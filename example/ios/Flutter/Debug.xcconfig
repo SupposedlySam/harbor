@@ -1,0 +1,7 @@
+#include "Generated.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.example.harborExample
+
+// To run on a device, sign with your own team and a bundle ID you own:
+// copy Local.xcconfig.example to Local.xcconfig (it is not checked in).
+#include? "Local.xcconfig"
