@@ -394,6 +394,69 @@ void main() {
     expect(await tabBarTopUnderKeyboard(resize: true), lessThan(_screen - 336), reason: 'the hazard the README warns of');
   });
 
+  group('A dock lays its child out like a Row or Column does', () {
+    // Reported by rubric-owner: a NavigationRail in a start quay took the whole 1024-wide frame and
+    // left the page 0 wide, silently. A dock offered its child any extent up to the frame's, and a
+    // widget that fills what it is given (NavigationRail, AppBar, an empty Container) took all of
+    // it. Docks now leave the child unbounded along the edge's depth, as a Row or Column does, so
+    // Row- and Column-native widgets size as they do there, and one that truly wants to fill fails
+    // loudly instead of eating the page. Breaks if: the dock bounds its child at the frame again.
+    const HarborTrialDevice tablet = HarborTrialDevice(
+      name: 'tablet',
+      size: Size(1024, 1366),
+      coast: EdgeInsets.only(top: 24, bottom: 20),
+      tideHeight: 400,
+    );
+
+    Future<void> pump(final WidgetTester tester, {final List<HarborDock> start = const <HarborDock>[], final List<HarborDock> top = const <HarborDock>[]}) =>
+        tester.pumpSeaTrial(
+          MaterialApp(
+            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+            home: Scaffold(
+              resizeToAvoidBottomInset: false,
+              body: Harbor(start: start, top: top, body: const SizedBox.expand(key: ValueKey<String>('body'))),
+            ),
+          ),
+          device: tablet,
+        );
+
+    testWidgets('a NavigationRail in a side dock takes its own width', (final tester) async {
+      await pump(
+        tester,
+        start: <HarborDock>[
+          HarborDock.quay(
+            child: NavigationRail(
+              key: const ValueKey<String>('rail'),
+              selectedIndex: 0,
+              destinations: const <NavigationRailDestination>[
+                NavigationRailDestination(icon: Icon(Icons.home), label: Text('Home')),
+                NavigationRailDestination(icon: Icon(Icons.settings), label: Text('Settings')),
+              ],
+            ),
+          ),
+        ],
+      );
+      expect(_rect(tester, 'rail').width, 80);
+      expect(_rect(tester, 'body').width, 1024 - 80);
+    });
+
+    testWidgets('an AppBar in a top dock takes its own height', (final tester) async {
+      await pump(tester, top: <HarborDock>[HarborDock.pier(child: AppBar(key: const ValueKey<String>('bar'), title: const Text('t')))]);
+      expect(_rect(tester, 'bar').height, kToolbarHeight);
+    });
+
+    testWidgets('a widget with no size of its own takes none', (final tester) async {
+      await pump(
+        tester,
+        start: <HarborDock>[HarborDock.quay(child: Container(key: const ValueKey<String>('side'), color: Colors.red))],
+        top: <HarborDock>[HarborDock.quay(child: Container(key: const ValueKey<String>('top'), color: Colors.blue))],
+      );
+      expect(_rect(tester, 'side').width, 0);
+      expect(_rect(tester, 'top').height, 0);
+      expect(_rect(tester, 'body').width, 1024, reason: 'the page keeps the frame');
+    });
+  });
+
   // Breaks if: a harbor's minimum is not applied to a bare edge.
   testWidgets('a harbor keeps its minimum off a bare edge', (final tester) async {
     await tester.pumpSeaTrial(

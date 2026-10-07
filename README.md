@@ -131,6 +131,12 @@ status bar, and a bottom dock pads it above the home indicator. Its `backdrop` i
 painted under the whole of its ground, coast included. The insets across it (a
 top dock's sides) stay in the child's `MediaQuery` for the child to handle.
 
+A dock sizes its child **the way a `Row` or `Column` does**: the child spans the
+edge and picks its own depth. A `NavigationRail` in a `start` dock is as wide as
+it is in a `Row`, and an `AppBar` in a `top` dock is as tall as its toolbar.
+Something that fills whatever it is given, like a `ListView`, needs a size, just
+as it would in a `Row`.
+
 | Option | Use it for |
 |---|---|
 | `wake: HarborWake.fade(length:, blurSigma:, restsAt:)` | Content fades as it passes under; it rests past the fade (`HarborRest.wakeEnd`) or at the dock (`.dockEdge`) |

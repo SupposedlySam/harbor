@@ -448,9 +448,14 @@ class RenderHarbor extends RenderBox
         case HarborSlotKind.buoys:
           buoys = child;
         case HarborSlotKind.dock:
+          // Unbounded along the edge's depth, as a Row or Column leaves its children. Bounding it
+          // at the frame let any widget that fills what it is given (a NavigationRail, an AppBar,
+          // an empty Container) take the whole frame and leave the body nothing, with no error.
+          // Unbounded, those size as they do in a Row or Column, and one that truly wants to fill
+          // (a ListView) fails loudly, which is the failure Flutter developers already know.
           final BoxConstraints dockConstraints = data.edge.isVertical
-              ? BoxConstraints(minWidth: width, maxWidth: width, maxHeight: dockMaxHeight)
-              : BoxConstraints(minHeight: dockMaxHeight, maxHeight: dockMaxHeight, maxWidth: width);
+              ? BoxConstraints(minWidth: width, maxWidth: width)
+              : BoxConstraints(minHeight: dockMaxHeight, maxHeight: dockMaxHeight);
           child.layout(dockConstraints, parentUsesSize: true);
           double extent = data.edge.isVertical ? child.size.height : child.size.width;
           double resting = extent;
