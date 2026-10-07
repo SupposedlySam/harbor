@@ -14,6 +14,22 @@ them a place and a rule, so your content stops doing inset arithmetic.
 Depends on the Flutter SDK only. `package:harbor/testing.dart` adds sea trials
 for widget tests.
 
+## Installing
+
+harbor is released through lamp, a local package manager, not pub.dev:
+
+```sh
+lamp add harbor
+```
+
+```yaml
+dependencies:
+  harbor:
+    path: .lamp/harbor
+```
+
+`lamp upgrade harbor` moves you to the newest release. MIT licensed.
+
 ## The one rule
 
 A harbor has layers: the **body** (your content) at the bottom, **docks** above
