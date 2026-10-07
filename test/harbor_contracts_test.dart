@@ -366,6 +366,34 @@ void main() {
     });
   });
 
+  // The README's Scaffold advice, held. A resizing Scaffold shrinks the harbor before it sees the
+  // keyboard, so a tab bar on pilings is lifted instead of covered; with resizing off, the harbor
+  // owns the tide. Both halves are asserted, so the advice is checked and so is its reason.
+  testWidgets('inside a Scaffold, the harbor owns the tide only once the Scaffold stops resizing', (final tester) async {
+    Future<double> tabBarTopUnderKeyboard({required final bool resize}) async {
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        MaterialApp(
+          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+          home: Scaffold(
+            resizeToAvoidBottomInset: resize,
+            body: Harbor(
+              bottom: <HarborDock>[HarborDock.quay(child: _bar('tabs', 56))],
+              body: const SizedBox.expand(),
+            ),
+          ),
+        ),
+      );
+      await trial.raiseTide(settle: true);
+      final double top = _rect(tester, 'tabs').top;
+      await trial.lowerTide(settle: true);
+      return top;
+    }
+
+    final double resting = _screen - 34 - 56; // above the home indicator
+    expect(await tabBarTopUnderKeyboard(resize: false), resting, reason: 'pilings: the keyboard covers it');
+    expect(await tabBarTopUnderKeyboard(resize: true), lessThan(_screen - 336), reason: 'the hazard the README warns of');
+  });
+
   // Breaks if: a harbor's minimum is not applied to a bare edge.
   testWidgets('a harbor keeps its minimum off a bare edge', (final tester) async {
     await tester.pumpSeaTrial(

@@ -193,6 +193,24 @@ has moved out of the keyboard's way: for information, never for layout.
 `highWater` is the last settled keyboard height in this orientation, and it
 falls as well as rises.
 
+## Harbor and Scaffold
+
+A harbor does what a `Scaffold` does for the edges, so a page built from a harbor does not need
+one. Keep a `Scaffold` only where Material needs it, for its surface or to host `SnackBar`s, and
+then give it the harbor as its body and **turn off its resizing**:
+
+```dart
+Scaffold(
+  resizeToAvoidBottomInset: false, // the harbor handles the keyboard
+  body: Harbor(top: [...], bottom: [...], body: ...),
+)
+```
+
+A resizing `Scaffold` shrinks the harbor before the harbor ever sees the keyboard. Nothing is
+counted twice, but every dock then rides up above the keyboard: a tab bar on pilings is lifted
+instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave the Scaffold's
+`appBar`, `bottomNavigationBar` and `floatingActionButton` empty and use docks and buoys instead.
+
 ## Talking to the harbor
 
 ```dart
