@@ -1,0 +1,43 @@
+# What `dart pub publish` leaves out of the package.
+#
+# A .pubignore REPLACES .gitignore for pub in this directory (pub reads one or the other, never
+# both), so everything .gitignore keeps out is repeated here first. Nested .gitignore files, such
+# as example/.gitignore, still apply.
+
+# --- Repeated from .gitignore ---
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+*.iml
+*.ipr
+*.iws
+.idea/
+.fvm/
+/pubspec.lock
+**/doc/api/
+.dart_tool/
+.flutter-plugins-dependencies
+/build/
+/coverage/
+
+# --- lamp and the owner agent: machine-local tooling, never part of the package ---
+.lamp/
+lamp.lock
+.llm_chat/
+.harbor_owner/
+.claude/
+CLAUDE.md
+
+# --- Repository upkeep a package consumer has no use for ---
+.github/
+.vscode/
+.fvmrc
+tool/
+doc/

@@ -16,19 +16,11 @@ for widget tests.
 
 ## Installing
 
-harbor is released through lamp, a local package manager, not pub.dev:
-
 ```sh
-lamp add harbor
+flutter pub add harbor
 ```
 
-```yaml
-dependencies:
-  harbor:
-    path: .lamp/harbor
-```
-
-`lamp upgrade harbor` moves you to the newest release. MIT licensed.
+MIT licensed.
 
 ## The one rule
 

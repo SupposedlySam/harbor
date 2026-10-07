@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The one gate: analyze and test the package, then the example.
 #
-# CI runs this, and so does `lamp publish` (registered as harbor's polish command), so a release
-# and a green build can never be checked by two different lists that drift apart.
+# CI runs this, and so does a release (CLAUDE.md), so a release and a green build can never be
+# checked by two different lists that drift apart.
 #
 # FLUTTER overrides the command: CI installs the pinned SDK as plain `flutter`, a workstation runs
 # it through fvm so `.fvmrc` decides the version.

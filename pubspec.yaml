@@ -1,8 +1,14 @@
 name: harbor
-description: "A harbor for your widgets. Docks claim the edges of the screen, everything else moors clear of them, sails under them or is open water, and the tide (the keyboard) rises over whatever doesn't float."
+description: "Keeps widgets clear of whatever covers each screen edge: system bars, the keyboard, and your own headers, tab bars and sheets. No inset arithmetic."
 version: 0.1.0
 repository: https://github.com/SupposedlySam/harbor
-publish_to: 'none'
+issue_tracker: https://github.com/SupposedlySam/harbor/issues
+topics:
+  - layout
+  - safe-area
+  - keyboard
+  - insets
+  - widget
 
 environment:
   sdk: '>=3.12.0 <4.0.0'

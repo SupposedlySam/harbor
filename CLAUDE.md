@@ -12,8 +12,7 @@ The Flutter version is pinned in `.fvmrc`, so use `fvm flutter`, not a bare `flu
 ```
 
 That script is the one gate. CI (`.github/workflows/check.yaml`) runs it on every push and pull
-request, and `lamp publish` runs it before granting a wish. If a check belongs in the gate, add
-it there and both pick it up.
+request, and a release runs it first. If a check belongs in the gate, add it there.
 
 The example suite is the larger one: the field guide's widget tests measure every class's
 options on a pretend phone, so a layout change in `lib/` usually shows up there first. The
@@ -22,29 +21,22 @@ is not part of the gate.
 
 ## How consumers get harbor
 
-Through **lamp**, published locally from `main`. Not from pub.dev (`publish_to: 'none'`).
+From **pub.dev**: `flutter pub add harbor`. That is the only release channel. harbor was briefly a
+lamp geanie (wish #1, no consumers) and was taken out on 2026-10-07: a second channel meant two
+releases to keep in step for no consumer that needed it. A project on this machine that needs an
+unreleased commit takes a git dependency on this repo with a `ref:`.
 
-```sh
-lamp add harbor          # in the consumer; vendors a released commit into .lamp/harbor
-```
+**Pushed is not released.** To release:
 
-```yaml
-# the consumer's pubspec.yaml; no version constraint, ever: upgrades swap the directory
-dependencies:
-  harbor:
-    path: .lamp/harbor
-```
+1. Bump `version:` in `pubspec.yaml` and add the entry to `CHANGELOG.md`, in one commit.
+2. `./tool/check.sh` must pass, and CI must be green on that commit.
+3. `fvm flutter pub publish --dry-run` must report 0 warnings. A pub.dev release can be retracted
+   but never deleted, so look at the file list it prints, not just the verdict.
+4. `fvm flutter pub publish`.
 
-**Pushed is not released.** A consumer sits on a wish, a specific commit, until it runs
-`lamp upgrade`. To release, from a clean `main`:
-
-```sh
-lamp publish harbor --note "what changed, for someone deciding whether to upgrade"
-lamp wishes harbor       # confirm the newest wish names HEAD
-```
-
-Keep `version:` in `pubspec.yaml` and `CHANGELOG.md` in step with what a wish carries. The wish
-number is lamp's label; the version is what a reader of the changelog sees.
+**What ships is decided by `.pubignore`, which replaces `.gitignore` for pub** in the root
+directory. A new gitignore rule must be copied there too, or pub will publish what git ignores.
+lamp files, `.claude/`, `CLAUDE.md`, `doc/`, `tool/` and `.github/` are kept out on purpose.
 
 ## The owner agent
 
@@ -58,6 +50,7 @@ under the identity `harbor-owner`.
 - **Sign every GitHub comment with the line `— 🤖 harbor owner agent`.** The agent posts under
   the maintainer's account, so this signature is the only way the waker can tell its own
   comments from the maintainer's. An unsigned comment wakes the session that wrote it.
-- The llm_chat wiring (`.lamp/`, `.llm_chat/`, `.claude/settings.local.json`) is machine-local and
-  not tracked. `lamp.lock` is tracked and pins the llm_chat version.
+- The llm_chat wiring (`.lamp/`, `lamp.lock`, `.llm_chat/`, `.claude/settings.local.json`) is
+  machine-local and gitignored. `lamp.lock` would normally be committed; it is not here because
+  harbor's only lamp dependency is llm_chat for this agent, which nobody cloning harbor needs.
 - `doc/READINGS.md` records when each front-door doc was last read whole.
