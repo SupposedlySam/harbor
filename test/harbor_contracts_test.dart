@@ -1,0 +1,404 @@
+// Promises the README makes that nothing in either suite held.
+//
+// Each test here was written against a mutant: a one-line change to lib/ that broke the promise
+// and left all 68 package tests and all 351 example tests green. The comment on each test names
+// the change it must fail on. If you weaken one of these tests, re-apply that change and check
+// the test still goes red. A test that passes with the code broken is decoration.
+
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:harbor/harbor.dart';
+import 'package:harbor/testing.dart';
+
+const double _statusBar = 62; // iPhone17's top coast.
+const double _screen = 874; // iPhone17's height.
+
+Widget _bar(final String label, final double height) => SizedBox(
+  key: ValueKey<String>(label),
+  height: height,
+  width: double.infinity,
+  child: Text(label),
+);
+
+Widget _app(final Widget home, {final HarborCoast coast = HarborCoast.ambient}) => MaterialApp(
+  builder: (final BuildContext context, final Widget? child) => HarborSea(coast: coast, child: child!),
+  home: Material(child: home),
+);
+
+Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
+
+/// Captures the [BuildContext] it is built in.
+class _Probe extends StatelessWidget {
+  const _Probe(this.onBuild, {this.child = const SizedBox.expand()});
+
+  final void Function(BuildContext context) onBuild;
+  final Widget child;
+
+  @override
+  Widget build(final BuildContext context) {
+    onBuild(context);
+    return child;
+  }
+}
+
+/// Reads only the coast, and only through the raw waters: `HarborWaters.of` also depends on the
+/// whole `MediaQuery`, which would rebuild this whatever the aspect said.
+class _CoastReader extends StatelessWidget {
+  const _CoastReader(this.seen);
+
+  final List<double> seen;
+
+  @override
+  Widget build(final BuildContext context) {
+    seen.add(HarborWaters.maybeRawOf(context, aspect: HarborWatersAspect.coast)!.coast.top);
+    return const SizedBox.expand();
+  }
+}
+
+/// Records the tide each time it is rebuilt.
+class _TideReader extends StatelessWidget {
+  const _TideReader(this.seen);
+
+  final List<HarborTideState> seen;
+
+  @override
+  Widget build(final BuildContext context) {
+    seen.add(HarborTide.of(context));
+    return const SizedBox.expand();
+  }
+}
+
+void main() {
+  group('Claims', () {
+    // Breaks if: releasing one claim releases every claim on the edge.
+    testWidgets('are counted: the dock comes back only when every claim is released', (final tester) async {
+      late BuildContext body;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: _Probe((final BuildContext c) => body = c),
+          ),
+        ),
+      );
+      final HarborController harbor = HarborController.of(body);
+      final HarborClaim first = harbor.makeWay(HarborEdge.top);
+      final HarborClaim second = harbor.makeWay(HarborEdge.top);
+      expect(harbor.claimedStateOf(HarborEdge.top), HarborDockState.withdrawn);
+
+      first.release();
+      await tester.pumpAndSettle();
+      expect(harbor.claimedStateOf(HarborEdge.top), HarborDockState.withdrawn, reason: 'one claim is still held');
+      expect(first.isActive, isFalse);
+      expect(second.isActive, isTrue);
+
+      second.release();
+      await tester.pumpAndSettle();
+      expect(harbor.claimedStateOf(HarborEdge.top), isNull);
+    });
+
+    // Breaks if: a claim stays on the harbor that asked, rather than the nearest one with a dock
+    // on that edge.
+    testWidgets('go to the nearest harbor outward that has a dock on the edge', (final tester) async {
+      late BuildContext inner;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: HarborMoored(
+              child: Harbor(
+                debugLabel: 'component',
+                body: _Probe((final BuildContext c) => inner = c),
+              ),
+            ),
+          ),
+        ),
+      );
+      final double open = _rect(tester, 'header').height;
+      expect(open, greaterThan(0));
+
+      final HarborClaim claim = HarborController.of(inner).makeWay(HarborEdge.top);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('header')).hitTestable(), findsNothing, reason: 'the page header withdrew');
+
+      claim.release();
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'header').height, open);
+    });
+  });
+
+  group('Breakwaters', () {
+    Future<HarborController> page(final WidgetTester tester) async {
+      late BuildContext body;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: HarborMoored(
+              child: _Probe((final BuildContext c) => body = c, child: const SizedBox.expand(key: ValueKey<String>('content'))),
+            ),
+          ),
+        ),
+      );
+      return HarborController.of(body);
+    }
+
+    // Breaks if: coverage takes the first breakwater rather than the largest.
+    testWidgets('keep content clear of the largest of them', (final tester) async {
+      final HarborController harbor = await page(tester);
+      final ValueNotifier<double> low = ValueNotifier<double>(100);
+      final ValueNotifier<double> high = ValueNotifier<double>(300);
+      addTearDown(low.dispose);
+      addTearDown(high.dispose);
+      harbor
+        ..addBreakwater(low)
+        ..addBreakwater(high);
+      await tester.pumpAndSettle();
+      expect(harbor.breakwaterCoverage, 300);
+      expect(_rect(tester, 'content').bottom, lessThanOrEqualTo(_screen - 300));
+    });
+
+    // Breaks if: removing a breakwater does nothing. (Skipping only the list removal in
+    // `_removeBreakwater` is NOT caught, and cannot be: `remove()` nulls the controller first, so
+    // coverage already reads zero. That mutant leaks an entry and a listener, which no layout sees.)
+    testWidgets('stop covering the page once removed', (final tester) async {
+      final HarborController harbor = await page(tester);
+      final double before = _rect(tester, 'content').bottom;
+      final ValueNotifier<double> cover = ValueNotifier<double>(300);
+      addTearDown(cover.dispose);
+      final HarborBreakwater breakwater = harbor.addBreakwater(cover);
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'content').bottom, lessThan(before), reason: 'positive control: it covered');
+
+      breakwater.remove();
+      await tester.pumpAndSettle();
+      expect(harbor.breakwaterCoverage, 0);
+      expect(_rect(tester, 'content').bottom, before);
+    });
+  });
+
+  group('Signals', () {
+    // Breaks if: the port on top is any route that is still active, rather than the current one.
+    testWidgets('go to the current route even when a background page re-mounts its harbor', (final tester) async {
+      final ValueNotifier<int> generation = ValueNotifier<int>(0);
+      addTearDown(generation.dispose);
+      final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+      late BuildContext top;
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          navigatorKey: navigator,
+          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+          home: ValueListenableBuilder<int>(
+            valueListenable: generation,
+            builder: (final BuildContext context, final int g, final Widget? _) =>
+                Harbor(key: ValueKey<int>(g), debugLabel: 'background', body: const SizedBox.expand()),
+          ),
+        ),
+      );
+      unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
+        builder: (final BuildContext context) => Harbor(
+          debugLabel: 'front',
+          body: _Probe((final BuildContext c) => top = c),
+        ),
+      )));
+      await tester.pumpAndSettle();
+      // The page underneath rebuilds a fresh harbor, which joins the fleet after the front one.
+      generation.value++;
+      await tester.pumpAndSettle();
+
+      final HarborController front = HarborController.of(top);
+      expect(front.fleet.topmost, same(front));
+    });
+  });
+
+  group('The tide', () {
+    Future<HarborSeaTrial> page(final WidgetTester tester, final List<HarborTideState> seen) =>
+        tester.pumpSeaTrial(_app(Harbor(bodyClearsTide: false, body: _TideReader(seen))));
+
+    Future<void> frames(final WidgetTester tester) async {
+      for (int i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+    }
+
+    // Breaks if: high water is no longer kept per orientation.
+    testWidgets('keeps a high-water mark per orientation', (final tester) async {
+      final List<HarborTideState> seen = <HarborTideState>[];
+      final HarborSeaTrial trial = await page(tester, seen);
+      await trial.raiseTide();
+      await trial.lowerTide();
+      expect(seen.last.highWater, 336);
+      expect(seen.last.highWaterIsEstimate, isFalse);
+
+      tester.view.physicalSize = const Size(_screen, 402);
+      await frames(tester);
+      expect(seen.last.highWaterIsEstimate, isTrue, reason: 'no keyboard has settled in landscape');
+      expect(seen.last.highWater, isNot(336));
+    });
+
+    // Breaks if: high water only ever rises. The example's field guide holds this too; the
+    // package owns the concept, so it holds it here.
+    testWidgets('lets high water fall when the keyboard settles lower', (final tester) async {
+      final List<HarborTideState> seen = <HarborTideState>[];
+      final HarborSeaTrial trial = await page(tester, seen);
+      await trial.raiseTide();
+      await trial.lowerTide();
+      expect(seen.last.highWater, 336, reason: 'positive control');
+
+      tester.view.viewInsets = const FakeViewPadding(bottom: 250);
+      await frames(tester);
+      expect(seen.last.highWater, 250);
+    });
+  });
+
+  group('The waters', () {
+    // Breaks if: the waters stop being clamped to MediaQuery.
+    testWidgets('honor a layer outside the harbor that removed padding', (final tester) async {
+      late BuildContext inside;
+      late BuildContext control;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                Expanded(child: _Probe((final BuildContext c) => control = c)),
+                Expanded(
+                  child: Builder(
+                    builder: (final BuildContext context) => MediaQuery.removePadding(
+                      context: context,
+                      removeTop: true,
+                      child: _Probe((final BuildContext c) => inside = c),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(HarborWaters.of(control).coast.top, _statusBar, reason: 'positive control');
+      expect(HarborWaters.of(inside).coast.top, 0);
+    });
+
+    // Breaks if: casting off an edge keeps that edge's wake.
+    testWidgets('cast off an edge\'s wake along with the edge', (final tester) async {
+      late BuildContext under;
+      late BuildContext castOff;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(length: 12), child: _bar('header', 50))],
+            body: _Probe(
+              (final BuildContext c) => under = c,
+              child: HarborCastOff(
+                edges: const <HarborEdge>{HarborEdge.top},
+                child: _Probe((final BuildContext c) => castOff = c),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(HarborWaters.of(under).wakes, contains(HarborEdge.top), reason: 'positive control');
+      expect(HarborWaters.of(castOff).wakes, isNot(contains(HarborEdge.top)));
+      expect(HarborWaters.of(castOff).wakeOf(HarborEdge.top), HarborWakeBand.none);
+    });
+
+    // Breaks if: a reader of the coast aspect is not rebuilt when the coast changes.
+    testWidgets('rebuild a coast reader when the coast changes', (final tester) async {
+      final ValueNotifier<double> top = ValueNotifier<double>(20);
+      addTearDown(top.dispose);
+      final List<double> seen = <double>[];
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          home: ValueListenableBuilder<double>(
+            valueListenable: top,
+            // The reader is const, so nothing but the waters can rebuild it.
+            child: Harbor(body: _CoastReader(seen)),
+            builder: (final BuildContext context, final double t, final Widget? page) =>
+                HarborSea(coast: HarborCoast.fixed(EdgeInsetsDirectional.only(top: t)), child: page!),
+          ),
+        ),
+      );
+      expect(seen.last, 20);
+      top.value = 40;
+      await tester.pump();
+      expect(seen.last, 40);
+    });
+
+    // Breaks if: the CSS insets ignore the docks.
+    testWidgets('give a web view the larger of the coast and the docks', (final tester) async {
+      late BuildContext body;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: _Probe((final BuildContext c) => body = c),
+          ),
+        ),
+      );
+      final Map<String, String> css = HarborWaters.of(body).toCssVariables(TextDirection.ltr);
+      expect(css['--harbor-inset-top'], '${_statusBar + 50}px');
+    });
+
+    // Breaks if: HarborCastOff(tide: true) keeps the keyboard.
+    testWidgets('cast off the tide when asked', (final tester) async {
+      late BuildContext under;
+      late BuildContext castOff;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            body: _Probe(
+              (final BuildContext c) => under = c,
+              child: HarborCastOff(
+                edges: const <HarborEdge>{},
+                tide: true,
+                child: _Probe((final BuildContext c) => castOff = c),
+              ),
+            ),
+          ),
+        ),
+      );
+      await trial.raiseTide();
+      expect(MediaQuery.viewInsetsOf(under).bottom, greaterThan(0), reason: 'positive control');
+      expect(MediaQuery.viewInsetsOf(castOff).bottom, 0);
+    });
+  });
+
+  // Breaks if: a harbor's minimum is not applied to a bare edge.
+  testWidgets('a harbor keeps its minimum off a bare edge', (final tester) async {
+    await tester.pumpSeaTrial(
+      _app(
+        coast: HarborCoast.none,
+        const Harbor(
+          minimum: EdgeInsetsDirectional.only(top: 24),
+          body: HarborMoored(child: SizedBox.expand(key: ValueKey<String>('content'))),
+        ),
+      ),
+    );
+    expect(_rect(tester, 'content').top, 24);
+  });
+
+  // Breaks if: a fast fling down no longer closes a draggable sheet.
+  testWidgets('a draggable sheet closes on a fast fling down', (final tester) async {
+    late BuildContext page;
+    await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+    unawaited(showHarborSheet<void>(
+      page,
+      builder: (final BuildContext context) => HarborSheet.draggable(
+        header: _bar('handle', 40),
+        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+          controller: controller,
+          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget, reason: 'positive control');
+    // A short distance, so the sheet is nowhere near its minimum: only the speed can close it.
+    await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+  });
+}
