@@ -29,3 +29,9 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# llm_chat identity for this project
+.llm_chat/
+
+# The owner agent's GitHub watcher state (.claude/hooks/issue-waker.py), machine-local
+.harbor_owner/
