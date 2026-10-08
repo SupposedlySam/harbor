@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -14,7 +15,7 @@ import 'wake.dart';
 
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
-class HarborSheetExtent {
+class HarborSheetExtent with Diagnosticable {
   const HarborSheetExtent({
     this.rest = 0.5,
     this.max = 0.88,
@@ -45,6 +46,34 @@ class HarborSheetExtent {
   final bool shouldCloseOnMinExtent;
 
   List<double> get _snaps => <double>{...(snapSizes ?? <double>[rest]), max}.toList()..sort();
+
+  @override
+  bool operator ==(final Object other) =>
+      other is HarborSheetExtent &&
+      other.rest == rest &&
+      other.max == max &&
+      other.min == min &&
+      other.snap == snap &&
+      listEquals(other.snapSizes, snapSizes) &&
+      other.shouldCloseOnMinExtent == shouldCloseOnMinExtent;
+
+  @override
+  int get hashCode =>
+      Object.hash(rest, max, min, snap, snapSizes == null ? null : Object.hashAll(snapSizes!), shouldCloseOnMinExtent);
+
+  @override
+  String toStringShort() => objectRuntimeType(this, 'HarborSheetExtent');
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(PercentProperty('rest', rest, level: rest == 0.5 ? DiagnosticLevel.fine : DiagnosticLevel.info));
+    properties.add(PercentProperty('max', max, level: max == 0.88 ? DiagnosticLevel.fine : DiagnosticLevel.info));
+    properties.add(PercentProperty('min', min, level: min == 0.25 ? DiagnosticLevel.fine : DiagnosticLevel.info));
+    properties.add(FlagProperty('snap', value: snap, ifFalse: 'no snapping'));
+    properties.add(IterableProperty<double>('snapSizes', snapSizes, defaultValue: null));
+    properties.add(FlagProperty('shouldCloseOnMinExtent', value: shouldCloseOnMinExtent, ifFalse: 'stays open at its floor'));
+  }
 }
 
 /// A sheet's surface: a new port with its own docks. Its header is a pier the
@@ -154,6 +183,31 @@ class HarborSheet extends StatelessWidget {
   /// always closes when dragged below its floor.
   final bool dragToClose;
 
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborSheetExtent>('extent', extent, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<HarborWake>('headerWake', headerWake, defaultValue: const HarborWake.fade(length: 12.0)),
+    );
+    properties.add(
+      DiagnosticsProperty<HarborWake>('footerWake', footerWake, defaultValue: const HarborWake.hairline()),
+    );
+    properties.add(DoubleProperty('footerMinimum', footerMinimum, defaultValue: 16.0));
+    properties.add(EnumProperty<HarborTideStance>('footerTide', footerTide, defaultValue: HarborTideStance.float));
+    properties.add(
+      PercentProperty(
+        'maxExtentFraction',
+        maxExtentFraction,
+        level: maxExtentFraction == null || maxExtentFraction == 0.9 ? DiagnosticLevel.fine : DiagnosticLevel.info,
+      ),
+    );
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
+    properties.add(ObjectFlagProperty<TransitionBuilder>.has('contentBuilder', contentBuilder));
+    properties.add(DiagnosticsProperty<ShapeBorder>('clip', clip, defaultValue: null));
+    properties.add(FlagProperty('dragToClose', value: dragToClose, ifTrue: 'drag to close'));
+  }
+
   /// Closes the sheet [context] is in, whichever way it was opened, and
   /// completes the future that opened it with [result], as [Navigator.pop]
   /// does for a route.
@@ -206,8 +260,22 @@ class HarborSheet extends StatelessWidget {
       return sheet;
     }
     final _SheetHostScope? host = _SheetHostScope.maybeOf(context);
-    assert(host != null, 'HarborSheet(dragToClose: true) closes only a sheet that showHarborSheet opened.');
+    assert(() {
+      if (host != null) {
+        return true;
+      }
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('HarborSheet(dragToClose: true) was built outside a sheet that showHarborSheet opened.'),
+        ErrorDescription('Dragging to close needs the sheet showHarborSheet opened to close, and none is above this HarborSheet.'),
+        ErrorHint(
+          'Open the sheet with showHarborSheet, or pass dragToClose: false where the HarborSheet is shown some other way, '
+          'such as inside a page or a dialog.',
+        ),
+        context.describeElement('The HarborSheet was'),
+      ]);
+    }());
     return GestureDetector(
+      onVerticalDragStart: (final DragStartDetails _) => host?.host.dragStart(),
       onVerticalDragUpdate: (final DragUpdateDetails details) => host?.host.dragBy(details.primaryDelta ?? 0.0),
       onVerticalDragEnd: (final DragEndDetails details) => host?.host.dragEnd(details.primaryVelocity ?? 0.0),
       child: sheet,
@@ -522,6 +590,14 @@ class HarborSheetController extends ChangeNotifier {
 /// bottom sheet theme's cap passes
 /// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
 ///
+/// [sheetAnimationStyle] sets how the sheet slides in and out, as it does for
+/// `showModalBottomSheet`: by default it opens over 280 ms and closes over 220 ms
+/// (280 ms both ways with [HarborSheetBarrier.none]), along [Curves.easeOutCubic]
+/// both ways. [AnimationStyle.noAnimation] opens and closes it at once. Whatever
+/// the style leaves out keeps its default; as on a modal bottom sheet, `curve`
+/// alone does not set the reverse curve. Reduced motion
+/// (`MediaQuery.disableAnimations`) still wins: the sheet is simply there.
+///
 /// A [controller] closes and rebuilds the sheet from outside it. A
 /// [transitionAnimationController] slides the sheet in place of its own 280 ms
 /// slide, as it does a modal bottom sheet: the sheet runs it forward to open
@@ -540,6 +616,7 @@ Future<T?> showHarborSheet<T>(
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
+  final AnimationStyle? sheetAnimationStyle,
   final HarborSheetController? controller,
   final AnimationController? transitionAnimationController,
   final String? barrierOnTapHint,
@@ -558,6 +635,7 @@ Future<T?> showHarborSheet<T>(
     keepsTopCoast: keepsTopCoast,
     anchorPoint: anchorPoint,
     presenter: breakwater ? presenter : null,
+    animationStyle: sheetAnimationStyle,
     controller: controller,
     scopesRoute: barrier != HarborSheetBarrier.none,
     semanticLabel: semanticLabel,
@@ -585,6 +663,7 @@ Future<T?> showHarborSheet<T>(
       barrierLabel: barrierLabel ?? 'Close sheet',
       barrierOnTapHint: barrierOnTapHint,
       settings: routeSettings,
+      animationStyle: sheetAnimationStyle,
       transitionAnimationController: transitionAnimationController,
       requestFocus: requestFocus,
     ),
@@ -598,6 +677,7 @@ class _SheetHost {
     required this.keepsTopCoast,
     required this.anchorPoint,
     required this.presenter,
+    required this.animationStyle,
     required this.controller,
     required this.scopesRoute,
     required this.semanticLabel,
@@ -610,6 +690,7 @@ class _SheetHost {
   final bool keepsTopCoast;
   final Offset? anchorPoint;
   final HarborController? presenter;
+  final AnimationStyle? animationStyle;
 
   /// Whether the sheet is a route of its own; one with no barrier is not.
   final bool scopesRoute;
@@ -627,39 +708,48 @@ class _SheetHost {
 
   Future<void> get gone => _gone.future;
 
+  static const Curve _defaultCurve = Curves.easeOutCubic;
+
+  Curve get _curve => animationStyle?.curve ?? _defaultCurve;
+  Curve get _reverseCurve => animationStyle?.reverseCurve ?? _defaultCurve;
+
+  AnimationController? _slide;
+
+  /// How much of the sheet shows: [slide] along the curve, or [slide] itself while it is dragged.
+  final ProxyAnimation _shown = ProxyAnimation(kAlwaysDismissedAnimation);
+  CurvedAnimation? _curved;
+
   /// What slides the sheet in and out, for dragging it down by hand.
   AnimationController? get slide => _slide;
-  AnimationController? _slide;
   set slide(final AnimationController? slide) {
     _slide = slide;
-    _shown.parent = slide?.drive(CurveTween(curve: _reveal)) ?? kAlwaysDismissedAnimation;
+    _follow(_curve, _reverseCurve);
   }
-
-  /// How much of the sheet shows: [slide] along the reveal curve.
-  final ProxyAnimation _shown = ProxyAnimation(kAlwaysDismissedAnimation);
 
   /// What the sheet is painted with: [_shown], or all of it under reduced motion.
   late Animation<double> _painted = _shown;
 
-  /// How much of the sheet is drawn this frame, as a fraction of its height.
-  double get _drawn => _painted.value;
+  /// How much of the sheet is drawn this frame, as a fraction of its height. A curve may start
+  /// below zero, as Curves.easeInBack does.
+  double get _drawn => math.max(0.0, _painted.value);
 
-  // The reveal is curved, so the drag goes through the curve's inverse to
-  // keep the sheet under the finger.
-  static const Curve _reveal = Curves.easeOutCubic;
+  void _follow(final Curve curve, final Curve reverseCurve) {
+    _curved?.dispose();
+    final AnimationController? slide = _slide;
+    _curved = slide == null ? null : CurvedAnimation(parent: slide, curve: curve, reverseCurve: reverseCurve);
+    _shown.parent = _curved ?? kAlwaysDismissedAnimation;
+  }
 
-  static double _unreveal(final double shown) {
-    double low = 0.0;
-    double high = 1.0;
-    for (int i = 0; i < 24; i++) {
-      final double mid = (low + high) / 2;
-      if (_reveal.transform(mid) < shown) {
-        low = mid;
-      } else {
-        high = mid;
-      }
+  // As a modal bottom sheet does, a dragged sheet follows its controller with no curve, so it stays
+  // under the finger whatever the curve is (one that overshoots has no inverse). Caught while it
+  // moves, the controller first takes what is shown, so nothing jumps.
+  void dragStart() {
+    final AnimationController? slide = this.slide;
+    if (slide == null) {
+      return;
     }
-    return (low + high) / 2;
+    slide.value = _shown.value;
+    _shown.parent = slide;
   }
 
   void dragBy(final double delta) {
@@ -667,8 +757,7 @@ class _SheetHost {
     if (slide == null || _height <= 0) {
       return;
     }
-    final double shown = (_reveal.transform(slide.value) - delta / _height).clamp(0.0, 1.0);
-    slide.value = _unreveal(shown);
+    slide.value -= delta / _height;
   }
 
   void dragEnd(final double velocity) {
@@ -676,12 +765,20 @@ class _SheetHost {
     if (slide == null) {
       return;
     }
+    // On from where the finger let go, along the curve for what is left of the way.
+    _follow(Split(slide.value, endCurve: _curve), Split(slide.value, endCurve: _reverseCurve));
     // As a modal bottom sheet has it: a fling down, or let go under half shown.
-    if (velocity > 700 || _reveal.transform(slide.value) < 0.5) {
+    if (velocity > 700 || slide.value < 0.5) {
       close?.call();
     } else {
       unawaited(slide.forward());
     }
+  }
+
+  void dispose() {
+    _shown.parent = kAlwaysDismissedAnimation;
+    _curved?.dispose();
+    _curved = null;
   }
 
   /// Where the sheet's visible top is, in global coordinates.
@@ -874,11 +971,13 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
     required this.barrierLabel,
     required this.transitionAnimationController,
     required this.barrierOnTapHint,
+    required this.animationStyle,
     super.settings,
     super.requestFocus,
   });
 
   final _SheetHost host;
+  final AnimationStyle? animationStyle;
   final AnimationController? transitionAnimationController;
 
   @override
@@ -893,10 +992,10 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   final String? barrierOnTapHint;
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 280);
+  Duration get transitionDuration => animationStyle?.duration ?? const Duration(milliseconds: 280);
 
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 220);
+  Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? const Duration(milliseconds: 220);
 
   // The caller's controller, as ModalBottomSheetRoute takes it: driven here, disposed by the caller.
   @override
@@ -932,7 +1031,8 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   void dispose() {
     host
       ..detach()
-      ..left();
+      ..left()
+      ..dispose();
     super.dispose();
   }
 
@@ -966,7 +1066,13 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 
 class _NonModalSheet<T> {
   _NonModalSheet({required this.host, required this.overlay, required this.route, final AnimationController? transition})
-    : _animation = transition ?? AnimationController(vsync: overlay, duration: const Duration(milliseconds: 280)),
+    : _animation =
+          transition ??
+          AnimationController(
+            vsync: overlay,
+            duration: host.animationStyle?.duration ?? const Duration(milliseconds: 280),
+            reverseDuration: host.animationStyle?.reverseDuration ?? const Duration(milliseconds: 280),
+          ),
       _ownsAnimation = transition == null;
 
   final _SheetHost host;
@@ -1075,6 +1181,7 @@ class _NonModalSheet<T> {
     } on Object {
       // The overlay is already going.
     }
+    host.dispose();
     _leave();
   }
 
@@ -1091,6 +1198,7 @@ class _NonModalSheet<T> {
     host.detach();
     _entry?.remove();
     _entry = null;
+    host.dispose();
     // The result first: _leave completes with null when nothing has.
     if (!_done.isCompleted) {
       _done.complete(result);

@@ -419,6 +419,100 @@ void main() {
       await tester.pumpAndSettle();
       expect(firstFrame, tester.getRect(find.byKey(const ValueKey<String>('content'))).top);
     });
+
+    /// Where a row below the fold is on the frame after a reveal, and where it comes to rest.
+    /// Built in the cache extent, it is offstage until revealed.
+    Future<(double, double)> revealFrames(final WidgetTester tester, {required final bool disableAnimations}) async {
+      final GlobalKey row = GlobalKey();
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: HarborFairway(
+              slivers: <Widget>[
+                const SliverToBoxAdapter(child: SizedBox(height: 900)),
+                SliverToBoxAdapter(child: SizedBox(key: row, height: 40)),
+                const SliverToBoxAdapter(child: SizedBox(height: 1500)),
+              ],
+            ),
+          ),
+          disableAnimations: disableAnimations,
+        ),
+      );
+      HarborLighthouse.reveal(row.currentContext!);
+      await tester.pump();
+      final double firstFrame = tester.getRect(find.byKey(row, skipOffstage: false)).bottom;
+      await tester.pumpAndSettle();
+      return (firstFrame, tester.getRect(find.byKey(row, skipOffstage: false)).bottom);
+    }
+
+    testWidgets('a reveal scrolls over several frames normally (positive control)', (final tester) async {
+      final (double firstFrame, double rest) = await revealFrames(tester, disableAnimations: false);
+      expect(rest, lessThan(874));
+      expect(firstFrame, isNot(rest));
+    });
+
+    // Failed before: the row scrolled into sight over 250 ms either way.
+    testWidgets('a reveal jumps', (final tester) async {
+      final (double firstFrame, double rest) = await revealFrames(tester, disableAnimations: true);
+      expect(rest, lessThan(874));
+      expect(firstFrame, rest);
+    });
+
+    /// Where a lifted beacon is one frame after the cover rises under it, and where it comes to rest.
+    Future<(double, double)> liftFrames(final WidgetTester tester, {required final bool disableAnimations}) async {
+      final ValueNotifier<double> cover = ValueNotifier<double>(10);
+      addTearDown(cover.dispose);
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bottom: <HarborDock>[
+              HarborDock.pier(
+                child: ValueListenableBuilder<double>(
+                  valueListenable: cover,
+                  builder: (final BuildContext context, final double height, final Widget? _) =>
+                      SizedBox(height: height),
+                ),
+              ),
+            ],
+            body: const HarborLighthouseRegion(
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    top: 600,
+                    left: 100,
+                    child: HarborBeacon(
+                      lift: true,
+                      child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          disableAnimations: disableAnimations,
+        ),
+      );
+      await tester.pumpAndSettle();
+      cover.value = 300;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      final double firstFrame = tester.getRect(find.byKey(const ValueKey<String>('boat'))).bottom;
+      await tester.pumpAndSettle();
+      return (firstFrame, tester.getRect(find.byKey(const ValueKey<String>('boat'))).bottom);
+    }
+
+    testWidgets('a region lifts over several frames normally (positive control)', (final tester) async {
+      final (double firstFrame, double rest) = await liftFrames(tester, disableAnimations: false);
+      expect(rest, lessThan(640));
+      expect(firstFrame, isNot(rest));
+    });
+
+    // Failed before: the region lifted its content over 280 ms either way.
+    testWidgets('a region lifts at once', (final tester) async {
+      final (double firstFrame, double rest) = await liftFrames(tester, disableAnimations: true);
+      expect(rest, lessThan(640));
+      expect(firstFrame, rest);
+    });
   });
 
   group('A buoy follows the reading direction', () {
