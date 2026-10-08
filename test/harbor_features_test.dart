@@ -1454,4 +1454,134 @@ void main() {
     expect(_rect(tester, 'footer').bottom, trial.waterline);
     expect(_rect(tester, 'footer').height, 40);
   });
+
+  group('insets take EdgeInsetsGeometry, resolved against the reading direction', () {
+    Widget rtl(final Widget home, {final HarborCoast coast = HarborCoast.ambient, final EdgeInsetsGeometry? margin}) => MaterialApp(
+      builder: (final BuildContext context, final Widget? child) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: HarborSea(coast: coast, margin: margin, child: child!),
+      ),
+      home: Material(child: home),
+    );
+    Widget rows() => SliverList.builder(
+      itemCount: 30,
+      itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50),
+    );
+
+    testWidgets("the sea's mooring line keeps a physical left on the left", (final tester) async {
+      await tester.pumpSeaTrial(rtl(HarborMooringLine(child: _bar('row', 40)), margin: const EdgeInsets.only(left: 24)));
+      expect(_rect(tester, 'row').left, 24);
+      expect(_rect(tester, 'row').right, 402);
+    });
+
+    testWidgets("a harbor's margin and minimum keep a physical side where they say", (final tester) async {
+      await tester.pumpSeaTrial(
+        rtl(
+          Harbor(
+            margin: const EdgeInsets.only(right: 12),
+            minimum: const EdgeInsets.only(left: 30),
+            body: HarborMoored(mooringLine: true, child: _bar('form', 40)),
+          ),
+        ),
+      );
+      expect(_rect(tester, 'form').left, 30);
+      expect(_rect(tester, 'form').right, 402 - 12);
+    });
+
+    testWidgets("a fairway's padding and minimum keep a physical side where they say", (final tester) async {
+      await tester.pumpSeaTrial(
+        rtl(HarborFairway(padding: const EdgeInsets.only(left: 12), minimum: const EdgeInsets.only(bottom: 16), slivers: <Widget>[rows()])),
+        device: HarborTrialDevice.iPhoneSE,
+      );
+      expect(_rect(tester, 'row0').left, 12);
+      expect(_rect(tester, 'row0').right, 375);
+      await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'row29').bottom, 667 - 16);
+    });
+
+    testWidgets('a fairway sliver takes the same', (final tester) async {
+      await tester.pumpSeaTrial(
+        rtl(
+          CustomScrollView(
+            slivers: <Widget>[
+              HarborFairwaySliver(padding: const EdgeInsets.only(left: 12), minimum: const EdgeInsets.only(bottom: 16), sliver: rows()),
+            ],
+          ),
+        ),
+        device: HarborTrialDevice.iPhoneSE,
+      );
+      expect(_rect(tester, 'row0').left, 12);
+      await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'row29').bottom, 667 - 16);
+    });
+
+    testWidgets("paddingOf resolves its extra and minimum the way it resolves what it returns", (final tester) async {
+      late EdgeInsets padding;
+      await tester.pumpSeaTrial(
+        rtl(
+          Builder(
+            builder: (final BuildContext context) {
+              padding = HarborFairway.paddingOf(
+                context,
+                extra: const EdgeInsets.only(left: 5),
+                minimum: const EdgeInsetsDirectional.only(bottom: 16).add(const EdgeInsets.only(bottom: 4)),
+              );
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+        device: HarborTrialDevice.iPhoneSE,
+      );
+      expect(padding, const EdgeInsets.only(left: 5, top: 20, bottom: 20));
+    });
+
+    testWidgets("a moored widget's minimum and extra, and clearanceOf, keep a physical side where they say", (final tester) async {
+      late EdgeInsetsDirectional clearance;
+      await tester.pumpSeaTrial(
+        rtl(
+          Builder(
+            builder: (final BuildContext context) {
+              clearance = HarborMoored.clearanceOf(context, minimum: const EdgeInsets.only(left: 30), extra: const EdgeInsets.only(right: 6));
+              return HarborMoored(minimum: const EdgeInsets.only(left: 30), extra: const EdgeInsets.only(right: 6), child: _bar('form', 40));
+            },
+          ),
+        ),
+      );
+      expect(_rect(tester, 'form').left, 30);
+      expect(_rect(tester, 'form').right, 402 - 6);
+      expect(clearance, const EdgeInsetsDirectional.fromSTEB(6, 62, 30, 34));
+    });
+
+    testWidgets('a fixed coast and a fixed title-safe band keep a physical side where they say', (final tester) async {
+      Future<EdgeInsets> paddingUnder(final HarborCoast coast) async {
+        late EdgeInsets padding;
+        await tester.pumpSeaTrial(
+          rtl(
+            Builder(
+              builder: (final BuildContext context) {
+                padding = MediaQuery.paddingOf(context);
+                return const SizedBox.shrink();
+              },
+            ),
+            coast: coast,
+          ),
+        );
+        return padding;
+      }
+
+      expect(await paddingUnder(const HarborCoast.fixed(EdgeInsets.only(left: 40))), const EdgeInsets.only(left: 40));
+      expect(
+        await paddingUnder(const HarborCoast.titleSafe(HarborTitleSafe.fixed(EdgeInsets.only(left: 40)))),
+        const EdgeInsets.only(left: 40, top: 62, bottom: 34),
+      );
+    });
+
+    testWidgets('a directional inset still follows the reading direction', (final tester) async {
+      await tester.pumpSeaTrial(rtl(HarborMooringLine(child: _bar('row', 40)), margin: const EdgeInsetsDirectional.only(start: 24)));
+      expect(_rect(tester, 'row').right, 402 - 24);
+      expect(_rect(tester, 'row').left, 0);
+    });
+  });
 }

@@ -27,12 +27,13 @@ class HarborTitleSafe {
   const HarborTitleSafe.fraction(final double fraction) : _fraction = fraction, _fixed = null;
 
   /// A fixed band on each edge, in logical pixels.
-  const HarborTitleSafe.fixed(final EdgeInsetsDirectional insets) : _fraction = null, _fixed = insets;
+  const HarborTitleSafe.fixed(final EdgeInsetsGeometry insets) : _fraction = null, _fixed = insets;
 
   final double? _fraction;
-  final EdgeInsetsDirectional? _fixed;
+  final EdgeInsetsGeometry? _fixed;
 
-  EdgeInsetsDirectional resolve(final Size size) {
+  /// The band on a screen of [size]; resolve it against the reading direction to place it.
+  EdgeInsetsGeometry resolve(final Size size) {
     final double? fraction = _fraction;
     if (fraction == null) {
       return _fixed!;
@@ -63,7 +64,7 @@ class HarborCoast {
 
   /// A coast of exactly [insets], whatever the platform reports. The tide still
   /// comes in unless [calmTide] is set.
-  const HarborCoast.fixed(final EdgeInsetsDirectional insets, {final bool calmTide = false})
+  const HarborCoast.fixed(final EdgeInsetsGeometry insets, {final bool calmTide = false})
     : this._(fixedInsets: insets, calmTide: calmTide);
 
   /// A TV's title-safe band on top of what the platform reports, edge by edge
@@ -71,7 +72,7 @@ class HarborCoast {
   const HarborCoast.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
 
   final HarborTitleSafe? titleSafe;
-  final EdgeInsetsDirectional? fixedInsets;
+  final EdgeInsetsGeometry? fixedInsets;
 
   /// Whether the keyboard is kept out entirely.
   final bool calmTide;
@@ -83,7 +84,7 @@ class HarborCoast {
     }
     final EdgeInsets padding;
     final EdgeInsets viewPadding;
-    final EdgeInsetsDirectional? fixed = fixedInsets;
+    final EdgeInsetsGeometry? fixed = fixedInsets;
     if (fixed != null) {
       padding = fixed.resolve(direction);
       viewPadding = padding;
@@ -102,10 +103,13 @@ class HarborCoast {
   /// The features each edge of [mediaQuery] is made of under this coast, for a chart.
   Map<HarborEdge, HarborCoastFeature?> features(final MediaQueryData mediaQuery, final TextDirection direction) {
     final EdgeInsetsDirectional platform = HarborEdges.directional(mediaQuery.padding, direction);
-    final EdgeInsetsDirectional? band = titleSafe?.resolve(mediaQuery.size);
+    final EdgeInsetsGeometry? bandGeometry = titleSafe?.resolve(mediaQuery.size);
+    final EdgeInsetsDirectional? band = bandGeometry == null ? null : HarborEdges.resolve(bandGeometry, direction);
+    final EdgeInsetsGeometry? fixedGeometry = fixedInsets;
+    final EdgeInsetsDirectional? fixed = fixedGeometry == null ? null : HarborEdges.resolve(fixedGeometry, direction);
     HarborCoastFeature? featureOf(final HarborEdge edge) {
-      if (fixedInsets != null) {
-        return HarborEdges.of(fixedInsets!, edge) > 0 ? HarborCoastFeature.fixed : null;
+      if (fixed != null) {
+        return HarborEdges.of(fixed, edge) > 0 ? HarborCoastFeature.fixed : null;
       }
       final double fromPlatform = HarborEdges.of(platform, edge);
       if (band != null && HarborEdges.of(band, edge) >= fromPlatform && HarborEdges.of(band, edge) > 0) {

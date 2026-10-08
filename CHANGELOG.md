@@ -1,5 +1,6 @@
 ## Unreleased
 
+* **Breaking:** every inset harbor takes is an `EdgeInsetsGeometry`, as `Padding.padding` and `ListView.padding` are, resolved against `Directionality` where it is used: `Harbor.margin` and `.minimum`, `HarborSea.margin`, `HarborFairway.padding` and `.minimum`, `HarborFairwaySliver.padding` and `.minimum`, `HarborMoored.minimum` and `.extra`, `HarborCoast.fixed` (and `HarborCoast.fixedInsets`) and `HarborTitleSafe.fixed`, and the `extra:` and `minimum:` of `HarborFairway.paddingOf` and `HarborMoored.clearanceOf`. `EdgeInsets.all(16)` now compiles, and an `EdgeInsets` stays on the side it names. Passing `EdgeInsetsDirectional` still compiles and behaves as before; reading one of these fields as `EdgeInsetsDirectional` needs `HarborEdges.resolve(insets, textDirection)`, and `HarborTitleSafe.resolve(size)` now returns an `EdgeInsetsGeometry`. What harbor publishes for you to read (`HarborWatersData`, `HarborMoored.clearanceOf`'s result) stays directional.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0
