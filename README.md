@@ -258,7 +258,9 @@ by keyboard focus and by screen readers, not only by taps. Signals are live
 regions, so screen readers announce them, with a dismiss action that lowers
 them, as a `SnackBar` is. A signal whose widget is already its own live region
 (a `SnackBar`-like widget from your design library) is raised with
-`liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
+`liveRegion: false`, so harbor adds no second, unlabelled one around it. A
+signal with a button is raised with `persist: true`, as a `SnackBar` with an
+action persists, so it is still there when a screen reader reaches it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
 leave without moving. On iOS a tap on the
@@ -290,6 +292,8 @@ Harbor(
 
 HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('Saved'));
 HarborSignals.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+final undo = HarborSignals.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
+final HarborSignalClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
 HarborSignals.raise(
   context,
   transitionBuilder: (context, animation, child) => SlideTransition(
@@ -322,6 +326,20 @@ A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 signal moves to the one now on top.
+
+Signals raised at the same slot or alignment of one port take turns, as a
+`ScaffoldMessenger` shows its snack bars: the next comes in once the one before
+it has run its exit, so "Copied" tapped twice is never drawn over itself. To
+replace the signal that is up, `lower()` it; one lowered while it waits leaves
+without being shown. Signals at different slots show together. `closed`
+completes once a signal has left, with why.
+
+A signal stays 4 s, as a `SnackBar` does, and its `duration` counts only while it
+is in sight: from the end of its entrance, and not while another route covers
+its page (the time starts over when that route leaves). `persist: true` keeps it
+up until it is lowered, as `SnackBar(persist:)` does. Give it to a signal with a
+button, an Undo: a screen-reader user moving through the page needs longer than
+4 s to reach it.
 
 A signal raised with no harbor above it (a widget test that pumps a bare
 `MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
