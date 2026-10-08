@@ -224,6 +224,61 @@ void main() {
       expect(front.fleet.topmost, same(front));
     });
 
+    // Breaks if: an exact alignment is ignored in favour of the slot, or placed anywhere but its
+    // point in the clear water, 16 in from its edges, as a buoy at that alignment would be.
+    testWidgets('take an exact alignment within the clear water', (final tester) async {
+      const Alignment notch = Alignment(0.0, -0.8);
+      late BuildContext page;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(
+        page,
+        alignment: notch,
+        builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      final Rect water = trial.clearWaterAround(find.byType(_Probe)).deflate(16);
+      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
+    });
+
+    // Breaks if: a directional alignment is resolved where the signal is shown rather than in the
+    // reading direction of the page that raised it.
+    testWidgets('resolve a directional alignment in the direction of the page that raised it', (final tester) async {
+      late BuildContext page;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Directionality(textDirection: TextDirection.rtl, child: _Probe((final BuildContext c) => page = c)),
+          ),
+        ),
+      );
+      HarborSignals.raise(
+        page,
+        alignment: AlignmentDirectional.centerEnd,
+        builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      final Rect water = trial.clearWaterAround(find.byType(_Probe)).deflate(16);
+      expect(_rect(tester, 'toast'), Alignment.centerLeft.inscribe(const Size(200, 40), water));
+    });
+
+    // Breaks if: the overlay a signal falls back to ignores its exact alignment.
+    testWidgets('without a harbor, take an exact alignment within the overlay’s padded water', (final tester) async {
+      const Alignment notch = Alignment(0.0, -0.8);
+      late BuildContext page;
+      await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(
+        page,
+        alignment: notch,
+        builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      final Rect water = const EdgeInsets.fromLTRB(16, _statusBar + 16, 16, 34 + 16).deflateRect(Offset.zero & const Size(402, _screen));
+      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
+    });
+
     // Breaks if: a signal with no harbor above it is dropped (it used to assert, and show nothing
     // in release), or the overlay it falls back to ignores the coast or the keyboard.
     testWidgets('without a harbor, go to the nearest overlay, clear of the coast and the keyboard', (final tester) async {
