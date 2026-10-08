@@ -390,7 +390,7 @@ puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Its `barrierLabel` ('Close' when none is
+before it are hidden while it is up. Its `barrierLabel` ('Dismiss' when none is
 given) is what a screen reader announces for the barrier; a Material app passes
 `MaterialLocalizations.of(context).modalBarrierDismissLabel`. Unlike a route, it
 does not trap keyboard focus.

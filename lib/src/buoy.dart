@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'barrier_label.dart';
 import 'controller.dart';
 import 'render_harbor.dart';
 
@@ -299,7 +300,7 @@ class HarborBuoy with Diagnosticable {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
-    this.barrierLabel = 'Close',
+    this.barrierLabel = harborBarrierDismissLabel,
     this.within,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        anchor = null,
@@ -326,7 +327,7 @@ class HarborBuoy with Diagnosticable {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
-    this.barrierLabel = 'Close',
+    this.barrierLabel = harborBarrierDismissLabel,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        alignment = Alignment.center,
        within = null;
