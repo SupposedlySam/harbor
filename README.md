@@ -503,6 +503,10 @@ testWidgets('the composer rides the keyboard', (tester) async {
 });
 ```
 
+`raiseTide()` pumps 600 ms, long enough for the harbor to follow;
+`raiseTide(pumpFor: Duration.zero)` stops at the first frame after the keyboard
+arrives, and `settle: true` pumps until nothing is animating.
+
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
