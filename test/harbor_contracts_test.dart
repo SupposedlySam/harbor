@@ -350,6 +350,199 @@ void main() {
     });
   });
 
+  group("A signal's time", () {
+    Future<BuildContext> pumpPage(final WidgetTester tester, {final GlobalKey<NavigatorState>? navigator}) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          navigatorKey: navigator,
+          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+          home: Material(child: Harbor(body: _Probe((final BuildContext c) => page = c))),
+        ),
+      );
+      return page;
+    }
+
+    // Breaks if: the default is not a SnackBar's 4 s.
+    testWidgets('is 4 s by default, as a SnackBar’s is', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('toast', 30));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 3500));
+      expect(entry.showing.value, isTrue);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(entry.showing.value, isFalse);
+    });
+
+    // Breaks if: the time starts when the signal is raised rather than once its entrance has run.
+    testWidgets('starts once its entrance has finished', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: const AnimationStyle(duration: Duration(seconds: 1)),
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('toast', 30),
+      );
+      // Frame by frame, as a device draws them, so the entrance ends when it would.
+      for (int i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(entry.showing.value, isTrue, reason: 'it has been in full view for only 0.5 s');
+      for (int i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(entry.showing.value, isFalse);
+    });
+
+    // Breaks if: the time runs while another route covers the page the signal is on.
+    testWidgets('waits while another route covers its page', (final tester) async {
+      final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+      final BuildContext page = await pumpPage(tester, navigator: navigator);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('toast', 30),
+      );
+      await tester.pumpAndSettle();
+      unawaited(navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext c) => const SizedBox.expand())));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 3));
+      expect(entry.showing.value, isTrue, reason: 'nobody could see it');
+
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('toast')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(entry.showing.value, isFalse, reason: 'its time ran once the page was back on top');
+    });
+
+    // Breaks if: persist is ignored, so a signal with a button times out before a screen reader
+    // reaches it, as a SnackBar with an action does not.
+    testWidgets('with persist, does not run out', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        persist: true,
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('undo', 30),
+      );
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 10));
+      expect(entry.showing.value, isTrue);
+
+      entry.lower();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('undo')), findsNothing);
+      expect(reason, HarborSignalClosedReason.lower);
+    });
+
+    // Breaks if: closed completes before the exit has run, or with the wrong reason.
+    testWidgets('closes with timeout once its exit has run', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('toast', 30),
+      );
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+      expect(entry.showing.value, isFalse);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(reason, isNull, reason: 'it is still on its way out');
+      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.byKey(const ValueKey<String>('toast')), findsNothing);
+      expect(reason, HarborSignalClosedReason.timeout);
+    });
+  });
+
+  group('Signals at the same place', () {
+    final Finder first = find.byKey(const ValueKey<String>('first'));
+    final Finder second = find.byKey(const ValueKey<String>('second'));
+
+    // Breaks if: two signals at one slot are shown at once, drawn over each other, rather than one
+    // after the other as a ScaffoldMessenger shows its snack bars; or the one waiting starts its
+    // time before it is shown.
+    testWidgets('are shown one at a time, each after the last has left', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      final HarborSignalEntry one = HarborSignals.raise(page, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      final HarborSignalEntry two = HarborSignals.raise(
+        page,
+        slot: HarborSignalSlot.low,
+        builder: (final BuildContext c) => _bar('second', 30),
+        duration: const Duration(seconds: 1),
+      );
+      await tester.pumpAndSettle();
+      expect(first, findsOneWidget);
+      expect(second, findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      expect(two.showing.value, isTrue, reason: 'its time has not started while it waits');
+
+      one.lower();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(first, findsOneWidget, reason: 'the first runs its exit before the next comes in');
+      expect(second, findsNothing);
+      await tester.pumpAndSettle();
+      expect(first, findsNothing);
+      expect(second, findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(two.showing.value, isFalse);
+      await tester.pumpAndSettle();
+    });
+
+    // Breaks if: a signal lowered while it waits is still shown when its turn comes, or its closed
+    // future waits for an exit it never had.
+    testWidgets('leave the queue at once when lowered while waiting', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      final HarborSignalEntry one = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      final HarborSignalEntry two = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('third', 30), duration: null);
+      HarborSignalClosedReason? reason;
+      unawaited(two.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+
+      two.lower();
+      await tester.pump();
+      expect(reason, HarborSignalClosedReason.lower);
+      one.lower();
+      await tester.pumpAndSettle();
+      expect(second, findsNothing);
+      expect(find.byKey(const ValueKey<String>('third')), findsOneWidget);
+    });
+
+    testWidgets('without a harbor, are shown one at a time in the overlay', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
+      final HarborSignalEntry one = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      await tester.pumpAndSettle();
+      expect(first, findsOneWidget);
+      expect(second, findsNothing);
+
+      one.lower();
+      await tester.pumpAndSettle();
+      expect(first, findsNothing);
+      expect(second, findsOneWidget);
+    });
+
+    // Positive control: the queue is per place, so signals at two slots still show together.
+    testWidgets('at two slots, are shown together', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(page, slot: HarborSignalSlot.top, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      HarborSignals.raise(page, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      await tester.pumpAndSettle();
+      expect(first, findsOneWidget);
+      expect(second, findsOneWidget);
+    });
+  });
+
   group('The tide', () {
     Future<HarborSeaTrial> page(final WidgetTester tester, final List<HarborTideState> seen) =>
         tester.pumpSeaTrial(_app(Harbor(bodyClearsTide: false, body: _TideReader(seen))));
@@ -896,5 +1089,16 @@ void main() {
     await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+  });
+
+  // Breaks if: a builder stops taking the named builder type a caller holds it in.
+  testWidgets('open water and a draggable sheet take named builder types', (final tester) async {
+    final HarborWatersWidgetBuilder background = (final BuildContext context, final HarborWatersData waters) =>
+        SizedBox(key: const ValueKey<String>('water'), height: waters.frameSize.height);
+    final ScrollableWidgetBuilder list = (final BuildContext context, final ScrollController controller) =>
+        HarborFairway(controller: controller, slivers: const <Widget>[]);
+    await tester.pumpSeaTrial(_app(Harbor(body: HarborOpenWater(builder: background))));
+    expect(_rect(tester, 'water').height, tester.view.physicalSize.height / tester.view.devicePixelRatio);
+    expect(HarborSheet.draggable(builder: list).builder, same(list));
   });
 }

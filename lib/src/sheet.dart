@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
@@ -121,7 +122,7 @@ class HarborSheet extends StatelessWidget {
     super.key,
     this.header,
     this.footer,
-    required Widget Function(BuildContext context, ScrollController controller) this.builder,
+    required ScrollableWidgetBuilder this.builder,
     this.extent = const HarborSheetExtent(),
     this.controller,
     this.expand = true,
@@ -140,7 +141,7 @@ class HarborSheet extends StatelessWidget {
   final Widget? header;
   final Widget? footer;
   final Widget? body;
-  final Widget Function(BuildContext context, ScrollController controller)? builder;
+  final ScrollableWidgetBuilder? builder;
   final HarborSheetExtent? extent;
 
   /// Drives a draggable sheet from outside it, as it drives a [DraggableScrollableSheet].
@@ -689,7 +690,9 @@ class _SheetHost {
     required this.controller,
     required this.scopesRoute,
     required this.semanticLabel,
-  });
+  }) {
+    _shown.addListener(_moveTop);
+  }
 
   final WidgetBuilder builder;
   final double? maxWidth;
@@ -702,13 +705,10 @@ class _SheetHost {
   final bool scopesRoute;
   final String? semanticLabel;
 
-  final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
   HarborBreakwater? _breakwater;
   double _height = 0.0;
-  double _progress = 0.0;
   double? _dragExtent;
   double _available = 0.0;
-  double _tide = 0.0;
   void Function([Object? result])? close;
   VoidCallback? remove;
   VoidCallback? rebuild;
@@ -734,6 +734,13 @@ class _SheetHost {
     _slide = slide;
     _follow(_curve, _reverseCurve);
   }
+
+  /// What the sheet is painted with: [_shown], or all of it under reduced motion.
+  late Animation<double> _painted = _shown;
+
+  /// How much of the sheet is drawn this frame, as a fraction of its height. A curve may start
+  /// below zero, as Curves.easeInBack does.
+  double get _drawn => math.max(0.0, _painted.value);
 
   void _follow(final Curve curve, final Curve reverseCurve) {
     _curved?.dispose();
@@ -786,6 +793,28 @@ class _SheetHost {
   /// Where the sheet's visible top is, in global coordinates.
   final ValueNotifier<double> topInGlobal = ValueNotifier<double>(double.infinity);
 
+  /// Told where the sheet's visible top is as it is painted, a frame before [topInGlobal].
+  ValueChanged<double>? onTopPainted;
+
+  // The top as last painted, and how far the sheet showed and was dragged then.
+  double? _paintedTop;
+  double _paintedShown = 0.0;
+  double? _paintedExtent;
+
+  // A painted top reaches the page under the sheet a frame late, so as the sheet slides or is
+  // dragged its new top is worked out from the last painted one, before this frame lays out.
+  void _moveTop() {
+    final double? top = _paintedTop;
+    // In build or layout the pages under the sheet may already be laid out; paint measures it then.
+    if (top == null || SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      return;
+    }
+    final double? extent = _dragExtent;
+    final double? paintedExtent = _paintedExtent;
+    final double dragged = extent == null || paintedExtent == null ? 0.0 : (extent - paintedExtent) * _available;
+    topInGlobal.value = top - (_drawn - _paintedShown) * _height - dragged;
+  }
+
   void attach() {
     _breakwater ??= presenter?.addBreakwaterEdge(topInGlobal);
     controller?._attach(this);
@@ -807,7 +836,13 @@ class _SheetHost {
     if (_draggable && !fromSheet) {
       return;
     }
-    topInGlobal.value = top;
+    _paintedTop = top;
+    _paintedShown = _drawn;
+    _paintedExtent = _dragExtent;
+    onTopPainted?.call(top);
+    // Reported during paint now, and breakwater listeners lay out other routes, so they hear of it
+    // after this frame; between paints, _moveTop keeps topInGlobal moving with the slide.
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) => topInGlobal.value = top);
   }
 
   void detach() {
@@ -818,33 +853,12 @@ class _SheetHost {
   bool get hasDragExtent => _dragExtent != null;
   bool _draggable = false;
 
-  void _update() {
-    if (_draggable && _dragExtent == null) {
-      // A draggable sheet's measured box is the whole screen; wait for its extent.
-      coverage.value = 0.0;
-      return;
-    }
-    final double height = _dragExtent != null ? _dragExtent! * _available + _tide : _height;
-    coverage.value = math.max(0.0, height * _progress);
-  }
+  void measured(final double height) => _height = height;
 
-  set progress(final double value) {
-    _progress = value;
-    _update();
-  }
-
-  void measured(final double height) {
-    if (height != _height) {
-      _height = height;
-      _update();
-    }
-  }
-
-  void reportExtent(final double extent, final double available, final double tide) {
+  void reportExtent(final double extent, final double available) {
     _dragExtent = extent;
     _available = available;
-    _tide = tide;
-    _update();
+    _moveTop();
   }
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
@@ -855,6 +869,7 @@ class _SheetHost {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     // With reduced motion the sheet is simply there: its route still takes its time, but nothing slides.
     final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : _shown;
+    _painted = animation;
     // Built inside the sheet, so its context can close the sheet.
     Widget sheet = Builder(builder: builder);
     // A sheet stops short of the status bar unless it keeps the top coast.
@@ -872,7 +887,6 @@ class _SheetHost {
     return _SheetHostScope(
       host: this,
       available: math.max(0.0, mediaQuery.size.height - tide - top),
-      tide: tide,
       child: MediaQuery.removePadding(
         context: context,
         removeTop: !keepsTopCoast,
@@ -883,8 +897,7 @@ class _SheetHost {
             builder: (final BuildContext context, final Widget? child) => ClipRect(
               child: Align(
                 alignment: Alignment.topCenter,
-                // A curve may start below zero, as Curves.easeInBack does.
-                heightFactor: math.max(0.0, animation.value),
+                heightFactor: _drawn,
                 child: child,
               ),
             ),
@@ -901,16 +914,15 @@ class _SheetHost {
 }
 
 class _SheetHostScope extends InheritedWidget {
-  const _SheetHostScope({required this.host, required this.available, required this.tide, required super.child});
+  const _SheetHostScope({required this.host, required this.available, required super.child});
 
   final _SheetHost host;
   final double available;
-  final double tide;
 
   static _SheetHostScope? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<_SheetHostScope>();
 
-  void reportExtent(final double extent) => host.reportExtent(extent, available, tide);
+  void reportExtent(final double extent) => host.reportExtent(extent, available);
 
   void close([final Object? result]) => host.close?.call(result);
 
@@ -923,7 +935,7 @@ class _MeasureHeight extends SingleChildRenderObjectWidget {
 
   final ValueChanged<double>? onHeight;
 
-  /// Told where this box's top is in global coordinates, after each paint.
+  /// Told where this box's top is in global coordinates, as it is painted.
   final ValueChanged<double> onTop;
 
   @override
@@ -961,7 +973,7 @@ class _RenderMeasureHeight extends RenderProxyBox {
     final double top = localToGlobal(Offset.zero).dy;
     if (top != _lastTop) {
       _lastTop = top;
-      WidgetsBinding.instance.addPostFrameCallback((final Duration _) => onTop(top));
+      onTop(top);
     }
   }
 }
@@ -1027,19 +1039,34 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
       }
       ..rebuild = changedExternalState
       ..slide = controller
+      ..onTopPainted = _clipBarrierSemantics
       ..attach();
-    animation!.addListener(_tick);
   }
 
-  void _tick() => host.progress = animation!.value;
+  /// How much of the barrier's semantics the sheet covers, as on ModalBottomSheetRoute, so a
+  /// screen reader exploring the sheet finds its content, not the barrier.
+  final ValueNotifier<EdgeInsets> _clipDetailsNotifier = ValueNotifier<EdgeInsets>(EdgeInsets.zero);
+
+  // From the sheet's visible top, where ModalBottomSheetRoute uses its laid-out height, so the
+  // clip follows a slide or a drag and stops at a draggable sheet rather than its drag area.
+  void _clipBarrierSemantics(final double top) {
+    final RenderObject? overlay = navigator?.overlay?.context.findRenderObject();
+    if (overlay is! RenderBox || !overlay.hasSize || !top.isFinite) {
+      return;
+    }
+    final double height = overlay.size.height;
+    final double covered = height - overlay.globalToLocal(Offset(0.0, top)).dy;
+    _clipDetailsNotifier.value = EdgeInsets.only(bottom: covered.clamp(0.0, height));
+  }
 
   @override
   void dispose() {
-    animation?.removeListener(_tick);
     host
+      ..onTopPainted = null
       ..detach()
       ..left()
       ..dispose();
+    _clipDetailsNotifier.dispose();
     super.dispose();
   }
 
@@ -1047,8 +1074,8 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
       host.build(context);
 
-  // ModalRoute's barrier, with the tap hint ModalBottomSheetRoute gives its own: ModalRoute has no
-  // field for one.
+  // ModalRoute's barrier, with the tap hint and semantics clip ModalBottomSheetRoute gives its own:
+  // ModalRoute has no field for either.
   @override
   Widget buildModalBarrier() {
     if (barrierColor.a != 0 && !offstage) {
@@ -1059,6 +1086,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
         dismissible: barrierDismissible,
         semanticsLabel: barrierLabel,
         barrierSemanticsDismissible: semanticsDismissible,
+        clipDetailsNotifier: _clipDetailsNotifier,
         semanticsOnTapHint: barrierOnTapHint,
       );
     }
@@ -1066,6 +1094,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
       dismissible: barrierDismissible,
       semanticsLabel: barrierLabel,
       barrierSemanticsDismissible: semanticsDismissible,
+      clipDetailsNotifier: _clipDetailsNotifier,
       semanticsOnTapHint: barrierOnTapHint,
     );
   }
@@ -1110,7 +1139,6 @@ class _NonModalSheet<T> {
       }
       ..slide = _animation
       ..attach();
-    _animation.addListener(_tick);
     final ModalRoute<Object?>? route = this.route;
     _entry = OverlayEntry(
       builder: (final BuildContext context) {
@@ -1163,10 +1191,7 @@ class _NonModalSheet<T> {
 
   bool _closing = false;
 
-  void _tick() => host.progress = _animation.value;
-
   void _leave() {
-    _animation.removeListener(_tick);
     if (_ownsAnimation) {
       _animation.dispose();
     }
@@ -1202,10 +1227,11 @@ class _NonModalSheet<T> {
     }
     _closing = true;
     _leaveHistory();
-    host.detach();
     if (overlay.mounted) {
       await _animation.reverse();
     }
+    // The page keeps clear of the sheet until it has slid away, as it does under a sheet that is a route.
+    host.detach();
     _entry?.remove();
     _entry = null;
     host.dispose();

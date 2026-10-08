@@ -250,11 +250,18 @@ class HarborLighthouseRegion extends StatefulWidget {
     super.key,
     this.duration = const Duration(milliseconds: 280),
     this.curve = Curves.easeOutCubic,
+    this.animationStyle,
     required this.child,
   });
 
   final Duration duration;
   final Curve curve;
+
+  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
+  /// duration and curve. Its `duration` and `curve` are for lifting, and its `reverseDuration` and
+  /// `reverseCurve` for settling back down; each falls back to the forward one, then to [duration]
+  /// and [curve]. [AnimationStyle.noAnimation] moves the content at once.
+  final AnimationStyle? animationStyle;
   final Widget child;
 
   @override
@@ -277,8 +284,9 @@ class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTi
   double _to = 0.0;
   bool _pending = false;
   final GlobalKey _contentKey = GlobalKey();
+  late Curve _moveCurve = widget.curve;
 
-  double get _offset => _from + (_to - _from) * widget.curve.transform(_lift.value);
+  double get _offset => _from + (_to - _from) * _moveCurve.transform(_lift.value);
 
   void _register(final _HarborBeaconState beacon) {
     _beacons.add(beacon);
@@ -342,10 +350,19 @@ class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTi
     if ((target - _to).abs() < 0.5) {
       return;
     }
+    final AnimationStyle? style = widget.animationStyle;
+    final Duration liftDuration = style?.duration ?? widget.duration;
+    final Curve liftCurve = style?.curve ?? widget.curve;
+    final bool lifting = target < _offset;
     _from = _offset;
     _to = target;
+    _moveCurve = lifting ? liftCurve : style?.reverseCurve ?? liftCurve;
     _lift
-      ..duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : widget.duration
+      ..duration = MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : lifting
+          ? liftDuration
+          : style?.reverseDuration ?? liftDuration
       ..value = 0.0
       ..forward();
   }
