@@ -51,6 +51,11 @@ abstract final class HarborEdges {
   static EdgeInsetsDirectional min(final EdgeInsetsDirectional a, final EdgeInsetsDirectional b) =>
       build((final HarborEdge e) => of(a, e) < of(b, e) ? of(a, e) : of(b, e));
 
+  /// [insets] resolved under [direction], as `Padding` resolves its padding,
+  /// with its left and right read as start and end.
+  static EdgeInsetsDirectional resolve(final EdgeInsetsGeometry insets, final TextDirection direction) =>
+      insets is EdgeInsetsDirectional ? insets : directional(insets.resolve(direction), direction);
+
   /// [insets] with its left and right read as start and end under [direction].
   static EdgeInsetsDirectional directional(final EdgeInsets insets, final TextDirection direction) {
     final bool ltr = direction == TextDirection.ltr;

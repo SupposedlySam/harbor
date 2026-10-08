@@ -84,12 +84,16 @@ Mount the sea once, above your `Navigator`:
 ```dart
 MaterialApp(
   builder: (context, child) => HarborSea(
-    margin: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+    margin: const EdgeInsets.symmetric(horizontal: 16),
     child: child!,
   ),
   home: const InboxPage(),
 );
 ```
+
+Every inset harbor takes (a margin, a minimum, a fairway's padding, a fixed
+coast) is an `EdgeInsetsGeometry`, as `Padding`'s is: `EdgeInsets` keeps to the
+side it names, and `EdgeInsetsDirectional` follows the reading direction.
 
 Build a page from a harbor:
 

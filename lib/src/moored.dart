@@ -58,10 +58,10 @@ class HarborMoored extends StatelessWidget {
   final bool mooringLine;
 
   /// A floor on each edge: the clearance or this, whichever is larger.
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
 
   /// Your own spacing, added on top.
-  final EdgeInsetsDirectional extra;
+  final EdgeInsetsGeometry extra;
 
   final Widget child;
 
@@ -74,10 +74,10 @@ class HarborMoored extends StatelessWidget {
     properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
     properties.add(FlagProperty('mooringLine', value: mooringLine, ifTrue: 'mooring line'));
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('extra', extra, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('extra', extra, defaultValue: EdgeInsetsDirectional.zero),
     );
   }
 
@@ -89,14 +89,18 @@ class HarborMoored extends StatelessWidget {
     final HarborFollow follow = HarborFollow.live,
     final bool tide = true,
     final bool mooringLine = false,
-    final EdgeInsetsDirectional minimum = EdgeInsetsDirectional.zero,
-    final EdgeInsetsDirectional extra = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
   }) {
+    EdgeInsetsDirectional resolved(final EdgeInsetsGeometry insets) =>
+        insets is EdgeInsetsDirectional ? insets : HarborEdges.resolve(insets, Directionality.of(context));
+    final EdgeInsetsDirectional minimumHere = resolved(minimum);
+    final EdgeInsetsDirectional extraHere = resolved(extra);
     // Each part of the waters is read only where it is used, so a mooring line
     // in a list under the keyboard does not rebuild as the keyboard moves.
     double clearance(final HarborEdge edge) {
       if (!edges.contains(edge)) {
-        return HarborEdges.of(extra, edge);
+        return HarborEdges.of(extraHere, edge);
       }
       double value = switch ((clear, follow)) {
         (HarborClear.coast, _) => HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
@@ -112,7 +116,7 @@ class HarborMoored extends StatelessWidget {
       if (mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
-      return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(extra, edge);
+      return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(extraHere, edge);
     }
 
     return HarborEdges.build(clearance);
