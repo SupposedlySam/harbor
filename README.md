@@ -342,6 +342,12 @@ records it frame by frame on the test clock, so it comes out the same every
 time, and `example/test/showcase_test.dart` checks each caption against the
 real page on the phone.
 
+The video is narrated. `example/tool/narrate.py` voices each line of
+`example/lib/showcase/narration.tsv`, times every word, and checks that each
+clip says what the script says. The showcase's timeline is built from those
+timings, so the keyboard rises as "comes in" is spoken. Narration: the Kokoro-82M
+voice `am_liam`, generated on device by Kass.
+
 The **Harbor Field Guide** (the book button on the game's first page, or
 `fvm flutter run -t lib/field_guide_main.dart`) has a page for every class,
 named as it is in code, with a drawing of the real thing it's named after and a

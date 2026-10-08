@@ -337,15 +337,15 @@ class _ScenePainter extends CustomPainter {
 
   void _boats(final Canvas canvas, final double waterline) {
     // Two rowboats pass under the pier, the way rows scroll under a header.
-    const ShowcaseChapter pier = ShowcaseTimeline.pier;
+    final ShowcaseChapter pier = ShowcaseTimeline.pier;
     for (int i = 0; i < 2; i++) {
       final double p = ShowcaseTimeline.boat(t, pier.start + 0.6 + i * 1.6, pier.end - 0.4 + i * 0.6);
       final double x = lerpDouble(_World.pierEnd + 160, _World.pierStart - 40, Curves.easeInOut.transform(p))!;
       Scenery.rowboat(canvas, Offset(x, waterline + 4 + ShowcaseTimeline.bob(t, phase: i * 2.0)), 70, Palette.hulls[i == 0 ? 0 : 2]);
     }
     // A tug comes in and stops at the quay wall, the way a list stops at a tab bar.
-    const ShowcaseChapter quay = ShowcaseTimeline.quay;
-    final double p = Curves.easeOutCubic.transform(ShowcaseTimeline.boat(t, quay.start + 0.4, quay.end - 1.6));
+    final (double sets, double alongside) = ShowcaseTimeline.tugPassage;
+    final double p = Curves.easeOutCubic.transform(ShowcaseTimeline.boat(t, sets, alongside));
     final double bow = lerpDouble(_World.pierEnd + 60, _World.quayStart - 4, p)!;
     _tug(canvas, Offset(bow - 75, waterline + 4 + ShowcaseTimeline.bob(t, phase: 3)), 150, Palette.hulls[1]);
   }
