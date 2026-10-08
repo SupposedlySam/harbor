@@ -179,6 +179,7 @@ class HarborGeometry {
     required this.coast,
     required this.coastSteady,
     required this.coastOnly,
+    required this.coastOnlySteady,
     required this.inheritedDocks,
     required this.inheritedWakes,
     required this.tide,
@@ -207,6 +208,9 @@ class HarborGeometry {
   /// The platform's share of [coast], for the waters.
   final EdgeInsetsDirectional coastOnly;
 
+  /// [coastOnly] as it is with the keyboard down.
+  final EdgeInsetsDirectional coastOnlySteady;
+
   /// How far an outer harbor's docks reach into this one.
   final EdgeInsetsDirectional inheritedDocks;
   final Map<HarborEdge, HarborWakeBand> inheritedWakes;
@@ -234,6 +238,7 @@ class HarborGeometry {
       other.coast == coast &&
       other.coastSteady == coastSteady &&
       other.coastOnly == coastOnly &&
+      other.coastOnlySteady == coastOnlySteady &&
       other.inheritedDocks == inheritedDocks &&
       other.inheritedWakes.length == inheritedWakes.length &&
       other.inheritedWakes.entries.every((final MapEntry<HarborEdge, HarborWakeBand> e) => inheritedWakes[e.key] == e.value) &&
@@ -252,6 +257,7 @@ class HarborGeometry {
     coast,
     coastSteady,
     coastOnly,
+    coastOnlySteady,
     inheritedDocks,
     tide,
     bodyClearsTide,
@@ -579,6 +585,10 @@ class RenderHarbor extends RenderBox
     final EdgeInsetsDirectional coastPast = HarborEdges.build(
       (final HarborEdge e) => past(HarborEdges.build((final HarborEdge x) => coastOf(g.coastOnly, x)), e),
     );
+    // Past the quays only: the keyboard's ground is what the steady coast holds through.
+    final EdgeInsetsDirectional coastSteadyPast = HarborEdges.build(
+      (final HarborEdge e) => math.max(0.0, coastOf(g.coastOnlySteady, e) - quayEnd[e]!),
+    );
     final EdgeInsetsDirectional docksPast = HarborEdges.build(
       (final HarborEdge e) => past(HarborEdges.max(docksLive, g.inheritedDocks), e),
     );
@@ -597,6 +607,7 @@ class RenderHarbor extends RenderBox
       viewInsetsBottom: g.bodyClearsTide ? 0.0 : math.max(0.0, tide - bodyInset.bottom),
       waters: HarborWatersData(
         coast: coastPast,
+        coastSteady: coastSteadyPast,
         docks: docksPast,
         docksResting: restingPast,
         wakes: wakes,

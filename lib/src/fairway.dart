@@ -33,6 +33,7 @@ class HarborFairway extends StatelessWidget {
     this.physics,
     this.shrinkWrap = false,
     this.padding = EdgeInsetsDirectional.zero,
+    this.minimum = EdgeInsetsDirectional.zero,
     this.mooringLine = true,
     this.revealMargin = 0.0,
     this.wake = true,
@@ -42,9 +43,16 @@ class HarborFairway extends StatelessWidget {
     this.scrollCacheExtent,
     this.semanticChildCount,
     required this.slivers,
-  });
+  }) : _hugsChild = false;
 
   /// A fairway with a single box [child].
+  ///
+  /// Where the cross axis is unbounded, as a horizontal fairway's height is in
+  /// a `Column`, it is as thick as [child] (a row of chips as tall as the
+  /// chips), the way a `SingleChildScrollView` is. [child] then needs an
+  /// intrinsic size on that axis, as it would under `IntrinsicHeight`. Given a
+  /// bounded cross axis it fills it, like any scroll view. [shrinkWrap] is the
+  /// main axis.
   HarborFairway.box({
     super.key,
     this.scrollDirection = Axis.vertical,
@@ -54,6 +62,7 @@ class HarborFairway extends StatelessWidget {
     this.physics,
     this.shrinkWrap = false,
     this.padding = EdgeInsetsDirectional.zero,
+    this.minimum = EdgeInsetsDirectional.zero,
     this.mooringLine = true,
     this.revealMargin = 0.0,
     this.wake = true,
@@ -63,7 +72,8 @@ class HarborFairway extends StatelessWidget {
     this.scrollCacheExtent,
     required final Widget child,
   }) : semanticChildCount = null,
-       slivers = <Widget>[SliverToBoxAdapter(child: child)];
+       _hugsChild = true,
+       slivers = <Widget>[SliverToBoxAdapter(child: _HarborHugTarget(child: child))];
 
   final Axis scrollDirection;
   final bool reverse;
@@ -74,6 +84,11 @@ class HarborFairway extends StatelessWidget {
 
   /// Your own spacing at each end and side, added to the clearance.
   final EdgeInsetsDirectional padding;
+
+  /// A floor on each end's clearance, as `SafeArea.minimum` is: whatever is in
+  /// the way there or this, whichever is larger, before [padding] is added.
+  /// The bottom of a phone with a home button, where nothing covers the end.
+  final EdgeInsetsDirectional minimum;
 
   /// For a horizontal fairway: whether the ends add the harbor's margin, so
   /// the first item at rest lines up with the rest of the page.
@@ -97,13 +112,17 @@ class HarborFairway extends StatelessWidget {
   final int? semanticChildCount;
   final List<Widget> slivers;
 
+  /// Whether this is the box form, which can take its cross axis from its child.
+  final bool _hugsChild;
+
   /// The scroll padding a third-party list should use to sail this fairway's
-  /// way: clearance at both ends along [axis], plus [extra]. Cast off the
-  /// same edges beneath it with [HarborCastOff].
+  /// way: clearance at both ends along [axis], at least [minimum], plus
+  /// [extra]. Cast off the same edges beneath it with [HarborCastOff].
   static EdgeInsets paddingOf(
     final BuildContext context, {
     final Axis axis = Axis.vertical,
     final EdgeInsetsDirectional extra = EdgeInsetsDirectional.zero,
+    final EdgeInsetsDirectional minimum = EdgeInsetsDirectional.zero,
     final bool mooringLine = true,
   }) {
     final TextDirection direction = Directionality.of(context);
@@ -112,7 +131,7 @@ class HarborFairway extends StatelessWidget {
       if (!edge.isVertical && mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
-      return value + HarborEdges.of(extra, edge);
+      return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(extra, edge);
     }
 
     final EdgeInsetsDirectional padding = axis == Axis.vertical
@@ -137,7 +156,7 @@ class HarborFairway extends StatelessWidget {
       if (!vertical && mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
-      return value + HarborEdges.of(padding, edge);
+      return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(padding, edge);
     }
 
     double leading = clearance(leadingEdge);
@@ -175,7 +194,7 @@ class HarborFairway extends StatelessWidget {
               if (waters.wakes.containsKey(e) && !waters.wakesPainted.contains(e) && !(hasSliverDock && e == leadingEdge))
                 e: waters.wakes[e]!,
           };
-    return HarborWakeMask(
+    final Widget fairway = HarborWakeMask(
       wakes: wakes,
       child: _fairway(
         context,
@@ -189,6 +208,14 @@ class HarborFairway extends StatelessWidget {
         crossPadding,
         direction,
       ),
+    );
+    if (!_hugsChild) {
+      return fairway;
+    }
+    return _HarborCrossAxisHug(
+      scrollDirection: scrollDirection,
+      crossPadding: vertical ? crossPadding.horizontal : crossPadding.vertical,
+      child: fairway,
     );
   }
 
@@ -429,6 +456,146 @@ class _RenderHarborShrinkWrappingViewport extends RenderShrinkWrappingViewport {
 Rect _widen(final Rect rect, final EdgeInsets by) =>
     Rect.fromLTRB(rect.left - by.left, rect.top - by.top, rect.right + by.right, rect.bottom + by.bottom);
 
+/// Gives a box fairway its cross-axis size from its child when its parent
+/// leaves that axis unbounded. A viewport cannot be measured by what it holds,
+/// so this asks the child, through [_HarborHugTarget], for its intrinsic size.
+class _HarborCrossAxisHug extends SingleChildRenderObjectWidget {
+  const _HarborCrossAxisHug({required this.scrollDirection, required this.crossPadding, required super.child});
+
+  final Axis scrollDirection;
+
+  /// The fairway's own padding across the scroll, added to the child's size.
+  final double crossPadding;
+
+  @override
+  RenderObject createRenderObject(final BuildContext context) => _RenderHarborCrossAxisHug(scrollDirection, crossPadding);
+
+  @override
+  void updateRenderObject(final BuildContext context, final _RenderHarborCrossAxisHug renderObject) {
+    renderObject
+      ..scrollDirection = scrollDirection
+      ..crossPadding = crossPadding;
+  }
+}
+
+class _RenderHarborCrossAxisHug extends RenderProxyBox {
+  _RenderHarborCrossAxisHug(this._scrollDirection, this._crossPadding);
+
+  Axis _scrollDirection;
+  set scrollDirection(final Axis value) {
+    if (_scrollDirection != value) {
+      _scrollDirection = value;
+      markNeedsLayout();
+    }
+  }
+
+  double _crossPadding;
+  set crossPadding(final double value) {
+    if (_crossPadding != value) {
+      _crossPadding = value;
+      markNeedsLayout();
+    }
+  }
+
+  _RenderHarborHugTarget? target;
+  bool _layingOut = false;
+
+  // The viewport between this and the target is a relayout boundary, so a
+  // target that changes size cannot reach this through its parents.
+  void targetChanged() {
+    if (!_layingOut) {
+      markNeedsLayout();
+    }
+  }
+
+  double? _crossExtent() {
+    final RenderBox? target = this.target;
+    if (target == null) {
+      return null;
+    }
+    final double content = _scrollDirection == Axis.horizontal
+        ? target.getMaxIntrinsicHeight(double.infinity)
+        : target.getMaxIntrinsicWidth(double.infinity);
+    return content + _crossPadding;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(final double width) =>
+      _scrollDirection == Axis.horizontal ? (_crossExtent() ?? 0.0) : super.computeMinIntrinsicHeight(width);
+
+  @override
+  double computeMaxIntrinsicHeight(final double width) =>
+      _scrollDirection == Axis.horizontal ? (_crossExtent() ?? 0.0) : super.computeMaxIntrinsicHeight(width);
+
+  @override
+  double computeMinIntrinsicWidth(final double height) =>
+      _scrollDirection == Axis.vertical ? (_crossExtent() ?? 0.0) : super.computeMinIntrinsicWidth(height);
+
+  @override
+  double computeMaxIntrinsicWidth(final double height) =>
+      _scrollDirection == Axis.vertical ? (_crossExtent() ?? 0.0) : super.computeMaxIntrinsicWidth(height);
+
+  @override
+  void performLayout() {
+    final RenderBox child = this.child!;
+    final bool horizontal = _scrollDirection == Axis.horizontal;
+    final bool bounded = horizontal ? constraints.hasBoundedHeight : constraints.hasBoundedWidth;
+    _layingOut = true;
+    try {
+      final double? cross = bounded ? null : _crossExtent();
+      final BoxConstraints given = cross == null
+          ? constraints
+          : horizontal
+          ? constraints.tighten(height: constraints.constrainHeight(cross))
+          : constraints.tighten(width: constraints.constrainWidth(cross));
+      child.layout(given, parentUsesSize: true);
+      size = child.size;
+    } finally {
+      _layingOut = false;
+    }
+  }
+}
+
+/// Marks the box a [_HarborCrossAxisHug] measures, and tells it when that box
+/// needs laying out again.
+class _HarborHugTarget extends SingleChildRenderObjectWidget {
+  const _HarborHugTarget({required super.child});
+
+  @override
+  RenderObject createRenderObject(final BuildContext context) =>
+      _RenderHarborHugTarget()..hug = context.findAncestorRenderObjectOfType<_RenderHarborCrossAxisHug>();
+
+  @override
+  void updateRenderObject(final BuildContext context, final _RenderHarborHugTarget renderObject) {
+    renderObject.hug = context.findAncestorRenderObjectOfType<_RenderHarborCrossAxisHug>();
+  }
+}
+
+class _RenderHarborHugTarget extends RenderProxyBox {
+  _RenderHarborCrossAxisHug? _hug;
+  set hug(final _RenderHarborCrossAxisHug? value) {
+    if (identical(_hug, value)) {
+      return;
+    }
+    if (identical(_hug?.target, this)) {
+      _hug!.target = null;
+    }
+    _hug = value?..target = this;
+  }
+
+  @override
+  void markNeedsLayout() {
+    super.markNeedsLayout();
+    _hug?.targetChanged();
+  }
+
+  @override
+  void dispose() {
+    hug = null;
+    super.dispose();
+  }
+}
+
 /// One sliver of a scroll view you build yourself, kept clear at the ends you
 /// choose. Use it on the sliver at each end of a `CustomScrollView`; a whole
 /// scroll view is better as a [HarborFairway].
@@ -438,12 +605,16 @@ class HarborFairwaySliver extends StatelessWidget {
     this.clearLeading = true,
     this.clearTrailing = true,
     this.padding = EdgeInsetsDirectional.zero,
+    this.minimum = EdgeInsetsDirectional.zero,
     required this.sliver,
   });
 
   final bool clearLeading;
   final bool clearTrailing;
   final EdgeInsetsDirectional padding;
+
+  /// A floor on the clearance at each end it clears, as on [HarborFairway.minimum].
+  final EdgeInsetsDirectional minimum;
   final Widget sliver;
 
   @override
@@ -456,8 +627,9 @@ class HarborFairwaySliver extends StatelessWidget {
       AxisDirection.right => direction == TextDirection.ltr ? (HarborEdge.start, HarborEdge.end) : (HarborEdge.end, HarborEdge.start),
       AxisDirection.left => direction == TextDirection.ltr ? (HarborEdge.end, HarborEdge.start) : (HarborEdge.start, HarborEdge.end),
     };
-    final double leading = clearLeading ? HarborWaters.clearanceOf(context, leadingEdge) : 0.0;
-    final double trailing = clearTrailing ? HarborWaters.clearanceOf(context, trailingEdge) : 0.0;
+    double clearance(final HarborEdge edge) => math.max(HarborWaters.clearanceOf(context, edge), HarborEdges.of(minimum, edge));
+    final double leading = clearLeading ? clearance(leadingEdge) : 0.0;
+    final double trailing = clearTrailing ? clearance(trailingEdge) : 0.0;
     final EdgeInsetsDirectional insets = HarborEdges.build((final HarborEdge e) {
       final double own = HarborEdges.of(padding, e);
       if (e == leadingEdge) {

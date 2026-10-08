@@ -479,6 +479,33 @@ void main() {
       return counts;
     }
 
+    // Found merging #2 with #5: the steady coast's clamp reads the keyboard, and on a phone with a
+    // home indicator it reached that read for every reader of the waters, so a reader of the docks
+    // rebuilt through the keyboard's rise again (3 times here, against 1). The iPhone SE above has no
+    // bottom coast, so the tests there never reach the clamp. The one rebuild left is the home
+    // indicator's padding going to zero, which the docks clamp does read.
+    // Breaks if: the steady coast subscribes to the keyboard for readers outside the coast aspect.
+    testWidgets('a reader of the docks holds still on a phone with a home indicator too', (final tester) async {
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{_AspectReader, _TideReader});
+      final List<HarborTideState> tide = <HarborTideState>[];
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                const _AspectReader(HarborWatersAspect.docks),
+                SizedBox(height: 10, child: _TideReader(tide)),
+              ],
+            ),
+          ),
+        ),
+      );
+      rebuilds.updateAll((final Type _, final int _) => 0);
+      await trial.raiseTide();
+      expect(rebuilds[_TideReader], greaterThan(1), reason: 'positive control: the keyboard moved over several frames');
+      expect(rebuilds[_AspectReader], lessThanOrEqualTo(1));
+    });
+
     // Breaks if: HarborWaters.of depends on the whole MediaQuery again, or a content role reads
     // the waters (or MediaQuery) beyond the parts it uses.
     testWidgets('readers of the coast, the docks and the margin hold still while the keyboard moves', (final tester) async {

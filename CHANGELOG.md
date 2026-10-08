@@ -3,6 +3,10 @@
 * `HarborSignals.raise` with no harbor above the context shows the signal in the nearest `Overlay`, clear of `MediaQuery.padding` and `viewInsets`, instead of asserting in debug and showing nothing in release. With no overlay either, it reports a `FlutterError`.
 * A signal's timers are cancelled when it is lowered or its harbor leaves with nowhere to move it, so a widget test that removes the tree with a signal up no longer fails with a pending timer.
 * Readers rebuild only for what they read. `HarborWaters.of` depends on `MediaQuery`'s padding (and, outside a harbor, its size) rather than all of it, and only where its `aspect` needs them. `HarborTide.isInOf` rebuilds when the keyboard comes or goes, not on every frame it moves. `HarborMoored`, `HarborMooringLine`, `HarborOpenWater`, `HarborDryDock` and a horizontal `HarborFairway` no longer rebuild while the keyboard animates. Layout is unchanged.
+* `HarborWaters.steadyCoastOf(context, edge)` and `HarborWatersData.coastSteady`: the coast as it is with the keyboard down, so a footer keeps the home indicator's height while the keyboard is up.
+* `HarborFairway(minimum:)`, `HarborFairwaySliver(minimum:)` and `HarborFairway.paddingOf(minimum:)`: a floor on each end's clearance, as on `SafeArea`.
+* `HarborFairway.box` takes its child's size across the scroll when that axis is unbounded, so a horizontal row in a `Column` is as tall as its content instead of throwing.
+* Docs: mooring the bottom edge alone clears the coast and the keyboard but not a header; `HarborCoastFeature.hinge` and `HarborController.isPort` are reserved and not yet read.
 
 ## 0.1.0
 
