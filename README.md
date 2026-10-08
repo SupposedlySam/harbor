@@ -250,6 +250,14 @@ signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 signal moves to the one now on top.
 
+A signal raised with no harbor above it (a widget test that pumps a bare
+`MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
+goes to the nearest `Overlay`, at its slot and clear of `MediaQuery.padding` and
+`viewInsets`. With no overlay either, it is reported through
+`FlutterError.reportError`, in release builds too. A signal's timers stop when it
+is lowered or when nothing is left to show it, so a test that ends with one up
+has no timer pending.
+
 ## Sheets and dialogs
 
 ```dart
