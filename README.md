@@ -389,7 +389,8 @@ indicator in its coast, so its footer clears it exactly once. A draggable
 sheet's heights are fractions of the space between the status bar and the
 keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
-content keeps clear of it while it's up.
+content keeps clear of it while it's up: in the same frame as the sheet is
+drawn, as it slides in and out and as it is dragged.
 
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and signals and buoys keep to the screen that holds them, never across the hinge.
