@@ -155,6 +155,7 @@ as it would in a `Row`.
 | `state: HarborDockState.dark` | Not drawn and not tappable, but it keeps its ground |
 | `state: HarborDockState.withdrawn` | Slides out and gives its ground back |
 | `extentPolicy:` | How a withdrawing dock gives its ground back: `hold` (once it's gone, the default), `follow`, `release` |
+| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, coast or not |
@@ -415,6 +416,11 @@ HarborBeacon(keepInSight: true, child: field);            // re-reveals as the k
 HarborLighthouseRegion(child: canvas)                     // + HarborBeacon(lift: true, clearance: 80)
 HarborLighthouse.reveal(context, clearance: 24);
 ```
+
+A region lifts over 280 ms and settles back the same way. Give it an
+`animationStyle:` to change that: its `duration` and `curve` are for the lift,
+its `reverseDuration` and `reverseCurve` for settling back, and
+`AnimationStyle.noAnimation` moves the content at once.
 
 ## TV
 

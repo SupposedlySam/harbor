@@ -2,6 +2,7 @@
 
 * `HarborBuoySide.start` and `.end` name an anchored buoy's reading-order sides, as `AlignmentDirectional.centerStart` and `CrossAxisAlignment.start` do. `HarborBuoySide.before` and `.after` are deprecated aliases of them and place the buoy exactly as before; a side's `name` is now `'start'` or `'end'`.
 * harbor's builders have named types, as Flutter's do: `HarborOpenWater.builder` is a `HarborWatersWidgetBuilder`, and `HarborSheet.draggable(builder:)` is a `ScrollableWidgetBuilder`, as `DraggableScrollableSheet.builder` is. The function types are unchanged, so existing builders still fit.
+* `HarborDock(animationStyle:)` and `HarborLighthouseRegion(animationStyle:)` take an `AnimationStyle`, as Flutter's routes and `MaterialApp.themeAnimationStyle` do, so leaving and returning can differ. A dock withdraws and goes dark over its `reverseDuration` and `reverseCurve` and returns over its `duration` and `curve`; a region lifts over the forward pair and settles back over the reverse one. `AnimationStyle.noAnimation` makes either move at once. Given, it overrides `duration:` and `curve:`, which stay.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0

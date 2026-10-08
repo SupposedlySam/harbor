@@ -164,6 +164,56 @@ void main() {
     expect(_rect(tester, 'body').bottom, 874);
   });
 
+  group('A dock given an animation style', () {
+    Future<(ValueNotifier<HarborDockState>, double)> pumpStrip(final WidgetTester tester, final AnimationStyle style) async {
+      final ValueNotifier<HarborDockState> state = ValueNotifier<HarborDockState>(HarborDockState.open);
+      addTearDown(state.dispose);
+      await tester.pumpSeaTrial(
+        _app(
+          ValueListenableBuilder<HarborDockState>(
+            valueListenable: state,
+            builder: (final BuildContext context, final HarborDockState s, final Widget? _) => Harbor(
+              bottom: <HarborDock>[
+                HarborDock.quay(state: s, extentPolicy: HarborExtentPolicy.follow, animationStyle: style, child: _bar('strip', 60)),
+              ],
+              body: const SizedBox.expand(key: ValueKey<String>('body')),
+            ),
+          ),
+        ),
+      );
+      return (state, _rect(tester, 'body').bottom);
+    }
+
+    testWidgets('withdraws over its reverse duration and curve, and returns over its duration', (final tester) async {
+      final (ValueNotifier<HarborDockState> state, double resting) = await pumpStrip(
+        tester,
+        const AnimationStyle(
+          duration: Duration(milliseconds: 100),
+          reverseDuration: Duration(milliseconds: 400),
+          reverseCurve: Curves.linear,
+        ),
+      );
+      state.value = HarborDockState.withdrawn;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(_rect(tester, 'body').bottom, closeTo((resting + 874) / 2, 1));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'body').bottom, 874);
+      state.value = HarborDockState.open;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_rect(tester, 'body').bottom, resting);
+    });
+
+    testWidgets('of no animation withdraws at once', (final tester) async {
+      final (ValueNotifier<HarborDockState> state, double resting) = await pumpStrip(tester, AnimationStyle.noAnimation);
+      expect(resting, lessThan(874), reason: 'positive control: the strip takes its ground');
+      state.value = HarborDockState.withdrawn;
+      await tester.pump();
+      expect(_rect(tester, 'body').bottom, 874);
+    });
+  });
+
   testWidgets('a dock that withdraws at high tide leaves while the keyboard is up', (final tester) async {
     final HarborSeaTrial trial = await tester.pumpSeaTrial(
       _app(
@@ -480,6 +530,56 @@ void main() {
     final Rect boat = _rect(tester, 'boat');
     final Rect sheet = tester.getRect(find.byType(HarborSheet));
     expect(boat.bottom, lessThanOrEqualTo(sheet.top - 20 + 1));
+  });
+
+  testWidgets('a lighthouse region lifts over its duration and settles back over its reverse duration', (final tester) async {
+    final ValueNotifier<bool> boatIn = ValueNotifier<bool>(false);
+    addTearDown(boatIn.dispose);
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          bottom: <HarborDock>[HarborDock.pier(child: _bar('tabs', 50))],
+          body: HarborLighthouseRegion(
+            animationStyle: const AnimationStyle(
+              duration: Duration(milliseconds: 100),
+              curve: Curves.linear,
+              reverseDuration: Duration(milliseconds: 400),
+              reverseCurve: Curves.linear,
+            ),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: boatIn,
+              builder: (final BuildContext context, final bool shown, final Widget? _) => Stack(
+                children: <Widget>[
+                  Positioned(top: 0, left: 0, child: _box('mast', 10, 10)),
+                  if (shown)
+                    Positioned(
+                      top: 800,
+                      left: 100,
+                      child: HarborBeacon(lift: true, clearance: 0, child: _box('boat', 60, 40)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final double rest = _rect(tester, 'mast').top;
+    boatIn.value = true;
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final double lift = rest - _rect(tester, 'mast').top;
+    expect(lift, greaterThan(0), reason: 'the boat is lifted clear of the tab bar');
+    await tester.pumpAndSettle();
+    expect(rest - _rect(tester, 'mast').top, lift, reason: 'the lift was done within its duration');
+    boatIn.value = false;
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(rest - _rect(tester, 'mast').top, closeTo(lift / 2, 1));
+    await tester.pumpAndSettle();
+    expect(_rect(tester, 'mast').top, rest);
   });
 
   testWidgets('a beacon reports how much of it the header covers', (final tester) async {
