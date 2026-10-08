@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
@@ -14,6 +15,13 @@ Widget _bar(final String label, final double height) => SizedBox(
 );
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
+
+/// The semantics nodes above [node], nearest first.
+Iterable<SemanticsNode> _ancestors(final SemanticsNode node) sync* {
+  for (SemanticsNode? parent = node.parent; parent != null; parent = parent.parent) {
+    yield parent;
+  }
+}
 
 class _Observer extends NavigatorObserver {
   final List<Route<dynamic>> pushed = <Route<dynamic>>[];
@@ -29,6 +37,7 @@ Future<BuildContext> _page(
   final ThemeData? theme,
   final List<NavigatorObserver> observers = const <NavigatorObserver>[],
   final bool disableAnimations = false,
+  final FocusNode? focusNode,
 }) async {
   late BuildContext pageContext;
   await tester.pumpSeaTrial(
@@ -44,7 +53,8 @@ Future<BuildContext> _page(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
-              return const SizedBox.expand(key: ValueKey<String>('page'));
+              const Widget page = SizedBox.expand(key: ValueKey<String>('page'));
+              return focusNode == null ? page : Focus(focusNode: focusNode, child: page);
             },
           ),
         ),
@@ -127,6 +137,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierLabel, 'Close sheet');
   });
+
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.clear]) {
+    testWidgets('a sheet that is not dismissible ignores a barrier tap and closes on back (barrier: ${barrier.name})', (final tester) async {
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: barrier,
+        isDismissible: false,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(200, 120));
+      await tester.pumpAndSettle();
+      expect(closed, isFalse);
+      expect(find.byKey(const ValueKey<String>('content')), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(find.byKey(const ValueKey<String>('content')), findsNothing);
+    });
+  }
+
+  for (final bool requestFocus in <bool>[true, false]) {
+    testWidgets('a sheet opened with requestFocus: $requestFocus ${requestFocus ? 'takes' : 'leaves'} the focus', (final tester) async {
+      final FocusNode field = FocusNode(debugLabel: 'page field');
+      addTearDown(field.dispose);
+      final BuildContext page = await _page(tester, focusNode: field);
+      field.requestFocus();
+      await tester.pump();
+      expect(field.hasPrimaryFocus, isTrue);
+      unawaited(showHarborSheet<void>(
+        page,
+        requestFocus: requestFocus,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ));
+      await tester.pumpAndSettle();
+      expect(field.hasPrimaryFocus, !requestFocus);
+    });
+  }
 
   testWidgets('a sheet spans the screen by default, however wide', (final tester) async {
     final BuildContext page = await _page(tester, device: HarborTrialDevice.television);
@@ -424,4 +475,61 @@ void main() {
       expect(_rect(tester, 'content').top, restTop);
     });
   });
+  testWidgets("a sheet route is a semantics scope named by its semanticLabel, holding the sheet's content", (final tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final BuildContext page = await _page(tester);
+    unawaited(showHarborSheet<void>(
+      page,
+      semanticLabel: 'Reply',
+      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+    ));
+    await tester.pumpAndSettle();
+    final SemanticsNode scope = find.semantics.byLabel('Reply').evaluate().single;
+    expect(scope, isSemantics(label: 'Reply', scopesRoute: true, namesRoute: true));
+    expect(_ancestors(tester.getSemantics(find.text('content'))), contains(scope));
+    semantics.dispose();
+  });
+
+  testWidgets('a sheet route scopes and names itself with no label given, as a modal bottom sheet does', (final tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final BuildContext page = await _page(tester);
+    unawaited(showHarborSheet<void>(page, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))));
+    await tester.pumpAndSettle();
+    final SemanticsNode nearestScope = _ancestors(tester.getSemantics(find.text('content')))
+        .firstWhere((final SemanticsNode node) => node.getSemanticsData().flagsCollection.scopesRoute);
+    expect(nearestScope, isSemantics(scopesRoute: true, namesRoute: true));
+    semantics.dispose();
+  });
+
+  testWidgets('a sheet with no barrier is not a route, so it names no route', (final tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final BuildContext page = await _page(tester);
+    unawaited(showHarborSheet<void>(
+      page,
+      barrier: HarborSheetBarrier.none,
+      semanticLabel: 'Reply',
+      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.semantics.byLabel('content'), findsOne);
+    expect(find.semantics.byLabel('Reply'), findsNothing);
+    semantics.dispose();
+  });
+
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.clear]) {
+    testWidgets('a ${barrier.name} sheet barrier says what tapping it does with barrierOnTapHint', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: barrier,
+        barrierOnTapHint: 'Close the reply',
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ));
+      await tester.pumpAndSettle();
+      final SemanticsNode barrierNode = find.semantics.byLabel('Close sheet').evaluate().single;
+      expect(barrierNode, isSemantics(label: 'Close sheet', hasTapAction: true, onTapHint: 'Close the reply'));
+      semantics.dispose();
+    });
+  }
 }
