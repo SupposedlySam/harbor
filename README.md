@@ -466,7 +466,10 @@ testWidgets('the composer rides the keyboard', (tester) async {
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
-`device.displayFeatures` puts a device's folds and hinges on the view. `trial.clearWaterAround(finder)` and `isInClearWater`
+Each device goes on the view at its own `devicePixelRatio`, and
+`device.displayFeatures` puts its folds and hinges there.
+`pumpSeaTrial(textScaleFactor:)` grows the system text size, so docks are
+measured at the size their text grew to. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
 
 `package:harbor/testing.dart`, where sea trials used to be, is now empty and
