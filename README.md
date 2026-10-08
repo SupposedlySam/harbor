@@ -254,7 +254,8 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 ## Accessibility
 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
-by keyboard focus and by screen readers, not only by taps. Signals are live
+by keyboard focus and by screen readers, not only by taps, and a buoy whose
+anchor is not in the tree is not read out. Signals are live
 regions, so screen readers announce them. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
@@ -291,7 +292,8 @@ HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left. While its
-anchor is not in the tree, an anchored buoy is not shown and takes no taps.
+anchor is not in the tree, an anchored buoy is not shown, takes no taps and is
+not read out by screen readers.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -327,7 +329,8 @@ A **portal buoy** is an anchored buoy opened from where it is used rather than
 listed in `Harbor.buoys`: a menu from a list row, a popover from a button in
 another package. It is an `OverlayPortal`, so its buoy builds with the row's
 themes and floats in the nearest `Overlay`, placed in the clear water of the
-harbor around the row by its `child` (or by an `anchor`). When its `side` has
+harbor around the row by its `child` (or by an `anchor`). Until that anchor is
+in the tree, it is not shown, takes no taps and is not read out. When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
 room, it is held inside the clear water.

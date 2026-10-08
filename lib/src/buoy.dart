@@ -432,7 +432,7 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
 
 class _BuoyParentData extends ContainerBoxParentData<RenderBox> {
   /// Whether the last paint painted this buoy. An anchored buoy is not painted while its anchor
-  /// has no box, and its offset is then stale, so it takes no taps either.
+  /// has no box, and its offset is then stale, so it takes no taps and is not read out either.
   bool painted = false;
 }
 
@@ -563,7 +563,11 @@ class _RenderBuoyLayer extends RenderBox
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
       final RenderBox? anchorBox = buoy.anchor?.box;
-      data.painted = buoy.anchor == null || anchorBox != null;
+      final bool painted = buoy.anchor == null || anchorBox != null;
+      if (painted != data.painted) {
+        data.painted = painted;
+        markNeedsSemanticsUpdate();
+      }
       if (buoy.anchor != null) {
         if (anchorBox == null) {
           child = data.nextSibling;
@@ -588,6 +592,18 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   bool paintsChild(final RenderBox child) => (child.parentData! as _BuoyParentData).painted;
+
+  @override
+  void visitChildrenForSemantics(final RenderObjectVisitor visitor) {
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final _BuoyParentData data = child.parentData! as _BuoyParentData;
+      if (data.painted) {
+        visitor(child);
+      }
+      child = data.nextSibling;
+    }
+  }
 
   @override
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) {
@@ -791,14 +807,19 @@ class _RenderPortalBuoy extends RenderShiftedBox {
   void paint(final PaintingContext context, final Offset offset) {
     final RenderBox? child = this.child;
     final RenderBox? anchorBox = _config.anchor.box;
-    _placed = child != null && anchorBox != null;
-    if (!_placed) {
+    final bool placed = child != null && anchorBox != null;
+    if (placed != _placed) {
+      _placed = placed;
+      markNeedsSemanticsUpdate();
+    }
+    if (!placed) {
       return;
     }
-    final BoxParentData data = child!.parentData! as BoxParentData;
+    final BoxParentData data = child.parentData! as BoxParentData;
+    final Offset was = data.offset;
     data.offset = _anchoredOffset(
       water: _water(),
-      at: MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size),
+      at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
       size: child.size,
       side: _config.side,
       gap: _config.gap,
@@ -806,7 +827,21 @@ class _RenderPortalBuoy extends RenderShiftedBox {
       textDirection: _config.textDirection,
       flips: _config.flips,
     );
+    // Layout refreshes semantics, but the buoy is placed here, after it, so a move refreshes them too.
+    if (data.offset != was) {
+      markNeedsSemanticsUpdate();
+    }
     context.paintChild(child, data.offset + offset);
+  }
+
+  @override
+  bool paintsChild(final RenderBox child) => _placed;
+
+  @override
+  void visitChildrenForSemantics(final RenderObjectVisitor visitor) {
+    if (_placed) {
+      super.visitChildrenForSemantics(visitor);
+    }
   }
 
   @override
