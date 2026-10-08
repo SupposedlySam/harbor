@@ -1,4 +1,13 @@
-## Unreleased
+## 0.2.0
+
+### Breaking changes
+
+* **Sea trials moved to `harbor_test`.** harbor no longer depends on `flutter_test`. Run `flutter pub add dev:harbor_test` and import `package:harbor_test/harbor_test.dart`; `package:harbor/testing.dart` is now empty and deprecated.
+* **`HarborBuoy(modal: true)` is modal** and needs `onDismiss`: a barrier keeps taps off the page, and a tap beside the buoy or back calls `onDismiss`.
+* **`HarborBuoy.alignment` is an `AlignmentGeometry` and `HarborBuoy.margin` an `EdgeInsetsGeometry`.** Passing `Alignment` and `EdgeInsets` still compiles; reading the fields as the physical types needs `resolve(textDirection)`.
+* **Behaviour that moves things:** an anchored buoy's `before` and `after` follow reading order under right-to-left; a sheet with no barrier closes on back before its page; on a dual-screen device, sheets, dialogs, signals and buoys keep off the hinge; a signal raised with no harbor above it shows in the nearest overlay instead of asserting.
+
+### Everything in this release
 
 * **Breaking:** `HarborBuoy(modal: true)` is modal. It puts a barrier over the page and its docks (`barrierColor`, clear by default), a tap beside it or back calls the new `onDismiss`, and screen readers leave the page alone while it is up; it still hides the buoys listed before it. `onDismiss` is required with `modal: true`. Before, a modal buoy only hid the buoys before it, and taps and back reached the page.
 

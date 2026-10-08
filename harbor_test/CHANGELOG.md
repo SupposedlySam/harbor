@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0
 
 The first sea trials, moved here from `package:harbor/testing.dart` so that harbor no longer depends on `flutter_test`.
 
