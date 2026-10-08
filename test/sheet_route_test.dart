@@ -23,6 +23,19 @@ Iterable<SemanticsNode> _ancestors(final SemanticsNode node) sync* {
   }
 }
 
+/// Where [node] sits on the screen, in logical pixels.
+Rect _globalRect(final SemanticsNode node) {
+  Rect rect = node.rect;
+  // The root's transform is the device pixel ratio.
+  for (SemanticsNode? at = node; at != null && at.parent != null; at = at.parent) {
+    final Matrix4? transform = at.transform;
+    if (transform != null) {
+      rect = MatrixUtils.transformRect(transform, rect);
+    }
+  }
+  return rect;
+}
+
 class _Observer extends NavigatorObserver {
   final List<Route<dynamic>> pushed = <Route<dynamic>>[];
 
@@ -360,4 +373,59 @@ void main() {
       semantics.dispose();
     });
   }
+
+  testWidgets("a sheet's barrier is read only above the sheet, as a modal bottom sheet's is", (final tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final BuildContext page = await _page(tester);
+    unawaited(showHarborSheet<void>(
+      page,
+      semanticLabel: 'Reply',
+      builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    // Mid-slide, the barrier already stops where the sheet has risen to.
+    Rect barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    expect(barrier.top, 0.0);
+    expect(barrier.bottom, closeTo(tester.getTopLeft(find.byKey(const ValueKey<String>('content'))).dy, 1));
+    await tester.pumpAndSettle();
+    barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    final Rect sheet = _globalRect(find.semantics.byLabel('Reply').evaluate().single);
+    expect(sheet.bottom, 874.0);
+    expect(barrier.bottom, closeTo(sheet.top, 1));
+    expect(barrier.bottom, lessThan(874.0 - 300.0 + 1));
+    // Dragged down, the barrier follows the sheet's top.
+    final TestGesture drag = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey<String>('content'))));
+    await drag.moveBy(const Offset(0, 40));
+    await drag.moveBy(const Offset(0, 60));
+    await tester.pump();
+    await tester.pump();
+    final double draggedTop = tester.getTopLeft(find.byKey(const ValueKey<String>('content'))).dy;
+    barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    expect(draggedTop, greaterThan(sheet.top + 50));
+    expect(barrier.bottom, closeTo(draggedTop, 1));
+    await drag.up();
+    await tester.pumpAndSettle();
+    semantics.dispose();
+  });
+
+  testWidgets("a draggable sheet's barrier is read only above the sheet, not above its whole drag area", (final tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final BuildContext page = await _page(tester);
+    unawaited(showHarborSheet<void>(
+      page,
+      builder: (final BuildContext context) => HarborSheet.draggable(
+        header: _bar('handle', 40),
+        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+          controller: controller,
+          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final Rect barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    expect(barrier.top, 0.0);
+    expect(barrier.bottom, closeTo(_rect(tester, 'handle').top, 2));
+    semantics.dispose();
+  });
 }

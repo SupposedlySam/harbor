@@ -392,7 +392,10 @@ navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given), with
 `barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
 sheet is a semantics scope of its own, and screen readers announce its
-`semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
+`semanticLabel:` as it opens. The barrier's semantics end at the sheet's top, as
+a modal bottom sheet's do, and follow it as it slides or is dragged, so touch
+exploration over the sheet finds its content rather than the barrier. It spans
+the screen unless you give it a `maxWidth`.
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app

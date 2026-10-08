@@ -499,6 +499,9 @@ class _SheetHost {
   /// Where the sheet's visible top is, in global coordinates.
   final ValueNotifier<double> topInGlobal = ValueNotifier<double>(double.infinity);
 
+  /// Told where the sheet's visible top is as it is painted, a frame before [topInGlobal].
+  ValueChanged<double>? onTopPainted;
+
   void attach() {
     _breakwater ??= presenter?.addBreakwaterEdge(topInGlobal);
   }
@@ -509,7 +512,9 @@ class _SheetHost {
     if (_draggable && !fromSheet) {
       return;
     }
-    topInGlobal.value = top;
+    onTopPainted?.call(top);
+    // Breakwater listeners lay out other routes, so tell them after this frame.
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) => topInGlobal.value = top);
   }
 
   void detach() {
@@ -624,7 +629,7 @@ class _MeasureHeight extends SingleChildRenderObjectWidget {
 
   final ValueChanged<double>? onHeight;
 
-  /// Told where this box's top is in global coordinates, after each paint.
+  /// Told where this box's top is in global coordinates, as it is painted.
   final ValueChanged<double> onTop;
 
   @override
@@ -662,7 +667,7 @@ class _RenderMeasureHeight extends RenderProxyBox {
     final double top = localToGlobal(Offset.zero).dy;
     if (top != _lastTop) {
       _lastTop = top;
-      WidgetsBinding.instance.addPostFrameCallback((final Duration _) => onTop(top));
+      onTop(top);
     }
   }
 }
@@ -705,16 +710,36 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
         }
       }
       ..slide = controller
+      ..onTopPainted = _clipBarrierSemantics
       ..attach();
     animation!.addListener(_tick);
   }
 
   void _tick() => host.progress = animation!.value;
 
+  /// How much of the barrier's semantics the sheet covers, as on ModalBottomSheetRoute, so a
+  /// screen reader exploring the sheet finds its content, not the barrier.
+  final ValueNotifier<EdgeInsets> _clipDetailsNotifier = ValueNotifier<EdgeInsets>(EdgeInsets.zero);
+
+  // From the sheet's visible top, where ModalBottomSheetRoute uses its laid-out height, so the
+  // clip follows a slide or a drag and stops at a draggable sheet rather than its drag area.
+  void _clipBarrierSemantics(final double top) {
+    final RenderObject? overlay = navigator?.overlay?.context.findRenderObject();
+    if (overlay is! RenderBox || !overlay.hasSize || !top.isFinite) {
+      return;
+    }
+    final double height = overlay.size.height;
+    final double covered = height - overlay.globalToLocal(Offset(0.0, top)).dy;
+    _clipDetailsNotifier.value = EdgeInsets.only(bottom: covered.clamp(0.0, height));
+  }
+
   @override
   void dispose() {
     animation?.removeListener(_tick);
-    host.detach();
+    host
+      ..onTopPainted = null
+      ..detach();
+    _clipDetailsNotifier.dispose();
     super.dispose();
   }
 
@@ -722,8 +747,8 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
       host.build(context, animation);
 
-  // ModalRoute's barrier, with the tap hint ModalBottomSheetRoute gives its own: ModalRoute has no
-  // field for one.
+  // ModalRoute's barrier, with the tap hint and semantics clip ModalBottomSheetRoute gives its own:
+  // ModalRoute has no field for either.
   @override
   Widget buildModalBarrier() {
     if (barrierColor.a != 0 && !offstage) {
@@ -734,6 +759,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
         dismissible: barrierDismissible,
         semanticsLabel: barrierLabel,
         barrierSemanticsDismissible: semanticsDismissible,
+        clipDetailsNotifier: _clipDetailsNotifier,
         semanticsOnTapHint: barrierOnTapHint,
       );
     }
@@ -741,6 +767,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
       dismissible: barrierDismissible,
       semanticsLabel: barrierLabel,
       barrierSemanticsDismissible: semanticsDismissible,
+      clipDetailsNotifier: _clipDetailsNotifier,
       semanticsOnTapHint: barrierOnTapHint,
     );
   }
