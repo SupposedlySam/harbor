@@ -1,5 +1,8 @@
 ## Unreleased
 
+* `HarborSignals.raise(animationStyle:, transitionBuilder:)`: a signal's entrance and exit, as `showSnackBar(snackBarAnimationStyle:)` and `showGeneralDialog(transitionBuilder:)` take them. `AnimationStyle.noAnimation` shows a widget that brings its own entrance as it is, instead of fading and scaling it in on top; a `transitionBuilder` builds the entrance and exit from harbor's animation. A lowered signal stays for its whole exit, and never less than the 300 ms it stayed before.
+* A signal's live region has a dismiss action, as a `SnackBar`'s does, so a screen reader can lower it. `HarborSignals.raise(liveRegion: false)` leaves the semantics to a widget that is its own live region: before, harbor wrapped it in a second live region with no label.
+* `HarborSignalEntry` gains `animationStyle`, `transitionBuilder`, `liveRegion` and `lingers`, the time a lowered signal stays in the tree; `HarborSignalTransitionBuilder` is exported.
 * `HarborSignals.raise(alignment:)`: raises a signal at an exact point in the clear water instead of a slot, placed as a buoy at that alignment would be, and in the nearest overlay's padded water when there is no harbor. An `AlignmentDirectional` is resolved in the reading direction of the page that raised it. `slot` is now nullable and still defaults to `high`; give one or the other.
 
 ## 0.2.0

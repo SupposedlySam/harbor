@@ -255,7 +255,10 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
 by keyboard focus and by screen readers, not only by taps. Signals are live
-regions, so screen readers announce them. Sheets and signals keep the themes of
+regions, so screen readers announce them, with a dismiss action that lowers
+them, as a `SnackBar` is. A signal whose widget is already its own live region
+(a `SnackBar`-like widget from your design library) is raised with
+`liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
 leave without moving. On iOS a tap on the
@@ -287,6 +290,14 @@ Harbor(
 
 HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('Saved'));
 HarborSignals.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+HarborSignals.raise(
+  context,
+  transitionBuilder: (context, animation, child) => SlideTransition(
+    position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(animation),
+    child: child,
+  ),
+  builder: (_) => Toast('Saved'),
+);
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
@@ -302,6 +313,11 @@ focus.
 A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
 `alignment`, placed as a buoy at that alignment would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.
+It fades and scales in over `animationStyle` (220 ms each way by default).
+A `transitionBuilder` brings your own entrance and exit, run on harbor's
+animation, and `AnimationStyle.noAnimation` shows a widget that animates
+itself as it is, as `showSnackBar(snackBarAnimationStyle:)` does. A lowered
+signal stays at least 300 ms, so its own exit can run.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
