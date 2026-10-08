@@ -200,8 +200,9 @@ edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a
-`Harbor` a `wakePainter` to wake its whole body instead, or to paint the wake
-your own way (a progressive blur shader).
+`Harbor` a `wakePainter` to wake its whole body instead
+(`wakePainter: HarborWakeMask.alphaWake`), or to paint the wake your own way (a
+progressive blur shader).
 
 Fairways widen every reveal by what covers their trailing edge. A focused
 field, `Scrollable.ensureVisible` and focus traversal all bring a row clear of
@@ -415,6 +416,22 @@ for a sheet with a barrier too. `transitionAnimationController:` slides the
 sheet by a controller of your own in place of its 280 ms slide, as on
 `showModalBottomSheet`; you dispose it.
 
+```dart
+final Folder? folder = await showHarborSheet<Folder>(
+  context,
+  builder: (context) => HarborSheet(
+    body: FolderList(onPick: (folder) => HarborSheet.close(context, folder)),
+  ),
+);
+```
+
+`HarborSheet.close(context, result)` closes the sheet `context` is in and
+completes the future that opened it with `result`, as `Navigator.pop(context,
+result)` does for a modal bottom sheet. It works whatever the barrier, and on a
+sheet opened by `showModalBottomSheet` or `showGeneralDialog`, where it pops that
+route. A sheet with no barrier is not a route, so back and `Navigator.pop` close
+it with no result: it returns its value only through `HarborSheet.close`.
+
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given), with
@@ -429,6 +446,11 @@ takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Close
 dialog' when none is given), `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
 `animationStyle:` (its fade, 180 ms by default).
+
+Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
+makes a sheet the user has to answer: a tap on the barrier does nothing, and
+back still closes it. `requestFocus: false` leaves focus in the page.
+`anchorPoint:` picks which screen of a dual-screen device it opens on.
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
@@ -460,7 +482,9 @@ showHarborSheet(
 );
 ```
 
-`dragToClose:` is off by default. With it on, a content-sized sheet follows the
+`dragToClose:` is off by default, where `showModalBottomSheet`'s `enableDrag` is
+on, so a Material app that wants its sheets to follow a downward drag turns it on,
+as above. With it on, a content-sized sheet follows the
 finger down by any part that doesn't scroll, and closes on a fling or when let
 go under half shown. A draggable sheet closes at its floor, and its
 `HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
