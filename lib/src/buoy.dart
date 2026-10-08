@@ -731,10 +731,19 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor? _own;
   late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.side);
   late final _DismissPortalBuoyAction _dismissAction = _DismissPortalBuoyAction(this);
+  bool _shown = false;
 
   HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
 
   void _dismiss() => widget.onDismiss?.call();
+
+  // The controller is the caller's and tells no one when it shows or hides, so the buoy reports
+  // it as it comes and goes. After the frame: it comes and goes while the overlay builds.
+  void _buoyCameOrWent() => WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+    if (mounted && _shown != widget.controller.isShowing) {
+      setState(() => _shown = widget.controller.isShowing);
+    }
+  });
 
   @override
   void dispose() {
@@ -757,7 +766,13 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
           child: Builder(builder: widget.buoyBuilder),
         );
         if (dismissible) {
-          buoy = _PortalBuoyDismissal(groupId: this, consumeOutsideTaps: widget.consumeOutsideTaps, onDismiss: _dismiss, child: buoy);
+          buoy = _PortalBuoyDismissal(
+            groupId: this,
+            consumeOutsideTaps: widget.consumeOutsideTaps,
+            onDismiss: _dismiss,
+            onCameOrWent: _buoyCameOrWent,
+            child: buoy,
+          );
         }
         return _PortalBuoyLayout(
           harbor: HarborController.maybeOf(context),
@@ -781,13 +796,15 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
     if (!dismissible) {
       return portal;
     }
-    // Above the portal, so Escape from focus in the buoy or in the child reaches it.
-    return Actions(actions: <Type, Action<Intent>>{DismissIntent: _dismissAction}, child: portal);
+    // Above the portal, so Escape from focus in the buoy or in the child reaches it. Mapped only
+    // while the buoy is shown: a disabled action would still stop Escape from reaching an enclosing
+    // dialog or route. RawMenuAnchor maps its own the same way.
+    return Actions(actions: <Type, Action<Intent>>{if (_shown) DismissIntent: _dismissAction}, child: portal);
   }
 }
 
-/// Escape (a [DismissIntent]) dismisses the portal buoy while it is shown, and is left to the
-/// widgets above otherwise, as `RawMenuAnchor`'s `DismissMenuAction` is.
+/// Escape (a [DismissIntent]) dismisses the portal buoy while it is shown, as `RawMenuAnchor`'s
+/// `DismissMenuAction` does.
 class _DismissPortalBuoyAction extends DismissAction {
   _DismissPortalBuoyAction(this._buoy);
 
@@ -813,11 +830,18 @@ class _PortalBuoySide extends InheritedWidget {
 /// outside the group, and the page's history entry, so back dismisses the buoy first, as it does
 /// a modal [HarborBuoy].
 class _PortalBuoyDismissal extends StatefulWidget {
-  const _PortalBuoyDismissal({required this.groupId, required this.consumeOutsideTaps, required this.onDismiss, required this.child});
+  const _PortalBuoyDismissal({
+    required this.groupId,
+    required this.consumeOutsideTaps,
+    required this.onDismiss,
+    required this.onCameOrWent,
+    required this.child,
+  });
 
   final Object groupId;
   final bool consumeOutsideTaps;
   final VoidCallback onDismiss;
+  final VoidCallback onCameOrWent;
   final Widget child;
 
   @override
@@ -831,6 +855,7 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
   @override
   void initState() {
     super.initState();
+    widget.onCameOrWent();
     // After the frame: a route's history cannot change while it builds.
     WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
       final ModalRoute<Object?>? route = mounted ? ModalRoute.of(context) : null;
@@ -859,6 +884,7 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
       route.removeLocalHistoryEntry(history);
       _removingQuietly = false;
     }
+    widget.onCameOrWent();
     super.deactivate();
   }
 

@@ -565,6 +565,7 @@ void main() {
         required final OverlayPortalController menu,
         required final List<String> events,
         final bool consumeOutsideTaps = false,
+        final FocusNode? anchorFocus,
       }) => Harbor(
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -583,7 +584,7 @@ void main() {
                   height: 120,
                   child: TextButton(autofocus: true, onPressed: () => events.add('item'), child: const Text('Item')),
                 ),
-                child: TextButton(onPressed: menu.toggle, child: const Text('Open')),
+                child: TextButton(focusNode: anchorFocus, onPressed: menu.toggle, child: const Text('Open')),
               ),
               const SizedBox(height: 200),
               TextButton(onPressed: () => events.add('below'), child: const Text('Below')),
@@ -646,6 +647,37 @@ void main() {
         await tester.pump();
         expect(events, <String>['dismissed']);
         expect(find.text('Item'), findsNothing);
+      });
+
+      testWidgets('leaves Escape to the widgets above while it is hidden', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final FocusNode anchorFocus = FocusNode();
+        addTearDown(anchorFocus.dispose);
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(
+          _app(
+            Actions(
+              actions: <Type, Action<Intent>>{
+                DismissIntent: CallbackAction<DismissIntent>(onInvoke: (final DismissIntent _) => events.add('outer')),
+              },
+              child: dismissible(menu: menu, events: events, anchorFocus: anchorFocus),
+            ),
+          ),
+        );
+        anchorFocus.requestFocus();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(events, <String>['outer'], reason: 'an enclosing dialog or route hears Escape while the menu is down');
+
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+        anchorFocus.requestFocus();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(events, <String>['outer', 'dismissed'], reason: 'positive control: while the menu is up, Escape closes it and stops there');
       });
 
       testWidgets('by back, before back reaches its page', (final tester) async {
