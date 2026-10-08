@@ -389,6 +389,12 @@ abstract final class HarborSignals {
   /// Raises [builder]'s signal in [target]'s clear water at [slot], lowered
   /// after [duration] (or when the returned entry is lowered). If its harbor
   /// leaves (the page is popped), the signal moves to the port now on top.
+  ///
+  /// With no harbor above [context] (a bare `MaterialApp` in a widget test, a
+  /// screen not yet built from a harbor), the signal goes to the nearest
+  /// [Overlay], kept clear of `MediaQuery.padding` and `viewInsets`. With no
+  /// overlay either, it is reported through [FlutterError.reportError] and
+  /// returned already lowered.
   static HarborSignalEntry raise(
     final BuildContext context, {
     required final WidgetBuilder builder,
@@ -408,12 +414,102 @@ abstract final class HarborSignals {
       HarborSignalTarget.topmost => fleet?.topmost,
       HarborSignalTarget.sea => fleet?.sea,
     } ?? HarborController.maybeOf(context);
-    assert(controller != null, 'HarborSignals.raise needs a Harbor or HarborSea above the context.');
-    controller?.raiseSignal(entry);
+    if (controller != null) {
+      controller.raiseSignal(entry);
+    } else if (Overlay.maybeOf(context) case final OverlayState overlay) {
+      late final OverlayEntry host;
+      host = OverlayEntry(builder: (final BuildContext _) => _OverlaySignal(entry: entry, host: host));
+      overlay.insert(host);
+    } else {
+      entry.lower();
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('HarborSignals.raise found no Harbor, HarborSea or Overlay above the context, so the signal was not shown.'),
+          ErrorHint('Mount a HarborSea in MaterialApp.builder, or raise the signal from a context inside a Navigator.'),
+        ]),
+        library: 'harbor',
+      ));
+      return entry;
+    }
     if (duration != null) {
-      Timer(duration, entry.lower);
+      _lowerAfter(entry, duration);
     }
     return entry;
+  }
+
+  /// Lowers [entry] after [duration], and stops waiting as soon as it is
+  /// lowered some other way (by hand, or because nothing is left to show it).
+  static void _lowerAfter(final HarborSignalEntry entry, final Duration duration) {
+    final Timer timer = Timer(duration, entry.lower);
+    void lowered() {
+      if (!entry.showing.value) {
+        timer.cancel();
+        entry.showing.removeListener(lowered);
+      }
+    }
+
+    entry.showing.addListener(lowered);
+  }
+}
+
+/// A signal raised where there is no harbor: in an overlay, at its slot in the
+/// water the overlay's padding and keyboard leave.
+class _OverlaySignal extends StatefulWidget {
+  const _OverlaySignal({required this.entry, required this.host});
+
+  final HarborSignalEntry entry;
+  final OverlayEntry host;
+
+  @override
+  State<_OverlaySignal> createState() => _OverlaySignalState();
+}
+
+class _OverlaySignalState extends State<_OverlaySignal> {
+  static const EdgeInsets _margin = EdgeInsets.all(16.0);
+
+  Timer? _removal;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.entry.showing.addListener(_changed);
+  }
+
+  void _changed() {
+    if (!widget.entry.showing.value) {
+      // Leave time for the signal's own exit animation.
+      _removal ??= Timer(const Duration(milliseconds: 300), () {
+        widget.host
+          ..remove()
+          ..dispose();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.entry.showing.removeListener(_changed);
+    _removal?.cancel();
+    // The overlay went away with the signal still up: nothing is left to show it.
+    widget.entry.lower();
+    super.dispose();
+  }
+
+  @override
+  Widget build(final BuildContext context) {
+    final EdgeInsets padding = MediaQuery.paddingOf(context);
+    final EdgeInsets keyboard = MediaQuery.viewInsetsOf(context);
+    // Both are measured from the screen's edges, so the larger one on each edge is what is covered.
+    final EdgeInsets covered = EdgeInsets.fromLTRB(
+      math.max(padding.left, keyboard.left),
+      math.max(padding.top, keyboard.top),
+      math.max(padding.right, keyboard.right),
+      math.max(padding.bottom, keyboard.bottom),
+    );
+    return Padding(
+      padding: covered + _margin,
+      child: Align(alignment: widget.entry.alignment, child: _Signal(entry: widget.entry)),
+    );
   }
 }
 

@@ -211,6 +211,76 @@ void main() {
       final HarborController front = HarborController.of(top);
       expect(front.fleet.topmost, same(front));
     });
+
+    // Breaks if: a signal with no harbor above it is dropped (it used to assert, and show nothing
+    // in release), or the overlay it falls back to ignores the coast or the keyboard.
+    testWidgets('without a harbor, go to the nearest overlay, clear of the coast and the keyboard', (final tester) async {
+      late BuildContext page;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))),
+      );
+      await trial.raiseTide();
+      final HarborSignalEntry low = HarborSignals.raise(
+        page,
+        slot: HarborSignalSlot.low,
+        builder: (final BuildContext c) => _bar('low', 30),
+        duration: null,
+      );
+      final HarborSignalEntry top = HarborSignals.raise(
+        page,
+        slot: HarborSignalSlot.top,
+        builder: (final BuildContext c) => _bar('top', 30),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'low').bottom, lessThanOrEqualTo(trial.waterline));
+      expect(_rect(tester, 'low').bottom, greaterThan(trial.waterline - 30 - 16 - 1), reason: 'it sits on the keyboard');
+      expect(_rect(tester, 'top').top, greaterThanOrEqualTo(_statusBar));
+
+      low.lower();
+      top.lower();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('low')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('top')), findsNothing);
+    });
+
+    // Breaks if: a signal with nowhere to go is dropped without a word, or asserts (which a
+    // release build never sees).
+    testWidgets('without a harbor or an overlay, report that the signal was not shown', (final tester) async {
+      late BuildContext bare;
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: _Probe((final BuildContext c) => bare = c),
+      ));
+      final HarborSignalEntry entry = HarborSignals.raise(bare, builder: (final BuildContext c) => _bar('lost', 30));
+      final Object? error = tester.takeException();
+      expect(error, isA<FlutterError>());
+      expect('$error', contains('HarborSignals.raise'));
+      expect(entry.showing.value, isFalse);
+    });
+
+    // Breaks if: a signal's timers outlive the tree. The test framework fails a test that ends
+    // with a timer pending, so the check is the end of each test.
+    testWidgets('leave no timer pending when the harbor goes away', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('afloat')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('leave no timer pending when the overlay goes away', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
+      await tester.pump();
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('afloat')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
   });
 
   group('The tide', () {

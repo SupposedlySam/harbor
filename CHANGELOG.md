@@ -1,3 +1,8 @@
+## Unreleased
+
+* `HarborSignals.raise` with no harbor above the context shows the signal in the nearest `Overlay`, clear of `MediaQuery.padding` and `viewInsets`, instead of asserting in debug and showing nothing in release. With no overlay either, it reports a `FlutterError`.
+* A signal's timers are cancelled when it is lowered or its harbor leaves with nowhere to move it, so a widget test that removes the tree with a signal up no longer fails with a pending timer.
+
 ## 0.1.0
 
 The first harbor.
