@@ -250,6 +250,30 @@ void main() {
     expect(_rect(tester, 'before').left, _rect(tester, 'button').right + 8);
   });
 
+  testWidgets('an anchored buoy aligned to the end lines up with its anchor\'s right edge, moved by crossOffset', (final tester) async {
+    final HarborAnchor anchor = HarborAnchor();
+    addTearDown(anchor.dispose);
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          buoys: <HarborBuoy>[
+            HarborBuoy.anchored(
+              anchor: anchor,
+              side: HarborBuoySide.below,
+              crossAlignment: HarborBuoyCrossAlignment.end,
+              crossOffset: 6,
+              child: _box('menu', 160, 30),
+            ),
+          ],
+          body: Center(child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40))),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(_rect(tester, 'menu').right, _rect(tester, 'button').right + 6);
+    expect(_rect(tester, 'menu').top, _rect(tester, 'button').bottom + 8);
+  });
+
   group('A portal buoy', () {
     Widget page({required final OverlayPortalController menu, required final Alignment rowAt, final TextDirection? direction}) {
       final Widget harbor = Harbor(
@@ -434,6 +458,143 @@ void main() {
       menu.show();
       await tester.pump();
       expect(_rect(tester, 'menu').left, _rect(tester, 'button').right + 8);
+    });
+
+    group('aligned across its side', () {
+      Widget aligned({
+        required final OverlayPortalController menu,
+        required final AlignmentDirectional buttonAt,
+        required final HarborBuoyCrossAlignment crossAlignment,
+        final HarborBuoySide side = HarborBuoySide.below,
+        final double crossOffset = 0.0,
+        final TextDirection direction = TextDirection.ltr,
+      }) => _app(
+        Directionality(
+          textDirection: direction,
+          child: Harbor(
+            body: Padding(
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 40, vertical: 100),
+              child: Align(
+                alignment: buttonAt,
+                child: HarborPortalBuoy(
+                  controller: menu,
+                  side: side,
+                  crossAlignment: crossAlignment,
+                  crossOffset: crossOffset,
+                  buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+                  child: _box('button', 40, 40),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      testWidgets('to the start lines up with its anchor\'s left edge', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborBuoyCrossAlignment.start));
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'button').left, 40);
+        expect(_rect(tester, 'menu').left, 40);
+        expect(_rect(tester, 'menu').top, _rect(tester, 'button').bottom + 8);
+      });
+
+      testWidgets('to the start lines up with its anchor\'s right edge under right-to-left', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborBuoyCrossAlignment.start, direction: TextDirection.rtl),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').right, _rect(tester, 'button').right);
+      });
+
+      testWidgets('to the end lines up with its anchor\'s right edge, moved by crossOffset in reading order', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborBuoyCrossAlignment.end, crossOffset: -12),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').right, _rect(tester, 'button').right - 12);
+      });
+
+      testWidgets('crossOffset follows the reading order under right-to-left', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(
+            menu: menu,
+            buttonAt: AlignmentDirectional.topStart,
+            crossAlignment: HarborBuoyCrossAlignment.start,
+            crossOffset: 12,
+            direction: TextDirection.rtl,
+          ),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').right, _rect(tester, 'button').right - 12);
+      });
+
+      testWidgets('to the start of an anchor at the water\'s right edge is still held inside the clear water', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final HarborSeaTrial trial = await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborBuoyCrossAlignment.start),
+        );
+        menu.show();
+        await tester.pump();
+        final Rect water = trial.clearWaterAround(find.byKey(const ValueKey<String>('button')));
+        expect(_rect(tester, 'menu').left, water.right - 8 - 200);
+      });
+
+      testWidgets('beside its anchor, to the start lines up with its top edge', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborBuoySide.after, crossAlignment: HarborBuoyCrossAlignment.start),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').top, _rect(tester, 'button').top);
+        expect(_rect(tester, 'menu').left, _rect(tester, 'button').right + 8);
+      });
+    });
+
+    testWidgets('tells its buoy which side it landed on, after a flip and back', (final tester) async {
+      final OverlayPortalController menu = OverlayPortalController();
+      final ValueNotifier<Alignment> rowAt = ValueNotifier<Alignment>(Alignment.topCenter);
+      addTearDown(rowAt.dispose);
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: ValueListenableBuilder<Alignment>(
+              valueListenable: rowAt,
+              builder: (final BuildContext context, final Alignment at, final Widget? _) => Align(
+                alignment: at,
+                child: HarborPortalBuoy(
+                  controller: menu,
+                  buoyBuilder: (final BuildContext context) => SizedBox(
+                    width: 200,
+                    height: 120,
+                    child: Text(HarborPortalBuoy.sideOf(context).name),
+                  ),
+                  child: _bar('row', 48),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      menu.show();
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('below'), findsOneWidget, reason: 'no room above a row at the top, so it flipped');
+      expect(tester.getRect(find.text('below')).top, greaterThan(_rect(tester, 'row').bottom));
+
+      rowAt.value = Alignment.center;
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('above'), findsOneWidget);
+      expect(tester.getRect(find.text('above')).bottom, lessThan(_rect(tester, 'row').top));
     });
   });
 

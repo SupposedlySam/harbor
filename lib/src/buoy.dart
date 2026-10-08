@@ -121,15 +121,34 @@ class _RenderAnchorPoint extends RenderProxyBox {
 
 /// Which side of its anchor an anchored buoy sits on. [before] and [after]
 /// are in reading order: [before] is on the right under right-to-left.
-enum HarborBuoySide { above, below, before, after }
+enum HarborBuoySide {
+  above,
+  below,
+  before,
+  after;
 
-/// Where a buoy of [size] sits by the anchor at [at], inside [water]: on
-/// [side], [gap] away, overlapping it by [overlap], and centered on it across
-/// that side. It is kept inside [water] across the side, and above or below
-/// its anchor, never past the far edge. With [flips], it goes to the opposite
-/// side when [side] has no room and that one has, and is never past the far
-/// edge before or after its anchor either.
-Offset _anchoredOffset({
+  HarborBuoySide get _opposite => switch (this) {
+    above => below,
+    below => above,
+    before => after,
+    after => before,
+  };
+}
+
+/// How an anchored buoy lines up with its anchor across its side, as a `Row`'s or `Column`'s
+/// `CrossAxisAlignment` lines up its children: above or below the anchor, [start] and [end] are in
+/// reading order (a dropdown under its button's leading edge); before or after it, they are its
+/// top and bottom.
+enum HarborBuoyCrossAlignment { start, center, end }
+
+/// Where a buoy of [size] sits by the anchor at [at], inside [water], and the
+/// side it landed on: on [side], [gap] away, overlapping it by [overlap], and
+/// lined up with it across that side by [crossAlignment], moved [crossOffset]
+/// in reading order. It is kept inside [water] across the side, and above or
+/// below its anchor, never past the far edge. With [flips], it goes to the
+/// opposite side when [side] has no room and that one has, and is never past
+/// the far edge before or after its anchor either.
+({Offset offset, HarborBuoySide side}) _anchoredOffset({
   required final Rect water,
   required final Rect at,
   required final Size size,
@@ -137,6 +156,8 @@ Offset _anchoredOffset({
   required final double gap,
   required final double overlap,
   required final TextDirection textDirection,
+  final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
+  final double crossOffset = 0.0,
   final bool flips = false,
 }) {
   final bool rtl = textDirection == TextDirection.rtl;
@@ -160,8 +181,18 @@ Offset _anchoredOffset({
   };
   final AxisDirection opposite = flipAxisDirection(preferred);
   final AxisDirection direction = flips && !fits(preferred) && fits(opposite) ? opposite : preferred;
-  double left = at.center.dx - size.width / 2;
-  double top = at.center.dy - size.height / 2;
+  final bool vertical = axisDirectionToAxis(direction) == Axis.vertical;
+  // Across a vertical side the start is the reading start; across a horizontal one, the top.
+  final bool reversed = vertical && rtl;
+  final (double low, double high, double extent) = vertical ? (at.left, at.right, size.width) : (at.top, at.bottom, size.height);
+  final double cross = switch ((crossAlignment, reversed)) {
+        (HarborBuoyCrossAlignment.center, _) => (low + high - extent) / 2,
+        (HarborBuoyCrossAlignment.start, false) || (HarborBuoyCrossAlignment.end, true) => low,
+        (HarborBuoyCrossAlignment.end, false) || (HarborBuoyCrossAlignment.start, true) => high - extent,
+      } +
+      (reversed ? -crossOffset : crossOffset);
+  double left = vertical ? cross : 0.0;
+  double top = vertical ? 0.0 : cross;
   switch (direction) {
     case AxisDirection.up:
       top = math.max(along(direction), water.top);
@@ -172,12 +203,12 @@ Offset _anchoredOffset({
     case AxisDirection.right:
       left = flips ? math.min(along(direction), water.right - size.width) : along(direction);
   }
-  if (axisDirectionToAxis(direction) == Axis.vertical) {
+  if (vertical) {
     left = left.clamp(water.left, math.max(water.left, water.right - size.width));
   } else {
     top = top.clamp(water.top, math.max(water.top, water.bottom - size.height));
   }
-  return Offset(left, top);
+  return (offset: Offset(left, top), side: direction == preferred ? side : side._opposite);
 }
 
 /// Something afloat in a harbor: placed in the water nothing covers, so it
@@ -201,11 +232,14 @@ class HarborBuoy {
        anchor = null,
        side = HarborBuoySide.above,
        gap = 0.0,
-       overlap = 0.0;
+       overlap = 0.0,
+       crossAlignment = HarborBuoyCrossAlignment.center,
+       crossOffset = 0.0;
 
   /// A buoy moored to [anchor], on its [side], [gap] away, overlapping it by
-  /// [overlap] (a speech bubble whose tail sits over the button). Kept inside
-  /// the clear water across that side, and never past its far edge.
+  /// [overlap] (a speech bubble whose tail sits over the button), and lined up
+  /// with it across that side by [crossAlignment]. Kept inside the clear water
+  /// across that side, and never past its far edge.
   const HarborBuoy.anchored({
     this.key,
     required HarborAnchor this.anchor,
@@ -213,6 +247,8 @@ class HarborBuoy {
     this.side = HarborBuoySide.above,
     this.gap = 8.0,
     this.overlap = 0.0,
+    this.crossAlignment = HarborBuoyCrossAlignment.center,
+    this.crossOffset = 0.0,
     this.margin = const EdgeInsets.all(8.0),
     this.modal = false,
     this.onDismiss,
@@ -248,6 +284,14 @@ class HarborBuoy {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
+
+  /// How an anchored buoy lines up with its anchor across its [side]; centred by default.
+  final HarborBuoyCrossAlignment crossAlignment;
+
+  /// How far an anchored buoy is moved across its [side] from where [crossAlignment] puts it:
+  /// toward the reading end above or below its anchor, down beside it. The horizontal part of
+  /// `MenuAnchor.alignmentOffset`; [gap] and [overlap] are the rest.
+  final double crossOffset;
 
   /// Keeps the buoy inside this rectangle (in the harbor's own coordinates)
   /// as well as inside the clear water.
@@ -572,8 +616,10 @@ class _RenderBuoyLayer extends RenderBox
           side: buoy.side,
           gap: buoy.gap,
           overlap: buoy.overlap,
+          crossAlignment: buoy.crossAlignment,
+          crossOffset: buoy.crossOffset,
           textDirection: _textDirection,
-        );
+        ).offset;
       }
       context.paintChild(child, data.offset + offset);
       child = data.nextSibling;
@@ -593,9 +639,10 @@ class _RenderBuoyLayer extends RenderBox
 /// buoy floats in the nearest [Overlay] and is placed as a
 /// [HarborBuoy.anchored] is, in the clear water of the harbor around this
 /// widget: by [anchor] (or by [child] when there is none), on its [side],
-/// [gap] away, [margin] in from the water's edges. When [side] has no room
-/// and the opposite side has, it [flips] there; otherwise it is kept inside
-/// the clear water.
+/// [gap] away, lined up by [crossAlignment], [margin] in from the water's
+/// edges. When [side] has no room and the opposite side has, it [flips] there;
+/// otherwise it is kept inside the clear water. [sideOf] tells the buoy which
+/// side it landed on.
 class HarborPortalBuoy extends StatefulWidget {
   const HarborPortalBuoy({
     super.key,
@@ -606,6 +653,8 @@ class HarborPortalBuoy extends StatefulWidget {
     this.side = HarborBuoySide.above,
     this.gap = 8.0,
     this.overlap = 0.0,
+    this.crossAlignment = HarborBuoyCrossAlignment.center,
+    this.crossOffset = 0.0,
     this.margin = const EdgeInsets.all(8.0),
     this.flips = true,
   });
@@ -626,11 +675,31 @@ class HarborPortalBuoy extends StatefulWidget {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
+
+  /// How the buoy lines up with its anchor across its [side]; centred by default.
+  final HarborBuoyCrossAlignment crossAlignment;
+
+  /// How far the buoy is moved across its [side] from where [crossAlignment] puts it, as
+  /// [HarborBuoy.crossOffset].
+  final double crossOffset;
   final EdgeInsetsGeometry margin;
 
   /// Whether the buoy goes to the opposite side of its anchor when [side] has
   /// no room and that side has.
   final bool flips;
+
+  /// The side of its anchor the portal buoy around [context] landed on: its [side], or the
+  /// opposite one after it flipped. A popover reads it to point its arrow at the anchor. It is
+  /// placed when it paints, so after a flip this changes on the next frame.
+  static HarborBuoySide sideOf(final BuildContext context) {
+    final HarborBuoySide? side = maybeSideOf(context);
+    assert(side != null, 'HarborPortalBuoy.sideOf was called from outside a portal buoy\'s buoyBuilder.');
+    return side!;
+  }
+
+  /// [sideOf], or null outside a portal buoy.
+  static HarborBuoySide? maybeSideOf(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_PortalBuoySide>()?.side;
 
   @override
   State<HarborPortalBuoy> createState() => _HarborPortalBuoyState();
@@ -638,12 +707,14 @@ class HarborPortalBuoy extends StatefulWidget {
 
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor? _own;
+  late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.side);
 
   HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
 
   @override
   void dispose() {
     _own?.dispose();
+    _landed.dispose();
     super.dispose();
   }
 
@@ -656,13 +727,30 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
       side: widget.side,
       gap: widget.gap,
       overlap: widget.overlap,
+      crossAlignment: widget.crossAlignment,
+      crossOffset: widget.crossOffset,
       margin: widget.margin,
       flips: widget.flips,
       textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
-      child: widget.buoyBuilder(context),
+      landed: _landed,
+      child: ValueListenableBuilder<HarborBuoySide>(
+        valueListenable: _landed,
+        builder: (final BuildContext context, final HarborBuoySide side, final Widget? child) => _PortalBuoySide(side: side, child: child!),
+        // A Builder, so the builder's own context is below the side it reads.
+        child: Builder(builder: widget.buoyBuilder),
+      ),
     ),
     child: widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child,
   );
+}
+
+class _PortalBuoySide extends InheritedWidget {
+  const _PortalBuoySide({required this.side, required super.child});
+
+  final HarborBuoySide side;
+
+  @override
+  bool updateShouldNotify(final _PortalBuoySide oldWidget) => side != oldWidget.side;
 }
 
 class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
@@ -672,9 +760,12 @@ class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
     required this.side,
     required this.gap,
     required this.overlap,
+    required this.crossAlignment,
+    required this.crossOffset,
     required this.margin,
     required this.flips,
     required this.textDirection,
+    required this.landed,
     super.child,
   });
 
@@ -683,9 +774,14 @@ class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
+  final HarborBuoyCrossAlignment crossAlignment;
+  final double crossOffset;
   final EdgeInsetsGeometry margin;
   final bool flips;
   final TextDirection textDirection;
+
+  /// Told the side the buoy landed on, the frame after it changes.
+  final ValueNotifier<HarborBuoySide> landed;
 
   @override
   RenderObject createRenderObject(final BuildContext context) => _RenderPortalBuoy(this);
@@ -773,17 +869,45 @@ class _RenderPortalBuoy extends RenderShiftedBox {
       return;
     }
     final BoxParentData data = child!.parentData! as BoxParentData;
-    data.offset = _anchoredOffset(
+    final ({Offset offset, HarborBuoySide side}) placed = _anchoredOffset(
       water: _water(),
       at: MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size),
       size: child.size,
       side: _config.side,
       gap: _config.gap,
       overlap: _config.overlap,
+      crossAlignment: _config.crossAlignment,
+      crossOffset: _config.crossOffset,
       textDirection: _config.textDirection,
       flips: _config.flips,
     );
+    data.offset = placed.offset;
+    _report(placed.side);
     context.paintChild(child, data.offset + offset);
+  }
+
+  HarborBuoySide? _reporting;
+
+  // The side is only known here, and nothing may be rebuilt while painting, so the buoy hears it
+  // the frame after, as an anchor reports that it moved.
+  void _report(final HarborBuoySide side) {
+    final ValueNotifier<HarborBuoySide> landed = _config.landed;
+    if (side == (_reporting ?? landed.value)) {
+      return;
+    }
+    final bool scheduled = _reporting != null;
+    _reporting = side;
+    if (scheduled) {
+      return;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      final HarborBuoySide? reported = _reporting;
+      _reporting = null;
+      if (reported != null && attached) {
+        _config.landed.value = reported;
+      }
+    });
+    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   @override

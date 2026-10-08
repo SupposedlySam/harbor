@@ -290,7 +290,11 @@ HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
-reading order, so `before` is on the right under right-to-left.
+reading order, so `before` is on the right under right-to-left. Across that side
+it is centred on its anchor unless its `crossAlignment` says `start` or `end`,
+the anchor's edges in reading order (or its top and bottom beside it), as a
+dropdown lines up under its button's leading edge; `crossOffset` moves it on
+from there, toward the reading end.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -317,6 +321,7 @@ final menu = OverlayPortalController();
 HarborPortalBuoy(                       // in a list row, anywhere below a harbor
   controller: menu,
   side: HarborBuoySide.below,
+  crossAlignment: HarborBuoyCrossAlignment.start, // under the row's leading edge
   buoyBuilder: (context) => const RowMenu(),
   child: GestureDetector(onTap: menu.toggle, child: row),
 )
@@ -329,7 +334,10 @@ themes and floats in the nearest `Overlay`, placed in the clear water of the
 harbor around the row by its `child` (or by an `anchor`). When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
-room, it is held inside the clear water.
+room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
+the buoy is the side it landed on, so a popover can point its arrow at the
+anchor after a flip. The buoy is placed as it paints, so it hears of a flip on
+the next frame.
 
 ## Sheets and dialogs
 

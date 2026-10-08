@@ -1,3 +1,8 @@
+## Unreleased
+
+* `crossAlignment:` and `crossOffset:` on `HarborBuoy.anchored` and `HarborPortalBuoy`: an anchored buoy lines up with its anchor's `start` or `end` across its side (in reading order above and below it, top and bottom beside it) instead of centring on it, and is moved on by `crossOffset`, still held inside the clear water. `HarborBuoyCrossAlignment.center` is the default.
+* `HarborPortalBuoy.sideOf(context)` and `maybeSideOf`: the side a portal buoy landed on, its `side` or the opposite after a flip, so a popover can point its arrow at its anchor. It changes on the frame after the flip.
+
 ## 0.2.0
 
 ### Breaking changes
