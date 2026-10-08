@@ -765,15 +765,13 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
           // A Builder, so the builder's own context is below the side it reads.
           child: Builder(builder: widget.buoyBuilder),
         );
-        if (dismissible) {
-          buoy = _PortalBuoyDismissal(
-            groupId: this,
-            consumeOutsideTaps: widget.consumeOutsideTaps,
-            onDismiss: _dismiss,
-            onCameOrWent: _buoyCameOrWent,
-            child: buoy,
-          );
-        }
+        buoy = _PortalBuoyDismissal(
+          groupId: this,
+          consumeOutsideTaps: widget.consumeOutsideTaps,
+          onDismiss: dismissible ? _dismiss : null,
+          onCameOrWent: _buoyCameOrWent,
+          child: buoy,
+        );
         return _PortalBuoyLayout(
           harbor: HarborController.maybeOf(context),
           anchor: _anchor,
@@ -790,16 +788,14 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
         );
       },
       // The anchor is in the buoy's tap region group, as a MenuAnchor's button is in its menu's, so
-      // a tap on it is its own (a toggle) and never also an outside tap.
-      child: dismissible ? TapRegion(groupId: this, child: anchored) : anchored,
+      // a tap on it is its own (a toggle) and never also an outside tap. This and the Actions below
+      // stay in the tree without onDismiss, switched off, so setting it does not remount the child.
+      child: TapRegion(groupId: this, enabled: dismissible, child: anchored),
     );
-    if (!dismissible) {
-      return portal;
-    }
     // Above the portal, so Escape from focus in the buoy or in the child reaches it. Mapped only
     // while the buoy is shown: a disabled action would still stop Escape from reaching an enclosing
     // dialog or route. RawMenuAnchor maps its own the same way.
-    return Actions(actions: <Type, Action<Intent>>{if (_shown) DismissIntent: _dismissAction}, child: portal);
+    return Actions(actions: <Type, Action<Intent>>{if (dismissible && _shown) DismissIntent: _dismissAction}, child: portal);
   }
 }
 
@@ -826,9 +822,9 @@ class _PortalBuoySide extends InheritedWidget {
   bool updateShouldNotify(final _PortalBuoySide oldWidget) => side != oldWidget.side;
 }
 
-/// While a dismissible portal buoy is shown: its tap region, which calls [onDismiss] on a tap
-/// outside the group, and the page's history entry, so back dismisses the buoy first, as it does
-/// a modal [HarborBuoy].
+/// While a portal buoy is shown: its tap region, which calls [onDismiss] on a tap outside the
+/// group, and the page's history entry, so back dismisses the buoy first, as it does a modal
+/// [HarborBuoy]. Both are off without [onDismiss]; the region stays, so the buoy keeps its state.
 class _PortalBuoyDismissal extends StatefulWidget {
   const _PortalBuoyDismissal({
     required this.groupId,
@@ -840,7 +836,7 @@ class _PortalBuoyDismissal extends StatefulWidget {
 
   final Object groupId;
   final bool consumeOutsideTaps;
-  final VoidCallback onDismiss;
+  final VoidCallback? onDismiss;
   final VoidCallback onCameOrWent;
   final Widget child;
 
@@ -849,6 +845,8 @@ class _PortalBuoyDismissal extends StatefulWidget {
 }
 
 class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
+  ModalRoute<Object?>? _route;
+  ModalRoute<Object?>? _historyRoute;
   LocalHistoryEntry? _history;
   bool _removingQuietly = false;
 
@@ -856,34 +854,59 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
   void initState() {
     super.initState();
     widget.onCameOrWent();
-    // After the frame: a route's history cannot change while it builds.
-    WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
-      final ModalRoute<Object?>? route = mounted ? ModalRoute.of(context) : null;
-      if (route == null) {
-        return;
-      }
-      _history = LocalHistoryEntry(
-        onRemove: () {
-          _history = null;
-          if (!_removingQuietly) {
-            widget.onDismiss();
-          }
-        },
-      );
-      route.addLocalHistoryEntry(_history!);
-    });
+    _takeHistoryAfterFrame();
   }
 
   @override
-  void deactivate() {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+  }
+
+  @override
+  void didUpdateWidget(final _PortalBuoyDismissal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onDismiss == null) {
+      _giveHistoryBack();
+    } else if (oldWidget.onDismiss == null) {
+      _takeHistoryAfterFrame();
+    }
+  }
+
+  // After the frame: a route's history cannot change while it builds.
+  void _takeHistoryAfterFrame() => WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+    final ModalRoute<Object?>? route = _route;
+    if (!mounted || widget.onDismiss == null || _history != null || route == null) {
+      return;
+    }
+    _history = LocalHistoryEntry(
+      onRemove: () {
+        _history = null;
+        _historyRoute = null;
+        if (!_removingQuietly) {
+          widget.onDismiss?.call();
+        }
+      },
+    );
+    _historyRoute = route;
+    route.addLocalHistoryEntry(_history!);
+  });
+
+  void _giveHistoryBack() {
     final LocalHistoryEntry? history = _history;
-    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    final ModalRoute<Object?>? route = _historyRoute;
     _history = null;
+    _historyRoute = null;
     if (history != null && route != null && route.isActive) {
       _removingQuietly = true;
       route.removeLocalHistoryEntry(history);
       _removingQuietly = false;
     }
+  }
+
+  @override
+  void deactivate() {
+    _giveHistoryBack();
     widget.onCameOrWent();
     super.deactivate();
   }
@@ -891,8 +914,9 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
   @override
   Widget build(final BuildContext context) => TapRegion(
     groupId: widget.groupId,
+    enabled: widget.onDismiss != null,
     consumeOutsideTaps: widget.consumeOutsideTaps,
-    onTapOutside: (final PointerDownEvent _) => widget.onDismiss(),
+    onTapOutside: (final PointerDownEvent _) => widget.onDismiss?.call(),
     child: widget.child,
   );
 }

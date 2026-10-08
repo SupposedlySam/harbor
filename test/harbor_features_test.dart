@@ -680,6 +680,57 @@ void main() {
         expect(events, <String>['outer', 'dismissed'], reason: 'positive control: while the menu is up, Escape closes it and stops there');
       });
 
+      testWidgets('keeps the state of its child and its buoy when onDismiss is set or cleared', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final ValueNotifier<bool> closes = ValueNotifier<bool>(true);
+        addTearDown(closes.dispose);
+        await tester.pumpSeaTrial(
+          _app(
+            Harbor(
+              body: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 100),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: closes,
+                    builder: (final BuildContext context, final bool closes, final Widget? _) => HarborPortalBuoy(
+                      controller: menu,
+                      side: HarborBuoySide.after,
+                      onDismiss: closes ? menu.hide : null,
+                      buoyBuilder: (final BuildContext context) => const SizedBox(width: 200, height: 60, child: TextField(key: ValueKey<String>('filter'))),
+                      child: const SizedBox(width: 200, child: TextField(key: ValueKey<String>('query'))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        menu.show();
+        await tester.pump();
+        await tester.enterText(find.byKey(const ValueKey<String>('filter')), 'in the buoy');
+        await tester.enterText(find.byKey(const ValueKey<String>('query')), 'in the child');
+        await tester.pump();
+        final ModalRoute<Object?> page = ModalRoute.of(tester.element(find.byKey(const ValueKey<String>('query'))))!;
+        expect(page.willHandlePopInternally, isTrue, reason: 'positive control: back is the buoy\'s while it closes');
+
+        closes.value = false;
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('in the child'), findsOneWidget);
+        expect(find.text('in the buoy'), findsOneWidget);
+        expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key, const ValueKey<String>('query'));
+        expect(page.willHandlePopInternally, isFalse, reason: 'without onDismiss, back is the page\'s again');
+
+        closes.value = true;
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('in the child'), findsOneWidget);
+        expect(find.text('in the buoy'), findsOneWidget);
+        expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key, const ValueKey<String>('query'));
+        expect(page.willHandlePopInternally, isTrue);
+      });
+
       testWidgets('by back, before back reaches its page', (final tester) async {
         final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
         final OverlayPortalController menu = OverlayPortalController();
