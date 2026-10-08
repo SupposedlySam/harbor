@@ -202,12 +202,22 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
   /// The waters at [context], clamped to `MediaQuery` so a layer outside the
   /// harbor that already kept clear of an edge is honored. Outside any
   /// harbor the whole of `MediaQuery.padding` reads as coast.
+  ///
+  /// With an [aspect], the caller rebuilds only when that part changes: a
+  /// reader of the docks holds still while the keyboard moves.
   static HarborWatersData of(final BuildContext context, {final HarborWatersAspect? aspect}) {
-    final MediaQueryData mediaQuery = MediaQuery.of(context);
-    final EdgeInsetsDirectional padding = HarborEdges.directional(mediaQuery.padding, Directionality.of(context));
     final HarborWatersData? raw = maybeRawOf(context, aspect: aspect);
+    // Every field is filled in, but only the ones the aspect covers are
+    // depended on: the rest are read without subscribing.
+    final MediaQueryData mediaQuery = context.getInheritedWidgetOfExactType<MediaQuery>()?.data ?? MediaQuery.of(context);
+    final bool readsPadding = aspect == null || aspect == HarborWatersAspect.coast || aspect == HarborWatersAspect.docks;
+    final EdgeInsetsDirectional padding = HarborEdges.directional(
+      readsPadding ? MediaQuery.paddingOf(context) : mediaQuery.padding,
+      Directionality.of(context),
+    );
     if (raw == null) {
-      return HarborWatersData(coast: padding, frameSize: mediaQuery.size);
+      final bool readsFrame = aspect == null || aspect == HarborWatersAspect.frame;
+      return HarborWatersData(coast: padding, frameSize: readsFrame ? MediaQuery.sizeOf(context) : mediaQuery.size);
     }
     return raw.copyWith(
       coast: HarborEdges.min(raw.coast, padding),

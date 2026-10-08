@@ -44,8 +44,7 @@ class _Probe extends StatelessWidget {
   }
 }
 
-/// Reads only the coast, and only through the raw waters: `HarborWaters.of` also depends on the
-/// whole `MediaQuery`, which would rebuild this whatever the aspect said.
+/// Reads only the coast, through the raw waters, so nothing but the coast aspect can rebuild it.
 class _CoastReader extends StatelessWidget {
   const _CoastReader(this.seen);
 
@@ -55,6 +54,19 @@ class _CoastReader extends StatelessWidget {
   Widget build(final BuildContext context) {
     seen.add(HarborWaters.maybeRawOf(context, aspect: HarborWatersAspect.coast)!.coast.top);
     return const SizedBox.expand();
+  }
+}
+
+/// Reads one aspect of the waters through [HarborWaters.of].
+class _AspectReader extends StatelessWidget {
+  const _AspectReader(this.aspect);
+
+  final HarborWatersAspect aspect;
+
+  @override
+  Widget build(final BuildContext context) {
+    HarborWaters.of(context, aspect: aspect);
+    return const SizedBox(height: 10);
   }
 }
 
@@ -434,6 +446,131 @@ void main() {
       await trial.raiseTide();
       expect(MediaQuery.viewInsetsOf(under).bottom, greaterThan(0), reason: 'positive control');
       expect(MediaQuery.viewInsetsOf(castOff).bottom, 0);
+    });
+  });
+
+  group('A reader rebuilds only for what it reads', () {
+    // No bottom coast, so the keyboard moving changes viewInsets and nothing else.
+    const HarborTrialDevice device = HarborTrialDevice.iPhoneSE;
+
+    // Brings the keyboard in or out over ten frames, as the platform animates it.
+    Future<void> slideTide(final WidgetTester tester, {required final bool tideIn}) async {
+      for (int i = 1; i <= 10; i++) {
+        final double share = tideIn ? i / 10 : 1 - i / 10;
+        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // Long enough for the tide gauge to settle.
+      for (int i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+    }
+
+    /// Counts the rebuilds of every element whose widget's type is in [types].
+    Map<Type, int> countRebuilds(final Set<Type> types) {
+      final Map<Type, int> counts = <Type, int>{for (final Type t in types) t: 0};
+      debugOnRebuildDirtyWidget = (final Element element, final bool builtOnce) {
+        final Type type = element.widget.runtimeType;
+        if (counts.containsKey(type)) {
+          counts[type] = counts[type]! + 1;
+        }
+      };
+      addTearDown(() => debugOnRebuildDirtyWidget = null);
+      return counts;
+    }
+
+    // Breaks if: HarborWaters.of depends on the whole MediaQuery again, or a content role reads
+    // the waters (or MediaQuery) beyond the parts it uses.
+    testWidgets('readers of the coast, the docks and the margin hold still while the keyboard moves', (final tester) async {
+      final List<double> insetsSeen = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: Column(
+              children: <Widget>[
+                const _AspectReader(HarborWatersAspect.coast),
+                const _AspectReader(HarborWatersAspect.docks),
+                const _AspectReader(HarborWatersAspect.margin),
+                HarborOpenWater(builder: (final BuildContext context, final HarborWatersData waters) => const SizedBox(height: 10)),
+                const HarborMooringLine(child: SizedBox(height: 10)),
+                const HarborMoored(edges: HarborEdge.horizontal, tide: false, child: SizedBox(height: 10)),
+                const SizedBox(
+                  height: 40,
+                  child: HarborFairway(
+                    scrollDirection: Axis.horizontal,
+                    slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(width: 2000))],
+                  ),
+                ),
+                // The positive control: something that reads the keyboard does see it move.
+                _Probe((final BuildContext c) => insetsSeen.add(MediaQuery.viewInsetsOf(c).bottom), child: const SizedBox(height: 10)),
+              ],
+            ),
+          ),
+        ),
+        device: device,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{
+        _AspectReader,
+        HarborOpenWater,
+        HarborMooringLine,
+        HarborMoored,
+        HarborFairway,
+      });
+      insetsSeen.clear();
+      await slideTide(tester, tideIn: true);
+      expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
+      expect(insetsSeen.last, device.tideHeight);
+      expect(rebuilds, <Type, int>{
+        _AspectReader: 0,
+        HarborOpenWater: 0,
+        HarborMooringLine: 0,
+        HarborMoored: 0,
+        HarborFairway: 0,
+      });
+    });
+
+    // Breaks if: isInOf depends on the tide gauge as a whole, which notifies on every frame.
+    testWidgets('a reader of whether the tide is in rebuilds exactly when it comes and goes', (final tester) async {
+      final List<bool> seen = <bool>[];
+      await tester.pumpSeaTrial(
+        _app(Harbor(bodyClearsTide: false, body: _Probe((final BuildContext c) => seen.add(HarborTide.isInOf(c))))),
+        device: device,
+      );
+      expect(seen, <bool>[false]);
+      await slideTide(tester, tideIn: true);
+      expect(seen, <bool>[false, true]);
+      await slideTide(tester, tideIn: false);
+      expect(seen, <bool>[false, true, false]);
+    });
+
+    // Breaks if: a dry dock reads the whole tide, which moves on every frame.
+    testWidgets('a dry dock rebuilds when the tide comes, goes or sets a new high-water mark', (final tester) async {
+      final List<double> heights = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          const Harbor(
+            bottom: <HarborDock>[
+              HarborDock.quay(tide: HarborTideStance.dryDock, child: HarborDryDock(child: SizedBox.expand())),
+            ],
+            body: SizedBox.expand(),
+          ),
+        ),
+        device: device,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborDryDock});
+      void recordHeight() => heights.add(tester.getSize(find.byType(HarborDryDock)).height);
+      recordHeight();
+      await slideTide(tester, tideIn: true);
+      recordHeight();
+      // The tide came in (1) and settled at a new high-water mark (2).
+      expect(rebuilds[HarborDryDock], 2);
+      await slideTide(tester, tideIn: false);
+      recordHeight();
+      // It went out (3), and settling at low water left the mark where it was.
+      expect(rebuilds[HarborDryDock], 3);
+      expect(heights, <double>[device.size.height * 0.4, device.tideHeight, device.tideHeight]);
     });
   });
 
