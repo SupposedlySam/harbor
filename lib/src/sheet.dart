@@ -118,7 +118,7 @@ class HarborSheet extends StatelessWidget {
     super.key,
     this.header,
     this.footer,
-    required Widget Function(BuildContext context, ScrollController controller) this.builder,
+    required ScrollableWidgetBuilder this.builder,
     this.extent = const HarborSheetExtent(),
     this.controller,
     this.expand = true,
@@ -137,7 +137,7 @@ class HarborSheet extends StatelessWidget {
   final Widget? header;
   final Widget? footer;
   final Widget? body;
-  final Widget Function(BuildContext context, ScrollController controller)? builder;
+  final ScrollableWidgetBuilder? builder;
   final HarborSheetExtent? extent;
 
   /// Drives a draggable sheet from outside it, as it drives a [DraggableScrollableSheet].

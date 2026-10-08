@@ -163,6 +163,7 @@ as it would in a `Row`.
 | `state: HarborDockState.dark` | Not drawn and not tappable, but it keeps its ground |
 | `state: HarborDockState.withdrawn` | Slides out and gives its ground back |
 | `extentPolicy:` | How a withdrawing dock gives its ground back: `hold` (once it's gone, the default), `follow`, `release` |
+| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, coast or not |
@@ -329,12 +330,13 @@ HarborSignals.raise(
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
-An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
-reading order, so `before` is on the right under right-to-left. While its
-anchor is not in the tree, an anchored buoy is not shown and takes no taps.
-A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each row of a list
-its own; in debug builds two points left on one anchor are reported after the
-frame, as two leaders on one `LayerLink` are.
+An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
+reading order, as in `AlignmentDirectional`, so `start` is on the right under
+right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
+deprecated.) While its anchor is not in the tree, an anchored buoy is not shown
+and takes no taps. A `HarborAnchor` refers to one `HarborAnchorPoint`, so give
+each row of a list its own; in debug builds two points left on one anchor are
+reported after the frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -553,6 +555,11 @@ sight reveals all of itself: when the keyboard rises, and when focus moves into
 it from outside, by a tap or the keyboard's next action. So a field and the
 button under it come up together, `clearance` clear of the keyboard.
 `onlyWhileFocused: true` keeps the rest of a form's beacons still.
+
+A region lifts over 280 ms and settles back the same way. Give it an
+`animationStyle:` to change that: its `duration` and `curve` are for the lift,
+its `reverseDuration` and `reverseCurve` for settling back, and
+`AnimationStyle.noAnimation` moves the content at once.
 
 ## TV
 
