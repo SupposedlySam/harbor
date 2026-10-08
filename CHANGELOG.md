@@ -1,3 +1,7 @@
+## Unreleased
+
+* **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
+
 ## 0.2.0
 
 ### Breaking changes
