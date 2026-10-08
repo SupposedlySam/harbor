@@ -223,6 +223,12 @@ class HarborBuoy {
 
   /// How far in from the clear water's edges; an [EdgeInsetsDirectional] follows the reading direction.
   final EdgeInsetsGeometry margin;
+
+  /// Whether this buoy hides the buoys listed before it while it is up (a menu over a tooltip).
+  ///
+  /// Only that: it is NOT a modal route. There is no barrier, taps beside it reach the page, and
+  /// back pops the page. For something that must block the page until it is dismissed, use
+  /// `showHarborSheet` or `showHarborDialog`, which are routes.
   final bool modal;
   final HarborAnchor? anchor;
   final HarborBuoySide side;

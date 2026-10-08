@@ -287,6 +287,9 @@ An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
+A `modal` buoy only hides the buoys before it: it is not a modal route, so taps
+beside it reach the page and back pops the page. For something that blocks the
+page until it is dismissed, use a sheet or a dialog.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
