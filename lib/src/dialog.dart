@@ -26,6 +26,10 @@ import 'controller.dart';
 /// Tab does past its last control (the navigator's choice when null), and
 /// whether it takes focus. [animationStyle] sets the fade, 180 ms by default;
 /// with reduced motion the dialog is simply there.
+///
+/// See also:
+///
+///  * [showGeneralDialog], the closest Flutter function.
 Future<T?> showHarborDialog<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,

@@ -74,6 +74,43 @@ header your list starts below.
 | **Chart** | Who holds which edge, at which layer | `HarborChart`, `HarborChartOverlay` |
 | **Sea trials** | Widget-test devices and tide control (`harbor_test`) | `pumpSeaTrial` |
 
+### In Flutter's terms
+
+If you know the Flutter widget, this is where to look in harbor, and what is different.
+
+| Harbor | Closest Flutter concept | The difference that matters |
+|---|---|---|
+| **Sea** | `MaterialApp.builder`: one per app, above the `Navigator`, inside the `ScaffoldMessenger` that `MaterialApp` wraps around the builder's output | It holds the coast, the tide gauge and the signals every route shares. It moves nothing out of the keyboard's way itself |
+| **Harbor** | `Scaffold` | Any number of docks on all four edges, each measured. A `Scaffold` has one app bar, capped at its `preferredSize`, and one bottom bar |
+| **New port** | A route, which reads the `MediaQuery` from above the `Navigator` | A harbor that is not a new port takes the docks of the harbor around it as part of its coast |
+| **Coast** | `MediaQuery.padding` and `viewPadding` | The same insets, read from `MediaQuery`, plus a TV's title-safe band (`HarborCoast.titleSafe`) or a fixed coast (`HarborCoast.fixed`, and `HarborCoast.none` for goldens) |
+| **Tide** | `MediaQuery.viewInsets.bottom`; `Scaffold.resizeToAvoidBottomInset` | It adds a phase, a high-water mark, and how much of it still reaches this point (`remaining`). A resizing `Scaffold` moves the whole body; here each dock decides. The keyboard stays in `viewInsets`, never in `padding` |
+| **Quay** (`HarborDock.quay`) | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured, never declared, and on any edge: a start dock holds a `NavigationRail` as a `Row` would. Several stack |
+| **Pier** (`HarborDock.pier`) | An app bar under `Scaffold(extendBodyBehindAppBar: true)`, a bottom bar under `extendBody: true` | The same mechanism: the body runs under it and its `MediaQuery.padding` says how far. A pier does it on any edge, and for a stack of docks |
+| **Wake** | A `ShaderMask` fade, with a `BackdropFilter` frost under the bar | The fade's length counts toward where content rests, so the band and the first row's resting line never drift apart |
+| **Moored** | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. A moored widget keeps clear of it at the bottom too, can clear the coast alone (`clear:`) or the docks at rest (`follow:`), and takes directional edges. Both cast off what they cleared, and `minimum:` is a floor on both |
+| **Mooring line** | Horizontal page padding: a `Padding` on each row | It adds whatever is in the way on the sides (a side cutout, a rail) to the harbor's margin, and only the rows that ask get it, so the list itself still runs to the frame's edge |
+| **Fairway** | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A fairway clears both ends, keyboard included, and widens every reveal by what covers its edges. `HarborFairwaySliver` is the `SliverSafeArea` of a scroll view you build yourself |
+| **Pinned header** (`HarborSliverDock`) | `PinnedHeaderSliver`, `SliverAppBar(pinned: true)` | It pins at the docks' face rather than the viewport's edge, several stack, and reveals keep clear of it |
+| **Open water** | Content outside any `SafeArea` that reads `MediaQuery.padding` itself | `waters` splits each edge into coast and docks, which `MediaQuery.padding` adds together |
+| **Cast off** (`HarborCastOff`) | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; a cast-off zeroes it, and with `tide:` the keyboard, and zeroes harbor's own waters, so harbor widgets beneath read zero too |
+| **Float / pilings** | Float: the bottom of a resizing `Scaffold`'s body. Pilings: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per dock, so a composer can float while the tab bar under it stays on pilings |
+| **Dry dock** | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
+| **Make way** | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the dock's ground as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the ground back |
+| **Pontoon** | `ScaffoldState.showBottomSheet`, which puts a widget into an ancestor's frame from deep in the tree | A pontoon is a dock: it takes its ground (or the body sails under it), and leaves with the widget that added it |
+| **Buoy** | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the clear water, so it clears the coast, every dock and the keyboard. A `modal` buoy has a barrier, as `ModalBarrier` does, but it is not a route, so keyboard focus is not trapped |
+| **Portal buoy** | `OverlayPortal` (it is one), as `MenuAnchor` and `RawMenuAnchor` use | Placement only: it keeps the buoy in the clear water and flips it when its side has no room. It brings no menu semantics, keyboard navigation or tap-outside dismissal; your `controller` opens and closes it |
+| **Signal** | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Signals at one slot take turns, as snack bars do, and a signal's time counts only while it is in sight; signals at different slots show together. It builds any widget, at one of four heights (`HarborSignalSlot`), clear of the docks of the page that raised it. Both are live regions |
+| **Sheet** (`showHarborSheet`) | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborSheetBarrier.none` is `showBottomSheet` | Its header and footer are docks, so the body sails under the header and the footer floats on the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
+| **Breakwater** | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A breakwater sheet tells the page that opened it how far it covers, and the page's content keeps clear |
+| **Lighthouse** | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the docks and the keyboard of every fairway it passes through. `HarborBeacon(onObscured:)`, how much of a widget the header covers, and `HarborLighthouseRegion`, lifting content that does not scroll, have no Flutter equivalent |
+| **Scale model** | A `FittedBox` around a `MediaQuery` with a fixed `size` | The real screen's insets are re-based into the model's coordinates. Under a bare `FittedBox`, content still reads the real screen's `MediaQuery` |
+| **Chart** | `debugPaintSizeEnabled` | It draws who holds each edge, at which layer, and the clear water, and serves the same as data (`HarborChart.snapshot`) |
+| **Sea trials** | `tester.view.padding`, `viewPadding` and `viewInsets`, set with `FakeViewPadding` | Devices come with their status bar, home indicator, keyboard height and folds already set, and assertions are about the clear water, not numbers |
+
+Two names end in *State* without being a `State`: `HarborTideState` is an immutable snapshot
+of the keyboard, as `MediaQueryData` is, and `HarborDockState` is an enum, as `AnimationStatus` is.
+
 **Pronouncing them:** a **quay** is pronounced "key", as harbours have always said it.
 A **buoy** is pronounced "BOO-ee" in American English and "boy" in British; both are right.
 
@@ -338,20 +375,25 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
 right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
-deprecated.) While its anchor is not in the tree, an anchored buoy is not shown,
-takes no taps and is not read out by screen readers. It is placed again in every
-frame that is drawn, so it moves with its anchor in the same frame, a row
-scrolling under an open menu included. A `HarborAnchor` refers to one
-`HarborAnchorPoint`, so give each row of a list its own; in debug builds two
-points left on one anchor are reported after the frame, as two leaders on one
-`LayerLink` are.
+deprecated.) Across that side it is centred on its anchor unless its
+`crossAlignment` says `start` or `end`, the anchor's edges in reading order (or
+its top and bottom beside it), as a dropdown lines up under its button's leading
+edge; `crossOffset` moves it on from there, toward the reading end. While its
+anchor is not in the tree, an anchored buoy is not shown, takes no taps and is
+not read out by screen readers. It is placed again in every frame that is drawn,
+so it moves with its anchor in the same frame, a row scrolling under an open
+menu included. A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each
+row of a list its own; in debug builds two points left on one anchor are
+reported after the frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Unlike a route, it does not trap keyboard
-focus.
+before it are hidden while it is up. Its `barrierLabel` ('Close' when none is
+given) is what a screen reader announces for the barrier; a Material app passes
+`MaterialLocalizations.of(context).modalBarrierDismissLabel`. Unlike a route, it
+does not trap keyboard focus.
 A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
 `alignment`, placed as a buoy at that alignment would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.
@@ -393,6 +435,9 @@ final menu = OverlayPortalController();
 HarborPortalBuoy(                       // in a list row, anywhere below a harbor
   controller: menu,
   side: HarborBuoySide.below,
+  crossAlignment: HarborBuoyCrossAlignment.start, // under the row's leading edge
+  onDismiss: menu.hide,                   // a tap outside, Escape or back
+  consumeOutsideTaps: true,               // and that tap presses nothing else
   buoyBuilder: (context) => const RowMenu(),
   child: GestureDetector(onTap: menu.toggle, child: row),
 )
@@ -406,7 +451,20 @@ harbor around the row by its `child` (or by an `anchor`). Until that anchor is
 in the tree, it is not shown, takes no taps and is not read out. When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
-room, it is held inside the clear water.
+room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
+the buoy is the side it landed on, so a popover can point its arrow at the
+anchor after a flip. The buoy is placed as it paints, so it hears of a flip on
+the next frame.
+
+With an `onDismiss`, a portal buoy closes as a `MenuAnchor` does: its buoy and
+its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss`
+while a tap on the row that opened it is left to the row, and so do Escape with
+focus in either and back (before it reaches the page). The tap goes on to what
+is under it, as a `MenuAnchor`'s does, unless `consumeOutsideTaps` is set. It
+puts up no barrier and leaves the page to screen readers, as a menu does. So in
+a modal buoy, a tap on the barrier while the portal buoy is open calls both
+`onDismiss`es, and in a dialog it calls the portal buoy's and closes the
+dialog, as it does with a `MenuAnchor` open in a dialog.
 
 ## Sheets and dialogs
 
@@ -440,7 +498,13 @@ it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
 page is on top (from the first frame of that page's push until its pop has
 finished, since the sheet is drawn above every page rather than inside its
-own), and it leaves when its page is replaced or removed. A
+own), and it leaves when its page is replaced or removed. Escape closes it as
+back does, from focus in the sheet or in a harbor on its page, and is left to
+the widgets above while no such sheet is up. It is not modal, as a persistent
+bottom sheet is not: it is a focus scope of its own, as a route is, so Tab goes
+through the sheet in order and then on to the page, and it leaves focus where it
+was when it opens unless you pass `requestFocus: true`. Then focus goes back to
+the page when it closes. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
@@ -655,7 +719,10 @@ arrives, and `settle: true` pumps until nothing is animating.
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
-`device.displayFeatures` puts a device's folds and hinges on the view. `trial.clearWaterAround(finder)` and `isInClearWater`
+Each device goes on the view at its own `devicePixelRatio`, and
+`device.displayFeatures` puts its folds and hinges there.
+`pumpSeaTrial(textScaleFactor:)` grows the system text size, so docks are
+measured at the size their text grew to. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
 
 `package:harbor/testing.dart`, where sea trials used to be, is now empty and

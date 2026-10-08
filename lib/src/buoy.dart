@@ -193,15 +193,29 @@ enum HarborBuoySide {
 
   @Deprecated('Use HarborBuoySide.end, the reading-order name Flutter uses.')
   static const HarborBuoySide after = end;
+
+  HarborBuoySide get _opposite => switch (this) {
+    above => below,
+    below => above,
+    start => end,
+    end => start,
+  };
 }
 
-/// Where a buoy of [size] sits by the anchor at [at], inside [water]: on
-/// [side], [gap] away, overlapping it by [overlap], and centered on it across
-/// that side. It is kept inside [water] across the side, and above or below
-/// its anchor, never past the far edge. With [flips], it goes to the opposite
-/// side when [side] has no room and that one has, and is never past the far
-/// edge at the start or end of its anchor either.
-Offset _anchoredOffset({
+/// How an anchored buoy lines up with its anchor across its side, as a `Row`'s or `Column`'s
+/// `CrossAxisAlignment` lines up its children: above or below the anchor, [start] and [end] are in
+/// reading order (a dropdown under its button's leading edge); at its start or end, they are its
+/// top and bottom.
+enum HarborBuoyCrossAlignment { start, center, end }
+
+/// Where a buoy of [size] sits by the anchor at [at], inside [water], and the
+/// side it landed on: on [side], [gap] away, overlapping it by [overlap], and
+/// lined up with it across that side by [crossAlignment], moved [crossOffset]
+/// in reading order. It is kept inside [water] across the side, and above or
+/// below its anchor, never past the far edge. With [flips], it goes to the
+/// opposite side when [side] has no room and that one has, and is never past
+/// the far edge at the start or end of its anchor either.
+({Offset offset, HarborBuoySide side}) _anchoredOffset({
   required final Rect water,
   required final Rect at,
   required final Size size,
@@ -209,6 +223,8 @@ Offset _anchoredOffset({
   required final double gap,
   required final double overlap,
   required final TextDirection textDirection,
+  final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
+  final double crossOffset = 0.0,
   final bool flips = false,
 }) {
   final bool rtl = textDirection == TextDirection.rtl;
@@ -232,8 +248,18 @@ Offset _anchoredOffset({
   };
   final AxisDirection opposite = flipAxisDirection(preferred);
   final AxisDirection direction = flips && !fits(preferred) && fits(opposite) ? opposite : preferred;
-  double left = at.center.dx - size.width / 2;
-  double top = at.center.dy - size.height / 2;
+  final bool vertical = axisDirectionToAxis(direction) == Axis.vertical;
+  // Across a vertical side the start is the reading start; across a horizontal one, the top.
+  final bool reversed = vertical && rtl;
+  final (double low, double high, double extent) = vertical ? (at.left, at.right, size.width) : (at.top, at.bottom, size.height);
+  final double cross = switch ((crossAlignment, reversed)) {
+        (HarborBuoyCrossAlignment.center, _) => (low + high - extent) / 2,
+        (HarborBuoyCrossAlignment.start, false) || (HarborBuoyCrossAlignment.end, true) => low,
+        (HarborBuoyCrossAlignment.end, false) || (HarborBuoyCrossAlignment.start, true) => high - extent,
+      } +
+      (reversed ? -crossOffset : crossOffset);
+  double left = vertical ? cross : 0.0;
+  double top = vertical ? 0.0 : cross;
   switch (direction) {
     case AxisDirection.up:
       top = math.max(along(direction), water.top);
@@ -244,12 +270,12 @@ Offset _anchoredOffset({
     case AxisDirection.right:
       left = flips ? math.min(along(direction), water.right - size.width) : along(direction);
   }
-  if (axisDirectionToAxis(direction) == Axis.vertical) {
+  if (vertical) {
     left = left.clamp(water.left, math.max(water.left, water.right - size.width));
   } else {
     top = top.clamp(water.top, math.max(water.top, water.bottom - size.height));
   }
-  return Offset(left, top);
+  return (offset: Offset(left, top), side: direction == preferred ? side : side._opposite);
 }
 
 /// Something afloat in a harbor: placed in the water nothing covers, so it
@@ -257,6 +283,11 @@ Offset _anchoredOffset({
 ///
 /// Give buoys to [Harbor.buoys]. A modal buoy hides the buoys listed before it
 /// while it is up (a menu over a tooltip).
+///
+/// See also:
+///
+///  * `Scaffold.floatingActionButton`, the closest Flutter slot, and [ModalBarrier], which a modal
+///    buoy's barrier is like.
 @immutable
 class HarborBuoy with Diagnosticable {
   /// A buoy at [alignment] within the clear water, [margin] in from its edges.
@@ -268,16 +299,20 @@ class HarborBuoy with Diagnosticable {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
+    this.barrierLabel = 'Close',
     this.within,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        anchor = null,
        side = HarborBuoySide.above,
        gap = 0.0,
-       overlap = 0.0;
+       overlap = 0.0,
+       crossAlignment = HarborBuoyCrossAlignment.center,
+       crossOffset = 0.0;
 
   /// A buoy moored to [anchor], on its [side], [gap] away, overlapping it by
-  /// [overlap] (a speech bubble whose tail sits over the button). Kept inside
-  /// the clear water across that side, and never past its far edge.
+  /// [overlap] (a speech bubble whose tail sits over the button), and lined up
+  /// with it across that side by [crossAlignment]. Kept inside the clear water
+  /// across that side, and never past its far edge.
   const HarborBuoy.anchored({
     this.key,
     required HarborAnchor this.anchor,
@@ -285,10 +320,13 @@ class HarborBuoy with Diagnosticable {
     this.side = HarborBuoySide.above,
     this.gap = 8.0,
     this.overlap = 0.0,
+    this.crossAlignment = HarborBuoyCrossAlignment.center,
+    this.crossOffset = 0.0,
     this.margin = const EdgeInsets.all(8.0),
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
+    this.barrierLabel = 'Close',
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        alignment = Alignment.center,
        within = null;
@@ -316,10 +354,22 @@ class HarborBuoy with Diagnosticable {
 
   /// The colour of a modal buoy's barrier; clear by default, so the page shows as it is.
   final Color barrierColor;
+
+  /// What a screen reader announces for a modal buoy's barrier, as [ModalBarrier.semanticsLabel].
+  /// A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+  final String barrierLabel;
   final HarborAnchor? anchor;
   final HarborBuoySide side;
   final double gap;
   final double overlap;
+
+  /// How an anchored buoy lines up with its anchor across its [side]; centred by default.
+  final HarborBuoyCrossAlignment crossAlignment;
+
+  /// How far an anchored buoy is moved across its [side] from where [crossAlignment] puts it:
+  /// toward the reading end above or below its anchor, down beside it. The horizontal part of
+  /// `MenuAnchor.alignmentOffset`; [gap] and [overlap] are the rest.
+  final double crossOffset;
 
   /// Keeps the buoy inside this rectangle (in the harbor's own coordinates)
   /// as well as inside the clear water.
@@ -460,7 +510,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     return Stack(
       fit: StackFit.passthrough,
       children: <Widget>[
-        Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: 'Close')),
+        Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: modal.barrierLabel)),
         layer,
       ],
     );
@@ -663,8 +713,10 @@ class _RenderBuoyLayer extends RenderBox
           side: buoy.side,
           gap: buoy.gap,
           overlap: buoy.overlap,
+          crossAlignment: buoy.crossAlignment,
+          crossOffset: buoy.crossOffset,
           textDirection: _textDirection,
-        );
+        ).offset;
       }
       context.paintChild(child, data.offset + offset);
       child = data.nextSibling;
@@ -714,9 +766,18 @@ class _RenderBuoyLayer extends RenderBox
 /// buoy floats in the nearest [Overlay] and is placed as a
 /// [HarborBuoy.anchored] is, in the clear water of the harbor around this
 /// widget: by [anchor] (or by [child] when there is none), on its [side],
-/// [gap] away, [margin] in from the water's edges. When [side] has no room
-/// and the opposite side has, it [flips] there; otherwise it is kept inside
-/// the clear water.
+/// [gap] away, lined up by [crossAlignment], [margin] in from the water's
+/// edges. When [side] has no room and the opposite side has, it [flips] there;
+/// otherwise it is kept inside the clear water. [sideOf] tells the buoy which
+/// side it landed on.
+///
+/// With [onDismiss], it closes as a `MenuAnchor` does: a tap outside both the
+/// buoy and [child], Escape while focus is in either, and back all call it.
+///
+/// See also:
+///
+///  * [RawMenuAnchor] and `MenuAnchor`, which also open from an [OverlayPortal] and add menu
+///    semantics and keyboard navigation, which this does not.
 class HarborPortalBuoy extends StatefulWidget {
   const HarborPortalBuoy({
     super.key,
@@ -727,8 +788,12 @@ class HarborPortalBuoy extends StatefulWidget {
     this.side = HarborBuoySide.above,
     this.gap = 8.0,
     this.overlap = 0.0,
+    this.crossAlignment = HarborBuoyCrossAlignment.center,
+    this.crossOffset = 0.0,
     this.margin = const EdgeInsets.all(8.0),
     this.flips = true,
+    this.onDismiss,
+    this.consumeOutsideTaps = false,
   });
 
   /// Shows and hides the buoy.
@@ -747,11 +812,42 @@ class HarborPortalBuoy extends StatefulWidget {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
+
+  /// How the buoy lines up with its anchor across its [side]; centred by default.
+  final HarborBuoyCrossAlignment crossAlignment;
+
+  /// How far the buoy is moved across its [side] from where [crossAlignment] puts it, as
+  /// [HarborBuoy.crossOffset].
+  final double crossOffset;
   final EdgeInsetsGeometry margin;
 
   /// Whether the buoy goes to the opposite side of its anchor when [side] has
   /// no room and that side has.
   final bool flips;
+
+  /// Called while the buoy is shown when a tap lands outside both the buoy and [child] (a
+  /// [TapRegion] group, as a `MenuAnchor`'s), when Escape is pressed with focus in either, and on
+  /// back, before back reaches the page. Hide the buoy in it. Null leaves the buoy up until
+  /// [controller] hides it.
+  final VoidCallback? onDismiss;
+
+  /// Whether a tap outside that calls [onDismiss] stops there, as
+  /// [RawMenuAnchor.consumeOutsideTaps]: true for a menu whose closing tap must not also press
+  /// what is under it. By default the tap goes on, as it does for a `MenuAnchor`.
+  final bool consumeOutsideTaps;
+
+  /// The side of its anchor the portal buoy around [context] landed on: its [side], or the
+  /// opposite one after it flipped. A popover reads it to point its arrow at the anchor. It is
+  /// placed when it paints, so after a flip this changes on the next frame.
+  static HarborBuoySide sideOf(final BuildContext context) {
+    final HarborBuoySide? side = maybeSideOf(context);
+    assert(side != null, 'HarborPortalBuoy.sideOf was called from outside a portal buoy\'s buoyBuilder.');
+    return side!;
+  }
+
+  /// [sideOf], or null outside a portal buoy.
+  static HarborBuoySide? maybeSideOf(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_PortalBuoySide>()?.side;
 
   @override
   State<HarborPortalBuoy> createState() => _HarborPortalBuoyState();
@@ -771,30 +867,207 @@ class HarborPortalBuoy extends StatefulWidget {
 
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor? _own;
+  late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.side);
+  late final _DismissPortalBuoyAction _dismissAction = _DismissPortalBuoyAction(this);
+  bool _shown = false;
 
   HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
+
+  void _dismiss() => widget.onDismiss?.call();
+
+  // The controller is the caller's and tells no one when it shows or hides, so the buoy reports
+  // it as it comes and goes. After the frame: it comes and goes while the overlay builds.
+  void _buoyCameOrWent() => WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+    if (mounted && _shown != widget.controller.isShowing) {
+      setState(() => _shown = widget.controller.isShowing);
+    }
+  });
 
   @override
   void dispose() {
     _own?.dispose();
+    _landed.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(final BuildContext context) => OverlayPortal(
-    controller: widget.controller,
-    overlayChildBuilder: (final BuildContext context) => _PortalBuoyLayout(
-      harbor: HarborController.maybeOf(context),
-      anchor: _anchor,
-      side: widget.side,
-      gap: widget.gap,
-      overlap: widget.overlap,
-      margin: widget.margin,
-      flips: widget.flips,
-      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
-      child: widget.buoyBuilder(context),
-    ),
-    child: widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child,
+  Widget build(final BuildContext context) {
+    final bool dismissible = widget.onDismiss != null;
+    final Widget anchored = widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child;
+    final Widget portal = OverlayPortal(
+      controller: widget.controller,
+      overlayChildBuilder: (final BuildContext context) {
+        Widget buoy = ValueListenableBuilder<HarborBuoySide>(
+          valueListenable: _landed,
+          builder: (final BuildContext context, final HarborBuoySide side, final Widget? child) => _PortalBuoySide(side: side, child: child!),
+          // A Builder, so the builder's own context is below the side it reads.
+          child: Builder(builder: widget.buoyBuilder),
+        );
+        buoy = _PortalBuoyDismissal(
+          controller: widget.controller,
+          groupId: this,
+          consumeOutsideTaps: widget.consumeOutsideTaps,
+          onDismiss: dismissible ? _dismiss : null,
+          onCameOrWent: _buoyCameOrWent,
+          child: buoy,
+        );
+        return _PortalBuoyLayout(
+          harbor: HarborController.maybeOf(context),
+          anchor: _anchor,
+          side: widget.side,
+          gap: widget.gap,
+          overlap: widget.overlap,
+          crossAlignment: widget.crossAlignment,
+          crossOffset: widget.crossOffset,
+          margin: widget.margin,
+          flips: widget.flips,
+          textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+          landed: _landed,
+          child: buoy,
+        );
+      },
+      // The anchor is in the buoy's tap region group, as a MenuAnchor's button is in its menu's, so
+      // a tap on it is its own (a toggle) and never also an outside tap. This and the Actions below
+      // stay in the tree without onDismiss, switched off, so setting it does not remount the child.
+      child: TapRegion(groupId: this, enabled: dismissible, child: anchored),
+    );
+    // Above the portal, so Escape from focus in the buoy or in the child reaches it. Mapped only
+    // while the buoy is shown: a disabled action would still stop Escape from reaching an enclosing
+    // dialog or route. RawMenuAnchor maps its own the same way.
+    return Actions(actions: <Type, Action<Intent>>{if (dismissible && _shown) DismissIntent: _dismissAction}, child: portal);
+  }
+}
+
+/// Escape (a [DismissIntent]) dismisses the portal buoy while it is shown, as `RawMenuAnchor`'s
+/// `DismissMenuAction` does.
+class _DismissPortalBuoyAction extends DismissAction {
+  _DismissPortalBuoyAction(this._buoy);
+
+  final _HarborPortalBuoyState _buoy;
+
+  @override
+  bool isEnabled(final DismissIntent intent) => _buoy.widget.onDismiss != null && _buoy.widget.controller.isShowing;
+
+  @override
+  void invoke(final DismissIntent intent) => _buoy._dismiss();
+}
+
+class _PortalBuoySide extends InheritedWidget {
+  const _PortalBuoySide({required this.side, required super.child});
+
+  final HarborBuoySide side;
+
+  @override
+  bool updateShouldNotify(final _PortalBuoySide oldWidget) => side != oldWidget.side;
+}
+
+/// While a portal buoy is shown: its tap region, which calls [onDismiss] on a tap outside the
+/// group, and the page's history entry, so back dismisses the buoy first, as it does a modal
+/// [HarborBuoy]. Both are off without [onDismiss]; the region stays, so the buoy keeps its state.
+class _PortalBuoyDismissal extends StatefulWidget {
+  const _PortalBuoyDismissal({
+    required this.controller,
+    required this.groupId,
+    required this.consumeOutsideTaps,
+    required this.onDismiss,
+    required this.onCameOrWent,
+    required this.child,
+  });
+
+  final OverlayPortalController controller;
+  final Object groupId;
+  final bool consumeOutsideTaps;
+  final VoidCallback? onDismiss;
+  final VoidCallback onCameOrWent;
+  final Widget child;
+
+  @override
+  State<_PortalBuoyDismissal> createState() => _PortalBuoyDismissalState();
+}
+
+class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
+  ModalRoute<Object?>? _route;
+  ModalRoute<Object?>? _historyRoute;
+  LocalHistoryEntry? _history;
+  bool _removingQuietly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.onCameOrWent();
+    _takeHistoryAfterFrame();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+  }
+
+  @override
+  void didUpdateWidget(final _PortalBuoyDismissal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onDismiss == null) {
+      _giveHistoryBack();
+    } else if (oldWidget.onDismiss == null) {
+      _takeHistoryAfterFrame();
+    }
+  }
+
+  // After the frame: a route's history cannot change while it builds.
+  void _takeHistoryAfterFrame() => WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+    final ModalRoute<Object?>? route = _route;
+    if (!mounted || widget.onDismiss == null || _history != null || route == null) {
+      return;
+    }
+    _history = LocalHistoryEntry(
+      onRemove: () {
+        _history = null;
+        _historyRoute = null;
+        if (!_removingQuietly) {
+          widget.onDismiss?.call();
+        }
+      },
+    );
+    _historyRoute = route;
+    route.addLocalHistoryEntry(_history!);
+  });
+
+  void _giveHistoryBack() {
+    final LocalHistoryEntry? history = _history;
+    final ModalRoute<Object?>? route = _historyRoute;
+    _history = null;
+    _historyRoute = null;
+    if (history != null && route != null && route.isActive) {
+      _removingQuietly = true;
+      route.removeLocalHistoryEntry(history);
+      _removingQuietly = false;
+    }
+  }
+
+  void _tappedOutside(final PointerDownEvent _) {
+    widget.onDismiss?.call();
+    // Hidden now, gone at the next build. Back is the page's at once, so a barrier under the tap
+    // (a dialog's) closes what it closes, as it does with a MenuAnchor open in a dialog.
+    if (!widget.controller.isShowing) {
+      _giveHistoryBack();
+    }
+  }
+
+  @override
+  void deactivate() {
+    _giveHistoryBack();
+    widget.onCameOrWent();
+    super.deactivate();
+  }
+
+  @override
+  Widget build(final BuildContext context) => TapRegion(
+    groupId: widget.groupId,
+    enabled: widget.onDismiss != null,
+    consumeOutsideTaps: widget.consumeOutsideTaps,
+    onTapOutside: _tappedOutside,
+    child: widget.child,
   );
 }
 
@@ -805,9 +1078,12 @@ class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
     required this.side,
     required this.gap,
     required this.overlap,
+    required this.crossAlignment,
+    required this.crossOffset,
     required this.margin,
     required this.flips,
     required this.textDirection,
+    required this.landed,
     super.child,
   });
 
@@ -816,9 +1092,14 @@ class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
+  final HarborBuoyCrossAlignment crossAlignment;
+  final double crossOffset;
   final EdgeInsetsGeometry margin;
   final bool flips;
   final TextDirection textDirection;
+
+  /// Told the side the buoy landed on, the frame after it changes.
+  final ValueNotifier<HarborBuoySide> landed;
 
   @override
   RenderObject createRenderObject(final BuildContext context) => _RenderPortalBuoy(this);
@@ -917,21 +1198,49 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     }
     final BoxParentData data = child.parentData! as BoxParentData;
     final Offset was = data.offset;
-    data.offset = _anchoredOffset(
+    final ({Offset offset, HarborBuoySide side}) landed = _anchoredOffset(
       water: _water(),
       at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
       size: child.size,
       side: _config.side,
       gap: _config.gap,
       overlap: _config.overlap,
+      crossAlignment: _config.crossAlignment,
+      crossOffset: _config.crossOffset,
       textDirection: _config.textDirection,
       flips: _config.flips,
     );
+    data.offset = landed.offset;
+    _report(landed.side);
     // Layout refreshes semantics, but the buoy is placed here, after it, so a move refreshes them too.
     if (data.offset != was) {
       markNeedsSemanticsUpdate();
     }
     context.paintChild(child, data.offset + offset);
+  }
+
+  HarborBuoySide? _reporting;
+
+  // The side is only known here, and nothing may be rebuilt while painting, so the buoy hears it
+  // the frame after, as an anchor reports that it moved.
+  void _report(final HarborBuoySide side) {
+    final ValueNotifier<HarborBuoySide> landed = _config.landed;
+    if (side == (_reporting ?? landed.value)) {
+      return;
+    }
+    final bool scheduled = _reporting != null;
+    _reporting = side;
+    if (scheduled) {
+      return;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      final HarborBuoySide? reported = _reporting;
+      _reporting = null;
+      if (reported != null && attached) {
+        _config.landed.value = reported;
+      }
+    });
+    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   @override
@@ -995,6 +1304,11 @@ enum HarborSignalTarget {
 }
 
 /// Transient buoys: messages raised in a harbor's clear water for a while.
+///
+/// See also:
+///
+///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages; signals are not
+///    queued.
 abstract final class HarborSignals {
   /// Raises [builder]'s signal in [target]'s clear water at [slot], lowered
   /// after [duration] (or when the returned entry is lowered). If its harbor
