@@ -1,5 +1,6 @@
 ## Unreleased
 
+* An anchored buoy whose anchor is not in the tree takes no taps. It was already not painted, but it was still hit-tested where it last sat (at first, the top-left corner), so an invisible buoy could swallow taps meant for the page. A portal buoy already behaved this way.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0
