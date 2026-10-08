@@ -1,6 +1,6 @@
 name: harbor
 description: "Keeps widgets clear of whatever covers each screen edge: system bars, the keyboard, and your own headers, tab bars and sheets. No inset arithmetic."
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/SupposedlySam/harbor
 issue_tracker: https://github.com/SupposedlySam/harbor/issues
 topics:
@@ -17,9 +17,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Only package:harbor/testing.dart imports it; the main library does not.
-  flutter_test:
-    sdk: flutter
 
 dev_dependencies:
   flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  harbor_test:
+    path: harbor_test

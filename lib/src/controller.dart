@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -60,16 +62,26 @@ class HarborBreakwater {
 
 /// A transient buoy raised by `HarborSignals.raise`.
 class HarborSignalEntry {
-  HarborSignalEntry({required this.builder, required this.alignment, required this.duration, this.avoidInGlobal});
+  HarborSignalEntry({required this.builder, required this.alignment, required this.duration, final Rect? avoidInGlobal, this.raisedIn})
+    : _avoidAtRaise = avoidInGlobal;
 
   final WidgetBuilder builder;
   final Alignment alignment;
   final Duration? duration;
 
+  /// The harbor the signal was raised from, whose clear water it also keeps inside.
+  final HarborController? raisedIn;
+
+  final Rect? _avoidAtRaise;
+
   /// The clear water of the harbor the signal was raised from, in global
   /// coordinates: the signal stays inside it too, so it clears that harbor's
   /// docks (a tab's own header) as well as its target's.
-  final Rect? avoidInGlobal;
+  ///
+  /// Read from that harbor's latest layout, not kept from the moment it was raised: a stored
+  /// rectangle boxed the signal into a foldable's cover screen after the device opened. The
+  /// rectangle from the raise is the fallback once that harbor has gone.
+  Rect? get avoidInGlobal => raisedIn?.clearWaterInGlobal() ?? _avoidAtRaise;
   final ValueNotifier<bool> showing = ValueNotifier<bool>(true);
   HarborController? owner;
 
@@ -133,13 +145,15 @@ class HarborFleet {
 
   void _leave(final HarborController controller) {
     _harbors.remove(controller);
-    // Signals on a harbor that is leaving move to the one now on top.
-    final List<HarborSignalEntry> orphans = controller._signals.where((final HarborSignalEntry s) => s.showing.value).toList();
-    controller._signals.clear();
+    // Signals on a harbor that is leaving move to the one now on top. With no
+    // harbor left to show them, they are lowered, which stops their timers.
+    final List<HarborSignalEntry> orphans = controller._releaseSignals();
     final HarborController? top = topmost;
-    if (top != null) {
-      for (final HarborSignalEntry signal in orphans) {
+    for (final HarborSignalEntry signal in orphans) {
+      if (top != null) {
         top._raiseSignal(signal);
+      } else {
+        signal.lower();
       }
     }
   }
@@ -184,7 +198,8 @@ class HarborController {
   final HarborFleet fleet;
 
   /// Whether this harbor is a port (the sea, a route or a sheet) rather than a
-  /// component inside one.
+  /// component inside one. Reserved and not yet read: signals find their port
+  /// with [isRouteLevel] instead.
   final bool isPort;
 
   String? debugLabel;
@@ -215,6 +230,8 @@ class HarborController {
   final List<_Pontoon> _pontoons = <_Pontoon>[];
   final List<HarborBreakwater> _breakwaters = <HarborBreakwater>[];
   final List<HarborSignalEntry> _signals = <HarborSignalEntry>[];
+  final Map<HarborSignalEntry, VoidCallback> _signalListeners = <HarborSignalEntry, VoidCallback>{};
+  final Map<HarborSignalEntry, Timer> _signalRemovals = <HarborSignalEntry, Timer>{};
   final _BreakwaterNotifier _breakwaterChanges = _BreakwaterNotifier();
 
   /// The nearest harbor above [context].
@@ -368,17 +385,42 @@ class HarborController {
   void _raiseSignal(final HarborSignalEntry signal) {
     signal.owner = this;
     _signals.add(signal);
-    signal.showing.addListener(() {
+    void lowered() {
       if (!signal.showing.value) {
         // Leave time for the signal's own exit animation.
-        Future<void>.delayed(const Duration(milliseconds: 300), () {
-          if (_signals.remove(signal)) {
-            _changed();
-          }
+        _signalRemovals[signal] ??= Timer(const Duration(milliseconds: 300), () {
+          _signalRemovals.remove(signal);
+          _forgetSignal(signal);
+          _changed();
         });
       }
-    });
+    }
+
+    _signalListeners[signal] = lowered;
+    signal.showing.addListener(lowered);
     _changed();
+  }
+
+  void _forgetSignal(final HarborSignalEntry signal) {
+    _signals.remove(signal);
+    final VoidCallback? listener = _signalListeners.remove(signal);
+    if (listener != null) {
+      signal.showing.removeListener(listener);
+    }
+  }
+
+  /// Lets go of every signal, cancelling pending removals, and returns those
+  /// still showing.
+  List<HarborSignalEntry> _releaseSignals() {
+    final List<HarborSignalEntry> showing = _signals.where((final HarborSignalEntry s) => s.showing.value).toList();
+    for (final Timer removal in _signalRemovals.values) {
+      removal.cancel();
+    }
+    _signalRemovals.clear();
+    for (final HarborSignalEntry signal in List<HarborSignalEntry>.of(_signals)) {
+      _forgetSignal(signal);
+    }
+    return showing;
   }
 
   /// Raises [signal] on this harbor.

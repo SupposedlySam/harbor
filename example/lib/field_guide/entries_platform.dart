@@ -978,13 +978,13 @@ class _SeaTrialEntryState extends State<SeaTrialEntry> {
         'Before a new ship is handed over she goes out on sea trials: flags flying, a tug standing by, she is run at '
         'speed, turned hard and stopped, and every reading is checked against what the yard promised.',
     inYourApp:
-        'package:harbor/testing.dart puts a widget test on a pretend device. tester.pumpSeaTrial(app, device:) sets the '
+        'package:harbor_test puts a widget test on a pretend device. tester.pumpSeaTrial(app, device:) sets the '
         'test view to the HarborTrialDevice’s size and coast; trial.raiseTide() brings its keyboard in, and '
         'trial.waterline is where the keyboard’s top is. The stage’s device chips are the trial devices (the list '
         'also has television). Pick one and raise the tide.',
     art: const SeaTrialsArt(),
     code:
-        "import 'package:harbor/testing.dart';\n"
+        "import 'package:harbor_test/harbor_test.dart';\n"
         '\n'
         "testWidgets('the composer rides the keyboard', (tester) async {\n"
         '  final trial = await tester.pumpSeaTrial(\n'

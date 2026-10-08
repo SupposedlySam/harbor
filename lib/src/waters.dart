@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
+import 'tide.dart';
 
 /// Which part of the waters a reader depends on, so it rebuilds only for that.
 enum HarborWatersAspect { coast, docks, margin, frame }
@@ -47,6 +48,7 @@ class HarborWakeBand {
 class HarborWatersData {
   const HarborWatersData({
     this.coast = EdgeInsetsDirectional.zero,
+    this.coastSteady = EdgeInsetsDirectional.zero,
     this.docks = EdgeInsetsDirectional.zero,
     this.docksResting = EdgeInsetsDirectional.zero,
     this.wakes = const <HarborEdge, HarborWakeBand>{},
@@ -59,6 +61,11 @@ class HarborWatersData {
   /// What the platform still takes on each edge: status bar, home indicator,
   /// cutouts, title-safe.
   final EdgeInsetsDirectional coast;
+
+  /// [coast] as it is with the keyboard down, as `MediaQuery.viewPadding` is to
+  /// `MediaQuery.padding`: the home indicator stays in it while the keyboard
+  /// covers it. Read it with [HarborWaters.steadyCoastOf].
+  final EdgeInsetsDirectional coastSteady;
 
   /// How far the docks (and their wake, where content rests past it) reach
   /// into this area on each edge, as they are now.
@@ -103,6 +110,7 @@ class HarborWatersData {
 
   HarborWatersData copyWith({
     final EdgeInsetsDirectional? coast,
+    final EdgeInsetsDirectional? coastSteady,
     final EdgeInsetsDirectional? docks,
     final EdgeInsetsDirectional? docksResting,
     final Map<HarborEdge, HarborWakeBand>? wakes,
@@ -112,6 +120,7 @@ class HarborWatersData {
     final Set<HarborEdge>? wakesPainted,
   }) => HarborWatersData(
     coast: coast ?? this.coast,
+    coastSteady: coastSteady ?? this.coastSteady,
     docks: docks ?? this.docks,
     docksResting: docksResting ?? this.docksResting,
     wakes: wakes ?? this.wakes,
@@ -125,6 +134,7 @@ class HarborWatersData {
   /// nothing beneath does it again.
   HarborWatersData castOff(final Set<HarborEdge> edges, {final bool margin = true}) => copyWith(
     coast: HarborEdges.without(coast, edges),
+    coastSteady: HarborEdges.without(coastSteady, edges),
     docks: HarborEdges.without(docks, edges),
     docksResting: HarborEdges.without(docksResting, edges),
     wakes: {
@@ -138,6 +148,7 @@ class HarborWatersData {
   bool operator ==(final Object other) =>
       other is HarborWatersData &&
       other.coast == coast &&
+      other.coastSteady == coastSteady &&
       other.docks == docks &&
       other.docksResting == docksResting &&
       _mapEquals(other.wakes, wakes) &&
@@ -149,6 +160,7 @@ class HarborWatersData {
   @override
   int get hashCode => Object.hash(
     coast,
+    coastSteady,
     docks,
     docksResting,
     Object.hashAllUnordered(wakes.entries.map((final MapEntry<HarborEdge, HarborWakeBand> e) => Object.hash(e.key, e.value))),
@@ -182,7 +194,7 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
     final HarborWatersData b = oldWidget.data;
     return dependencies.any(
       (final HarborWatersAspect aspect) => switch (aspect) {
-        HarborWatersAspect.coast => a.coast != b.coast,
+        HarborWatersAspect.coast => a.coast != b.coast || a.coastSteady != b.coastSteady,
         HarborWatersAspect.docks =>
           a.docks != b.docks ||
               a.docksResting != b.docksResting ||
@@ -202,18 +214,79 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
   /// The waters at [context], clamped to `MediaQuery` so a layer outside the
   /// harbor that already kept clear of an edge is honored. Outside any
   /// harbor the whole of `MediaQuery.padding` reads as coast.
+  ///
+  /// With an [aspect], the caller rebuilds only when that part changes: a
+  /// reader of the docks holds still while the keyboard moves.
   static HarborWatersData of(final BuildContext context, {final HarborWatersAspect? aspect}) {
-    final MediaQueryData mediaQuery = MediaQuery.of(context);
-    final EdgeInsetsDirectional padding = HarborEdges.directional(mediaQuery.padding, Directionality.of(context));
     final HarborWatersData? raw = maybeRawOf(context, aspect: aspect);
+    // Every field is filled in, but only the ones the aspect covers are
+    // depended on: the rest are read without subscribing.
+    final MediaQueryData mediaQuery = context.getInheritedWidgetOfExactType<MediaQuery>()?.data ?? MediaQuery.of(context);
+    final bool readsPadding = aspect == null || aspect == HarborWatersAspect.coast || aspect == HarborWatersAspect.docks;
+    final EdgeInsetsDirectional padding = HarborEdges.directional(
+      readsPadding ? MediaQuery.paddingOf(context) : mediaQuery.padding,
+      Directionality.of(context),
+    );
     if (raw == null) {
-      return HarborWatersData(coast: padding, frameSize: mediaQuery.size);
+      final bool readsFrame = aspect == null || aspect == HarborWatersAspect.frame;
+      return HarborWatersData(
+        coast: padding,
+        coastSteady: HarborEdges.directional(
+          readsPadding ? MediaQuery.viewPaddingOf(context) : mediaQuery.viewPadding,
+          Directionality.of(context),
+        ),
+        frameSize: readsFrame ? MediaQuery.sizeOf(context) : mediaQuery.size,
+      );
     }
     return raw.copyWith(
       coast: HarborEdges.min(raw.coast, padding),
+      // The steady coast belongs to the coast aspect. Its clamp reads the view padding and the
+      // keyboard, so only readers of that aspect (or of everything) subscribe to them; a reader of
+      // the docks still gets the right value, read without subscribing, and holds still while the
+      // keyboard moves.
+      coastSteady: HarborEdges.build(
+        (final HarborEdge edge) => _steadyCoast(context, raw, edge, listen: aspect == null || aspect == HarborWatersAspect.coast),
+      ),
       docks: HarborEdges.min(raw.docks, padding),
       docksResting: HarborEdges.min(raw.docksResting, padding),
     );
+  }
+
+  /// The coast on [edge] at [context] as it is with the keyboard down: the home
+  /// indicator's height at the bottom, held while the keyboard is up. For a
+  /// footer that keeps the same size as the keyboard comes and goes, where
+  /// `MediaQuery.viewPadding` would not: a harbor whose body clears the tide
+  /// takes the keyboard's ground out of both. Zero once a dock has absorbed
+  /// the coast or a layer has cast it off; outside any harbor,
+  /// `MediaQuery.viewPadding`.
+  static double steadyCoastOf(final BuildContext context, final HarborEdge edge) {
+    final HarborWatersData? raw = maybeRawOf(context, aspect: HarborWatersAspect.coast);
+    if (raw == null) {
+      return HarborEdges.of(HarborEdges.directional(MediaQuery.viewPaddingOf(context), Directionality.of(context)), edge);
+    }
+    return _steadyCoast(context, raw, edge);
+  }
+
+  // Clamped to `MediaQuery.viewPadding` like the rest of the waters, so a layer
+  // outside the harbor that removed the coast is honored. At the bottom the
+  // keyboard the harbors above kept clear of is added back first: a body that
+  // ends at the waterline has no view padding left there, though the coast is
+  // still what it was.
+  static double _steadyCoast(final BuildContext context, final HarborWatersData raw, final HarborEdge edge, {final bool listen = true}) {
+    final double value = HarborEdges.of(raw.coastSteady, edge);
+    final MediaQueryData? quiet = listen ? null : context.getInheritedWidgetOfExactType<MediaQuery>()?.data;
+    final EdgeInsets viewPadding = quiet?.viewPadding ?? MediaQuery.viewPaddingOf(context);
+    double bound = HarborEdges.of(HarborEdges.directional(viewPadding, Directionality.of(context)), edge);
+    if (bound < value && edge == HarborEdge.bottom) {
+      if (listen) {
+        bound += HarborTide.of(context).avoidedAbove;
+      } else {
+        final double remaining = quiet?.viewInsets.bottom ?? 0.0;
+        final double height = HarborTideScope.maybeGaugeOf(context, listen: false)?.height ?? remaining;
+        bound += math.max(height, remaining) - remaining;
+      }
+    }
+    return math.min(value, bound);
   }
 
   /// What is still in the way on [edge] at [context]: the one number content

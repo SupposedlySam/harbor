@@ -79,6 +79,7 @@ class _HarborTownState extends State<HarborTown> {
             HarborBuoy(
               key: const ValueKey<String>('quick actions'),
               modal: true,
+              onDismiss: () => setState(() => _quickActions = false),
               alignment: Alignment.bottomCenter,
               child: _QuickActions(
                 onClose: () => setState(() => _quickActions = false),

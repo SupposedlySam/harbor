@@ -213,6 +213,7 @@ void main() {
       'HarborBuoy',
       'HarborBuoy.anchored',
       'HarborBuoy(modal: true)',
+      'HarborPortalBuoy',
       'HarborSignals.raise',
     ]);
     expect(names(GuideGroup.sheets), <String>[
@@ -455,6 +456,56 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // HarborPortalBuoy
+
+  testWidgets('HarborPortalBuoy: the menu opened from the first row sits gap below it', (final WidgetTester tester) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _tapStage(tester, 'stage row 0');
+    final Rect row = _rect(tester, 'stage row 0');
+    expect(_rect(tester, 'portal buoy').top, _near(row.bottom + 8 * s));
+    expect(_code(tester), contains('side: HarborBuoySide.below,'));
+  });
+
+  testWidgets('HarborPortalBuoy: the menu opened from the last row flips above it, clear of the tab bar', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _tapStage(tester, 'stage row 11');
+    final Rect row = _rect(tester, 'stage row 11');
+    expect(_rect(tester, 'portal buoy').bottom, _near(row.top - 8 * s));
+    expect(_rect(tester, 'portal buoy').bottom, _atMost(_rect(tester, 'portal tab bar').top));
+  });
+
+  testWidgets('HarborPortalBuoy: with the keyboard up, the menu from the last row in sight flips above the keyboard', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _setTide(tester, high: true);
+    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _tapStage(tester, 'stage row 11');
+    final Rect row = _rect(tester, 'stage row 11');
+    expect(row.bottom, _atMost(_keyboardTop(tester)));
+    expect(_rect(tester, 'portal buoy').bottom, _near(row.top - 8 * s));
+    expect(_rect(tester, 'portal buoy').bottom, _atMost(_keyboardTop(tester)));
+  });
+
+  testWidgets('HarborPortalBuoy: without flips, the menu below the last row is held clear of the tab bar instead', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _tap(tester, 'toggle flips');
+    expect(_code(tester), contains('flips: false,'));
+    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _tapStage(tester, 'stage row 11');
+    expect(_rect(tester, 'portal buoy').bottom, _near(_rect(tester, 'portal tab bar').top - 8 * s));
+  });
+
+  // -------------------------------------------------------------------------
   // HarborBuoy(modal: true)
 
   testWidgets('HarborBuoy(modal: true): hides the buoy listed before it and is centered in the clear water', (
@@ -472,7 +523,7 @@ void main() {
     expect(_rect(tester, 'modal buoy').center.dy, _near(water.center.dy));
     expect(_rect(tester, 'modal buoy').center.dx, _near(water.center.dx));
     expect(find.text('HarborBuoy(modal: true)'), findsWidgets);
-    expect(_code(tester), contains('HarborBuoy(modal: true, child: QuickActions()), // hides the tooltip'));
+    expect(_code(tester), contains('HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'));
   });
 
   testWidgets('HarborBuoy(modal: true): not modal, both buoys float, the first at the bottom center', (
@@ -486,7 +537,7 @@ void main() {
     expect(_rect(tester, 'listed first').bottom, _near(_rect(tester, 'modal tab bar').top - 16 * s));
     expect(_rect(tester, 'listed first').center.dx, _near((_frameLeft(tester) + _frameRight(tester)) / 2));
     expect(find.text('Not modal: the buoys before me stay up.'), findsOneWidget);
-    expect(_code(tester), contains('HarborBuoy(modal: false, child: QuickActions()), // floats beside it'));
+    expect(_code(tester), contains('HarborBuoy(child: QuickActions()), // floats beside it'));
 
     await _tap(tester, 'toggle modal');
     expect(_key('listed first'), findsNothing);

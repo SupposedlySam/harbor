@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:harbor/harbor.dart';
 
-import '../controller.dart';
 import 'trial_device.dart';
 
 /// Pumps a harbor on a [HarborTrialDevice] and moves its tide.
@@ -83,7 +83,8 @@ class HarborSeaTrial {
         right: device.coast.right,
         bottom: device.coast.bottom,
       )
-      ..viewInsets = FakeViewPadding(bottom: tideIn ? device.tideHeight : 0.0);
+      ..viewInsets = FakeViewPadding(bottom: tideIn ? device.tideHeight : 0.0)
+      ..displayFeatures = device.displayFeatures;
   }
 
   /// The clear water of the harbor nearest [finder]'s widget, in global

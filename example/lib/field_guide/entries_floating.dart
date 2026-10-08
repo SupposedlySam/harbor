@@ -42,6 +42,14 @@ final List<GuideEntry> floatingEntries = <GuideEntry>[
     page: (final BuildContext context) => const ModalBuoyEntry(),
   ),
   GuideEntry(
+    id: 'buoy-portal',
+    className: 'HarborPortalBuoy',
+    group: GuideGroup.floating,
+    realWorld: 'A dan buoy thrown over the side, wherever the boat happens to be',
+    art: (final BuildContext context) => const DanBuoyArt(),
+    page: (final BuildContext context) => const PortalBuoyEntry(),
+  ),
+  GuideEntry(
     id: 'signals',
     className: 'HarborSignals.raise',
     group: GuideGroup.floating,
@@ -555,6 +563,95 @@ class _BubblePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
+// HarborPortalBuoy
+
+/// `HarborPortalBuoy`: an anchored buoy opened from deep in the tree.
+class PortalBuoyEntry extends StatefulWidget {
+  const PortalBuoyEntry({super.key});
+
+  @override
+  State<PortalBuoyEntry> createState() => _PortalBuoyEntryState();
+}
+
+class _PortalBuoyEntryState extends State<PortalBuoyEntry> {
+  static const int _rowCount = 12;
+
+  final List<OverlayPortalController> _menus = List<OverlayPortalController>.generate(
+    _rowCount,
+    (final int i) => OverlayPortalController(debugLabel: 'row $i menu'),
+  );
+  HarborBuoySide _side = HarborBuoySide.below;
+  bool _flips = true;
+
+  void _toggle(final int row) {
+    for (int i = 0; i < _menus.length; i++) {
+      if (i == row) {
+        _menus[i].toggle();
+      } else {
+        _menus[i].hide();
+      }
+    }
+  }
+
+  @override
+  Widget build(final BuildContext context) => GuidePage(
+    className: 'HarborPortalBuoy',
+    realWorld:
+        'A dan buoy is a float with a flag on a pole, kept on deck to be thrown over the side. It goes in wherever the '
+        'boat is, and floats on the open water clear of the boat.',
+    inYourApp:
+        'A menu or popover opened from a list row or a button deep in the page, or from another package, that cannot '
+        'be listed in Harbor.buoys. It sits by its row in the clear water. Tap a row near the bottom: there is no room '
+        'below it above the tab bar, so the menu flips above the row instead.',
+    art: const DanBuoyArt(),
+    controls: <Widget>[
+      ChoiceControl<HarborBuoySide>(
+        label: 'side',
+        values: const <HarborBuoySide>[HarborBuoySide.above, HarborBuoySide.below],
+        value: _side,
+        labelOf: (final HarborBuoySide s) => s.name,
+        onChanged: (final HarborBuoySide s) => setState(() => _side = s),
+      ),
+      ToggleControl(label: 'flips', value: _flips, onChanged: (final bool v) => setState(() => _flips = v)),
+    ],
+    code:
+        'final menu = OverlayPortalController();\n\n'
+        '// In a row, anywhere below the harbor:\n'
+        'HarborPortalBuoy(\n'
+        '  controller: menu,\n'
+        '  side: HarborBuoySide.${_side.name},\n'
+        '  flips: $_flips,\n'
+        '  buoyBuilder: (context) => RowMenu(),\n'
+        '  child: GestureDetector(onTap: menu.toggle, child: Row()),\n'
+        ')',
+    stage: (final BuildContext context) => Harbor(
+      top: <HarborDock>[_headerDock('HarborPortalBuoy')],
+      bottom: <HarborDock>[_tabBarDock('HarborDock.quay', key: const ValueKey<String>('portal tab bar'))],
+      body: HarborFairway(
+        key: const ValueKey<String>('portal stage'),
+        slivers: <Widget>[
+          SliverList.builder(
+            itemCount: _rowCount,
+            itemBuilder: (final BuildContext context, final int i) => GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _toggle(i),
+              child: HarborPortalBuoy(
+                controller: _menus[i],
+                side: _side,
+                flips: _flips,
+                buoyBuilder: (final BuildContext context) =>
+                    _BuoyTag(key: const ValueKey<String>('portal buoy'), label: 'Menu for row ${i + 1}'),
+                child: StageRow(index: i),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 3. HarborBuoy(modal: true)
 
 /// `HarborBuoy(modal: true)`: a buoy that hides the buoys listed before it.
@@ -576,9 +673,9 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
         'When the harbor master’s launch comes through with its blue light on, every other boat moves out of its way. '
         'While it is there, it is the only one in the channel.',
     inYourApp:
-        'A menu or a panel that should be the only thing afloat while it is up. A modal buoy hides every buoy listed '
-        'before it (a tooltip, a floating button) until it goes, and they come back when it does. Buoys listed after it '
-        'stay up.',
+        'A menu or a panel that should be the only thing afloat while it is up. A modal buoy puts a barrier over the '
+        'page, so a tap beside it or back closes it (through onDismiss) instead of reaching the page, and it hides every '
+        'buoy listed before it (a tooltip, a floating button) until it goes. Buoys listed after it stay up.',
     art: const HarborLaunchArt(),
     controls: <Widget>[
       ToggleControl(label: 'launch up', value: _launchUp, onChanged: (final bool v) => setState(() => _launchUp = v)),
@@ -588,7 +685,7 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
         'Harbor(\n'
         '  buoys: [\n'
         '    HarborBuoy(alignment: Alignment.bottomCenter, child: Tooltip()),\n'
-        '${_launchUp ? '    HarborBuoy(modal: $_modal, child: QuickActions()), // ${_modal ? 'hides the tooltip' : 'floats beside it'}\n' : ''}'
+        '${_launchUp ? (_modal ? '    HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip\n' : '    HarborBuoy(child: QuickActions()), // floats beside it\n') : ''}'
         '  ],\n'
         '  ...\n'
         ')',
@@ -603,6 +700,7 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
         if (_launchUp)
           HarborBuoy(
             modal: _modal,
+            onDismiss: _modal ? () => setState(() => _launchUp = false) : null,
             alignment: Alignment.center,
             child: _LaunchPanel(
               key: const ValueKey<String>('modal buoy'),

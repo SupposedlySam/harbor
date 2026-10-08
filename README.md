@@ -11,13 +11,20 @@ them a place and a rule, so your content stops doing inset arithmetic.
 > them, or is open water. The tide (the keyboard) rises over whatever doesn't
 > float.**
 
-Depends on the Flutter SDK only. `package:harbor/testing.dart` adds sea trials
-for widget tests.
+[![An illustrated harbor beside a phone running harbor. A pier is the header rows scroll under, a quay is the tab bar the list stops at, and the tide is the keyboard: a dock on pilings is covered, a floating one rides up.](https://raw.githubusercontent.com/SupposedlySam/harbor/main/doc/media/showcase.gif)](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
+
+*Left, a harbor. Right, a phone running the real package, driven by the same
+clock. ([Watch the video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4).)*
+
+Depends on the Flutter SDK only. Sea trials for widget tests come in a package
+of their own, `harbor_test`, so the test framework stays out of your app's
+dependencies.
 
 ## Installing
 
 ```sh
 flutter pub add harbor
+flutter pub add dev:harbor_test   # sea trials, for widget tests
 ```
 
 MIT licensed.
@@ -58,12 +65,13 @@ header your list starts below.
 | **Make way** | Content asking a dock to go dark or withdraw | `HarborMakeWay` |
 | **Pontoon** | A dock moored from deep in the tree | `HarborPontoon` |
 | **Buoy** | Something afloat in the clear water: a menu, a bubble | `HarborBuoy` |
+| **Portal buoy** | A buoy opened from anywhere: a row's menu, a button's popover | `HarborPortalBuoy` |
 | **Signal** | A transient buoy: a toast | `HarborSignals.raise` |
 | **Breakwater** | A sheet reporting how much of the page it covers | `showHarborSheet(breakwater: true)` |
 | **Lighthouse** | Keeps things in sight: reveal, lift, coverage | `HarborLighthouse`, `HarborBeacon` |
 | **Scale model** | A fixed reference screen scaled to fit (TV) | `HarborScaleModel` |
 | **Chart** | Who holds which edge, at which layer | `HarborChart`, `HarborChartOverlay` |
-| **Sea trials** | Widget-test devices and tide control | `pumpSeaTrial` |
+| **Sea trials** | Widget-test devices and tide control (`harbor_test`) | `pumpSeaTrial` |
 
 ## Getting started
 
@@ -157,9 +165,10 @@ as it would in a `Row`.
 | Stance | Widget | Use it for |
 |---|---|---|
 | Moored | `HarborMoored(edges:, clear:, follow:, tide:, mooringLine:, minimum:, extra:)` | Forms, fixed buttons, static blocks |
+| Moored to one edge | `HarborMoored(edges: {HarborEdge.bottom})` | A form footer under a page header: it clears the coast and the keyboard at the bottom, and leaves the header to the rest of the page |
 | Mooring line | `HarborMooringLine(child:)` | A row that lines up with the page margin |
-| Fairway | `HarborFairway(slivers:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
-| One sliver | `HarborFairwaySliver(sliver:)` | A sliver in your own `CustomScrollView` |
+| Fairway | `HarborFairway(slivers:, minimum:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
+| One sliver | `HarborFairwaySliver(sliver:, minimum:)` | A sliver in your own `CustomScrollView` |
 | Pinned header | `HarborSliverDock(child:)` | A header or tab strip inside the scroll that pins at the docks' face and stacks |
 | Sticky | `HarborSticky(child:)` | A pill that rides with its item, then sticks below the docks and pinned headers |
 | Centered | `HarborCenter(overlapBudget:)` | Controls centered in the frame that may overlap the docks by at most a budget |
@@ -174,6 +183,16 @@ title under a translucent header that must not touch the status bar.
 `follow: HarborFollow.resting` holds still while a dock grows over it.
 `HarborFairway(startsInOpenWater: true)` starts its first sliver at the frame's
 edge, under the docks, for a hero that runs under a translucent header.
+`minimum:` on a fairway or a fairway sliver is a floor on each end, as on
+`SafeArea`: the end rests clear of whatever is in the way or the minimum,
+whichever is larger, so a phone with a home button still keeps 16 under the last row.
+`HarborFairway.box` given no bound across the scroll, as a horizontal one is in
+a `Column`, is as thick as its child: a row of chips as tall as the chips, its
+ends still clear.
+
+`clear: HarborClear.coast` keeps clear of the coast alone, without the keyboard.
+To keep clear of the coast and the keyboard but not a header, moor the bottom
+edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a
@@ -190,6 +209,7 @@ the docks and the keyboard with no extra code.
 Harbor(bodyClearsTide: true, ...)   // default: the body ends at the waterline
 Harbor(bodyClearsTide: false, ...)  // the body runs under; content reads it
 HarborTide.of(context)              // height, remaining, highWater, phase
+HarborTide.isInOf(context)          // whether it is in, rebuilding only when that flips
 ```
 
 `MediaQuery.padding` never carries the keyboard. That stays in `viewInsets`,
@@ -198,6 +218,20 @@ bottom. `HarborTide.of(context).height` is still readable after a harbor
 has moved out of the keyboard's way: for information, never for layout.
 `highWater` is the last settled keyboard height in this orientation, and it
 falls as well as rises.
+
+Readers rebuild only for what they read. `HarborTide.of` follows every frame
+of the keyboard moving; `HarborTide.isInOf` hears it come and go, and
+`HarborWaters.of(context, aspect: HarborWatersAspect.docks)` holds still while
+it moves. Harbor's own content reads the same way: a mooring line, a horizontal
+fairway, open water or a dry dock in a page the keyboard runs under is not
+rebuilt as it rises. Only what lays out against it is.
+
+`HarborWaters.steadyCoastOf(context, HarborEdge.bottom)` is the home
+indicator's height, held while the keyboard is up, as `viewPadding` is in
+Flutter: for a footer that keeps its size while the keyboard animates. A body
+that clears the tide has no `viewPadding` left at the bottom while the keyboard
+is up, so read it here. It is zero below a quay that absorbed the coast, and
+below anything that cast the edge off.
 
 ## Harbor and Scaffold
 
@@ -217,6 +251,16 @@ counted twice, but every dock then rides up above the keyboard: a tab bar on pil
 instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave the Scaffold's
 `appBar`, `bottomNavigationBar` and `floatingActionButton` empty and use docks and buoys instead.
 
+## Accessibility
+
+What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
+by keyboard focus and by screen readers, not only by taps. Signals are live
+regions, so screen readers announce them. Sheets and signals keep the themes of
+the page they came from, and so do dialogs. With reduced motion
+(`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
+leave without moving. On iOS a tap on the
+status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
+
 ## Talking to the harbor
 
 ```dart
@@ -233,9 +277,9 @@ A pontoon joins the harbor's docks on the next frame.
 ```dart
 Harbor(
   buoys: [
-    HarborBuoy(alignment: Alignment.bottomRight, child: fab),
+    HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: fab),
     HarborBuoy.anchored(anchor: launchAnchor, side: HarborBuoySide.above, overlap: 6, child: bubble),
-    HarborBuoy(modal: true, child: quickActions), // hides the buoys before it
+    HarborBuoy(modal: true, onDismiss: closeQuickActions, child: quickActions), // a barrier over the page
   ],
   bottom: [HarborDock.quay(child: TabBar(launch: HarborAnchorPoint(anchor: launchAnchor, child: launchButton)))],
   body: ...,
@@ -245,10 +289,47 @@ HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
+An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
+reading order, so `before` is on the right under right-to-left.
+`alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
+puts a button where a right-to-left reader expects it.
+A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
+keeps taps off the page and its docks and tells screen readers to leave them
+alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
+before it are hidden while it is up. Unlike a route, it does not trap keyboard
+focus.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 signal moves to the one now on top.
+
+A signal raised with no harbor above it (a widget test that pumps a bare
+`MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
+goes to the nearest `Overlay`, at its slot and clear of `MediaQuery.padding` and
+`viewInsets`. With no overlay either, it is reported through
+`FlutterError.reportError`, in release builds too. A signal's timers stop when it
+is lowered or when nothing is left to show it, so a test that ends with one up
+has no timer pending.
+
+```dart
+final menu = OverlayPortalController();
+
+HarborPortalBuoy(                       // in a list row, anywhere below a harbor
+  controller: menu,
+  side: HarborBuoySide.below,
+  buoyBuilder: (context) => const RowMenu(),
+  child: GestureDetector(onTap: menu.toggle, child: row),
+)
+```
+
+A **portal buoy** is an anchored buoy opened from where it is used rather than
+listed in `Harbor.buoys`: a menu from a list row, a popover from a button in
+another package. It is an `OverlayPortal`, so its buoy builds with the row's
+themes and floats in the nearest `Overlay`, placed in the clear water of the
+harbor around the row by its `child` (or by an `anchor`). When its `side` has
+no room, it `flips` to the other side of the anchor, so a menu from a row just
+above the tab bar or the keyboard opens above the row; when neither side has
+room, it is held inside the clear water.
 
 ## Sheets and dialogs
 
@@ -271,6 +352,56 @@ sheet's heights are fractions of the space between the status bar and the
 keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
 content keeps clear of it while it's up.
+
+On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
+and signals and buoys keep to the screen that holds them, never across the hinge.
+A flat fold, which has no width, may still be spanned.
+
+A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
+it is tied to the page that opened it: back (and a pop) closes it before the
+page, the iOS back swipe stands aside while it is up, it hides while another
+page is on top, and it leaves when its page is replaced or removed. A
+`PopScope` inside such a sheet has no route to register with; put it around
+the page instead.
+
+A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
+navigator observers and route-name analytics, and `barrierLabel:` is what a
+screen reader announces for the barrier ('Close sheet' when none is given). It
+spans the screen unless you give it a `maxWidth`.
+
+harbor imports no design library: it sits on Flutter's widgets layer, and since
+Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
+passes Material's pieces in, three lines that `showModalBottomSheet` would have
+filled in for it:
+
+```dart
+showHarborSheet(
+  context,
+  routeSettings: const RouteSettings(name: 'reply'),
+  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+  maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
+  builder: (_) => HarborSheet(
+    contentBuilder: (context, content) => Material( // text fields and ink work in it
+      type: MaterialType.transparency,
+      textStyle: DefaultTextStyle.of(context).style,
+      child: content,
+    ),
+    clip: const RoundedRectangleBorder(             // a photo at the top keeps the corners
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    dragToClose: true,                              // drag it down to close
+    surface: const ColoredBox(color: Colors.white),
+    body: composer,
+  ),
+);
+```
+
+`dragToClose:` is off by default. With it on, a content-sized sheet follows the
+finger down by any part that doesn't scroll, and closes on a fling or when let
+go under half shown. A draggable sheet always closes below its floor, and its
+`HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
+rest and its ceiling). A draggable sheet opened some other way, by
+`showModalBottomSheet` or `showGeneralDialog`, closes that route instead.
 
 ## The lighthouse
 
@@ -309,10 +440,19 @@ the labels' font, so they read in widget tests and goldens rather than as
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
 
+Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (sheets,
+dialogs, signals and buoys keep off a hinge through `MediaQuery.displayFeatures`,
+not through the coast) and `HarborController.isPort` (signals find their port by
+route instead).
+
 ## Sea trials
 
+Sea trials are in `harbor_test`, a dev dependency beside harbor
+(`flutter pub add dev:harbor_test`). It brings `flutter_test`, which harbor
+itself does not depend on.
+
 ```dart
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 
 testWidgets('the composer rides the keyboard', (tester) async {
   final trial = await tester.pumpSeaTrial(app, device: HarborTrialDevice.androidThreeButton);
@@ -322,14 +462,30 @@ testWidgets('the composer rides the keyboard', (tester) async {
 ```
 
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
-`iPhone17Landscape`, `foldableOpen`, `dualScreenCover`, `television`, plus the
-`phones` and `all` lists. `trial.clearWaterAround(finder)` and `isInClearWater`
+`iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
+`dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
+`device.displayFeatures` puts a device's folds and hinges on the view. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
+
+`package:harbor/testing.dart`, where sea trials used to be, is now empty and
+deprecated: importing it points to `harbor_test`. It will be removed in a later release.
 
 ## Example
 
 `example/` is a small harbor game that exercises every pattern above. Toggle
 the chart in its Harbor Office to see the layers.
+
+The video at the top of this page is `example/lib/showcase/`: run it with
+`fvm flutter run -t lib/showcase_main.dart`. `example/tool/render_showcase.sh`
+records it frame by frame on the test clock, so it comes out the same every
+time, and `example/test/showcase_test.dart` checks each caption against the
+real page on the phone.
+
+The video is narrated. `example/tool/narrate.py` voices each line of
+`example/lib/showcase/narration.tsv`, times every word, and checks that each
+clip says what the script says. The showcase's timeline is built from those
+timings, so the keyboard rises as "comes in" is spoken. Narration: the Kokoro-82M
+voice `am_liam`, generated on device by Kass.
 
 The **Harbor Field Guide** (the book button on the game's first page, or
 `fvm flutter run -t lib/field_guide_main.dart`) has a page for every class,

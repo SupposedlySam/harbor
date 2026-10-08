@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -84,6 +86,9 @@ class HarborTideGauge extends ChangeNotifier {
   double _height = 0.0;
   HarborTidePhase _phase = HarborTidePhase.low;
   final Map<Orientation, double> _highWater = <Orientation, double>{};
+
+  /// Counts changes to [_highWater], so a scope can tell a new mark from a moving tide.
+  int _marks = 0;
   Size _size = Size.zero;
   int _observation = 0;
   bool _disposed = false;
@@ -134,6 +139,7 @@ class HarborTideGauge extends ChangeNotifier {
       final Orientation orientation = _orientationOf(_size);
       if (_highWater[orientation] != _height) {
         _highWater[orientation] = _height;
+        _marks++;
         markChanged = true;
       }
     }
@@ -152,6 +158,15 @@ class HarborTideGauge extends ChangeNotifier {
   }
 }
 
+/// The part of the tide a reader depends on, so it is not rebuilt for the rest.
+enum _HarborTideAspect {
+  /// Whether the tide is in: changes when the keyboard comes or goes.
+  isIn,
+
+  /// The high-water marks: change when the keyboard settles at a new height.
+  highWater,
+}
+
 /// Carries the [HarborTideGauge] down from the outermost harbor.
 class HarborTideScope extends InheritedNotifier<HarborTideGauge> {
   const HarborTideScope({super.key, required HarborTideGauge gauge, required super.child}) : super(notifier: gauge);
@@ -159,6 +174,104 @@ class HarborTideScope extends InheritedNotifier<HarborTideGauge> {
   static HarborTideGauge? maybeGaugeOf(final BuildContext context, {final bool listen = true}) => listen
       ? context.dependOnInheritedWidgetOfExactType<HarborTideScope>()?.notifier
       : context.getInheritedWidgetOfExactType<HarborTideScope>()?.notifier;
+
+  static HarborTideGauge? _gaugeOf(final BuildContext context, final _HarborTideAspect aspect) =>
+      context.dependOnInheritedWidgetOfExactType<HarborTideScope>(aspect: aspect)?.notifier;
+
+  @override
+  InheritedElement createElement() => _HarborTideScopeElement(this);
+}
+
+/// What a tide gauge's readers were told, aspect by aspect.
+typedef _TideReading = ({bool isIn, int marks});
+
+_TideReading? _readingOf(final HarborTideGauge? gauge) =>
+    gauge == null ? null : (isIn: gauge.height > 0.0, marks: gauge._marks);
+
+/// Hears the gauge as `InheritedNotifier` does, but tells a reader that
+/// depends on one aspect only when that aspect changed. The gauge notifies on
+/// every frame the keyboard moves, and most readers care only whether it is in.
+class _HarborTideScopeElement extends InheritedElement {
+  _HarborTideScopeElement(final HarborTideScope widget) : _told = _readingOf(widget.notifier), super(widget) {
+    widget.notifier?.addListener(_gaugeChanged);
+  }
+
+  bool _dirty = false;
+  _TideReading? _told;
+  _TideReading? _now;
+
+  HarborTideGauge? get _gauge => (widget as HarborTideScope).notifier;
+
+  void _gaugeChanged() {
+    _dirty = true;
+    markNeedsBuild();
+  }
+
+  @override
+  void update(final HarborTideScope newWidget) {
+    final HarborTideGauge? oldGauge = _gauge;
+    if (oldGauge != newWidget.notifier) {
+      oldGauge?.removeListener(_gaugeChanged);
+      newWidget.notifier?.addListener(_gaugeChanged);
+    }
+    super.update(newWidget);
+  }
+
+  @override
+  Widget build() {
+    if (_dirty) {
+      notifyClients(widget as HarborTideScope);
+    }
+    return super.build();
+  }
+
+  // As `InheritedModelElement` keeps them: an empty set depends on everything.
+  @override
+  void updateDependencies(final Element dependent, final Object? aspect) {
+    final Set<_HarborTideAspect>? dependencies = getDependencies(dependent) as Set<_HarborTideAspect>?;
+    if (dependencies != null && dependencies.isEmpty) {
+      return;
+    }
+    if (aspect == null) {
+      setDependencies(dependent, HashSet<_HarborTideAspect>());
+    } else {
+      setDependencies(dependent, (dependencies ?? HashSet<_HarborTideAspect>())..add(aspect as _HarborTideAspect));
+    }
+  }
+
+  @override
+  void notifyClients(final HarborTideScope oldWidget) {
+    _now = _readingOf(_gauge);
+    super.notifyClients(oldWidget);
+    _told = _now;
+    _dirty = false;
+  }
+
+  @override
+  void notifyDependent(final HarborTideScope oldWidget, final Element dependent) {
+    final Set<_HarborTideAspect>? dependencies = getDependencies(dependent) as Set<_HarborTideAspect>?;
+    if (dependencies == null) {
+      return;
+    }
+    final bool changed =
+        dependencies.isEmpty ||
+        !identical(oldWidget.notifier, _gauge) ||
+        dependencies.any(
+          (final _HarborTideAspect aspect) => switch (aspect) {
+            _HarborTideAspect.isIn => _told?.isIn != _now?.isIn,
+            _HarborTideAspect.highWater => _told?.marks != _now?.marks,
+          },
+        );
+    if (changed) {
+      dependent.didChangeDependencies();
+    }
+  }
+
+  @override
+  void unmount() {
+    _gauge?.removeListener(_gaugeChanged);
+    super.unmount();
+  }
 }
 
 /// Reads the tide: the keyboard, as the harbor sees it.
@@ -189,7 +302,15 @@ abstract final class HarborTide {
 
   /// Whether the tide is in, rebuilding the caller only when that flips.
   static bool isInOf(final BuildContext context) =>
-      (HarborTideScope.maybeGaugeOf(context)?.height ?? MediaQuery.viewInsetsOf(context).bottom) > 0.0;
+      (HarborTideScope._gaugeOf(context, _HarborTideAspect.isIn)?.height ?? MediaQuery.viewInsetsOf(context).bottom) > 0.0;
+
+  /// The tide's high-water mark at [context], rebuilding the caller only when
+  /// a new mark is set or the screen turns.
+  static double _highWaterOf(final BuildContext context) {
+    final HarborTideGauge? gauge = HarborTideScope._gaugeOf(context, _HarborTideAspect.highWater);
+    final Size size = MediaQuery.sizeOf(context);
+    return gauge == null ? size.height * 0.4 : gauge.highWaterFor(size);
+  }
 }
 
 /// The ground a dry dock keeps: a box exactly as tall as the tide's high-water
@@ -207,10 +328,11 @@ class HarborDryDock extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    final HarborTideState tide = HarborTide.of(context);
-    final bool show = showsChildAtHighTide || !tide.isIn;
+    // Not `HarborTide.of`, which rebuilds on every frame the keyboard moves.
+    final bool isIn = HarborTide.isInOf(context) || MediaQuery.viewInsetsOf(context).bottom > 0.0;
+    final bool show = showsChildAtHighTide || !isIn;
     return SizedBox(
-      height: tide.highWater,
+      height: HarborTide._highWaterOf(context),
       width: double.infinity,
       child: Visibility(visible: show, maintainState: true, child: child ?? const SizedBox.shrink()),
     );

@@ -1,0 +1,13 @@
+intro	Every screen has things pushing in from its edges.
+intro	The status bar, the home indicator, the keyboard, and your own headers and tab bars.
+intro	Harbor gives each one a place.
+pier	The pier, built out over the water.
+pier	A header your content scrolls under.
+pier	Boats pass beneath the pier, the way your rows slide under the header.
+quay	The quay, a stone wall on the shore.
+quay	A tab bar your content stops at.
+quay	The tug pulls up to the quay wall, and the list comes to rest right above the tab bar.
+tide	The tide is the keyboard.
+tide	When it comes in, a dock on pilings stays where it is, and the water covers it. That's your tab bar.
+tide	A floating dock rides up with the tide. That's your composer, sitting right on top of the keyboard.
+outro	Docks claim the edges. Everything else moors clear of them.

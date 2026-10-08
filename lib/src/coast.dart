@@ -13,7 +13,8 @@ enum HarborCoastFeature {
   titleSafe,
   fixed,
 
-  /// A fold or hinge. Reserved: no layout splits around it yet.
+  /// A fold or hinge. Reserved and not yet read: [HarborCoast.features] never
+  /// reports it, and no layout splits around a fold yet.
   hinge,
 }
 

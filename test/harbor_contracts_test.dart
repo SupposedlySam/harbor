@@ -11,7 +11,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 
 const double _statusBar = 62; // iPhone17's top coast.
 const double _screen = 874; // iPhone17's height.
@@ -44,8 +44,7 @@ class _Probe extends StatelessWidget {
   }
 }
 
-/// Reads only the coast, and only through the raw waters: `HarborWaters.of` also depends on the
-/// whole `MediaQuery`, which would rebuild this whatever the aspect said.
+/// Reads only the coast, through the raw waters, so nothing but the coast aspect can rebuild it.
 class _CoastReader extends StatelessWidget {
   const _CoastReader(this.seen);
 
@@ -55,6 +54,19 @@ class _CoastReader extends StatelessWidget {
   Widget build(final BuildContext context) {
     seen.add(HarborWaters.maybeRawOf(context, aspect: HarborWatersAspect.coast)!.coast.top);
     return const SizedBox.expand();
+  }
+}
+
+/// Reads one aspect of the waters through [HarborWaters.of].
+class _AspectReader extends StatelessWidget {
+  const _AspectReader(this.aspect);
+
+  final HarborWatersAspect aspect;
+
+  @override
+  Widget build(final BuildContext context) {
+    HarborWaters.of(context, aspect: aspect);
+    return const SizedBox(height: 10);
   }
 }
 
@@ -211,6 +223,76 @@ void main() {
       final HarborController front = HarborController.of(top);
       expect(front.fleet.topmost, same(front));
     });
+
+    // Breaks if: a signal with no harbor above it is dropped (it used to assert, and show nothing
+    // in release), or the overlay it falls back to ignores the coast or the keyboard.
+    testWidgets('without a harbor, go to the nearest overlay, clear of the coast and the keyboard', (final tester) async {
+      late BuildContext page;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))),
+      );
+      await trial.raiseTide();
+      final HarborSignalEntry low = HarborSignals.raise(
+        page,
+        slot: HarborSignalSlot.low,
+        builder: (final BuildContext c) => _bar('low', 30),
+        duration: null,
+      );
+      final HarborSignalEntry top = HarborSignals.raise(
+        page,
+        slot: HarborSignalSlot.top,
+        builder: (final BuildContext c) => _bar('top', 30),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'low').bottom, lessThanOrEqualTo(trial.waterline));
+      expect(_rect(tester, 'low').bottom, greaterThan(trial.waterline - 30 - 16 - 1), reason: 'it sits on the keyboard');
+      expect(_rect(tester, 'top').top, greaterThanOrEqualTo(_statusBar));
+
+      low.lower();
+      top.lower();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('low')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('top')), findsNothing);
+    });
+
+    // Breaks if: a signal with nowhere to go is dropped without a word, or asserts (which a
+    // release build never sees).
+    testWidgets('without a harbor or an overlay, report that the signal was not shown', (final tester) async {
+      late BuildContext bare;
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: _Probe((final BuildContext c) => bare = c),
+      ));
+      final HarborSignalEntry entry = HarborSignals.raise(bare, builder: (final BuildContext c) => _bar('lost', 30));
+      final Object? error = tester.takeException();
+      expect(error, isA<FlutterError>());
+      expect('$error', contains('HarborSignals.raise'));
+      expect(entry.showing.value, isFalse);
+    });
+
+    // Breaks if: a signal's timers outlive the tree. The test framework fails a test that ends
+    // with a timer pending, so the check is the end of each test.
+    testWidgets('leave no timer pending when the harbor goes away', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('afloat')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('leave no timer pending when the overlay goes away', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
+      await tester.pump();
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('afloat')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
   });
 
   group('The tide', () {
@@ -364,6 +446,158 @@ void main() {
       await trial.raiseTide();
       expect(MediaQuery.viewInsetsOf(under).bottom, greaterThan(0), reason: 'positive control');
       expect(MediaQuery.viewInsetsOf(castOff).bottom, 0);
+    });
+  });
+
+  group('A reader rebuilds only for what it reads', () {
+    // No bottom coast, so the keyboard moving changes viewInsets and nothing else.
+    const HarborTrialDevice device = HarborTrialDevice.iPhoneSE;
+
+    // Brings the keyboard in or out over ten frames, as the platform animates it.
+    Future<void> slideTide(final WidgetTester tester, {required final bool tideIn}) async {
+      for (int i = 1; i <= 10; i++) {
+        final double share = tideIn ? i / 10 : 1 - i / 10;
+        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // Long enough for the tide gauge to settle.
+      for (int i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+    }
+
+    /// Counts the rebuilds of every element whose widget's type is in [types].
+    Map<Type, int> countRebuilds(final Set<Type> types) {
+      final Map<Type, int> counts = <Type, int>{for (final Type t in types) t: 0};
+      debugOnRebuildDirtyWidget = (final Element element, final bool builtOnce) {
+        final Type type = element.widget.runtimeType;
+        if (counts.containsKey(type)) {
+          counts[type] = counts[type]! + 1;
+        }
+      };
+      addTearDown(() => debugOnRebuildDirtyWidget = null);
+      return counts;
+    }
+
+    // Found merging #2 with #5: the steady coast's clamp reads the keyboard, and on a phone with a
+    // home indicator it reached that read for every reader of the waters, so a reader of the docks
+    // rebuilt through the keyboard's rise again (3 times here, against 1). The iPhone SE above has no
+    // bottom coast, so the tests there never reach the clamp. The one rebuild left is the home
+    // indicator's padding going to zero, which the docks clamp does read.
+    // Breaks if: the steady coast subscribes to the keyboard for readers outside the coast aspect.
+    testWidgets('a reader of the docks holds still on a phone with a home indicator too', (final tester) async {
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{_AspectReader, _TideReader});
+      final List<HarborTideState> tide = <HarborTideState>[];
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                const _AspectReader(HarborWatersAspect.docks),
+                SizedBox(height: 10, child: _TideReader(tide)),
+              ],
+            ),
+          ),
+        ),
+      );
+      rebuilds.updateAll((final Type _, final int _) => 0);
+      await trial.raiseTide();
+      expect(rebuilds[_TideReader], greaterThan(1), reason: 'positive control: the keyboard moved over several frames');
+      expect(rebuilds[_AspectReader], lessThanOrEqualTo(1));
+    });
+
+    // Breaks if: HarborWaters.of depends on the whole MediaQuery again, or a content role reads
+    // the waters (or MediaQuery) beyond the parts it uses.
+    testWidgets('readers of the coast, the docks and the margin hold still while the keyboard moves', (final tester) async {
+      final List<double> insetsSeen = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: Column(
+              children: <Widget>[
+                const _AspectReader(HarborWatersAspect.coast),
+                const _AspectReader(HarborWatersAspect.docks),
+                const _AspectReader(HarborWatersAspect.margin),
+                HarborOpenWater(builder: (final BuildContext context, final HarborWatersData waters) => const SizedBox(height: 10)),
+                const HarborMooringLine(child: SizedBox(height: 10)),
+                const HarborMoored(edges: HarborEdge.horizontal, tide: false, child: SizedBox(height: 10)),
+                const SizedBox(
+                  height: 40,
+                  child: HarborFairway(
+                    scrollDirection: Axis.horizontal,
+                    slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(width: 2000))],
+                  ),
+                ),
+                // The positive control: something that reads the keyboard does see it move.
+                _Probe((final BuildContext c) => insetsSeen.add(MediaQuery.viewInsetsOf(c).bottom), child: const SizedBox(height: 10)),
+              ],
+            ),
+          ),
+        ),
+        device: device,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{
+        _AspectReader,
+        HarborOpenWater,
+        HarborMooringLine,
+        HarborMoored,
+        HarborFairway,
+      });
+      insetsSeen.clear();
+      await slideTide(tester, tideIn: true);
+      expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
+      expect(insetsSeen.last, device.tideHeight);
+      expect(rebuilds, <Type, int>{
+        _AspectReader: 0,
+        HarborOpenWater: 0,
+        HarborMooringLine: 0,
+        HarborMoored: 0,
+        HarborFairway: 0,
+      });
+    });
+
+    // Breaks if: isInOf depends on the tide gauge as a whole, which notifies on every frame.
+    testWidgets('a reader of whether the tide is in rebuilds exactly when it comes and goes', (final tester) async {
+      final List<bool> seen = <bool>[];
+      await tester.pumpSeaTrial(
+        _app(Harbor(bodyClearsTide: false, body: _Probe((final BuildContext c) => seen.add(HarborTide.isInOf(c))))),
+        device: device,
+      );
+      expect(seen, <bool>[false]);
+      await slideTide(tester, tideIn: true);
+      expect(seen, <bool>[false, true]);
+      await slideTide(tester, tideIn: false);
+      expect(seen, <bool>[false, true, false]);
+    });
+
+    // Breaks if: a dry dock reads the whole tide, which moves on every frame.
+    testWidgets('a dry dock rebuilds when the tide comes, goes or sets a new high-water mark', (final tester) async {
+      final List<double> heights = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          const Harbor(
+            bottom: <HarborDock>[
+              HarborDock.quay(tide: HarborTideStance.dryDock, child: HarborDryDock(child: SizedBox.expand())),
+            ],
+            body: SizedBox.expand(),
+          ),
+        ),
+        device: device,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborDryDock});
+      void recordHeight() => heights.add(tester.getSize(find.byType(HarborDryDock)).height);
+      recordHeight();
+      await slideTide(tester, tideIn: true);
+      recordHeight();
+      // The tide came in (1) and settled at a new high-water mark (2).
+      expect(rebuilds[HarborDryDock], 2);
+      await slideTide(tester, tideIn: false);
+      recordHeight();
+      // It went out (3), and settling at low water left the mark where it was.
+      expect(rebuilds[HarborDryDock], 3);
+      expect(heights, <double>[device.size.height * 0.4, device.tideHeight, device.tideHeight]);
     });
   });
 
