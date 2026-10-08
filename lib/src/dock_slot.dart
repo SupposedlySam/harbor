@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -41,6 +42,16 @@ class HarborDockSlot extends StatefulWidget {
 
   @override
   State<HarborDockSlot> createState() => _HarborDockSlotState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborDock>('dock', dock));
+    properties.add(EnumProperty<HarborEdge>('edge', edge));
+    properties.add(EnumProperty<HarborDockState>('state', state));
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('coastPadding', coastPadding));
+    properties.add(FlagProperty('leavesWake', value: leavesWake, ifTrue: 'leaves wake'));
+  }
 }
 
 class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStateMixin {
