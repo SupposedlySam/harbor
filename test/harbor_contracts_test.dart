@@ -314,7 +314,7 @@ void main() {
       expect(seen.last.highWater, 336);
       expect(seen.last.highWaterIsEstimate, isFalse);
 
-      tester.view.physicalSize = const Size(_screen, 402);
+      tester.view.physicalSize = const Size(_screen, 402) * tester.view.devicePixelRatio;
       await frames(tester);
       expect(seen.last.highWaterIsEstimate, isTrue, reason: 'no keyboard has settled in landscape');
       expect(seen.last.highWater, isNot(336));
@@ -329,7 +329,7 @@ void main() {
       await trial.lowerTide();
       expect(seen.last.highWater, 336, reason: 'positive control');
 
-      tester.view.viewInsets = const FakeViewPadding(bottom: 250);
+      tester.view.viewInsets = FakeViewPadding(bottom: 250 * tester.view.devicePixelRatio);
       await frames(tester);
       expect(seen.last.highWater, 250);
     });
@@ -457,7 +457,7 @@ void main() {
     Future<void> slideTide(final WidgetTester tester, {required final bool tideIn}) async {
       for (int i = 1; i <= 10; i++) {
         final double share = tideIn ? i / 10 : 1 - i / 10;
-        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share);
+        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share * tester.view.devicePixelRatio);
         await tester.pump(const Duration(milliseconds: 16));
       }
       // Long enough for the tide gauge to settle.

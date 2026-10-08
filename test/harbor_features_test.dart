@@ -614,9 +614,10 @@ void main() {
     // As the platform has it: the bottom padding is gone as soon as any
     // keyboard is in, while the keyboard itself is still coming up.
     Future<void> keyboard(final double height) async {
+      final double ratio = tester.view.devicePixelRatio;
       tester.view
-        ..padding = FakeViewPadding(top: 62, bottom: height > 0 ? 0 : 34)
-        ..viewInsets = FakeViewPadding(bottom: height);
+        ..padding = FakeViewPadding(top: 62 * ratio, bottom: (height > 0 ? 0 : 34) * ratio)
+        ..viewInsets = FakeViewPadding(bottom: height * ratio);
       await tester.pump();
     }
 
