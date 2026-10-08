@@ -36,8 +36,10 @@ migrate_working_dir/
 # tracked, against lamp's usual convention: harbor's only lamp dependency is llm_chat for the
 # owner agent, which is machine-local anyway, so a clone has nothing to sync.
 .lamp/
+.game_loop/
 lamp.lock
 .llm_chat/
 .harbor_owner/
-# Claude Code agent worktrees
-.claude/worktrees/
+# Claude Code: the owner agent's hooks and settings, and agent worktrees. Machine-local tooling,
+# never part of the repository.
+.claude/

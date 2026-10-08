@@ -29,6 +29,7 @@ migrate_working_dir/
 
 # --- lamp and the owner agent: machine-local tooling, never part of the package ---
 .lamp/
+.game_loop/
 lamp.lock
 .llm_chat/
 .harbor_owner/
@@ -40,9 +41,13 @@ CLAUDE.md
 .vscode/
 .fvmrc
 tool/
+example/tool/
 doc/
 
 # harbor_test/ is a package of its own, published from its own directory, and it is NOT listed
 # here: pub applies these rules to a nested package too, so excluding it would leave its own
 # archive empty. It rides in harbor's archive as the example does, and harbor_test/.pubignore
 # keeps its build output, lockfile and override out of both.
+
+# The README video recorder needs macOS fonts; it is how the video is made, not part of the example.
+example/test/render_showcase_test.dart

@@ -48,14 +48,21 @@ lamp files, `.claude/`, `CLAUDE.md`, `doc/`, `tool/` and `.github/` are kept out
 This repo has an owner agent (see `/owner-agent`), reachable in llm_chat room `harbor_owner`
 under the identity `harbor-owner`.
 
-- `.claude/hooks/issue-waker.py` is a Stop hook that polls GitHub while the session is idle and
-  wakes it for new issues and PRs, reopens, and comments on open or closed items. It is ported
-  from showrunner's waker, which keeps the history behind each rule. Its state lives in
-  `.harbor_owner/`, which is gitignored.
+- **None of the agent's tooling is in the repository or the package.** `.claude/`, `.lamp/`,
+  `.game_loop/`, `.llm_chat/`, `.harbor_owner/` and `lamp.lock` are gitignored and pubignored, and
+  every hook is registered in `.claude/`, which is gitignored: game_loop's in `settings.json`,
+  where its installer writes them on every `lamp upgrade`, and llm_chat's and the GitHub
+  watcher's in `settings.local.json`. Keep each hook in one file only, or it runs twice. A clone
+  gets harbor and nothing else; a new owner session sets its tooling up again with `/owner-agent`.
+- The GitHub watcher is `.claude/hooks/issue-waker.py`, a Stop hook that polls GitHub while the
+  session is idle and wakes it for new issues and PRs, reopens, and comments on open or closed
+  items. It is ported from showrunner's waker, which keeps the history behind each rule. Its
+  state lives in `.harbor_owner/`.
+- game_loop (through lamp) holds the owner's mandate, the stop gate and the doorbell:
+  `./.game_loop/bin/game_loop status` first in every session.
 - **Sign every GitHub comment with the line `— 🤖 harbor owner agent`.** The agent posts under
   the maintainer's account, so this signature is the only way the waker can tell its own
   comments from the maintainer's. An unsigned comment wakes the session that wrote it.
-- The llm_chat wiring (`.lamp/`, `lamp.lock`, `.llm_chat/`, `.claude/settings.local.json`) is
-  machine-local and gitignored. `lamp.lock` would normally be committed; it is not here because
-  harbor's only lamp dependency is llm_chat for this agent, which nobody cloning harbor needs.
+- `lamp.lock` would normally be committed; it is not here because harbor's lamp dependencies
+  (llm_chat, game_loop) serve this agent only, which nobody cloning harbor needs.
 - `doc/READINGS.md` records when each front-door doc was last read whole.
