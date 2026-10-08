@@ -1,3 +1,7 @@
+## Unreleased
+
+* An anchored buoy whose anchor is not in the tree takes no taps. It was already not painted, but it was still hit-tested where it last sat (at first, the top-left corner), so an invisible buoy could swallow taps meant for the page. A portal buoy already behaved this way.
+
 ## 0.2.0
 
 ### Breaking changes
