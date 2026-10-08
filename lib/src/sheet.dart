@@ -83,6 +83,10 @@ class HarborSheetExtent with Diagnosticable {
 ///
 /// The sheet keeps the coast at the bottom (the home indicator), so its footer
 /// clears it once and nothing else in it has to.
+///
+/// See also:
+///
+///  * [DraggableScrollableSheet], which [HarborSheet.draggable] is built on.
 class HarborSheet extends StatelessWidget {
   /// A sheet as tall as its content, up to [maxExtentFraction] of the space
   /// above the keyboard, past which its body scrolls.
@@ -602,6 +606,11 @@ class HarborSheetController extends ChangeNotifier {
 /// [transitionAnimationController] slides the sheet in place of its own 280 ms
 /// slide, as it does a modal bottom sheet: the sheet runs it forward to open
 /// and back to close, and the caller disposes it.
+///
+/// See also:
+///
+///  * `showModalBottomSheet` and `ModalBottomSheetRoute`, the Material equivalent of a sheet with a
+///    barrier, and `ScaffoldState.showBottomSheet`, of one with [HarborSheetBarrier.none].
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
