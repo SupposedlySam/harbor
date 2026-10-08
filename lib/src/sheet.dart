@@ -393,6 +393,7 @@ enum HarborSheetBarrier {
 ///
 /// The future completes with the result given to [HarborSheet.close], or with
 /// null when the sheet is closed some other way.
+///
 /// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
 /// stays until it is answered; back still closes it, as it closes a modal
 /// bottom sheet. [requestFocus] is the route's: given false, focus stays where
