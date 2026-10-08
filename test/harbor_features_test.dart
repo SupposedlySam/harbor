@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
@@ -376,6 +377,30 @@ void main() {
     expect(bubbleTaps, 1);
   });
 
+  testWidgets('an anchored buoy aligned to the end lines up with its anchor\'s right edge, moved by crossOffset', (final tester) async {
+    final HarborAnchor anchor = HarborAnchor();
+    addTearDown(anchor.dispose);
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          buoys: <HarborBuoy>[
+            HarborBuoy.anchored(
+              anchor: anchor,
+              side: HarborBuoySide.below,
+              crossAlignment: HarborBuoyCrossAlignment.end,
+              crossOffset: 6,
+              child: _box('menu', 160, 30),
+            ),
+          ],
+          body: Center(child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40))),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(_rect(tester, 'menu').right, _rect(tester, 'button').right + 6);
+    expect(_rect(tester, 'menu').top, _rect(tester, 'button').bottom + 8);
+  });
+
   testWidgets('an anchored buoy follows its row as the list scrolls, in the same frame', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
@@ -617,6 +642,386 @@ void main() {
       menu.show();
       await tester.pump();
       expect(_rect(tester, 'menu').left, _rect(tester, 'button').right + 8);
+    });
+
+    group('aligned across its side', () {
+      Widget aligned({
+        required final OverlayPortalController menu,
+        required final AlignmentDirectional buttonAt,
+        required final HarborBuoyCrossAlignment crossAlignment,
+        final HarborBuoySide side = HarborBuoySide.below,
+        final double crossOffset = 0.0,
+        final TextDirection direction = TextDirection.ltr,
+      }) => _app(
+        Directionality(
+          textDirection: direction,
+          child: Harbor(
+            body: Padding(
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 40, vertical: 100),
+              child: Align(
+                alignment: buttonAt,
+                child: HarborPortalBuoy(
+                  controller: menu,
+                  side: side,
+                  crossAlignment: crossAlignment,
+                  crossOffset: crossOffset,
+                  buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+                  child: _box('button', 40, 40),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      testWidgets('to the start lines up with its anchor\'s left edge', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborBuoyCrossAlignment.start));
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'button').left, 40);
+        expect(_rect(tester, 'menu').left, 40);
+        expect(_rect(tester, 'menu').top, _rect(tester, 'button').bottom + 8);
+      });
+
+      testWidgets('to the start lines up with its anchor\'s right edge under right-to-left', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborBuoyCrossAlignment.start, direction: TextDirection.rtl),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').right, _rect(tester, 'button').right);
+      });
+
+      testWidgets('to the end lines up with its anchor\'s right edge, moved by crossOffset in reading order', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborBuoyCrossAlignment.end, crossOffset: -12),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').right, _rect(tester, 'button').right - 12);
+      });
+
+      testWidgets('crossOffset follows the reading order under right-to-left', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(
+            menu: menu,
+            buttonAt: AlignmentDirectional.topStart,
+            crossAlignment: HarborBuoyCrossAlignment.start,
+            crossOffset: 12,
+            direction: TextDirection.rtl,
+          ),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').right, _rect(tester, 'button').right - 12);
+      });
+
+      testWidgets('to the start of an anchor at the water\'s right edge is still held inside the clear water', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final HarborSeaTrial trial = await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborBuoyCrossAlignment.start),
+        );
+        menu.show();
+        await tester.pump();
+        final Rect water = trial.clearWaterAround(find.byKey(const ValueKey<String>('button')));
+        expect(_rect(tester, 'menu').left, water.right - 8 - 200);
+      });
+
+      testWidgets('beside its anchor, to the start lines up with its top edge', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        await tester.pumpSeaTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborBuoySide.end, crossAlignment: HarborBuoyCrossAlignment.start),
+        );
+        menu.show();
+        await tester.pump();
+        expect(_rect(tester, 'menu').top, _rect(tester, 'button').top);
+        expect(_rect(tester, 'menu').left, _rect(tester, 'button').right + 8);
+      });
+    });
+
+    group('dismissed', () {
+      Widget dismissible({
+        required final OverlayPortalController menu,
+        required final List<String> events,
+        final bool consumeOutsideTaps = false,
+        final FocusNode? anchorFocus,
+      }) => Harbor(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const SizedBox(height: 100),
+              HarborPortalBuoy(
+                controller: menu,
+                side: HarborBuoySide.end,
+                consumeOutsideTaps: consumeOutsideTaps,
+                onDismiss: () {
+                  events.add('dismissed');
+                  menu.hide();
+                },
+                buoyBuilder: (final BuildContext context) => SizedBox(
+                  width: 200,
+                  height: 120,
+                  child: TextButton(autofocus: true, onPressed: () => events.add('item'), child: const Text('Item')),
+                ),
+                child: TextButton(focusNode: anchorFocus, onPressed: menu.toggle, child: const Text('Open')),
+              ),
+              const SizedBox(height: 200),
+              TextButton(onPressed: () => events.add('below'), child: const Text('Below')),
+            ],
+          ),
+        );
+
+      testWidgets('by a tap outside it that, with consumeOutsideTaps, does not reach what is under it', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
+        await tester.tap(find.text('Open'));
+        await tester.pump();
+        expect(find.text('Item'), findsOneWidget, reason: 'positive control: the menu is up');
+
+        await tester.tap(find.text('Below'));
+        await tester.pump();
+        expect(events, <String>['dismissed']);
+        expect(find.text('Item'), findsNothing);
+
+        await tester.tap(find.text('Below'));
+        expect(events, <String>['dismissed', 'below'], reason: 'positive control: with the menu gone the tap lands');
+      });
+
+      testWidgets('by a tap outside it that, by default, also reaches what is under it, as a MenuAnchor\'s does', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events)));
+        menu.show();
+        await tester.pump();
+        await tester.tap(find.text('Below'));
+        await tester.pump();
+        expect(events, <String>['dismissed', 'below']);
+      });
+
+      testWidgets('not by a tap on its anchor or inside it', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
+        menu.show();
+        await tester.pump();
+        await tester.tap(find.text('Item'));
+        await tester.pump();
+        expect(events, <String>['item']);
+
+        await tester.tap(find.text('Open'));
+        await tester.pump();
+        expect(events, <String>['item'], reason: 'the anchor toggles the menu itself, with no dismissal on top');
+        expect(find.text('Item'), findsNothing);
+      });
+
+      testWidgets('by Escape while focus is in it', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events)));
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(events, <String>['dismissed']);
+        expect(find.text('Item'), findsNothing);
+      });
+
+      testWidgets('leaves Escape to the widgets above while it is hidden', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final FocusNode anchorFocus = FocusNode();
+        addTearDown(anchorFocus.dispose);
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(
+          _app(
+            Actions(
+              actions: <Type, Action<Intent>>{
+                DismissIntent: CallbackAction<DismissIntent>(onInvoke: (final DismissIntent _) => events.add('outer')),
+              },
+              child: dismissible(menu: menu, events: events, anchorFocus: anchorFocus),
+            ),
+          ),
+        );
+        anchorFocus.requestFocus();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(events, <String>['outer'], reason: 'an enclosing dialog or route hears Escape while the menu is down');
+
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+        anchorFocus.requestFocus();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(events, <String>['outer', 'dismissed'], reason: 'positive control: while the menu is up, Escape closes it and stops there');
+      });
+
+      testWidgets('keeps the state of its child and its buoy when onDismiss is set or cleared', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final ValueNotifier<bool> closes = ValueNotifier<bool>(true);
+        addTearDown(closes.dispose);
+        await tester.pumpSeaTrial(
+          _app(
+            Harbor(
+              body: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 100),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: closes,
+                    builder: (final BuildContext context, final bool closes, final Widget? _) => HarborPortalBuoy(
+                      controller: menu,
+                      side: HarborBuoySide.end,
+                      onDismiss: closes ? menu.hide : null,
+                      buoyBuilder: (final BuildContext context) => const SizedBox(width: 200, height: 60, child: TextField(key: ValueKey<String>('filter'))),
+                      child: const SizedBox(width: 200, child: TextField(key: ValueKey<String>('query'))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        menu.show();
+        await tester.pump();
+        await tester.enterText(find.byKey(const ValueKey<String>('filter')), 'in the buoy');
+        await tester.enterText(find.byKey(const ValueKey<String>('query')), 'in the child');
+        await tester.pump();
+        final ModalRoute<Object?> page = ModalRoute.of(tester.element(find.byKey(const ValueKey<String>('query'))))!;
+        expect(page.willHandlePopInternally, isTrue, reason: 'positive control: back is the buoy\'s while it closes');
+
+        closes.value = false;
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('in the child'), findsOneWidget);
+        expect(find.text('in the buoy'), findsOneWidget);
+        expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key, const ValueKey<String>('query'));
+        expect(page.willHandlePopInternally, isFalse, reason: 'without onDismiss, back is the page\'s again');
+
+        closes.value = true;
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('in the child'), findsOneWidget);
+        expect(find.text('in the buoy'), findsOneWidget);
+        expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key, const ValueKey<String>('query'));
+        expect(page.willHandlePopInternally, isTrue);
+      });
+
+      testWidgets('in a dialog, with the dialog, by a tap on its barrier, as a MenuAnchor in a dialog is', (final tester) async {
+        final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(
+          MaterialApp(
+            navigatorKey: navigator,
+            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+            home: const Harbor(body: SizedBox.expand()),
+          ),
+        );
+        unawaited(
+          showDialog<void>(
+            context: navigator.currentContext!,
+            builder: (final BuildContext _) => Center(
+              child: Material(
+                child: HarborPortalBuoy(
+                  controller: menu,
+                  side: HarborBuoySide.below,
+                  onDismiss: () {
+                    events.add('menu dismissed');
+                    menu.hide();
+                  },
+                  buoyBuilder: (final BuildContext _) => const ColoredBox(color: Color(0xFF000000), child: SizedBox(width: 100, height: 60)),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ).then((final void _) => events.add('dialog closed')),
+        );
+        await tester.pumpAndSettle();
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+
+        await tester.tapAt(const Offset(4, 4));
+        await tester.pumpAndSettle();
+        expect(events, <String>['menu dismissed', 'dialog closed']);
+        expect(find.text('Open'), findsNothing);
+      });
+
+      testWidgets('by back, before back reaches its page', (final tester) async {
+        final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(
+          MaterialApp(
+            navigatorKey: navigator,
+            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+            home: const Harbor(body: Center(child: Text('home'))),
+          ),
+        );
+        unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
+          builder: (final BuildContext _) => Material(child: dismissible(menu: menu, events: events)),
+        )));
+        await tester.pumpAndSettle();
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(events, <String>['dismissed']);
+        expect(find.text('Open'), findsOneWidget, reason: 'the page is still there');
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('Open'), findsNothing, reason: 'positive control: back pops the page once the menu is gone');
+        expect(events, <String>['dismissed']);
+      });
+    });
+
+    testWidgets('tells its buoy which side it landed on, after a flip and back', (final tester) async {
+      final OverlayPortalController menu = OverlayPortalController();
+      final ValueNotifier<Alignment> rowAt = ValueNotifier<Alignment>(Alignment.topCenter);
+      addTearDown(rowAt.dispose);
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: ValueListenableBuilder<Alignment>(
+              valueListenable: rowAt,
+              builder: (final BuildContext context, final Alignment at, final Widget? _) => Align(
+                alignment: at,
+                child: HarborPortalBuoy(
+                  controller: menu,
+                  buoyBuilder: (final BuildContext context) => SizedBox(
+                    width: 200,
+                    height: 120,
+                    child: Text(HarborPortalBuoy.sideOf(context).name),
+                  ),
+                  child: _bar('row', 48),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      menu.show();
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('below'), findsOneWidget, reason: 'no room above a row at the top, so it flipped');
+      expect(tester.getRect(find.text('below')).top, greaterThan(_rect(tester, 'row').bottom));
+
+      rowAt.value = Alignment.center;
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('above'), findsOneWidget);
+      expect(tester.getRect(find.text('above')).bottom, lessThan(_rect(tester, 'row').top));
     });
   });
 

@@ -10,6 +10,7 @@ export 'src/buoy.dart'
         HarborAnchor,
         HarborAnchorPoint,
         HarborBuoy,
+        HarborBuoyCrossAlignment,
         HarborBuoySide,
         HarborPortalBuoy,
         HarborSignalSlot,

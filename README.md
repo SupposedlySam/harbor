@@ -375,20 +375,25 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
 right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
-deprecated.) While its anchor is not in the tree, an anchored buoy is not shown,
-takes no taps and is not read out by screen readers. It is placed again in every
-frame that is drawn, so it moves with its anchor in the same frame, a row
-scrolling under an open menu included. A `HarborAnchor` refers to one
-`HarborAnchorPoint`, so give each row of a list its own; in debug builds two
-points left on one anchor are reported after the frame, as two leaders on one
-`LayerLink` are.
+deprecated.) Across that side it is centred on its anchor unless its
+`crossAlignment` says `start` or `end`, the anchor's edges in reading order (or
+its top and bottom beside it), as a dropdown lines up under its button's leading
+edge; `crossOffset` moves it on from there, toward the reading end. While its
+anchor is not in the tree, an anchored buoy is not shown, takes no taps and is
+not read out by screen readers. It is placed again in every frame that is drawn,
+so it moves with its anchor in the same frame, a row scrolling under an open
+menu included. A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each
+row of a list its own; in debug builds two points left on one anchor are
+reported after the frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Unlike a route, it does not trap keyboard
-focus.
+before it are hidden while it is up. Its `barrierLabel` ('Close' when none is
+given) is what a screen reader announces for the barrier; a Material app passes
+`MaterialLocalizations.of(context).modalBarrierDismissLabel`. Unlike a route, it
+does not trap keyboard focus.
 A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
 `alignment`, placed as a buoy at that alignment would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.
@@ -430,6 +435,9 @@ final menu = OverlayPortalController();
 HarborPortalBuoy(                       // in a list row, anywhere below a harbor
   controller: menu,
   side: HarborBuoySide.below,
+  crossAlignment: HarborBuoyCrossAlignment.start, // under the row's leading edge
+  onDismiss: menu.hide,                   // a tap outside, Escape or back
+  consumeOutsideTaps: true,               // and that tap presses nothing else
   buoyBuilder: (context) => const RowMenu(),
   child: GestureDetector(onTap: menu.toggle, child: row),
 )
@@ -443,7 +451,20 @@ harbor around the row by its `child` (or by an `anchor`). Until that anchor is
 in the tree, it is not shown, takes no taps and is not read out. When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
-room, it is held inside the clear water.
+room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
+the buoy is the side it landed on, so a popover can point its arrow at the
+anchor after a flip. The buoy is placed as it paints, so it hears of a flip on
+the next frame.
+
+With an `onDismiss`, a portal buoy closes as a `MenuAnchor` does: its buoy and
+its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss`
+while a tap on the row that opened it is left to the row, and so do Escape with
+focus in either and back (before it reaches the page). The tap goes on to what
+is under it, as a `MenuAnchor`'s does, unless `consumeOutsideTaps` is set. It
+puts up no barrier and leaves the page to screen readers, as a menu does. So in
+a modal buoy, a tap on the barrier while the portal buoy is open calls both
+`onDismiss`es, and in a dialog it calls the portal buoy's and closes the
+dialog, as it does with a `MenuAnchor` open in a dialog.
 
 ## Sheets and dialogs
 
