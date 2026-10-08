@@ -348,7 +348,10 @@ its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss`
 while a tap on the row that opened it is left to the row, and so do Escape with
 focus in either and back (before it reaches the page). The tap goes on to what
 is under it, as a `MenuAnchor`'s does, unless `consumeOutsideTaps` is set. It
-puts up no barrier and leaves the page to screen readers, as a menu does.
+puts up no barrier and leaves the page to screen readers, as a menu does. So in
+a modal buoy, a tap on the barrier while the portal buoy is open calls both
+`onDismiss`es, and in a dialog it calls the portal buoy's and closes the
+dialog, as it does with a `MenuAnchor` open in a dialog.
 
 ## Sheets and dialogs
 

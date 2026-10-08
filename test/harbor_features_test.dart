@@ -731,6 +731,47 @@ void main() {
         expect(page.willHandlePopInternally, isTrue);
       });
 
+      testWidgets('in a dialog, with the dialog, by a tap on its barrier, as a MenuAnchor in a dialog is', (final tester) async {
+        final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(
+          MaterialApp(
+            navigatorKey: navigator,
+            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+            home: const Harbor(body: SizedBox.expand()),
+          ),
+        );
+        unawaited(
+          showDialog<void>(
+            context: navigator.currentContext!,
+            builder: (final BuildContext _) => Center(
+              child: Material(
+                child: HarborPortalBuoy(
+                  controller: menu,
+                  side: HarborBuoySide.below,
+                  onDismiss: () {
+                    events.add('menu dismissed');
+                    menu.hide();
+                  },
+                  buoyBuilder: (final BuildContext _) => const ColoredBox(color: Color(0xFF000000), child: SizedBox(width: 100, height: 60)),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ).then((final void _) => events.add('dialog closed')),
+        );
+        await tester.pumpAndSettle();
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+
+        await tester.tapAt(const Offset(4, 4));
+        await tester.pumpAndSettle();
+        expect(events, <String>['menu dismissed', 'dialog closed']);
+        expect(find.text('Open'), findsNothing);
+      });
+
       testWidgets('by back, before back reaches its page', (final tester) async {
         final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
         final OverlayPortalController menu = OverlayPortalController();

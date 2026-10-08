@@ -766,6 +766,7 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
           child: Builder(builder: widget.buoyBuilder),
         );
         buoy = _PortalBuoyDismissal(
+          controller: widget.controller,
           groupId: this,
           consumeOutsideTaps: widget.consumeOutsideTaps,
           onDismiss: dismissible ? _dismiss : null,
@@ -827,6 +828,7 @@ class _PortalBuoySide extends InheritedWidget {
 /// [HarborBuoy]. Both are off without [onDismiss]; the region stays, so the buoy keeps its state.
 class _PortalBuoyDismissal extends StatefulWidget {
   const _PortalBuoyDismissal({
+    required this.controller,
     required this.groupId,
     required this.consumeOutsideTaps,
     required this.onDismiss,
@@ -834,6 +836,7 @@ class _PortalBuoyDismissal extends StatefulWidget {
     required this.child,
   });
 
+  final OverlayPortalController controller;
   final Object groupId;
   final bool consumeOutsideTaps;
   final VoidCallback? onDismiss;
@@ -904,6 +907,15 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
     }
   }
 
+  void _tappedOutside(final PointerDownEvent _) {
+    widget.onDismiss?.call();
+    // Hidden now, gone at the next build. Back is the page's at once, so a barrier under the tap
+    // (a dialog's) closes what it closes, as it does with a MenuAnchor open in a dialog.
+    if (!widget.controller.isShowing) {
+      _giveHistoryBack();
+    }
+  }
+
   @override
   void deactivate() {
     _giveHistoryBack();
@@ -916,7 +928,7 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
     groupId: widget.groupId,
     enabled: widget.onDismiss != null,
     consumeOutsideTaps: widget.consumeOutsideTaps,
-    onTapOutside: (final PointerDownEvent _) => widget.onDismiss?.call(),
+    onTapOutside: _tappedOutside,
     child: widget.child,
   );
 }
