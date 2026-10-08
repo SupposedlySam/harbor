@@ -394,6 +394,14 @@ screen reader announces for the barrier ('Close sheet' when none is given), with
 sheet is a semantics scope of its own, and screen readers announce its
 `semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
 
+A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
+into it, an observer of page routes does not count it as a screen, a draggable sheet
+inside it closes it, and its content is a route of its own for screen readers, named by `semanticLabel:`. It
+takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Close
+dialog' when none is given), `anchorPoint:` (which screen of a dual-screen
+device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
+`animationStyle:` (its fade, 180 ms by default).
+
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
 passes Material's pieces in, the lines that `showModalBottomSheet` would have
