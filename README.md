@@ -342,6 +342,13 @@ keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
 content keeps clear of it while it's up.
 
+A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
+it is tied to the page that opened it: back (and a pop) closes it before the
+page, the iOS back swipe stands aside while it is up, it hides while another
+page is on top, and it leaves when its page is replaced or removed. A
+`PopScope` inside such a sheet has no route to register with; put it around
+the page instead.
+
 A sheet is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and the barrier reads Material's
 dismiss label when the app has Material localizations (`barrierLabel:` to say

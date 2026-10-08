@@ -1,5 +1,7 @@
 ## Unreleased
 
+* A sheet with no barrier is tied to the page that opened it: back closes it before the page, the iOS back swipe stands aside while it is up, it hides while another page is on top, and it leaves when its page is replaced. Before, back popped the page from under it, and opened from above the page's harbor it could outlive the page.
+
 * After a turn or a foldable opening, a page under a breakwater sheet is no longer laid out for one frame against the cover the sheet had in the old shape (it could overflow), and a signal follows the clear water of the harbor that raised it instead of staying boxed into the old screen.
 
 * `HarborSignals.raise` with no harbor above the context shows the signal in the nearest `Overlay`, clear of `MediaQuery.padding` and `viewInsets`, instead of asserting in debug and showing nothing in release. With no overlay either, it reports a `FlutterError`.

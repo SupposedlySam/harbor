@@ -385,9 +385,10 @@ Future<T?> showHarborSheet<T>(
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
-    final _NonModalSheet<T> sheet = _NonModalSheet<T>(host: host, overlay: overlay);
-    // A non-modal sheet lives in the navigator's overlay, not in a route, so
-    // it leaves with the harbor that opened it.
+    // A non-modal sheet lives in the navigator's overlay, not in a route of its own, so it is tied
+    // to the page's route by hand: back closes it first, it hides while another page is on top,
+    // and it leaves when its page does. It also leaves with the harbor that opened it.
+    final _NonModalSheet<T> sheet = _NonModalSheet<T>(host: host, overlay: overlay, route: ModalRoute.of(context));
     void presenterLeft() => sheet.closeNow();
     presenter?.addLeaveListener(presenterLeft);
     return sheet.open().whenComplete(() => presenter?.removeLeaveListener(presenterLeft));
@@ -684,10 +685,18 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 }
 
 class _NonModalSheet<T> {
-  _NonModalSheet({required this.host, required this.overlay});
+  _NonModalSheet({required this.host, required this.overlay, required this.route});
 
   final _SheetHost host;
   final OverlayState overlay;
+
+  /// The page that opened the sheet. Tied to it with a local history entry, so back (and a
+  /// pop) closes the sheet before the page, and the iOS back swipe stands aside while it is up.
+  ///
+  /// NOT COVERED: a `PopScope` inside the sheet. It registers with the nearest ModalRoute, and
+  /// a sheet with no barrier deliberately is not one; wrap the PAGE in the PopScope instead.
+  final ModalRoute<Object?>? route;
+  LocalHistoryEntry? _history;
   late final AnimationController _animation = AnimationController(
     vsync: overlay,
     duration: const Duration(milliseconds: 280),
@@ -701,10 +710,50 @@ class _NonModalSheet<T> {
       ..slide = _animation
       ..attach();
     _animation.addListener(() => host.progress = _animation.value);
-    _entry = OverlayEntry(builder: (final BuildContext context) => host.build(context, _animation));
+    final ModalRoute<Object?>? route = this.route;
+    _entry = OverlayEntry(
+      builder: (final BuildContext context) {
+        final Widget sheet = host.build(context, _animation);
+        if (route == null) {
+          return sheet;
+        }
+        // Hidden, and out of reach, while another page is on top of the one that opened it.
+        return ListenableBuilder(
+          listenable: Listenable.merge(<Listenable?>[route.animation, route.secondaryAnimation]),
+          builder: (final BuildContext context, final Widget? child) {
+            if (!route.isActive) {
+              WidgetsBinding.instance.addPostFrameCallback((final Duration _) => closeNow());
+            }
+            return Visibility(visible: route.isCurrent, maintainState: true, child: child!);
+          },
+          child: sheet,
+        );
+      },
+    );
     overlay.insert(_entry!);
+    if (route != null) {
+      _history = LocalHistoryEntry(
+        onRemove: () {
+          _history = null;
+          unawaited(_close());
+        },
+      );
+      route.addLocalHistoryEntry(_history!);
+      // Popped or replaced: the sheet goes with it.
+      unawaited(route.completed.whenComplete(closeNow));
+    }
     _animation.forward();
     return _done.future;
+  }
+
+  /// Takes the sheet's entry out of its page's history, when it closes some other way.
+  void _leaveHistory() {
+    final LocalHistoryEntry? history = _history;
+    _history = null;
+    final ModalRoute<Object?>? route = this.route;
+    if (history != null && route != null && route.isActive) {
+      route.removeLocalHistoryEntry(history);
+    }
   }
 
   bool _closing = false;
@@ -717,6 +766,7 @@ class _NonModalSheet<T> {
     }
     _entry = null;
     _closing = true;
+    _leaveHistory();
     host.detach();
     _animation.stop();
     try {
@@ -735,6 +785,7 @@ class _NonModalSheet<T> {
       return;
     }
     _closing = true;
+    _leaveHistory();
     host.detach();
     if (overlay.mounted) {
       await _animation.reverse();
