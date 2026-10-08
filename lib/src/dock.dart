@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'tide.dart';
@@ -75,7 +76,7 @@ enum HarborExtentPolicy {
 /// Docks on the same edge stack in the order they are listed, the way a
 /// `Column` or `Row` would lay them out.
 @immutable
-class HarborDock {
+class HarborDock with Diagnosticable {
   /// A dock built out over the water: content sails under it.
   const HarborDock.pier({
     this.key,
@@ -87,6 +88,7 @@ class HarborDock {
     this.extentPolicy = HarborExtentPolicy.hold,
     this.duration = const Duration(milliseconds: 250),
     this.curve = Curves.easeInOutCubic,
+    this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
     this.withdrawsAtHighTide = false,
@@ -106,6 +108,7 @@ class HarborDock {
     this.extentPolicy = HarborExtentPolicy.hold,
     this.duration = const Duration(milliseconds: 250),
     this.curve = Curves.easeInOutCubic,
+    this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
     this.withdrawsAtHighTide = false,
@@ -138,6 +141,13 @@ class HarborDock {
   /// How long the dock takes to go dark, withdraw or return.
   final Duration duration;
   final Curve curve;
+
+  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
+  /// duration and curve. Its `duration` and `curve` are for returning and lighting up, and its
+  /// `reverseDuration` and `reverseCurve` for withdrawing and going dark; each falls back to the
+  /// forward one, then to [duration] and [curve]. [AnimationStyle.noAnimation] changes the dock's
+  /// state at once.
+  final AnimationStyle? animationStyle;
 
   /// Painted under the dock's whole ground, coast included: its surface, or a
   /// frosted glass. It never takes taps itself.
@@ -184,6 +194,7 @@ class HarborDock {
           extentPolicy: extentPolicy,
           duration: duration,
           curve: curve,
+          animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
           withdrawsAtHighTide: withdrawsAtHighTide,
@@ -201,6 +212,7 @@ class HarborDock {
           extentPolicy: extentPolicy,
           duration: duration,
           curve: curve,
+          animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
           withdrawsAtHighTide: withdrawsAtHighTide,
@@ -208,4 +220,32 @@ class HarborDock {
           minimum: minimum,
           debugLabel: debugLabel,
         );
+
+  @override
+  String toStringShort() => '${objectRuntimeType(this, 'HarborDock')}.${kind.name}';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
+    properties.add(DiagnosticsProperty<HarborWake>('wake', wake, defaultValue: HarborWake.none));
+    properties.add(EnumProperty<HarborTideStance>('tide', tide, defaultValue: HarborTideStance.pilings));
+    properties.add(EnumProperty<HarborCoastStance>('coast', coast, defaultValue: null));
+    properties.add(EnumProperty<HarborDockState>('state', state, defaultValue: HarborDockState.open));
+    properties.add(
+      EnumProperty<HarborExtentPolicy>('extentPolicy', extentPolicy, defaultValue: HarborExtentPolicy.hold),
+    );
+    properties.add(
+      DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 250)),
+    );
+    properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeInOutCubic));
+    properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
+    properties.add(
+      EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
+    );
+    properties.add(FlagProperty('withdrawsAtHighTide', value: withdrawsAtHighTide, ifTrue: 'withdraws at high tide'));
+    properties.add(DoubleProperty('restingExtent', restingExtent, defaultValue: null));
+    properties.add(DoubleProperty('minimum', minimum, defaultValue: 0.0));
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
+  }
 }

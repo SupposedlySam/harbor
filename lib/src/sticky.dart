@@ -19,6 +19,12 @@ class HarborSticky extends SingleChildRenderObjectWidget {
   final double gap;
 
   @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+  }
+
+  @override
   RenderObject createRenderObject(final BuildContext context) =>
       _RenderHarborSticky(HarborController.maybeOf(context), gap);
 
@@ -131,6 +137,12 @@ class HarborCenter extends StatelessWidget {
 
   final double overlapBudget;
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DoubleProperty('overlapBudget', overlapBudget, defaultValue: 0.0));
+  }
 
   @override
   Widget build(final BuildContext context) {

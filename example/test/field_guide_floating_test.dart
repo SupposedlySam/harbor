@@ -363,11 +363,11 @@ void main() {
     expect(bubble().center.dx, _near(boat.center.dx));
     expect(_code(tester), contains('side: HarborBuoySide.below,'));
 
-    await _tap(tester, 'side: before');
+    await _tap(tester, 'side: start');
     expect(bubble().right, _near(boat.left - 8 * s));
     expect(bubble().center.dy, _near(boat.center.dy));
 
-    await _tap(tester, 'side: after');
+    await _tap(tester, 'side: end');
     expect(bubble().left, _near(boat.right + 8 * s));
     expect(bubble().center.dy, _near(boat.center.dy));
 

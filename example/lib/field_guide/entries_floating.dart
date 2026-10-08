@@ -509,9 +509,9 @@ class _SpeechBubble extends StatelessWidget {
     painter: _BubblePainter(side),
     child: Padding(
       padding: EdgeInsets.fromLTRB(
-        12 + (side == HarborBuoySide.after ? _tail : 0),
+        12 + (side == HarborBuoySide.end ? _tail : 0),
         10 + (side == HarborBuoySide.below ? _tail : 0),
-        12 + (side == HarborBuoySide.before ? _tail : 0),
+        12 + (side == HarborBuoySide.start ? _tail : 0),
         10 + (side == HarborBuoySide.above ? _tail : 0),
       ),
       child: Text(text, style: const TextStyle(fontFamily: 'Menlo', color: Palette.night, fontWeight: FontWeight.w700, fontSize: 12)),
@@ -528,9 +528,9 @@ class _BubblePainter extends CustomPainter {
   void paint(final Canvas canvas, final Size size) {
     const double t = _SpeechBubble._tail;
     final Rect body = Rect.fromLTRB(
-      side == HarborBuoySide.after ? t : 0,
+      side == HarborBuoySide.end ? t : 0,
       side == HarborBuoySide.below ? t : 0,
-      size.width - (side == HarborBuoySide.before ? t : 0),
+      size.width - (side == HarborBuoySide.start ? t : 0),
       size.height - (side == HarborBuoySide.above ? t : 0),
     );
     final Path tail = switch (side) {
@@ -542,11 +542,11 @@ class _BubblePainter extends CustomPainter {
         ..moveTo(body.center.dx - t, body.top + 1)
         ..lineTo(body.center.dx, 0)
         ..lineTo(body.center.dx + t, body.top + 1),
-      HarborBuoySide.before => Path()
+      HarborBuoySide.start => Path()
         ..moveTo(body.right - 1, body.center.dy - t)
         ..lineTo(size.width, body.center.dy)
         ..lineTo(body.right - 1, body.center.dy + t),
-      HarborBuoySide.after => Path()
+      HarborBuoySide.end => Path()
         ..moveTo(body.left + 1, body.center.dy - t)
         ..lineTo(0, body.center.dy)
         ..lineTo(body.left + 1, body.center.dy + t),
