@@ -262,7 +262,10 @@ them, as a `SnackBar` is. A signal whose widget is already its own live region
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
 leave without moving. On iOS a tap on the
-status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
+status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
+as there only the page whose status bar band is on top at the screen's top left:
+a page under a route in an outer navigator, under an overlay, or in the
+right-hand pane of a split stays where it is.
 
 ## Talking to the harbor
 
