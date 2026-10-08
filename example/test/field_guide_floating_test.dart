@@ -112,7 +112,7 @@ Future<void> _scrollStage(final WidgetTester tester, final String key, final dou
 
 /// Closes the sheet open on the stage (a non-modal sheet is not a route).
 Future<void> _popStage(final WidgetTester tester, final String keyInside) async {
-  closeHarborSheet(tester.element(_key(keyInside).first));
+  HarborSheet.close(tester.element(_key(keyInside).first));
   await tester.pump();
   await tester.pump(_step);
   await tester.pump(_step);
