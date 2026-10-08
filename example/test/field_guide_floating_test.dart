@@ -213,6 +213,7 @@ void main() {
       'HarborBuoy',
       'HarborBuoy.anchored',
       'HarborBuoy(modal: true)',
+      'HarborPortalBuoy',
       'HarborSignals.raise',
     ]);
     expect(names(GuideGroup.sheets), <String>[
@@ -452,6 +453,56 @@ void main() {
     expect(_rect(tester, 'anchored buoy').left, _near(_frameLeft(tester) + 8 * s));
     expect(_rect(tester, 'anchored buoy').top, _near(boat.bottom + 8 * s));
     expect(_rect(tester, 'anchored buoy').center.dx, greaterThan(boat.center.dx));
+  });
+
+  // -------------------------------------------------------------------------
+  // HarborPortalBuoy
+
+  testWidgets('HarborPortalBuoy: the menu opened from the first row sits gap below it', (final WidgetTester tester) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _tapStage(tester, 'stage row 0');
+    final Rect row = _rect(tester, 'stage row 0');
+    expect(_rect(tester, 'portal buoy').top, _near(row.bottom + 8 * s));
+    expect(_code(tester), contains('side: HarborBuoySide.below,'));
+  });
+
+  testWidgets('HarborPortalBuoy: the menu opened from the last row flips above it, clear of the tab bar', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _tapStage(tester, 'stage row 11');
+    final Rect row = _rect(tester, 'stage row 11');
+    expect(_rect(tester, 'portal buoy').bottom, _near(row.top - 8 * s));
+    expect(_rect(tester, 'portal buoy').bottom, _atMost(_rect(tester, 'portal tab bar').top));
+  });
+
+  testWidgets('HarborPortalBuoy: with the keyboard up, the menu from the last row in sight flips above the keyboard', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _setTide(tester, high: true);
+    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _tapStage(tester, 'stage row 11');
+    final Rect row = _rect(tester, 'stage row 11');
+    expect(row.bottom, _atMost(_keyboardTop(tester)));
+    expect(_rect(tester, 'portal buoy').bottom, _near(row.top - 8 * s));
+    expect(_rect(tester, 'portal buoy').bottom, _atMost(_keyboardTop(tester)));
+  });
+
+  testWidgets('HarborPortalBuoy: without flips, the menu below the last row is held clear of the tab bar instead', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy-portal'));
+    final double s = _scale(tester);
+    await _tap(tester, 'toggle flips');
+    expect(_code(tester), contains('flips: false,'));
+    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _tapStage(tester, 'stage row 11');
+    expect(_rect(tester, 'portal buoy').bottom, _near(_rect(tester, 'portal tab bar').top - 8 * s));
   });
 
   // -------------------------------------------------------------------------

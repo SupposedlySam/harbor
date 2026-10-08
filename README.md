@@ -58,6 +58,7 @@ header your list starts below.
 | **Make way** | Content asking a dock to go dark or withdraw | `HarborMakeWay` |
 | **Pontoon** | A dock moored from deep in the tree | `HarborPontoon` |
 | **Buoy** | Something afloat in the clear water: a menu, a bubble | `HarborBuoy` |
+| **Portal buoy** | A buoy opened from anywhere: a row's menu, a button's popover | `HarborPortalBuoy` |
 | **Signal** | A transient buoy: a toast | `HarborSignals.raise` |
 | **Breakwater** | A sheet reporting how much of the page it covers | `showHarborSheet(breakwater: true)` |
 | **Lighthouse** | Keeps things in sight: reveal, lift, coverage | `HarborLighthouse`, `HarborBeacon` |
@@ -271,6 +272,8 @@ HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
+An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
+reading order, so `before` is on the right under right-to-left.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
@@ -283,6 +286,26 @@ goes to the nearest `Overlay`, at its slot and clear of `MediaQuery.padding` and
 `FlutterError.reportError`, in release builds too. A signal's timers stop when it
 is lowered or when nothing is left to show it, so a test that ends with one up
 has no timer pending.
+
+```dart
+final menu = OverlayPortalController();
+
+HarborPortalBuoy(                       // in a list row, anywhere below a harbor
+  controller: menu,
+  side: HarborBuoySide.below,
+  buoyBuilder: (context) => const RowMenu(),
+  child: GestureDetector(onTap: menu.toggle, child: row),
+)
+```
+
+A **portal buoy** is an anchored buoy opened from where it is used rather than
+listed in `Harbor.buoys`: a menu from a list row, a popover from a button in
+another package. It is an `OverlayPortal`, so its buoy builds with the row's
+themes and floats in the nearest `Overlay`, placed in the clear water of the
+harbor around the row by its `child` (or by an `anchor`). When its `side` has
+no room, it `flips` to the other side of the anchor, so a menu from a row just
+above the tab bar or the keyboard opens above the row; when neither side has
+room, it is held inside the clear water.
 
 ## Sheets and dialogs
 
