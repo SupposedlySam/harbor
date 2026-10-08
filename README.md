@@ -509,6 +509,12 @@ Rebuilt with a new `rest` before it is dragged, a sheet moves there, as a
 `DraggableScrollableSheet` does with a new `initialChildSize`; after a drag,
 move it with the controller.
 
+`sheetAnimationStyle:` takes an `AnimationStyle`, as `showModalBottomSheet`
+does: its `duration` and `curve` set how the sheet opens, `reverseDuration` and
+`reverseCurve` how it closes, and `AnimationStyle.noAnimation` opens and closes
+it at once. A dragged sheet stays under the finger whatever the curve, and
+reduced motion still wins.
+
 ## The lighthouse
 
 ```dart

@@ -1,5 +1,6 @@
 ## Unreleased
 
+* `showHarborSheet(sheetAnimationStyle:)`: an `AnimationStyle`, as on `showModalBottomSheet`, sets how a sheet opens and closes, with or without a barrier: `duration` and `curve` going in, `reverseDuration` and `reverseCurve` going out, and `AnimationStyle.noAnimation` for none. A dragged sheet follows the finger with no curve and goes on along the curve when let go, so it stays under the finger with any curve, one that overshoots included. Reduced motion still wins.
 * `HarborSheetController`, given to `showHarborSheet(controller:)`: closes a sheet from outside it (`close()`, `remove()` with no slide), completes `closed` when it has left, rebuilds it (`setState`) and reads its slide (`animation`). It is a `ChangeNotifier` that tells its listeners when a sheet attaches and leaves. For a sheet with no barrier, which `closeHarborSheet` could only close from inside, and for one with a barrier.
 * `showHarborSheet(transitionAnimationController:)`, as on `showModalBottomSheet`: the sheet slides by the caller's controller in place of its own, and the caller disposes it.
 * `HarborSheet.draggable(controller:)` takes a `DraggableScrollableController`, so a draggable sheet can be read and moved from outside it: fitted to content measured after layout, or raised to its ceiling when a field takes focus.
