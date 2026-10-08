@@ -145,13 +145,17 @@ class HarborMooringLine extends StatelessWidget {
   );
 }
 
+/// The signature of [HarborOpenWater.builder]: builds open water from the
+/// [waters] it lies in, as a `LayoutWidgetBuilder` builds from its constraints.
+typedef HarborWatersWidgetBuilder = Widget Function(BuildContext context, HarborWatersData waters);
+
 /// Open water: content that ignores the docks and the coast (a background, a
 /// map, a full-bleed image), told how far each of them reaches so it can place
 /// what it draws.
 class HarborOpenWater extends StatelessWidget {
   const HarborOpenWater({super.key, required this.builder});
 
-  final Widget Function(BuildContext context, HarborWatersData waters) builder;
+  final HarborWatersWidgetBuilder builder;
 
   @override
   Widget build(final BuildContext context) => builder(context, HarborWaters.of(context));

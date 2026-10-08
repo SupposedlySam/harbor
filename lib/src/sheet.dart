@@ -70,7 +70,7 @@ class HarborSheet extends StatelessWidget {
     super.key,
     this.header,
     this.footer,
-    required Widget Function(BuildContext context, ScrollController controller) this.builder,
+    required ScrollableWidgetBuilder this.builder,
     this.extent = const HarborSheetExtent(),
     this.surface,
     this.headerWake = const HarborWake.fade(length: 12.0),
@@ -87,7 +87,7 @@ class HarborSheet extends StatelessWidget {
   final Widget? header;
   final Widget? footer;
   final Widget? body;
-  final Widget Function(BuildContext context, ScrollController controller)? builder;
+  final ScrollableWidgetBuilder? builder;
   final HarborSheetExtent? extent;
 
   /// Painted under the whole sheet: its color and corners.
