@@ -568,6 +568,8 @@ void main() {
         expect(transition.value, 0.25);
       });
     }
+  });
+
   // A picker sheet ("choose a folder") is awaited for its answer, as showModalBottomSheet is.
   for (final HarborSheetBarrier barrier in HarborSheetBarrier.values) {
     testWidgets('a sheet with barrier ${barrier.name} completes with the result it is closed with', (final tester) async {
