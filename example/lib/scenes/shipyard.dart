@@ -675,7 +675,7 @@ class _PaintShopState extends State<PaintShop> {
       return;
     }
     _closing = true;
-    closeHarborSheet(context);
+    HarborSheet.close(context);
   }
 
   void _yardChanged() {

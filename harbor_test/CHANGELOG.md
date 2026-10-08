@@ -1,3 +1,7 @@
+## Unreleased
+
+* `raiseTide`, `lowerTide` and `setTide` take `pumpFor:`, how long to pump after the keyboard moves (600 ms when not given, as before). `pumpFor: Duration.zero` pumps one frame, so a test can check the first frame after the keyboard arrives, or run its own timers from there.
+
 ## 0.1.0
 
 The first sea trials, moved here from `package:harbor/testing.dart` so that harbor no longer depends on `flutter_test`.

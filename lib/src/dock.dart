@@ -96,7 +96,7 @@ class HarborDock {
     this.debugLabel,
   }) : kind = HarborDockKind.pier;
 
-  /// A dock built on the shore: the body starts where it ends.
+  /// A dock built on the shore: the body starts where it ends. A quay is pronounced "key".
   const HarborDock.quay({
     this.key,
     required this.child,

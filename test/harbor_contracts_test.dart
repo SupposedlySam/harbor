@@ -224,6 +224,61 @@ void main() {
       expect(front.fleet.topmost, same(front));
     });
 
+    // Breaks if: an exact alignment is ignored in favour of the slot, or placed anywhere but its
+    // point in the clear water, 16 in from its edges, as a buoy at that alignment would be.
+    testWidgets('take an exact alignment within the clear water', (final tester) async {
+      const Alignment notch = Alignment(0.0, -0.8);
+      late BuildContext page;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(
+        page,
+        alignment: notch,
+        builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      final Rect water = trial.clearWaterAround(find.byType(_Probe)).deflate(16);
+      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
+    });
+
+    // Breaks if: a directional alignment is resolved where the signal is shown rather than in the
+    // reading direction of the page that raised it.
+    testWidgets('resolve a directional alignment in the direction of the page that raised it', (final tester) async {
+      late BuildContext page;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Directionality(textDirection: TextDirection.rtl, child: _Probe((final BuildContext c) => page = c)),
+          ),
+        ),
+      );
+      HarborSignals.raise(
+        page,
+        alignment: AlignmentDirectional.centerEnd,
+        builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      final Rect water = trial.clearWaterAround(find.byType(_Probe)).deflate(16);
+      expect(_rect(tester, 'toast'), Alignment.centerLeft.inscribe(const Size(200, 40), water));
+    });
+
+    // Breaks if: the overlay a signal falls back to ignores its exact alignment.
+    testWidgets('without a harbor, take an exact alignment within the overlay’s padded water', (final tester) async {
+      const Alignment notch = Alignment(0.0, -0.8);
+      late BuildContext page;
+      await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(
+        page,
+        alignment: notch,
+        builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      final Rect water = const EdgeInsets.fromLTRB(16, _statusBar + 16, 16, 34 + 16).deflateRect(Offset.zero & const Size(402, _screen));
+      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
+    });
+
     // Breaks if: a signal with no harbor above it is dropped (it used to assert, and show nothing
     // in release), or the overlay it falls back to ignores the coast or the keyboard.
     testWidgets('without a harbor, go to the nearest overlay, clear of the coast and the keyboard', (final tester) async {
@@ -453,11 +508,19 @@ void main() {
     // No bottom coast, so the keyboard moving changes viewInsets and nothing else.
     const HarborTrialDevice device = HarborTrialDevice.iPhoneSE;
 
-    // Brings the keyboard in or out over ten frames, as the platform animates it.
-    Future<void> slideTide(final WidgetTester tester, {required final bool tideIn}) async {
+    // Brings the keyboard in or out over ten frames, as the platform animates it. On a phone that
+    // stops reporting its home indicator in padding under the keyboard, the padding goes with it.
+    Future<void> slideTide(
+      final WidgetTester tester, {
+      required final bool tideIn,
+      final HarborTrialDevice on = device,
+    }) async {
       for (int i = 1; i <= 10; i++) {
         final double share = tideIn ? i / 10 : 1 - i / 10;
-        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share);
+        final EdgeInsets coast = on.coastWhen(tideIn: share > 0);
+        tester.view
+          ..padding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
+          ..viewInsets = FakeViewPadding(bottom: on.tideHeight * share);
         await tester.pump(const Duration(milliseconds: 16));
       }
       // Long enough for the tide gauge to settle.
@@ -556,6 +619,75 @@ void main() {
         HarborMoored: 0,
         HarborFairway: 0,
       });
+    });
+
+    // A body that clears the tide takes the keyboard out of its view padding, as
+    // `MediaQueryData.removeViewInsets` does, so on a phone with a home indicator the steady
+    // coast's clamp is reached on every frame the keyboard moves. The iPhone SE above has no
+    // bottom coast and never reaches it.
+    // Breaks if: HarborWaters.of subscribes coast readers to the steady coast's clamp.
+    testWidgets('a coast-only moored block holds still while the keyboard rises over a home indicator', (final tester) async {
+      const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
+      final List<HarborTideState> tide = <HarborTideState>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                const HarborMoored(
+                  edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
+                  clear: HarborClear.coast,
+                  tide: false,
+                  child: SizedBox(height: 10),
+                ),
+                const _AspectReader(HarborWatersAspect.coast),
+                SizedBox(height: 10, child: _TideReader(tide)),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborMoored, _AspectReader, _TideReader});
+      await slideTide(tester, tideIn: true, on: phone);
+      expect(rebuilds[_TideReader], greaterThanOrEqualTo(10), reason: 'positive control: the keyboard moved on every frame');
+      // Once each, for the platform taking the home indicator out of the padding.
+      expect(rebuilds[HarborMoored], 1);
+      expect(rebuilds[_AspectReader], 1);
+    });
+
+    // The standard is `MediaQuery.viewPaddingOf`: it rebuilds when the view padding changes, and
+    // the steady coast should rebuild no more often than that while holding its value.
+    // Breaks if: steadyCoastOf depends on the tide gauge, which notifies on every frame.
+    testWidgets('the steady coast holds still while the keyboard rises over a home indicator', (final tester) async {
+      const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
+      final List<double> steady = <double>[];
+      final List<double> viewPadding = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                _Probe(
+                  (final BuildContext c) => steady.add(HarborWaters.steadyCoastOf(c, HarborEdge.bottom)),
+                  child: const SizedBox(height: 10),
+                ),
+                _Probe(
+                  (final BuildContext c) => viewPadding.add(MediaQuery.viewPaddingOf(c).bottom),
+                  child: const SizedBox(height: 10),
+                ),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      steady.clear();
+      viewPadding.clear();
+      await slideTide(tester, tideIn: true, on: phone);
+      expect(viewPadding.last, 0, reason: 'positive control: the body took the keyboard out of its view padding');
+      expect(steady, everyElement(phone.coast.bottom));
+      expect(steady.length, lessThanOrEqualTo(viewPadding.length));
     });
 
     // Breaks if: isInOf depends on the tide gauge as a whole, which notifies on every frame.
