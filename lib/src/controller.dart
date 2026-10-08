@@ -336,10 +336,26 @@ class HarborController {
   static HarborController? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<HarborScope>()?.controller;
 
+  /// The nearest harbor above [context]. Throws a [FlutterError], in release
+  /// builds too, when there is none; [maybeOf] returns null instead.
   static HarborController of(final BuildContext context) {
     final HarborController? controller = maybeOf(context);
-    assert(controller != null, 'No Harbor above this context.');
-    return controller!;
+    if (controller != null) {
+      return controller;
+    }
+    throw FlutterError.fromParts(<DiagnosticsNode>[
+      ErrorSummary('HarborController.of() called with a context that has no Harbor above it.'),
+      ErrorDescription(
+        'No Harbor ancestor could be found starting from the context that was passed to HarborController.of(). '
+        'This usually happens when the context is from the widget whose build method creates the Harbor, '
+        'or when the widget is outside every HarborSea.',
+      ),
+      ErrorHint(
+        'Use a Builder, or a widget of its own, below the Harbor to get a context inside it. '
+        'For a widget that may be used outside a harbor, call HarborController.maybeOf() and handle null.',
+      ),
+      context.describeElement('The context used was'),
+    ]);
   }
 
   /// The nearest harbor, from this one outward, that has a dock on [edge].

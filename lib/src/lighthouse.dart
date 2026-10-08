@@ -12,7 +12,8 @@ import 'waters.dart';
 abstract final class HarborLighthouse {
   /// Brings the widget at [context] into sight, [clearance] clear of whatever
   /// covers the edges of the scroll views it is in (docks and keyboard
-  /// included, when those scroll views are fairways).
+  /// included, when those scroll views are fairways). With reduced motion
+  /// ([MediaQueryData.disableAnimations]) it jumps there, whatever [duration] says.
   static void reveal(
     final BuildContext context, {
     final double clearance = 0.0,
@@ -24,7 +25,8 @@ abstract final class HarborLighthouse {
       return;
     }
     final Rect bounds = target.paintBounds.inflate(clearance);
-    target.showOnScreen(rect: bounds, duration: duration, curve: curve);
+    final bool still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    target.showOnScreen(rect: bounds, duration: still ? Duration.zero : duration, curve: curve);
   }
 
   /// How much of [box] (0 to 1) the docks and coast on [edge] of its nearest
@@ -53,7 +55,8 @@ abstract final class HarborLighthouse {
 ///
 /// With [keepInSight] set, it brings itself back into sight, [clearance] clear
 /// of the docks and the keyboard, once the keyboard has risen or what covers
-/// the bottom has grown: a field and the button under it. With
+/// the bottom has grown, and when focus moves into it: a field and the button
+/// under it, reached by a tap or the keyboard's next action. With
 /// [onlyWhileFocused], only while focus is inside it, so a form full of
 /// beacons reveals just the field being typed in. Inside a [HarborLighthouseRegion] it can [lift] instead:
 /// the region moves its content up until the beacon clears what covers it, and
@@ -74,7 +77,11 @@ class HarborBeacon extends StatefulWidget {
   final HarborEdge edge;
   final ValueChanged<double>? onObscured;
 
-  /// Whether to scroll this widget back into sight when what covers the bottom grows.
+  /// Whether to scroll this widget back into sight when what covers the bottom
+  /// grows, and when focus moves into it from outside.
+  ///
+  /// A focused text field reveals its own caret, as [EditableText] does; this
+  /// reveals the whole beacon, so what sits under the field comes with it.
   final bool keepInSight;
 
   /// Whether [keepInSight] applies only while focus is inside this beacon.
@@ -102,6 +109,15 @@ class _HarborBeaconState extends State<HarborBeacon> {
   double _lastWaterline = -1.0;
   bool _checkPending = false;
   _LighthouseRegionState? _region;
+
+  // Neither focusable nor traversable: it only tells the beacon whether focus is inside it.
+  final FocusNode _focus = FocusNode(debugLabel: 'HarborBeacon', canRequestFocus: false, skipTraversal: true);
+
+  void _handleFocusChange(final bool hasFocus) {
+    if (hasFocus && widget.keepInSight) {
+      _scheduleReveal();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -144,7 +160,7 @@ class _HarborBeaconState extends State<HarborBeacon> {
         if (!mounted || request != _revealRequest) {
           return;
         }
-        if (widget.onlyWhileFocused && !_hasFocusInside()) {
+        if (widget.onlyWhileFocused && !_focus.hasFocus) {
           return;
         }
         HarborLighthouse.reveal(context, clearance: widget.clearance);
@@ -152,24 +168,6 @@ class _HarborBeaconState extends State<HarborBeacon> {
       SchedulerBinding.instance.ensureVisualUpdate();
     });
     SchedulerBinding.instance.ensureVisualUpdate();
-  }
-
-  bool _hasFocusInside() {
-    final BuildContext? focused = FocusManager.instance.primaryFocus?.context;
-    if (focused == null) {
-      return false;
-    }
-    bool inside = identical(focused, context);
-    if (!inside) {
-      focused.visitAncestorElements((final Element ancestor) {
-        if (identical(ancestor, context)) {
-          inside = true;
-          return false;
-        }
-        return true;
-      });
-    }
-    return inside;
   }
 
   @override
@@ -205,19 +203,26 @@ class _HarborBeaconState extends State<HarborBeacon> {
 
   @override
   void dispose() {
+    _focus.dispose();
     _position?.removeListener(_scheduleCheck);
     _region?._unregister(this);
     super.dispose();
   }
 
   @override
-  Widget build(final BuildContext context) => widget.child;
+  Widget build(final BuildContext context) => Focus(
+    focusNode: _focus,
+    includeSemantics: false,
+    onFocusChange: _handleFocusChange,
+    child: widget.child,
+  );
 }
 
 /// A region the lighthouse can lift: when a [HarborBeacon] inside it with
 /// `lift` set would be covered by what covers the bottom (a sheet, a
 /// breakwater, the keyboard), the region moves its content up just far enough,
 /// and back down when the cover goes. Content already clear stays where it is.
+/// With reduced motion ([MediaQueryData.disableAnimations]) it moves at once.
 class HarborLighthouseRegion extends StatefulWidget {
   const HarborLighthouseRegion({
     super.key,
@@ -309,6 +314,7 @@ class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTi
     _from = _offset;
     _to = target;
     _lift
+      ..duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : widget.duration
       ..value = 0.0
       ..forward();
   }

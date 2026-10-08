@@ -25,6 +25,14 @@ class HarborAnchor extends ChangeNotifier {
   RenderBox? get box => (_box != null && _box!.attached && _box!.hasSize) ? _box : null;
 
   void _attach(final RenderBox box) {
+    assert(() {
+      final RenderBox? previous = _box;
+      if (previous != null && !identical(previous, box)) {
+        (_debugPreviousBoxes ??= <RenderBox>{}).add(previous);
+        _debugScheduleSharedCheck();
+      }
+      return true;
+    }());
     _box = box;
     _moved();
   }
@@ -34,6 +42,49 @@ class HarborAnchor extends ChangeNotifier {
       _box = null;
       _moved();
     }
+    assert(() {
+      _debugPreviousBoxes?.remove(box);
+      return true;
+    }());
+  }
+
+  // The boxes a later attach replaced. As with a LayerLink's leaders, each one
+  // must detach by the end of the frame, or two points share this anchor.
+  Set<RenderBox>? _debugPreviousBoxes;
+  bool _debugSharedCheckScheduled = false;
+
+  void _debugScheduleSharedCheck() {
+    if (_debugSharedCheckScheduled) {
+      return;
+    }
+    _debugSharedCheckScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      _debugSharedCheckScheduled = false;
+      final Set<RenderBox> stillAttached = <RenderBox>{
+        for (final RenderBox previous in _debugPreviousBoxes ?? const <RenderBox>{})
+          if (previous.attached && !identical(previous, _box)) previous,
+      };
+      _debugPreviousBoxes = null;
+      if (stillAttached.isEmpty || _disposed) {
+        return;
+      }
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('More than one HarborAnchorPoint is using the same HarborAnchor${debugLabel == null ? '' : ' "$debugLabel"'}.'),
+          ErrorDescription(
+            'An anchor refers to one point. With several attached, a buoy anchored to it sits by whichever '
+            'laid out last, and when that one leaves the anchor has no point while the others are still there.',
+          ),
+          ErrorHint(
+            'Give each HarborAnchorPoint its own HarborAnchor, for example one per row of a list, '
+            'or wrap only the row whose buoy is showing.',
+          ),
+          if (_box case final RenderBox current) current.describeForError('The point the anchor is using'),
+          for (final RenderBox previous in stillAttached) previous.describeForError('Also attached'),
+        ]),
+        library: 'harbor',
+      ));
+    }, debugLabel: 'HarborAnchor.sharedCheck');
   }
 
   bool _pending = false;
@@ -430,7 +481,11 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
   ];
 }
 
-class _BuoyParentData extends ContainerBoxParentData<RenderBox> {}
+class _BuoyParentData extends ContainerBoxParentData<RenderBox> {
+  /// Whether the last paint painted this buoy. An anchored buoy is not painted while its anchor
+  /// has no box, and its offset is then stale, so it takes no taps either.
+  bool painted = false;
+}
 
 class _RenderBuoyLayer extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, _BuoyParentData>, RenderBoxContainerDefaultsMixin<RenderBox, _BuoyParentData> {
@@ -559,6 +614,7 @@ class _RenderBuoyLayer extends RenderBox
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
       final RenderBox? anchorBox = buoy.anchor?.box;
+      data.painted = buoy.anchor == null || anchorBox != null;
       if (buoy.anchor != null) {
         if (anchorBox == null) {
           child = data.nextSibling;
@@ -582,8 +638,26 @@ class _RenderBuoyLayer extends RenderBox
   }
 
   @override
-  bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) =>
-      defaultHitTestChildren(result, position: position);
+  bool paintsChild(final RenderBox child) => (child.parentData! as _BuoyParentData).painted;
+
+  @override
+  bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) {
+    RenderBox? child = lastChild;
+    while (child != null) {
+      final _BuoyParentData data = child.parentData! as _BuoyParentData;
+      final RenderBox shown = child;
+      if (data.painted &&
+          result.addWithPaintOffset(
+            offset: data.offset,
+            position: position,
+            hitTest: (final BoxHitTestResult result, final Offset transformed) => shown.hitTest(result, position: transformed),
+          )) {
+        return true;
+      }
+      child = data.previousSibling;
+    }
+    return false;
+  }
 }
 
 /// An anchored buoy opened from anywhere: a menu from a list row, a popover
