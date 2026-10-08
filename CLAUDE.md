@@ -45,8 +45,10 @@ under the identity `harbor-owner`.
 
 - **None of the agent's tooling is in the repository or the package.** `.claude/`, `.lamp/`,
   `.game_loop/`, `.llm_chat/`, `.harbor_owner/` and `lamp.lock` are gitignored and pubignored, and
-  every hook is registered in the machine-local `.claude/settings.local.json`. A clone gets
-  harbor and nothing else; a new owner session sets its tooling up again with `/owner-agent`.
+  every hook is registered in `.claude/`, which is gitignored: game_loop's in `settings.json`,
+  where its installer writes them on every `lamp upgrade`, and llm_chat's and the GitHub
+  watcher's in `settings.local.json`. Keep each hook in one file only, or it runs twice. A clone
+  gets harbor and nothing else; a new owner session sets its tooling up again with `/owner-agent`.
 - The GitHub watcher is `.claude/hooks/issue-waker.py`, a Stop hook that polls GitHub while the
   session is idle and wakes it for new issues and PRs, reopens, and comments on open or closed
   items. It is ported from showrunner's waker, which keeps the history behind each rule. Its
