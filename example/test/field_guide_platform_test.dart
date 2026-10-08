@@ -633,15 +633,15 @@ void main() {
       expect(_code(tester), contains('  // No wakePainter: the fairway fades its rows;\n'));
     });
 
-    testWidgets('harborAlphaWake fades the whole body', (final WidgetTester tester) async {
+    testWidgets('HarborWakeMask.alphaWake fades the whole body', (final WidgetTester tester) async {
       await _pumpEntry(tester, const WakePainterEntry());
-      await _tap(tester, _key('wakePainter: harborAlphaWake'));
+      await _tap(tester, _key('wakePainter: HarborWakeMask.alphaWake'));
       expect(bodyMasks(tester), <Map<HarborEdge, HarborWakeBand>>[
         <HarborEdge, HarborWakeBand>{HarborEdge.top: band},
       ]);
       expect(fairwayMask(tester), isEmpty);
       expect(_key('tinted wake top'), findsNothing);
-      expect(_code(tester), contains('  wakePainter: harborAlphaWake, // the whole body fades\n'));
+      expect(_code(tester), contains('  wakePainter: HarborWakeMask.alphaWake, // the whole body fades\n'));
     });
 
     testWidgets('a custom painter is handed the wake bands', (final WidgetTester tester) async {
