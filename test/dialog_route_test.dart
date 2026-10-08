@@ -247,4 +247,60 @@ void main() {
     await tester.pump();
     expect(_opacity(tester), 1.0);
   });
+
+  testWidgets("a Hero on the page does not fly into a dialog, as it does not into showDialog's", (final tester) async {
+    late BuildContext page;
+    await tester.pumpSeaTrial(
+      MaterialApp(
+        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+        home: Harbor(
+          body: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return const Align(
+                alignment: Alignment.topLeft,
+                child: Hero(tag: 'avatar', child: SizedBox(key: ValueKey<String>('page avatar'), width: 40, height: 40)),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    final Rect resting = tester.getRect(find.byKey(const ValueKey<String>('page avatar')));
+    unawaited(showHarborDialog<void>(
+      page,
+      builder: (final BuildContext _) => const Center(
+        child: Hero(tag: 'avatar', child: SizedBox(key: ValueKey<String>('dialog avatar'), width: 200, height: 200)),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 90));
+    // In a flight both heroes' children are swapped for placeholders and a shuttle crosses between them.
+    expect(find.byKey(const ValueKey<String>('page avatar')), findsOneWidget);
+    expect(tester.getRect(find.byKey(const ValueKey<String>('page avatar'))), resting);
+    expect(tester.getSize(find.byKey(const ValueKey<String>('dialog avatar'))), const Size(200, 200));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a draggable sheet in a dialog closes the dialog when flung below its floor', (final tester) async {
+    final BuildContext page = await _page(tester);
+    bool closed = false;
+    unawaited(showHarborDialog<void>(
+      page,
+      builder: (final BuildContext _) => HarborSheet.draggable(
+        header: const SizedBox(key: ValueKey<String>('handle'), height: 40, width: double.infinity),
+        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+          controller: controller,
+          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+        ),
+      ),
+    ).then((final void _) => closed = true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
+    await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 300), 2000);
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+    expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+    expect(find.text('Page action'), findsOneWidget);
+  });
 }

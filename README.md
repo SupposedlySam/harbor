@@ -370,8 +370,8 @@ screen reader announces for the barrier ('Close sheet' when none is given). It
 spans the screen unless you give it a `maxWidth`.
 
 A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
-into it, an observer of page routes does not count it as a screen, and its
-content is a route of its own for screen readers, named by `semanticLabel:`. It
+into it, an observer of page routes does not count it as a screen, a draggable sheet
+inside it closes it, and its content is a route of its own for screen readers, named by `semanticLabel:`. It
 takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Close
 dialog' when none is given), `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and

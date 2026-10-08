@@ -1,6 +1,6 @@
 ## Unreleased
 
-* **Breaking:** `showHarborDialog` pushes a popup route (a `RawDialogRoute`, as `showGeneralDialog` does) instead of a page route. A `Hero` no longer flies into a harbor dialog, a `RouteObserver<PageRoute>` (and analytics observers that count page routes as screens) no longer sees one as a page, and its content is a route scope for screen readers. The API is unchanged; code that checked `route is PageRoute` for a harbor dialog no longer matches.
+* **Breaking:** `showHarborDialog` pushes a popup route (a `RawDialogRoute`, as `showGeneralDialog` does) instead of a page route. A `Hero` no longer flies into a harbor dialog, a `RouteObserver<PageRoute>` (and analytics observers that count page routes as screens) no longer sees one as a page, a `HarborSheet.draggable` inside one closes it when flung below its floor, and its content is a route scope for screen readers. The API is unchanged; code that checked `route is PageRoute` for a harbor dialog no longer matches.
 * `showHarborDialog` takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` (`'Close dialog'` when none is given; a Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`), `semanticLabel:` (the name screen readers announce for the dialog), `anchorPoint:`, `traversalEdgeBehavior:`, `requestFocus:` and `animationStyle:`.
 * `showHarborDialog` moved from `scale_model.dart` to `dialog.dart`. It is still exported from `package:harbor/harbor.dart`.
 
