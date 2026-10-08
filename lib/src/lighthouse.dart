@@ -99,7 +99,7 @@ class HarborBeacon extends StatefulWidget {
 class _HarborBeaconState extends State<HarborBeacon> {
   ScrollPosition? _position;
   double _lastObscured = -1.0;
-  double _lastBottom = -1.0;
+  double _lastWaterline = -1.0;
   bool _checkPending = false;
   _LighthouseRegionState? _region;
 
@@ -115,10 +115,15 @@ class _HarborBeaconState extends State<HarborBeacon> {
     // Either the keyboard covers this area (the body runs under it), or the
     // body shrank to end at it; watch both.
     final double bottom = HarborWaters.clearanceOf(context, HarborEdge.bottom) + HarborTide.of(context).height;
-    if (widget.keepInSight && _lastBottom >= 0 && bottom > _lastBottom + 0.5) {
+    // The WATERLINE, not the covered height: reveal when the water above the bottom drops. Watching
+    // the covered height alone missed a turn to landscape with the keyboard up, where that number
+    // shrinks (336 to 200) while the water above it falls from 538 to 202, leaving the beacon
+    // under the keyboard.
+    final double waterline = MediaQuery.sizeOf(context).height - bottom;
+    if (widget.keepInSight && _lastWaterline >= 0 && waterline < _lastWaterline - 0.5) {
       _scheduleReveal();
     }
-    _lastBottom = bottom;
+    _lastWaterline = waterline;
     final _LighthouseRegionState? region = _LighthouseRegionScope.maybeOf(context);
     if (!identical(region, _region)) {
       _region?._unregister(this);
