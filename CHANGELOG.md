@@ -1,3 +1,7 @@
+## Unreleased
+
+* A `HarborBeacon(keepInSight: true)` also brings itself into sight when focus moves into it, as `EditableText` does for its caret. In a form with the keyboard up, tapping the next field or pressing the keyboard's next action now reveals the whole beacon (the field and the button under it, `clearance` clear) rather than only the field's caret line. Before, a beacon re-revealed only when the keyboard rose or what covers the bottom grew.
+
 ## 0.2.0
 
 ### Breaking changes
