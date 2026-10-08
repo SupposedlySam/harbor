@@ -123,7 +123,9 @@ void main() {
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'row menu');
       addTearDown(anchor.dispose);
       await tester.pumpSeaTrial(rows(anchor, <int>[0]));
-      await tester.pumpWidget(rows(anchor, <int>[2]));
+      // A sea trial both times, so the tree is kept and the old point detaches in the same frame
+      // the new one attaches: the case the check must not mistake for two points on one anchor.
+      await tester.pumpSeaTrial(rows(anchor, <int>[2]));
       await tester.pump();
       expect(tester.takeException(), isNull);
       expect(anchor.box, isNotNull, reason: 'positive control: the anchor holds the point it moved to');
