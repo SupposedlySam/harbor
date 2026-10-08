@@ -29,6 +29,7 @@ migrate_working_dir/
 
 # --- lamp and the owner agent: machine-local tooling, never part of the package ---
 .lamp/
+.game_loop/
 lamp.lock
 .llm_chat/
 .harbor_owner/
