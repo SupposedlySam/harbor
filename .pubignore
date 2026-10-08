@@ -41,4 +41,8 @@ CLAUDE.md
 .vscode/
 .fvmrc
 tool/
+example/tool/
 doc/
+
+# The README video recorder needs macOS fonts; it is how the video is made, not part of the example.
+example/test/render_showcase_test.dart

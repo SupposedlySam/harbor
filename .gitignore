@@ -38,3 +38,6 @@ migrate_working_dir/
 lamp.lock
 .llm_chat/
 .harbor_owner/
+# Claude Code: the owner agent's hooks and settings, and agent worktrees. Machine-local tooling,
+# never part of the repository.
+.claude/
