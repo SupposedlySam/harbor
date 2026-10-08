@@ -124,6 +124,23 @@ class HarborSheet extends StatelessWidget {
   /// always closes when dragged below its floor.
   final bool dragToClose;
 
+  /// Closes the sheet [context] is in, whichever way it was opened, and
+  /// completes the future that opened it with [result], as [Navigator.pop]
+  /// does for a route.
+  ///
+  /// A sheet with [HarborSheetBarrier.none] is not a route, so this is the only
+  /// way it returns a value: closed by back or by [Navigator.pop], it completes
+  /// with null.
+  @optionalTypeArgs
+  static void close<T extends Object?>(final BuildContext context, [final T? result]) {
+    final _SheetHostScope? scope = _SheetHostScope.maybeOf(context);
+    if (scope != null && scope.host.close != null) {
+      scope.close(result);
+      return;
+    }
+    Navigator.maybePop<T>(context, result);
+  }
+
   Harbor _harbor(final Widget body, {required final bool hug, final Widget? header}) => Harbor(
     newPort: true,
     sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
@@ -374,6 +391,9 @@ enum HarborSheetBarrier {
 /// A sheet with [HarborSheetBarrier.none] is not a route, so it has none of
 /// these.
 ///
+/// The future completes with the result given to [HarborSheet.close], or with
+/// null when the sheet is closed some other way.
+///
 /// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
 /// stays until it is answered; back still closes it, as it closes a modal
 /// bottom sheet. [requestFocus] is the route's: given false, focus stays where
@@ -470,7 +490,7 @@ class _SheetHost {
   double? _dragExtent;
   double _available = 0.0;
   double _tide = 0.0;
-  VoidCallback? close;
+  void Function([Object? result])? close;
 
   /// What slides the sheet in and out, for dragging it down by hand.
   AnimationController? slide;
@@ -632,7 +652,7 @@ class _SheetHostScope extends InheritedWidget {
 
   void reportExtent(final double extent) => host.reportExtent(extent, available, tide);
 
-  void close() => host.close?.call();
+  void close([final Object? result]) => host.close?.call(result);
 
   @override
   bool updateShouldNotify(final _SheetHostScope oldWidget) => false;
@@ -720,9 +740,9 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   void install() {
     super.install();
     host
-      ..close = () {
+      ..close = ([final Object? result]) {
         if (isActive && isCurrent) {
-          navigator?.pop();
+          navigator?.pop<T>(result as T?);
         }
       }
       ..slide = controller
@@ -789,7 +809,9 @@ class _NonModalSheet<T> {
 
   Future<T?> open() {
     host
-      ..close = _close
+      ..close = ([final Object? result]) {
+        unawaited(_close(result as T?));
+      }
       ..slide = _animation
       ..attach();
     _animation.addListener(() => host.progress = _animation.value);
@@ -867,7 +889,7 @@ class _NonModalSheet<T> {
     }
   }
 
-  Future<void> _close() async {
+  Future<void> _close([final T? result]) async {
     if (_entry == null || _closing) {
       return;
     }
@@ -881,17 +903,11 @@ class _NonModalSheet<T> {
     _entry = null;
     _animation.dispose();
     if (!_done.isCompleted) {
-      _done.complete(null);
+      _done.complete(result);
     }
   }
 }
 
 /// Closes the sheet [context] is in, whichever way it was opened.
-void closeHarborSheet(final BuildContext context) {
-  final _SheetHostScope? scope = _SheetHostScope.maybeOf(context);
-  if (scope != null && scope.host.close != null) {
-    scope.close();
-    return;
-  }
-  Navigator.maybePop(context);
-}
+@Deprecated('Use HarborSheet.close instead, which also takes a result. Deprecated after 0.2.0.')
+void closeHarborSheet(final BuildContext context) => HarborSheet.close<Object?>(context);

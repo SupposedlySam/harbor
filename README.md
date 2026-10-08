@@ -200,8 +200,9 @@ edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a
-`Harbor` a `wakePainter` to wake its whole body instead, or to paint the wake
-your own way (a progressive blur shader).
+`Harbor` a `wakePainter` to wake its whole body instead
+(`wakePainter: HarborWakeMask.alphaWake`), or to paint the wake your own way (a
+progressive blur shader).
 
 Fairways widen every reveal by what covers their trailing edge. A focused
 field, `Scrollable.ensureVisible` and focus traversal all bring a row clear of
@@ -396,6 +397,22 @@ finished, since the sheet is drawn above every page rather than inside its
 own), and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
+
+```dart
+final Folder? folder = await showHarborSheet<Folder>(
+  context,
+  builder: (context) => HarborSheet(
+    body: FolderList(onPick: (folder) => HarborSheet.close(context, folder)),
+  ),
+);
+```
+
+`HarborSheet.close(context, result)` closes the sheet `context` is in and
+completes the future that opened it with `result`, as `Navigator.pop(context,
+result)` does for a modal bottom sheet. It works whatever the barrier, and on a
+sheet opened by `showModalBottomSheet` or `showGeneralDialog`, where it pops that
+route. A sheet with no barrier is not a route, so back and `Navigator.pop` close
+it with no result: it returns its value only through `HarborSheet.close`.
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a

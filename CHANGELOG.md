@@ -1,5 +1,7 @@
 ## Unreleased
 
+* `HarborSheet.close(context, [result])` closes the sheet `context` is in and completes the future that opened it with `result`, as `Navigator.pop(context, result)` does for a modal bottom sheet. A sheet with no barrier can now return a value: before, its future always completed with null. Back and `Navigator.pop` still close it with null, since it is not a route.
+* `closeHarborSheet` is deprecated in favour of `HarborSheet.close`, and `harborAlphaWake` in favour of `HarborWakeMask.alphaWake`. Both old names still work.
 * `showHarborSheet(isDismissible:, requestFocus:, anchorPoint:)`, as `showModalBottomSheet` has them. With `isDismissible: false` a tap on the barrier (dimmed or clear) does nothing and back still closes the sheet; before, every barrier closed its sheet on a tap. `requestFocus` is passed to the sheet's route, and `anchorPoint` picks the screen a sheet opens on beside a hinge.
 
 * Fixed: under a body that clears the tide, on a phone with a home indicator, `HarborMoored(clear: HarborClear.coast)` and every reader of `HarborWaters.of(context, aspect: HarborWatersAspect.coast)` rebuilt on every frame of the keyboard, and so did a reader of `HarborWaters.steadyCoastOf`. A coast reader now rebuilds only when the coast changes, and `steadyCoastOf` when the view padding does, as `MediaQuery.viewPaddingOf` would. `HarborWaters.of(aspect: HarborWatersAspect.coast).coastSteady` is filled in without subscribing, as the docks aspect already did; read it with `steadyCoastOf` to follow it. Values are unchanged.
