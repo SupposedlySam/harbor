@@ -734,7 +734,7 @@ void main() {
       testWidgets('beside its anchor, to the start lines up with its top edge', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborBuoySide.after, crossAlignment: HarborBuoyCrossAlignment.start),
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborBuoySide.end, crossAlignment: HarborBuoyCrossAlignment.start),
         );
         menu.show();
         await tester.pump();
@@ -756,7 +756,7 @@ void main() {
               const SizedBox(height: 100),
               HarborPortalBuoy(
                 controller: menu,
-                side: HarborBuoySide.after,
+                side: HarborBuoySide.end,
                 consumeOutsideTaps: consumeOutsideTaps,
                 onDismiss: () {
                   events.add('dismissed');
@@ -878,7 +878,7 @@ void main() {
                     valueListenable: closes,
                     builder: (final BuildContext context, final bool closes, final Widget? _) => HarborPortalBuoy(
                       controller: menu,
-                      side: HarborBuoySide.after,
+                      side: HarborBuoySide.end,
                       onDismiss: closes ? menu.hide : null,
                       buoyBuilder: (final BuildContext context) => const SizedBox(width: 200, height: 60, child: TextField(key: ValueKey<String>('filter'))),
                       child: const SizedBox(width: 200, child: TextField(key: ValueKey<String>('query'))),
