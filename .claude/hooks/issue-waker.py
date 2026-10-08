@@ -78,6 +78,7 @@ def look():
              "repos/%s/issues?state=all&sort=updated&direction=desc&per_page=100" % REPO,
              "--jq", '[.[] | {number, title, state, '
                      'is_pr: (.pull_request != null), '
+                     'tail: ((.body // "")[-160:]), '
                      'author: {login: .user.login, name: .user.login}}]'],
             capture_output=True, text=True, timeout=45)
     except (OSError, subprocess.SubprocessError):
@@ -295,7 +296,14 @@ def main():
         if now is None:
             continue           # could not look; never 'nothing new'
 
-        fresh = sorted(set(now) - seen)
+        # MY OWN PRs AND ISSUES MUST NOT WAKE ME EITHER. The signature check covered comments only,
+        # so the first PR this agent opened woke the session that had just opened it. Counted, not
+        # dropped in silence, the same as signed comments.
+        def signed(row):
+            return " ".join((row.get("tail") or "").split()).endswith(SIGNATURE)
+
+        mine_items = sorted(n for n in set(now) - seen if signed(now[n]))
+        fresh = sorted(n for n in set(now) - seen if not signed(now[n]))
         reopened = sorted(n for n, r in now.items()
                           if was.get(n) == "closed" and (r.get("state") or "") == "open")
 
@@ -327,6 +335,10 @@ def main():
         rung_comments |= {c["id"] for c in replies}
 
         if not (fresh or reopened or replies):
+            if mine_items:
+                seen |= set(mine_items)
+                was.update({n: (now[n].get("state") or "open") for n in mine_items})
+                _save(seen=sorted(seen), states={str(k): v for k, v in was.items()})
             _save(comments_since=mark, comments_rung=sorted(rung_comments))
             continue
 
@@ -343,8 +355,8 @@ def main():
             what.append("%d reopened" % len(reopened))
         if replies:
             what.append("%d new comment(s)" % len(replies))
-        if mine:
-            what.append("%d of my own (not shown)" % mine)
+        if mine or mine_items:
+            what.append("%d of my own (not shown)" % (mine + len(mine_items)))
         lines = ["GitHub activity on %s: %s" % (REPO, ", ".join(what)), ""]
 
         any_untrusted = False
