@@ -11,6 +11,11 @@ them a place and a rule, so your content stops doing inset arithmetic.
 > them, or is open water. The tide (the keyboard) rises over whatever doesn't
 > float.**
 
+[![An illustrated harbor beside a phone running harbor. A pier is the header rows scroll under, a quay is the tab bar the list stops at, and the tide is the keyboard: a dock on pilings is covered, a floating one rides up.](https://raw.githubusercontent.com/SupposedlySam/harbor/main/doc/media/showcase.gif)](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
+
+*Left, a harbor. Right, a phone running the real package, driven by the same
+clock. ([Watch the video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4).)*
+
 Depends on the Flutter SDK only. `package:harbor/testing.dart` adds sea trials
 for widget tests.
 
@@ -330,6 +335,12 @@ assert where something sits relative to everything in the way, not to a number.
 
 `example/` is a small harbor game that exercises every pattern above. Toggle
 the chart in its Harbor Office to see the layers.
+
+The video at the top of this page is `example/lib/showcase/`: run it with
+`fvm flutter run -t lib/showcase_main.dart`. `example/tool/render_showcase.sh`
+records it frame by frame on the test clock, so it comes out the same every
+time, and `example/test/showcase_test.dart` checks each caption against the
+real page on the phone.
 
 The **Harbor Field Guide** (the book button on the game's first page, or
 `fvm flutter run -t lib/field_guide_main.dart`) has a page for every class,
