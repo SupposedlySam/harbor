@@ -187,7 +187,7 @@ class HarborFairway extends StatelessWidget {
       EnumProperty<ScrollViewKeyboardDismissBehavior>(
         'keyboardDismissBehavior',
         keyboardDismissBehavior,
-        defaultValue: ScrollViewKeyboardDismissBehavior.manual,
+        defaultValue: null,
       ),
     );
     properties.add(EnumProperty<Clip>('clipBehavior', clipBehavior, defaultValue: Clip.hardEdge));
