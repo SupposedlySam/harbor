@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'coast.dart';
-import 'controller.dart';
 
 /// A scale model: lays [child] out on a fixed reference screen (a TV's
 /// 1200×675, say) and scales it to fit the real one, letterboxed.
@@ -87,70 +86,4 @@ class HarborScaleModel extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Opens [builder]'s dialog over [context].
-///
-/// A dialog is a new port: by default it sees only the coast. With
-/// [inheritClearWater], it sees the opening harbor's docks as coast too, so a
-/// contextual menu opened from a message stays between that page's header and
-/// its composer rather than only clear of the status bar.
-Future<T?> showHarborDialog<T>(
-  final BuildContext context, {
-  required final WidgetBuilder builder,
-  final bool inheritClearWater = false,
-  final Color barrierColor = const Color(0x88000000),
-  final bool barrierDismissible = true,
-  final bool useRootNavigator = true,
-}) {
-  final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
-  final CapturedThemes themes = InheritedTheme.capture(from: context, to: navigator.context);
-  EdgeInsets? inherited;
-  if (inheritClearWater) {
-    final Rect? clear = HarborController.maybeOf(context)?.clearWaterInGlobal();
-    // Measured against the navigator's overlay, where the dialog will be, so a
-    // scale model between the two is accounted for.
-    final RenderObject? overlay = navigator.overlay?.context.findRenderObject();
-    if (clear != null && overlay is RenderBox && overlay.hasSize) {
-      final Offset topLeft = overlay.globalToLocal(clear.topLeft);
-      final Offset bottomRight = overlay.globalToLocal(clear.bottomRight);
-      final Size size = overlay.size;
-      inherited = EdgeInsets.fromLTRB(
-        math.max(0.0, topLeft.dx),
-        math.max(0.0, topLeft.dy),
-        math.max(0.0, size.width - bottomRight.dx),
-        math.max(0.0, size.height - bottomRight.dy),
-      );
-    }
-  }
-  return navigator.push<T>(
-    PageRouteBuilder<T>(
-      opaque: false,
-      barrierColor: barrierColor,
-      barrierDismissible: barrierDismissible,
-      barrierLabel: 'Close dialog',
-      transitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (final BuildContext context, final Animation<double> animation, final Animation<double> _) {
-        // A Builder, so the builder's own context sees the captured themes (as for sheets and signals).
-        Widget dialog = themes.wrap(Builder(builder: builder));
-        final EdgeInsets? insets = inherited;
-        if (insets != null) {
-          final MediaQueryData mediaQuery = MediaQuery.of(context);
-          dialog = MediaQuery(
-            data: mediaQuery.copyWith(
-              padding: insets,
-              viewPadding: insets,
-              viewInsets: EdgeInsets.zero,
-            ),
-            child: dialog,
-          );
-        }
-        // Kept to one screen of a foldable, never across its hinge, as a Material dialog is; and with
-        // reduced motion it is simply there.
-        return DisplayFeatureSubScreen(
-          child: FadeTransition(opacity: MediaQuery.disableAnimationsOf(context) ? kAlwaysCompleteAnimation : animation, child: dialog),
-        );
-      },
-    ),
-  );
 }

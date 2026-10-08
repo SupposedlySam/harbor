@@ -247,12 +247,13 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
     }
     return raw.copyWith(
       coast: HarborEdges.min(raw.coast, padding),
-      // The steady coast belongs to the coast aspect. Its clamp reads the view padding and the
-      // keyboard, so only readers of that aspect (or of everything) subscribe to them; a reader of
-      // the docks still gets the right value, read without subscribing, and holds still while the
-      // keyboard moves.
+      // The steady coast's clamp reads the view padding and the keyboard, which a body that clears
+      // the tide moves on every frame. As `MediaQuery.paddingOf` does not subscribe to
+      // `viewPadding`, only a reader of everything subscribes here; the rest get the right value,
+      // read without subscribing, and hold still while the keyboard moves. `steadyCoastOf` is the
+      // reader that follows it.
       coastSteady: HarborEdges.build(
-        (final HarborEdge edge) => _steadyCoast(context, raw, edge, listen: aspect == null || aspect == HarborWatersAspect.coast),
+        (final HarborEdge edge) => _steadyCoast(context, raw, edge, listen: aspect == null),
       ),
       docks: HarborEdges.min(raw.docks, padding),
       docksResting: HarborEdges.min(raw.docksResting, padding),
@@ -279,6 +280,12 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
   // keyboard the harbors above kept clear of is added back first: a body that
   // ends at the waterline has no view padding left there, though the coast is
   // still what it was.
+  //
+  // The keyboard's height is read without following it. Under a body that
+  // clears the tide the view padding falls as the keyboard rises, so their sum
+  // and the result hold still; following the gauge would rebuild a listening
+  // reader on every frame for a value that does not move. It still hears the
+  // keyboard come and go.
   static double _steadyCoast(final BuildContext context, final HarborWatersData raw, final HarborEdge edge, {final bool listen = true}) {
     final double value = HarborEdges.of(raw.coastSteady, edge);
     final MediaQueryData? quiet = listen ? null : context.getInheritedWidgetOfExactType<MediaQuery>()?.data;
@@ -286,12 +293,11 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
     double bound = HarborEdges.of(HarborEdges.directional(viewPadding, Directionality.of(context)), edge);
     if (bound < value && edge == HarborEdge.bottom) {
       if (listen) {
-        bound += HarborTide.of(context).avoidedAbove;
-      } else {
-        final double remaining = quiet?.viewInsets.bottom ?? 0.0;
-        final double height = HarborTideScope.maybeGaugeOf(context, listen: false)?.height ?? remaining;
-        bound += math.max(height, remaining) - remaining;
+        HarborTide.isInOf(context);
       }
+      final double remaining = quiet?.viewInsets.bottom ?? MediaQuery.viewInsetsOf(context).bottom;
+      final double height = HarborTideScope.maybeGaugeOf(context, listen: false)?.height ?? remaining;
+      bound += math.max(height, remaining) - remaining;
     }
     return math.min(value, bound);
   }
