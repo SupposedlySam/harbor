@@ -289,8 +289,10 @@ HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
-An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
-reading order, so `before` is on the right under right-to-left.
+An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
+reading order, as in `AlignmentDirectional`, so `start` is on the right under
+right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
+deprecated.)
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)

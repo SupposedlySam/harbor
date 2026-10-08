@@ -119,16 +119,28 @@ class _RenderAnchorPoint extends RenderProxyBox {
   }
 }
 
-/// Which side of its anchor an anchored buoy sits on. [before] and [after]
-/// are in reading order: [before] is on the right under right-to-left.
-enum HarborBuoySide { above, below, before, after }
+/// Which side of its anchor an anchored buoy sits on. [start] and [end] are in
+/// reading order, as in `AlignmentDirectional.centerStart`: [start] is on the
+/// right under right-to-left.
+enum HarborBuoySide {
+  above,
+  below,
+  start,
+  end;
+
+  @Deprecated('Use HarborBuoySide.start, the reading-order name Flutter uses.')
+  static const HarborBuoySide before = start;
+
+  @Deprecated('Use HarborBuoySide.end, the reading-order name Flutter uses.')
+  static const HarborBuoySide after = end;
+}
 
 /// Where a buoy of [size] sits by the anchor at [at], inside [water]: on
 /// [side], [gap] away, overlapping it by [overlap], and centered on it across
 /// that side. It is kept inside [water] across the side, and above or below
 /// its anchor, never past the far edge. With [flips], it goes to the opposite
 /// side when [side] has no room and that one has, and is never past the far
-/// edge before or after its anchor either.
+/// edge at the start or end of its anchor either.
 Offset _anchoredOffset({
   required final Rect water,
   required final Rect at,
@@ -143,8 +155,8 @@ Offset _anchoredOffset({
   final AxisDirection preferred = switch (side) {
     HarborBuoySide.above => AxisDirection.up,
     HarborBuoySide.below => AxisDirection.down,
-    HarborBuoySide.before => rtl ? AxisDirection.right : AxisDirection.left,
-    HarborBuoySide.after => rtl ? AxisDirection.left : AxisDirection.right,
+    HarborBuoySide.start => rtl ? AxisDirection.right : AxisDirection.left,
+    HarborBuoySide.end => rtl ? AxisDirection.left : AxisDirection.right,
   };
   double along(final AxisDirection d) => switch (d) {
     AxisDirection.up => at.top - gap - size.height + overlap,

@@ -1,5 +1,6 @@
 ## Unreleased
 
+* `HarborBuoySide.start` and `.end` name an anchored buoy's reading-order sides, as `AlignmentDirectional.centerStart` and `CrossAxisAlignment.start` do. `HarborBuoySide.before` and `.after` are deprecated aliases of them and place the buoy exactly as before; a side's `name` is now `'start'` or `'end'`.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0

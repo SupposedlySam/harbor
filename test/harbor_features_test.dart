@@ -230,7 +230,7 @@ void main() {
     expect(bubble.center.dx, button.center.dx);
   });
 
-  testWidgets('an anchored buoy before its anchor sits on the right under right-to-left', (final tester) async {
+  testWidgets('an anchored buoy at the start of its anchor sits on the right under right-to-left', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
     await tester.pumpSeaTrial(
@@ -239,7 +239,7 @@ void main() {
           textDirection: TextDirection.rtl,
           child: Harbor(
             buoys: <HarborBuoy>[
-              HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.before, child: _box('before', 60, 30)),
+              HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.start, child: _box('start', 60, 30)),
             ],
             body: Center(child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40))),
           ),
@@ -247,7 +247,15 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(_rect(tester, 'before').left, _rect(tester, 'button').right + 8);
+    expect(_rect(tester, 'start').left, _rect(tester, 'button').right + 8);
+  });
+
+  test('a buoy side named before or after is the start or the end', () {
+    expect(
+      <HarborBuoySide>[HarborBuoySide.before, HarborBuoySide.after],
+      <HarborBuoySide>[HarborBuoySide.start, HarborBuoySide.end],
+    );
+    expect(HarborBuoySide.values.map((final HarborBuoySide side) => side.name), <String>['above', 'below', 'start', 'end']);
   });
 
   group('A portal buoy', () {
@@ -387,7 +395,7 @@ void main() {
       expect(_rect(tester, 'menu').top, _rect(tester, 'header').bottom + 8);
     });
 
-    testWidgets('after its anchor sits on the left under right-to-left', (final tester) async {
+    testWidgets('at the end of its anchor sits on the left under right-to-left', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       await tester.pumpSeaTrial(
         _app(
@@ -397,7 +405,7 @@ void main() {
               body: Center(
                 child: HarborPortalBuoy(
                   controller: menu,
-                  side: HarborBuoySide.after,
+                  side: HarborBuoySide.end,
                   buoyBuilder: (final BuildContext context) => _box('menu', 60, 30),
                   child: _box('button', 40, 40),
                 ),
@@ -411,7 +419,7 @@ void main() {
       expect(_rect(tester, 'menu').right, _rect(tester, 'button').left - 8);
     });
 
-    testWidgets('after its anchor that does not fit on the left flips to the right under right-to-left', (final tester) async {
+    testWidgets('at the end of its anchor that does not fit on the left flips to the right under right-to-left', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       await tester.pumpSeaTrial(
         _app(
@@ -422,7 +430,7 @@ void main() {
                 alignment: Alignment.centerLeft,
                 child: HarborPortalBuoy(
                   controller: menu,
-                  side: HarborBuoySide.after,
+                  side: HarborBuoySide.end,
                   buoyBuilder: (final BuildContext context) => _box('menu', 60, 30),
                   child: _box('button', 40, 40),
                 ),
