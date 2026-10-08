@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -25,7 +26,7 @@ enum HarborWakeKind { none, fade, hairline }
 /// and the resting line can never drift apart. A hairline draws a line on the
 /// dock's inner face, for a bar that content scrolls up to rather than under.
 @immutable
-class HarborWake {
+class HarborWake with Diagnosticable {
   const HarborWake._(this.kind, {this.length = 0.0, this.blurSigma = 0.0, this.color, this.restsAt = HarborRest.wakeEnd});
 
   /// No boundary at all.
@@ -70,6 +71,25 @@ class HarborWake {
 
   @override
   int get hashCode => Object.hash(kind, length, blurSigma, color, restsAt);
+
+  @override
+  String toStringShort() => '${objectRuntimeType(this, 'HarborWake')}.${kind.name}';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    switch (kind) {
+      case HarborWakeKind.none:
+        break;
+      case HarborWakeKind.fade:
+        properties.add(DoubleProperty('length', length, defaultValue: 16.0));
+        properties.add(DoubleProperty('blurSigma', blurSigma, defaultValue: 0.0));
+        properties.add(EnumProperty<HarborRest>('restsAt', restsAt, defaultValue: HarborRest.wakeEnd));
+      case HarborWakeKind.hairline:
+        properties.add(DoubleProperty('thickness', length, defaultValue: 1.0));
+        properties.add(ColorProperty('color', color, defaultValue: const Color(0x1F000000)));
+    }
+  }
 }
 
 /// Wraps a harbor's body so content fades out as it passes under the docks.
@@ -82,18 +102,33 @@ typedef HarborWakePainter = Widget Function(BuildContext context, Map<HarborEdge
 /// The default [HarborWakePainter]: an alpha mask over the body, transparent
 /// at the body's edge, a quarter opaque at the dock's inner face, and fully
 /// opaque where the wake ends.
+@Deprecated('Use HarborWakeMask.alphaWake instead. Deprecated after 0.2.0.')
 Widget harborAlphaWake(final BuildContext context, final Map<HarborEdge, HarborWakeBand> wakes, final Widget body) =>
-    HarborWakeMask(wakes: wakes, child: body);
+    HarborWakeMask.alphaWake(context, wakes, body);
 
 /// An alpha mask that fades [child] out along the [wakes] bands. Paints
 /// nothing extra when there are none, so it can always be in the tree.
 class HarborWakeMask extends SingleChildRenderObjectWidget {
   const HarborWakeMask({super.key, required this.wakes, this.dockOpacity = 0.25, super.child});
 
+  /// The default [HarborWakePainter]: an alpha mask over the body, transparent
+  /// at the body's edge, a quarter opaque at the dock's inner face, and fully
+  /// opaque where the wake ends. Give it to `Harbor(wakePainter:)` to fade the
+  /// whole body.
+  static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborWakeBand> wakes, final Widget body) =>
+      HarborWakeMask(wakes: wakes, child: body);
+
   final Map<HarborEdge, HarborWakeBand> wakes;
 
   /// How visible content is at the dock's inner face.
   final double dockOpacity;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Map<HarborEdge, HarborWakeBand>>('wakes', wakes));
+    properties.add(DoubleProperty('dockOpacity', dockOpacity, defaultValue: 0.25));
+  }
 
   @override
   RenderObject createRenderObject(final BuildContext context) =>
