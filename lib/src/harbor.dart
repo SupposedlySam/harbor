@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -132,6 +133,41 @@ class Harbor extends StatefulWidget {
 
   @override
   State<Harbor> createState() => _HarborState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    for (final (String name, List<HarborDock> docks) in <(String, List<HarborDock>)>[
+      ('top', top),
+      ('bottom', bottom),
+      ('start', start),
+      ('end', end),
+    ]) {
+      properties.add(
+        IterableProperty<HarborDock>(name, docks, level: docks.isEmpty ? DiagnosticLevel.fine : DiagnosticLevel.info),
+      );
+    }
+    properties.add(
+      IterableProperty<HarborBuoy>('buoys', buoys, level: buoys.isEmpty ? DiagnosticLevel.fine : DiagnosticLevel.info),
+    );
+    properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: null));
+    properties.add(FlagProperty('newPort', value: newPort, ifTrue: 'new port'));
+    properties.add(FlagProperty('bodyClearsTide', value: bodyClearsTide, ifFalse: 'body runs under the tide'));
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(EnumProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill));
+    properties.add(
+      PercentProperty(
+        'maxExtentFraction',
+        maxExtentFraction,
+        level: maxExtentFraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info,
+      ),
+    );
+    properties.add(ObjectFlagProperty<HarborWakePainter>.has('wakePainter', wakePainter));
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
+  }
 }
 
 class _HarborState extends State<Harbor> with WidgetsBindingObserver {
@@ -453,5 +489,12 @@ class HarborSea extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => Harbor._sea(coast: coast, margin: margin, body: child);
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+  }
 
 }

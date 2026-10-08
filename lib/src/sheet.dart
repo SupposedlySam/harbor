@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -13,7 +14,7 @@ import 'wake.dart';
 
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
-class HarborSheetExtent {
+class HarborSheetExtent with Diagnosticable {
   const HarborSheetExtent({this.rest = 0.5, this.max = 0.88, this.min = 0.25, this.snap = true, this.snapSizes});
 
   /// Where the sheet opens and rests.
@@ -32,6 +33,31 @@ class HarborSheetExtent {
   final List<double>? snapSizes;
 
   List<double> get _snaps => <double>{...(snapSizes ?? <double>[rest]), max}.toList()..sort();
+
+  @override
+  bool operator ==(final Object other) =>
+      other is HarborSheetExtent &&
+      other.rest == rest &&
+      other.max == max &&
+      other.min == min &&
+      other.snap == snap &&
+      listEquals(other.snapSizes, snapSizes);
+
+  @override
+  int get hashCode => Object.hash(rest, max, min, snap, snapSizes == null ? null : Object.hashAll(snapSizes!));
+
+  @override
+  String toStringShort() => objectRuntimeType(this, 'HarborSheetExtent');
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(PercentProperty('rest', rest, level: rest == 0.5 ? DiagnosticLevel.fine : DiagnosticLevel.info));
+    properties.add(PercentProperty('max', max, level: max == 0.88 ? DiagnosticLevel.fine : DiagnosticLevel.info));
+    properties.add(PercentProperty('min', min, level: min == 0.25 ? DiagnosticLevel.fine : DiagnosticLevel.info));
+    properties.add(FlagProperty('snap', value: snap, ifFalse: 'no snapping'));
+    properties.add(IterableProperty<double>('snapSizes', snapSizes, defaultValue: null));
+  }
 }
 
 /// A sheet's surface: a new port with its own docks. Its header is a pier the
@@ -123,6 +149,31 @@ class HarborSheet extends StatelessWidget {
   /// that doesn't scroll, when [showHarborSheet] opened it. A draggable sheet
   /// always closes when dragged below its floor.
   final bool dragToClose;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborSheetExtent>('extent', extent, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<HarborWake>('headerWake', headerWake, defaultValue: const HarborWake.fade(length: 12.0)),
+    );
+    properties.add(
+      DiagnosticsProperty<HarborWake>('footerWake', footerWake, defaultValue: const HarborWake.hairline()),
+    );
+    properties.add(DoubleProperty('footerMinimum', footerMinimum, defaultValue: 16.0));
+    properties.add(EnumProperty<HarborTideStance>('footerTide', footerTide, defaultValue: HarborTideStance.float));
+    properties.add(
+      PercentProperty(
+        'maxExtentFraction',
+        maxExtentFraction,
+        level: maxExtentFraction == null || maxExtentFraction == 0.9 ? DiagnosticLevel.fine : DiagnosticLevel.info,
+      ),
+    );
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
+    properties.add(ObjectFlagProperty<TransitionBuilder>.has('contentBuilder', contentBuilder));
+    properties.add(DiagnosticsProperty<ShapeBorder>('clip', clip, defaultValue: null));
+    properties.add(FlagProperty('dragToClose', value: dragToClose, ifTrue: 'drag to close'));
+  }
 
   Harbor _harbor(final Widget body, {required final bool hug, final Widget? header}) => Harbor(
     newPort: true,

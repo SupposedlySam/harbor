@@ -1,5 +1,7 @@
 ## Unreleased
 
+* harbor's widgets describe their settings to the widget inspector and `debugDumpApp` (`debugFillProperties`), as Flutter's own do, hiding the ones at their defaults. `HarborDock`, `HarborBuoy`, `HarborWake`, `HarborCoast`, `HarborTitleSafe` and `HarborSheetExtent` are `Diagnosticable`, so they print as `HarborDock.pier(state: dark, debugLabel: "header")` rather than `Instance of 'HarborDock'`, and a `HarborAnchor` prints its `debugLabel`.
+* `HarborSheetExtent` has value equality (`==` and `hashCode`), as its `@immutable` peers already did.
 * A sheet with a barrier is a semantics scope of its own, as a modal bottom sheet is: it scopes and names its route (`scopesRoute`, `namesRoute`, `explicitChildNodes`), so screen readers keep to the sheet and announce it as it opens. `showHarborSheet(semanticLabel:)` is the name they announce. A semantics-tree snapshot of an open sheet gains this node. A sheet with no barrier is not a route and is unchanged.
 * `showHarborSheet(barrierOnTapHint:)`: what tapping the barrier does, read as 'Double tap to …', as on `ModalBottomSheetRoute`. A Material app passes `localizations.scrimOnTapHint(localizations.bottomSheetLabel)`.
 * An anchored buoy whose anchor is not in the tree takes no taps. It was already not painted, but it was still hit-tested where it last sat (at first, the top-left corner), so an invisible buoy could swallow taps meant for the page. A portal buoy already behaved this way.

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
@@ -189,6 +190,12 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
   bool updateShouldNotify(final HarborWaters oldWidget) => data != oldWidget.data;
 
   @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborWatersData>('data', data, showName: false));
+  }
+
+  @override
   bool updateShouldNotifyDependent(final HarborWaters oldWidget, final Set<HarborWatersAspect> dependencies) {
     final HarborWatersData a = data;
     final HarborWatersData b = oldWidget.data;
@@ -328,6 +335,14 @@ class HarborCastOff extends StatelessWidget {
   final bool margin;
 
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<HarborEdge>('edges', edges, defaultValue: HarborEdge.all));
+    properties.add(FlagProperty('tide', value: tide, ifTrue: 'casts off the tide'));
+    properties.add(FlagProperty('margin', value: margin, ifFalse: 'keeps the mooring line'));
+  }
 
   @override
   Widget build(final BuildContext context) {
