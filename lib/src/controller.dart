@@ -38,6 +38,9 @@ class HarborClaim {
 /// A breakwater: a sheet (or any overlay) reporting how far it covers the
 /// bottom of the harbor that opened it, so that harbor's content keeps clear
 /// of it while it is up.
+///
+/// Flutter has no equivalent: a `Scaffold` lifts its floating action button over a bottom sheet but
+/// leaves the body under it.
 class HarborBreakwater {
   HarborBreakwater._(this._controller, this._coverage, {this.measuresTop = false});
 

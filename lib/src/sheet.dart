@@ -41,6 +41,10 @@ class HarborSheetExtent {
 ///
 /// The sheet keeps the coast at the bottom (the home indicator), so its footer
 /// clears it once and nothing else in it has to.
+///
+/// See also:
+///
+///  * [DraggableScrollableSheet], which [HarborSheet.draggable] is built on.
 class HarborSheet extends StatelessWidget {
   /// A sheet as tall as its content, up to [maxExtentFraction] of the space
   /// above the keyboard, past which its body scrolls.
@@ -375,6 +379,11 @@ enum HarborSheetBarrier {
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
 /// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
+///
+/// See also:
+///
+///  * `showModalBottomSheet` and `ModalBottomSheetRoute`, the Material equivalent of a sheet with a
+///    barrier, and `ScaffoldState.showBottomSheet`, of one with [HarborSheetBarrier.none].
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,

@@ -185,6 +185,11 @@ Offset _anchoredOffset({
 ///
 /// Give buoys to [Harbor.buoys]. A modal buoy hides the buoys listed before it
 /// while it is up (a menu over a tooltip).
+///
+/// See also:
+///
+///  * `Scaffold.floatingActionButton`, the closest Flutter slot, and [ModalBarrier], which a modal
+///    buoy's barrier is like.
 @immutable
 class HarborBuoy {
   /// A buoy at [alignment] within the clear water, [margin] in from its edges.
@@ -619,6 +624,11 @@ class _RenderBuoyLayer extends RenderBox
 /// [gap] away, [margin] in from the water's edges. When [side] has no room
 /// and the opposite side has, it [flips] there; otherwise it is kept inside
 /// the clear water.
+///
+/// See also:
+///
+///  * [RawMenuAnchor] and `MenuAnchor`, which also open from an [OverlayPortal] and add menu
+///    semantics, keyboard navigation and tap-outside dismissal, which this does not.
 class HarborPortalBuoy extends StatefulWidget {
   const HarborPortalBuoy({
     super.key,
@@ -837,6 +847,11 @@ enum HarborSignalTarget {
 }
 
 /// Transient buoys: messages raised in a harbor's clear water for a while.
+///
+/// See also:
+///
+///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages; signals are not
+///    queued.
 abstract final class HarborSignals {
   /// Raises [builder]'s signal in [target]'s clear water at [slot], lowered
   /// after [duration] (or when the returned entry is lowered). If its harbor

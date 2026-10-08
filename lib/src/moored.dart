@@ -31,6 +31,11 @@ enum HarborClear {
 /// What's in the way is the coast, the docks and, at the bottom, the tide.
 /// The mooring line (the harbor's margin) is added on [edges] when
 /// [mooringLine] is set. A fixed Save button, a form, a block of static text.
+///
+/// See also:
+///
+///  * [SafeArea], the closest Flutter widget, which keeps clear of `MediaQuery.padding` alone and so
+///    misses the keyboard.
 class HarborMoored extends StatelessWidget {
   const HarborMoored({
     super.key,
@@ -129,6 +134,11 @@ class HarborMoored extends StatelessWidget {
 /// whatever is in the way there (a side cutout, a rail). For a row in a list,
 /// a heading, a tile grid: anything that should line up with the page margin
 /// while the list itself runs to the frame's edge.
+///
+/// See also:
+///
+///  * [Padding], which a page margin is in Flutter; a mooring line adds whatever is in the way on the
+///    sides.
 class HarborMooringLine extends StatelessWidget {
   const HarborMooringLine({super.key, this.follow = HarborFollow.live, required this.child});
 
@@ -148,6 +158,11 @@ class HarborMooringLine extends StatelessWidget {
 /// Open water: content that ignores the docks and the coast (a background, a
 /// map, a full-bleed image), told how far each of them reaches so it can place
 /// what it draws.
+///
+/// See also:
+///
+///  * [MediaQuery.paddingOf], which adds the coast and the docks together; these waters keep them
+///    apart.
 class HarborOpenWater extends StatelessWidget {
   const HarborOpenWater({super.key, required this.builder});
 

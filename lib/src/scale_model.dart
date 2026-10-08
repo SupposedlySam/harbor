@@ -16,6 +16,10 @@ import 'controller.dart';
 ///
 /// Mount it above the `Navigator` (in `MaterialApp.builder`) so routes, dialogs
 /// and sheets are all inside the model.
+///
+/// See also:
+///
+///  * [FittedBox], which scales the same way but leaves the real screen's `MediaQuery` in place.
 class HarborScaleModel extends StatelessWidget {
   const HarborScaleModel({
     super.key,
@@ -85,6 +89,10 @@ class HarborScaleModel extends StatelessWidget {
 /// [inheritClearWater], it sees the opening harbor's docks as coast too, so a
 /// contextual menu opened from a message stays between that page's header and
 /// its composer rather than only clear of the status bar.
+///
+/// See also:
+///
+///  * [showGeneralDialog], the closest Flutter function.
 Future<T?> showHarborDialog<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,

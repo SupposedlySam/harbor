@@ -1,5 +1,6 @@
 ## Unreleased
 
+* The README's glossary gains a table that gives each harbor term its closest Flutter concept (`SafeArea`, `MediaQuery.padding` and `viewInsets`, `Scaffold`, `showModalBottomSheet`, `SnackBar`, `OverlayPortal` and more) and the difference that matters, or says there is none. The main classes' dartdoc points to the same Flutter widget, and `HarborTideState` and `HarborDockState` say they are not `State` objects. Documentation only.
 * A sheet with a barrier is a semantics scope of its own, as a modal bottom sheet is: it scopes and names its route (`scopesRoute`, `namesRoute`, `explicitChildNodes`), so screen readers keep to the sheet and announce it as it opens. `showHarborSheet(semanticLabel:)` is the name they announce. A semantics-tree snapshot of an open sheet gains this node. A sheet with no barrier is not a route and is unchanged.
 * `showHarborSheet(barrierOnTapHint:)`: what tapping the barrier does, read as 'Double tap to …', as on `ModalBottomSheetRoute`. A Material app passes `localizations.scrimOnTapHint(localizations.bottomSheetLabel)`.
 * An anchored buoy whose anchor is not in the tree takes no taps. It was already not painted, but it was still hit-tested where it last sat (at first, the top-left corner), so an invisible buoy could swallow taps meant for the page. A portal buoy already behaved this way.

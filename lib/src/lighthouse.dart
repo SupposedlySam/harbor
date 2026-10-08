@@ -9,6 +9,10 @@ import 'tide.dart';
 import 'waters.dart';
 
 /// The lighthouse keeps things in sight.
+///
+/// See also:
+///
+///  * [Scrollable.ensureVisible] and [RenderObject.showOnScreen], which [reveal] calls.
 abstract final class HarborLighthouse {
   /// Brings the widget at [context] into sight, [clearance] clear of whatever
   /// covers the edges of the scroll views it is in (docks and keyboard
@@ -58,6 +62,11 @@ abstract final class HarborLighthouse {
 /// beacons reveals just the field being typed in. Inside a [HarborLighthouseRegion] it can [lift] instead:
 /// the region moves its content up until the beacon clears what covers it, and
 /// settles back when that goes away.
+///
+/// See also:
+///
+///  * `TextField.scrollPadding`, the closest Flutter setting to [keepInSight]. [onObscured] and [lift]
+///    have no Flutter equivalent.
 class HarborBeacon extends StatefulWidget {
   const HarborBeacon({
     super.key,

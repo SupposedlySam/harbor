@@ -73,6 +73,43 @@ header your list starts below.
 | **Chart** | Who holds which edge, at which layer | `HarborChart`, `HarborChartOverlay` |
 | **Sea trials** | Widget-test devices and tide control (`harbor_test`) | `pumpSeaTrial` |
 
+### In Flutter's terms
+
+If you know the Flutter widget, this is where to look in harbor, and what is different.
+
+| Harbor | Closest Flutter concept | The difference that matters |
+|---|---|---|
+| **Sea** | `MaterialApp.builder`, where `ScaffoldMessenger` already sits: one per app, above the `Navigator` | It holds the coast, the tide gauge and the signals every route shares. It moves nothing out of the keyboard's way itself |
+| **Harbor** | `Scaffold` | Any number of docks on all four edges, each measured. A `Scaffold` has one app bar, capped at its `preferredSize`, and one bottom bar |
+| **New port** | A route, which reads the `MediaQuery` from above the `Navigator` | A harbor that is not a new port takes the docks of the harbor around it as part of its coast |
+| **Coast** | `MediaQuery.padding` and `viewPadding` | The same insets, read from `MediaQuery`, plus a TV's title-safe band (`HarborCoast.titleSafe`) or a fixed coast (`HarborCoast.fixed`, and `HarborCoast.none` for goldens) |
+| **Tide** | `MediaQuery.viewInsets.bottom`; `Scaffold.resizeToAvoidBottomInset` | It adds a phase, a high-water mark, and how much of it still reaches this point (`remaining`). A resizing `Scaffold` moves the whole body; here each dock decides. The keyboard stays in `viewInsets`, never in `padding` |
+| **Quay** (`HarborDock.quay`) | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured, never declared, and on any edge: a start dock holds a `NavigationRail` as a `Row` would. Several stack |
+| **Pier** (`HarborDock.pier`) | An app bar under `Scaffold(extendBodyBehindAppBar: true)`, a bottom bar under `extendBody: true` | The same mechanism: the body runs under it and its `MediaQuery.padding` says how far. A pier does it on any edge, and for a stack of docks |
+| **Wake** | A `ShaderMask` fade, with a `BackdropFilter` frost under the bar | The fade's length counts toward where content rests, so the band and the first row's resting line never drift apart |
+| **Moored** | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. A moored widget keeps clear of it at the bottom too, can clear the coast alone (`clear:`) or the docks at rest (`follow:`), and takes directional edges. Both cast off what they cleared, and `minimum:` is a floor on both |
+| **Mooring line** | Horizontal page padding: a `Padding` on each row | It adds whatever is in the way on the sides (a side cutout, a rail) to the harbor's margin, and only the rows that ask get it, so the list itself still runs to the frame's edge |
+| **Fairway** | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A fairway clears both ends, keyboard included, and widens every reveal by what covers its edges. `HarborFairwaySliver` is the `SliverSafeArea` of a scroll view you build yourself |
+| **Pinned header** (`HarborSliverDock`) | `PinnedHeaderSliver`, `SliverAppBar(pinned: true)` | It pins at the docks' face rather than the viewport's edge, several stack, and reveals keep clear of it |
+| **Open water** | Content outside any `SafeArea` that reads `MediaQuery.padding` itself | `waters` splits each edge into coast and docks, which `MediaQuery.padding` adds together |
+| **Cast off** (`HarborCastOff`) | `MediaQuery.removePadding` | It also removes `viewPadding`, and with `tide:` the keyboard, and zeroes harbor's own waters, so harbor widgets beneath read zero too |
+| **Float / pilings** | Float: the bottom of a resizing `Scaffold`'s body. Pilings: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per dock, so a composer can float while the tab bar under it stays on pilings |
+| **Dry dock** | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
+| **Make way** | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the dock's ground as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the ground back |
+| **Pontoon** | `ScaffoldState.showBottomSheet`, which puts a widget into an ancestor's frame from deep in the tree | A pontoon is a dock: it takes its ground (or the body sails under it), and leaves with the widget that added it |
+| **Buoy** | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the clear water, so it clears the coast, every dock and the keyboard. A `modal` buoy has a barrier, as `ModalBarrier` does, but it is not a route, so keyboard focus is not trapped |
+| **Portal buoy** | `OverlayPortal` (it is one), as `MenuAnchor` and `RawMenuAnchor` use | Placement only: it keeps the buoy in the clear water and flips it when its side has no room. It brings no menu semantics, keyboard navigation or tap-outside dismissal; your `controller` opens and closes it |
+| **Signal** | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Signals are not queued: each shows as soon as it is raised. It builds any widget, at one of four heights (`HarborSignalSlot`), clear of the docks of the page that raised it. Both are live regions |
+| **Sheet** (`showHarborSheet`) | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborSheetBarrier.none` is `showBottomSheet` | Its header and footer are docks, so the body sails under the header and the footer floats on the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
+| **Breakwater** | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A breakwater sheet tells the page that opened it how far it covers, and the page's content keeps clear |
+| **Lighthouse** | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the docks and the keyboard of every fairway it passes through. `HarborBeacon(onObscured:)`, how much of a widget the header covers, and `HarborLighthouseRegion`, lifting content that does not scroll, have no Flutter equivalent |
+| **Scale model** | A `FittedBox` around a `MediaQuery` with a fixed `size` | The real screen's insets are re-based into the model's coordinates. Under a bare `FittedBox`, content still reads the real screen's `MediaQuery` |
+| **Chart** | `debugPaintSizeEnabled` | It draws who holds each edge, at which layer, and the clear water, and serves the same as data (`HarborChart.snapshot`) |
+| **Sea trials** | `tester.view.padding`, `viewPadding` and `viewInsets`, set with `FakeViewPadding` | Devices come with their status bar, home indicator, keyboard height and folds already set, and assertions are about the clear water, not numbers |
+
+Two names end in *State* without being a `State`: `HarborTideState` is an immutable snapshot
+of the keyboard, as `MediaQueryData` is, and `HarborDockState` is an enum, as `AnimationStatus` is.
+
 ## Getting started
 
 Mount the sea once, above your `Navigator`:

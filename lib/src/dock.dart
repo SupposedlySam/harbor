@@ -36,6 +36,8 @@ enum HarborCoastStance {
 }
 
 /// Whether a dock is in service.
+///
+/// Despite its name, this is not a [State]: it is an enum, as [AnimationStatus] is.
 enum HarborDockState {
   /// In service: drawn, tappable, and its ground is taken.
   open,
@@ -74,6 +76,11 @@ enum HarborExtentPolicy {
 ///
 /// Docks on the same edge stack in the order they are listed, the way a
 /// `Column` or `Row` would lay them out.
+///
+/// See also:
+///
+///  * `Scaffold.appBar` and `Scaffold.bottomNavigationBar`, which are quays; under
+///    `Scaffold(extendBodyBehindAppBar: true)` an app bar is a pier.
 @immutable
 class HarborDock {
   /// A dock built out over the water: content sails under it.

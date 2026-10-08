@@ -23,6 +23,11 @@ import 'waters.dart';
 ///
 /// The tree is the same whatever the insets are, so the keyboard coming and
 /// going changes numbers, never structure, and scroll position survives.
+///
+/// See also:
+///
+///  * [ListView], which pads its ends by `MediaQuery.padding` when given no padding but not by the
+///    keyboard, and [CustomScrollView], which pads nothing.
 class HarborFairway extends StatelessWidget {
   const HarborFairway({
     super.key,
@@ -599,6 +604,10 @@ class _RenderHarborHugTarget extends RenderProxyBox {
 /// One sliver of a scroll view you build yourself, kept clear at the ends you
 /// choose. Use it on the sliver at each end of a `CustomScrollView`; a whole
 /// scroll view is better as a [HarborFairway].
+///
+/// See also:
+///
+///  * [SliverSafeArea], the closest Flutter widget, which keeps clear of `MediaQuery.padding` alone.
 class HarborFairwaySliver extends StatelessWidget {
   const HarborFairwaySliver({
     super.key,
@@ -653,6 +662,10 @@ class HarborFairwaySliver extends StatelessWidget {
 /// then pins, clear of the docks above it, and becomes a dock for everything
 /// after it. The first one in a fairway with no dock above takes the status
 /// bar itself, so its [backdrop] runs under it. Several stack.
+///
+/// See also:
+///
+///  * [PinnedHeaderSliver], which this pins with, and `SliverAppBar(pinned: true)`.
 class HarborSliverDock extends StatelessWidget {
   const HarborSliverDock({super.key, required this.child, this.backdrop, this.hitTestBehavior = HitTestBehavior.opaque});
 

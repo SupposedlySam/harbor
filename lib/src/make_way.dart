@@ -11,6 +11,11 @@ import 'edge.dart';
 /// The claim goes to the nearest harbor above, from the closest outward, that
 /// has a dock on [edge], and is counted: the dock comes back only once every
 /// claim on it is released. It is released when this widget leaves the tree.
+///
+/// See also:
+///
+///  * [Visibility] with `maintainSize`, which a dark dock behaves like. Flutter has no way to ask a
+///    `Scaffold`'s bars to make way from inside its body.
 class HarborMakeWay extends StatefulWidget {
   const HarborMakeWay({
     super.key,
@@ -79,6 +84,11 @@ class _HarborMakeWayState extends State<HarborMakeWay> {
 ///
 /// A pontoon joins on the frame after it arrives, and its content follows
 /// changes a frame behind.
+///
+/// See also:
+///
+///  * `ScaffoldState.showBottomSheet`, which also puts a widget into an ancestor's frame from deep in
+///    the tree.
 class HarborPontoon extends StatefulWidget {
   const HarborPontoon({super.key, required this.edge, required this.dock, this.active = true, required this.child});
 

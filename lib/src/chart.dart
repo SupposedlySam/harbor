@@ -145,6 +145,11 @@ abstract final class HarborChart {
 
 /// Draws the chart over [child]: every dock's ground (piers in teal, quays in
 /// sand), each harbor's clear water outlined, and the tide in blue.
+///
+/// See also:
+///
+///  * `debugPaintSizeEnabled`, the closest Flutter debug paint, which draws every box rather than who
+///    holds each edge.
 class HarborChartOverlay extends StatefulWidget {
   const HarborChartOverlay({super.key, this.enabled = true, this.labelStyle, required this.child});
 
