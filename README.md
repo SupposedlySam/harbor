@@ -295,9 +295,12 @@ reading order, so `before` is on the right under right-to-left.
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
-alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Unlike a route, it does not trap keyboard
-focus.
+alone, a tap beside the buoy, back or Escape calls its `onDismiss`, and the buoys
+listed before it are hidden while it is up. It holds keyboard focus as a dialog
+does: it takes focus when it opens, Tab goes round inside it and the arrow keys
+(a TV remote's D-pad) stop at its edges, and focus goes back to where it was when
+it closes. `requestFocus: false` leaves focus on the page, as it does for a route;
+Escape from there still closes the buoy.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the

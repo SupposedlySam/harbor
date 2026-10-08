@@ -1,5 +1,7 @@
 ## Unreleased
 
+* **Breaking:** a modal `HarborBuoy` holds keyboard focus as a dialog route does: it is a `FocusScope` that takes focus when it opens, keeps Tab inside it and stops the arrow keys at its edges, and gives focus back to the page when it closes. Escape calls its `onDismiss`, from focus in the buoy or on the page behind it. `HarborBuoy(requestFocus: false)` leaves focus where it was, as `Route.requestFocus` does. Opened over a focused text field, it now takes focus from the field, so the keyboard goes down as it does for a dialog; pass `requestFocus: false` to keep it. Before, focus stayed on the page behind the barrier, Tab and a TV remote's D-pad walked the page, and Escape did nothing.
+
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0

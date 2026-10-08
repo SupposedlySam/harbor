@@ -196,6 +196,7 @@ class HarborBuoy {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
+    this.requestFocus = true,
     this.within,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        anchor = null,
@@ -217,6 +218,7 @@ class HarborBuoy {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
+    this.requestFocus = true,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        alignment = Alignment.center,
        within = null;
@@ -232,15 +234,24 @@ class HarborBuoy {
 
   /// Whether this buoy is modal while it is up (quick actions, a menu): a barrier blocks taps to
   /// the page and its docks and tells screen readers to leave the page alone, a tap outside the
-  /// buoy and back both call [onDismiss], and the buoys listed before it are hidden.
+  /// buoy, back and Escape all call [onDismiss], and the buoys listed before it are hidden.
+  ///
+  /// It is modal for the keyboard as a dialog route is: the buoy is a [FocusScope] that takes
+  /// focus when it opens (see [requestFocus]), keeps Tab in a closed loop and stops arrow keys at
+  /// its edges, and gives focus back to what had it when it closes.
   ///
   /// Until 0.2.0 a modal buoy only hid the buoys before it, with taps and back reaching the page.
-  /// NOT COVERED: keyboard focus is not trapped in the buoy, as a route's would be.
   final bool modal;
 
-  /// Called when a modal buoy is dismissed by a tap outside it or by back. Required when [modal]:
-  /// the buoy is yours, so you take it away.
+  /// Called when a modal buoy is dismissed by a tap outside it, by back or by Escape. Required
+  /// when [modal]: the buoy is yours, so you take it away.
   final VoidCallback? onDismiss;
+
+  /// Whether a modal buoy takes focus when it opens, as [Route.requestFocus]: its scope is
+  /// focused, so a child with `autofocus: true` takes it from there. With false, focus stays where
+  /// it was, and Escape from the page still dismisses the buoy. Ignored for a buoy that is not
+  /// [modal].
+  final bool requestFocus;
 
   /// The colour of a modal buoy's barrier; clear by default, so the page shows as it is.
   final Color barrierColor;
@@ -385,12 +396,80 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             child: Visibility(
               visible: lastModal < 0 || i >= lastModal,
               maintainState: true,
-              child: all[i].child,
+              child: all[i].modal ? _ModalBuoyFocus(requestFocus: all[i].requestFocus, child: all[i].child) : all[i].child,
             ),
           ),
       ],
     );
   }
+}
+
+/// A modal buoy's focus scope, as a modal route's: its own node, so focus traversal ends at its
+/// edges ([FocusScopeNode]'s defaults are a dialog's: Tab loops, arrows stop). On close, the scope
+/// around it falls back to the child it focused before, as a page does when a dialog pops.
+class _ModalBuoyFocus extends StatefulWidget {
+  const _ModalBuoyFocus({required this.requestFocus, required this.child});
+
+  final bool requestFocus;
+  final Widget child;
+
+  @override
+  State<_ModalBuoyFocus> createState() => _ModalBuoyFocusState();
+}
+
+class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
+  final FocusScopeNode _scope = FocusScopeNode(debugLabel: 'HarborBuoy (modal)');
+  bool _opened = false;
+
+  // As a modal route takes focus: first focus in the scope around it, so the buoy has focus now if
+  // that scope does, and gets it when focus comes back to that scope otherwise.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_opened && widget.requestFocus) {
+      FocusScope.of(context).setFirstFocus(_scope);
+    }
+    _opened = true;
+  }
+
+  @override
+  void dispose() {
+    _scope.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(final BuildContext context) => FocusScope.withExternalFocusNode(focusScopeNode: _scope, child: widget.child);
+}
+
+/// Escape (a [DismissIntent]) from anywhere in a harbor calls its top modal buoy's
+/// [HarborBuoy.onDismiss], from focus in the buoy or on the page behind it. With no modal buoy up
+/// it is left to the widgets above, as `RawMenuAnchor` leaves it while its menu is closed.
+class HarborModalBuoyActions extends StatelessWidget {
+  const HarborModalBuoyActions({super.key, required this.buoys, required this.child});
+
+  final List<HarborBuoy> buoys;
+  final Widget child;
+
+  @override
+  Widget build(final BuildContext context) {
+    final int top = buoys.lastIndexWhere((final HarborBuoy b) => b.modal);
+    return Actions(
+      actions: <Type, Action<Intent>>{
+        if (top >= 0) DismissIntent: _DismissModalBuoyAction(buoys[top].onDismiss!),
+      },
+      child: child,
+    );
+  }
+}
+
+class _DismissModalBuoyAction extends DismissAction {
+  _DismissModalBuoyAction(this._onDismiss);
+
+  final VoidCallback _onDismiss;
+
+  @override
+  void invoke(final DismissIntent intent) => _onDismiss();
 }
 
 Rect? _local(final BuildContext context, final Rect? global) {
