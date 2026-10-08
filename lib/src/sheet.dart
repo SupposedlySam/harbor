@@ -14,15 +14,24 @@ import 'wake.dart';
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
 class HarborSheetExtent {
-  const HarborSheetExtent({this.rest = 0.5, this.max = 0.88, this.min = 0.25, this.snap = true, this.snapSizes});
+  const HarborSheetExtent({
+    this.rest = 0.5,
+    this.max = 0.88,
+    this.min = 0.25,
+    this.snap = true,
+    this.snapSizes,
+    this.shouldCloseOnMinExtent = true,
+  });
 
-  /// Where the sheet opens and rests.
+  /// Where the sheet opens and rests. Rebuilt with a new rest before it is
+  /// dragged, the sheet moves there, as [DraggableScrollableSheet.initialChildSize]
+  /// does; to move it after, use the sheet's [DraggableScrollableController].
   final double rest;
 
   /// The taller snap and the ceiling.
   final double max;
 
-  /// The drag floor; released below it, the sheet closes.
+  /// The drag floor; dragged to it, or flung down past the lowest snap, the sheet closes.
   final double min;
 
   final bool snap;
@@ -30,6 +39,9 @@ class HarborSheetExtent {
   /// The heights a released sheet snaps to, in increasing order, between [min]
   /// and [max]; [max] is always one. Defaults to [rest] and [max].
   final List<double>? snapSizes;
+
+  /// Whether reaching [min] closes the sheet. Off, the sheet rests at its floor.
+  final bool shouldCloseOnMinExtent;
 
   List<double> get _snaps => <double>{...(snapSizes ?? <double>[rest]), max}.toList()..sort();
 }
@@ -60,18 +72,26 @@ class HarborSheet extends StatelessWidget {
     this.clip,
     this.dragToClose = false,
   }) : builder = null,
-       extent = null;
+       extent = null,
+       controller = null,
+       expand = true;
 
   /// A sheet whose content is a list: it rests at [extent]'s rest height, drags
   /// to its ceiling, and closes when dragged below its floor. [builder] must
   /// give its fairway the controller it is handed, so dragging the list drags
   /// the sheet.
+  ///
+  /// A [controller] reads and moves the sheet from outside it: a share sheet
+  /// that fits its height to content measured after layout, a comments sheet
+  /// that rises to its ceiling when its field takes focus.
   const HarborSheet.draggable({
     super.key,
     this.header,
     this.footer,
     required Widget Function(BuildContext context, ScrollController controller) this.builder,
     this.extent = const HarborSheetExtent(),
+    this.controller,
+    this.expand = true,
     this.surface,
     this.headerWake = const HarborWake.fade(length: 12.0),
     this.footerWake = const HarborWake.hairline(),
@@ -89,6 +109,15 @@ class HarborSheet extends StatelessWidget {
   final Widget? body;
   final Widget Function(BuildContext context, ScrollController controller)? builder;
   final HarborSheetExtent? extent;
+
+  /// Drives a draggable sheet from outside it, as it drives a [DraggableScrollableSheet].
+  final DraggableScrollableController? controller;
+
+  /// Whether a draggable sheet fills the space it is given, as
+  /// [DraggableScrollableSheet.expand] does. Turn it off where the route sizes
+  /// the sheet to its content, as `showModalBottomSheet` does, so taps above
+  /// the visible sheet reach the barrier.
+  final bool expand;
 
   /// Painted under the whole sheet: its color and corners.
   final Widget? surface;
@@ -123,6 +152,23 @@ class HarborSheet extends StatelessWidget {
   /// that doesn't scroll, when [showHarborSheet] opened it. A draggable sheet
   /// always closes when dragged below its floor.
   final bool dragToClose;
+
+  /// Closes the sheet [context] is in, whichever way it was opened, and
+  /// completes the future that opened it with [result], as [Navigator.pop]
+  /// does for a route.
+  ///
+  /// A sheet with [HarborSheetBarrier.none] is not a route, so this is the only
+  /// way it returns a value: closed by back or by [Navigator.pop], it completes
+  /// with null.
+  @optionalTypeArgs
+  static void close<T extends Object?>(final BuildContext context, [final T? result]) {
+    final _SheetHostScope? scope = _SheetHostScope.maybeOf(context);
+    if (scope != null && scope.host.close != null) {
+      scope.close(result);
+      return;
+    }
+    Navigator.maybePop<T>(context, result);
+  }
 
   Harbor _harbor(final Widget body, {required final bool hug, final Widget? header}) => Harbor(
     newPort: true,
@@ -200,14 +246,17 @@ class _DraggableSheetBody extends StatefulWidget {
 }
 
 class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
-  final DraggableScrollableController _controller = DraggableScrollableController();
+  DraggableScrollableController? _ownController;
   double _available = 0.0;
+
+  DraggableScrollableController get _controller =>
+      widget.sheet.controller ?? (_ownController ??= DraggableScrollableController());
 
   HarborSheetExtent get _extent => widget.extent;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ownController?.dispose();
     super.dispose();
   }
 
@@ -226,22 +275,27 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     }
     final double velocity = details.primaryVelocity ?? 0.0;
     final double size = _controller.size;
-    if (size <= _extent.min + 0.001 || velocity > 1200) {
+    final bool closes = _extent.shouldCloseOnMinExtent;
+    if (closes && (size <= _extent.min + 0.001 || velocity > 1200)) {
       _close();
       return;
     }
     double target = size;
     if (_extent.snap) {
-      // As a dragged list snaps: a fling goes to the next size its way, a
-      // slow release to the nearest.
+      // As a dragged list snaps: a fling goes to the next size its way, the
+      // floor past the lowest, and a slow release to the nearest.
       final List<double> snaps = _extent._snaps;
       if (velocity < -400) {
         target = snaps.firstWhere((final double snap) => snap > size + 0.001, orElse: () => snaps.last);
       } else if (velocity > 400) {
-        target = snaps.lastWhere((final double snap) => snap < size - 0.001, orElse: () => snaps.first);
+        target = snaps.lastWhere((final double snap) => snap < size - 0.001, orElse: () => _extent.min);
       } else {
         target = snaps.reduce((final double a, final double b) => (size - a).abs() <= (size - b).abs() ? a : b);
       }
+    }
+    if (closes && target <= _extent.min + 0.001) {
+      _close();
+      return;
     }
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.jumpTo(target);
@@ -308,19 +362,20 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     return NotificationListener<DraggableScrollableNotification>(
       onNotification: (final DraggableScrollableNotification n) {
         host?.reportExtent(n.extent);
-        if (n.extent <= n.minExtent + 0.001) {
+        if (n.shouldCloseOnMinExtent && n.extent <= n.minExtent + 0.001) {
           _close();
         }
         return false;
       },
       child: DraggableScrollableSheet(
         controller: _controller,
-        expand: true,
+        expand: sheet.expand,
         initialChildSize: _extent.rest,
         minChildSize: _extent.min,
         maxChildSize: _extent.max,
         snap: _extent.snap,
         snapSizes: _extent.snap ? _extent._snaps : null,
+        shouldCloseOnMinExtent: _extent.shouldCloseOnMinExtent,
         builder: (final BuildContext context, final ScrollController controller) => _MeasureHeight(
           onTop: (final double top) => host?.host.reportTop(top, fromSheet: true),
           child: sheet._surfaced(
@@ -352,6 +407,82 @@ enum HarborSheetBarrier {
   none,
 }
 
+/// Closes and rebuilds a sheet [showHarborSheet] opened, from outside it: a
+/// now-playing drawer that a button on the page opens and closes, an editor's
+/// tool panel the page puts away when a tool is picked.
+///
+/// Give it to [showHarborSheet]; it is attached while that sheet is up, and
+/// tells its listeners when a sheet attaches and when it has left. It holds one
+/// sheet at a time and can be given to the next once the last has left. As
+/// with a [DraggableScrollableController], nothing but [isAttached] may be used
+/// while no sheet is attached.
+class HarborSheetController extends ChangeNotifier {
+  _SheetHost? _host;
+
+  /// Whether a sheet is attached: from when it opens until it has left, its
+  /// closing slide included.
+  bool get isAttached => _host != null;
+
+  /// The sheet's slide, from 0 (out of sight) to 1 (open).
+  Animation<double> get animation {
+    _assertAttached();
+    return _host!.slide!;
+  }
+
+  /// Completes when the sheet has left, however it closed.
+  Future<void> get closed {
+    _assertAttached();
+    return _host!.gone;
+  }
+
+  /// Slides the sheet out, as back or a tap on its barrier would.
+  void close() {
+    _assertAttached();
+    _host!.close?.call();
+  }
+
+  /// Takes the sheet away at once, with no slide.
+  void remove() {
+    _assertAttached();
+    _host!.remove?.call();
+  }
+
+  /// Calls [fn] and rebuilds the sheet, for a builder that reads state the page holds.
+  void setState(final VoidCallback fn) {
+    _assertAttached();
+    fn();
+    _host!.rebuild?.call();
+  }
+
+  void _assertAttached() {
+    assert(
+      isAttached,
+      'HarborSheetController is not attached to a sheet. Give it to showHarborSheet, and use it '
+      'only while that sheet is up.',
+    );
+  }
+
+  void _attach(final _SheetHost host) {
+    assert(_host == null, 'HarborSheetController is already attached to a sheet.');
+    _host = host;
+    notifyListeners();
+  }
+
+  void _detach(final _SheetHost host) {
+    if (_host == host) {
+      _host = null;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _host?.controller = null;
+    _host = null;
+    super.dispose();
+  }
+}
+
 /// Opens [builder]'s sheet (usually a [HarborSheet]) over [context]'s harbor.
 ///
 /// With [breakwater] set, the sheet reports how far it covers the bottom of
@@ -375,6 +506,9 @@ enum HarborSheetBarrier {
 /// A sheet with [HarborSheetBarrier.none] is not a route, so it has none of
 /// these.
 ///
+/// The future completes with the result given to [HarborSheet.close], or with
+/// null when the sheet is closed some other way.
+///
 /// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
 /// stays until it is answered; back still closes it, as it closes a modal
 /// bottom sheet. [requestFocus] is the route's: given false, focus stays where
@@ -395,6 +529,11 @@ enum HarborSheetBarrier {
 /// the style leaves out keeps its default; as on a modal bottom sheet, `curve`
 /// alone does not set the reverse curve. Reduced motion
 /// (`MediaQuery.disableAnimations`) still wins: the sheet is simply there.
+///
+/// A [controller] closes and rebuilds the sheet from outside it. A
+/// [transitionAnimationController] slides the sheet in place of its own 280 ms
+/// slide, as it does a modal bottom sheet: the sheet runs it forward to open
+/// and back to close, and the caller disposes it.
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
@@ -410,6 +549,8 @@ Future<T?> showHarborSheet<T>(
   final RouteSettings? routeSettings,
   final String? barrierLabel,
   final AnimationStyle? sheetAnimationStyle,
+  final HarborSheetController? controller,
+  final AnimationController? transitionAnimationController,
   final String? barrierOnTapHint,
   final String? semanticLabel,
 }) {
@@ -427,6 +568,7 @@ Future<T?> showHarborSheet<T>(
     anchorPoint: anchorPoint,
     presenter: breakwater ? presenter : null,
     animationStyle: sheetAnimationStyle,
+    controller: controller,
     scopesRoute: barrier != HarborSheetBarrier.none,
     semanticLabel: semanticLabel,
   );
@@ -435,7 +577,12 @@ Future<T?> showHarborSheet<T>(
     // A non-modal sheet lives in the navigator's overlay, not in a route of its own, so it is tied
     // to the page's route by hand: back closes it first, it hides while another page is on top,
     // and it leaves when its page does. It also leaves with the harbor that opened it.
-    final _NonModalSheet<T> sheet = _NonModalSheet<T>(host: host, overlay: overlay, route: ModalRoute.of(context));
+    final _NonModalSheet<T> sheet = _NonModalSheet<T>(
+      host: host,
+      overlay: overlay,
+      route: ModalRoute.of(context),
+      transition: transitionAnimationController,
+    );
     void presenterLeft() => sheet.closeNow();
     presenter?.addLeaveListener(presenterLeft);
     return sheet.open().whenComplete(() => presenter?.removeLeaveListener(presenterLeft));
@@ -449,6 +596,7 @@ Future<T?> showHarborSheet<T>(
       barrierOnTapHint: barrierOnTapHint,
       settings: routeSettings,
       animationStyle: sheetAnimationStyle,
+      transitionAnimationController: transitionAnimationController,
       requestFocus: requestFocus,
     ),
   );
@@ -462,6 +610,7 @@ class _SheetHost {
     required this.anchorPoint,
     required this.presenter,
     required this.animationStyle,
+    required this.controller,
     required this.scopesRoute,
     required this.semanticLabel,
   });
@@ -484,7 +633,13 @@ class _SheetHost {
   double? _dragExtent;
   double _available = 0.0;
   double _tide = 0.0;
-  VoidCallback? close;
+  void Function([Object? result])? close;
+  VoidCallback? remove;
+  VoidCallback? rebuild;
+  HarborSheetController? controller;
+  final Completer<void> _gone = Completer<void>();
+
+  Future<void> get gone => _gone.future;
 
   static const Curve _defaultCurve = Curves.easeOutCubic;
 
@@ -557,6 +712,17 @@ class _SheetHost {
 
   void attach() {
     _breakwater ??= presenter?.addBreakwaterEdge(topInGlobal);
+    controller?._attach(this);
+  }
+
+  /// The sheet is gone, by whichever way it closed.
+  void left() {
+    if (!_gone.isCompleted) {
+      _gone.complete();
+    }
+    final HarborSheetController? controller = this.controller;
+    this.controller = null;
+    controller?._detach(this);
   }
 
   void reportTop(final double top, {required final bool fromSheet}) {
@@ -670,7 +836,7 @@ class _SheetHostScope extends InheritedWidget {
 
   void reportExtent(final double extent) => host.reportExtent(extent, available, tide);
 
-  void close() => host.close?.call();
+  void close([final Object? result]) => host.close?.call(result);
 
   @override
   bool updateShouldNotify(final _SheetHostScope oldWidget) => false;
@@ -730,6 +896,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
     required this.barrierColor,
     required this.barrierDismissible,
     required this.barrierLabel,
+    required this.transitionAnimationController,
     required this.barrierOnTapHint,
     required this.animationStyle,
     super.settings,
@@ -738,6 +905,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 
   final _SheetHost host;
   final AnimationStyle? animationStyle;
+  final AnimationController? transitionAnimationController;
 
   @override
   final Color barrierColor;
@@ -756,15 +924,32 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? const Duration(milliseconds: 220);
 
+  // The caller's controller, as ModalBottomSheetRoute takes it: driven here, disposed by the caller.
+  @override
+  AnimationController createAnimationController() {
+    final AnimationController? transition = transitionAnimationController;
+    if (transition == null) {
+      return super.createAnimationController();
+    }
+    willDisposeAnimationController = false;
+    return transition;
+  }
+
   @override
   void install() {
     super.install();
     host
-      ..close = () {
+      ..close = ([final Object? result]) {
         if (isActive && isCurrent) {
-          navigator?.pop();
+          navigator?.pop<T>(result as T?);
         }
       }
+      ..remove = () {
+        if (isActive) {
+          navigator?.removeRoute(this);
+        }
+      }
+      ..rebuild = changedExternalState
       ..slide = controller
       ..attach();
     animation!.addListener(_tick);
@@ -777,6 +962,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
     animation?.removeListener(_tick);
     host
       ..detach()
+      ..left()
       ..dispose();
     super.dispose();
   }
@@ -810,7 +996,15 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 }
 
 class _NonModalSheet<T> {
-  _NonModalSheet({required this.host, required this.overlay, required this.route});
+  _NonModalSheet({required this.host, required this.overlay, required this.route, final AnimationController? transition})
+    : _animation =
+          transition ??
+          AnimationController(
+            vsync: overlay,
+            duration: host.animationStyle?.duration ?? const Duration(milliseconds: 280),
+            reverseDuration: host.animationStyle?.reverseDuration ?? const Duration(milliseconds: 280),
+          ),
+      _ownsAnimation = transition == null;
 
   final _SheetHost host;
   final OverlayState overlay;
@@ -822,20 +1016,25 @@ class _NonModalSheet<T> {
   /// a sheet with no barrier deliberately is not one; wrap the PAGE in the PopScope instead.
   final ModalRoute<Object?>? route;
   LocalHistoryEntry? _history;
-  late final AnimationController _animation = AnimationController(
-    vsync: overlay,
-    duration: host.animationStyle?.duration ?? const Duration(milliseconds: 280),
-    reverseDuration: host.animationStyle?.reverseDuration ?? const Duration(milliseconds: 280),
-  );
+  final AnimationController _animation;
+
+  /// False for a caller's controller, which outlives the sheet.
+  final bool _ownsAnimation;
   OverlayEntry? _entry;
   final Completer<T?> _done = Completer<T?>();
 
   Future<T?> open() {
     host
-      ..close = _close
+      ..close = ([final Object? result]) {
+        unawaited(_close(result as T?));
+      }
+      ..remove = closeNow
+      ..rebuild = () {
+        _entry?.markNeedsBuild();
+      }
       ..slide = _animation
       ..attach();
-    _animation.addListener(() => host.progress = _animation.value);
+    _animation.addListener(_tick);
     final ModalRoute<Object?>? route = this.route;
     _entry = OverlayEntry(
       builder: (final BuildContext context) {
@@ -888,6 +1087,19 @@ class _NonModalSheet<T> {
 
   bool _closing = false;
 
+  void _tick() => host.progress = _animation.value;
+
+  void _leave() {
+    _animation.removeListener(_tick);
+    if (_ownsAnimation) {
+      _animation.dispose();
+    }
+    if (!_done.isCompleted) {
+      _done.complete(null);
+    }
+    host.left();
+  }
+
   /// Removes the sheet at once, with no animation: its page is leaving.
   void closeNow() {
     final OverlayEntry? entry = _entry;
@@ -905,13 +1117,10 @@ class _NonModalSheet<T> {
       // The overlay is already going.
     }
     host.dispose();
-    _animation.dispose();
-    if (!_done.isCompleted) {
-      _done.complete(null);
-    }
+    _leave();
   }
 
-  Future<void> _close() async {
+  Future<void> _close([final T? result]) async {
     if (_entry == null || _closing) {
       return;
     }
@@ -924,19 +1133,14 @@ class _NonModalSheet<T> {
     _entry?.remove();
     _entry = null;
     host.dispose();
-    _animation.dispose();
+    // The result first: _leave completes with null when nothing has.
     if (!_done.isCompleted) {
-      _done.complete(null);
+      _done.complete(result);
     }
+    _leave();
   }
 }
 
 /// Closes the sheet [context] is in, whichever way it was opened.
-void closeHarborSheet(final BuildContext context) {
-  final _SheetHostScope? scope = _SheetHostScope.maybeOf(context);
-  if (scope != null && scope.host.close != null) {
-    scope.close();
-    return;
-  }
-  Navigator.maybePop(context);
-}
+@Deprecated('Use HarborSheet.close instead, which also takes a result. Deprecated after 0.2.0.')
+void closeHarborSheet(final BuildContext context) => HarborSheet.close<Object?>(context);

@@ -200,8 +200,9 @@ edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a
-`Harbor` a `wakePainter` to wake its whole body instead, or to paint the wake
-your own way (a progressive blur shader).
+`Harbor` a `wakePainter` to wake its whole body instead
+(`wakePainter: HarborWakeMask.alphaWake`), or to paint the wake your own way (a
+progressive blur shader).
 
 Fairways widen every reveal by what covers their trailing edge. A focused
 field, `Scrollable.ensureVisible` and focus traversal all bring a row clear of
@@ -397,6 +398,40 @@ own), and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
+```dart
+final HarborSheetController nowPlaying = HarborSheetController();
+
+showHarborSheet(context, barrier: HarborSheetBarrier.none, controller: nowPlaying, builder: ...);
+nowPlaying.close();   // from a button on the page: it slides out
+nowPlaying.remove();  // it goes at once
+```
+
+A `HarborSheetController` closes a sheet from outside it, as a
+`PersistentBottomSheetController` closes `Scaffold.showBottomSheet`'s: `close()`,
+a `closed` future, `setState` to rebuild it, and its slide as `animation`.
+`remove()` takes it away with no slide, as `removeCurrentSnackBar` does a snack
+bar. It is attached while its sheet is up (`isAttached`) and tells its listeners
+when that changes, so a button can show whether it opens or closes. It works
+for a sheet with a barrier too. `transitionAnimationController:` slides the
+sheet by a controller of your own in place of its 280 ms slide, as on
+`showModalBottomSheet`; you dispose it.
+
+```dart
+final Folder? folder = await showHarborSheet<Folder>(
+  context,
+  builder: (context) => HarborSheet(
+    body: FolderList(onPick: (folder) => HarborSheet.close(context, folder)),
+  ),
+);
+```
+
+`HarborSheet.close(context, result)` closes the sheet `context` is in and
+completes the future that opened it with `result`, as `Navigator.pop(context,
+result)` does for a modal bottom sheet. It works whatever the barrier, and on a
+sheet opened by `showModalBottomSheet` or `showGeneralDialog`, where it pops that
+route. A sheet with no barrier is not a route, so back and `Navigator.pop` close
+it with no result: it returns its value only through `HarborSheet.close`.
+
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given), with
@@ -451,10 +486,28 @@ showHarborSheet(
 on, so a Material app that wants its sheets to follow a downward drag turns it on,
 as above. With it on, a content-sized sheet follows the
 finger down by any part that doesn't scroll, and closes on a fling or when let
-go under half shown. A draggable sheet always closes below its floor, and its
+go under half shown. A draggable sheet closes at its floor, and its
 `HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
-rest and its ceiling). A draggable sheet opened some other way, by
-`showModalBottomSheet` or `showGeneralDialog`, closes that route instead.
+rest and its ceiling). A fling down on its header from its lowest height goes
+to the floor and closes it, as a fling on its list does. `HarborSheetExtent(shouldCloseOnMinExtent: false)` rests at the floor
+instead. A draggable sheet opened some other way, by `showModalBottomSheet` or
+`showGeneralDialog`, closes that route instead; in a modal bottom sheet give it
+`expand: false`, as you would a `DraggableScrollableSheet`, so a tap above it
+reaches the barrier.
+
+A draggable sheet takes a `DraggableScrollableController`, so the page or the
+sheet's own content can read and move it:
+
+```dart
+final DraggableScrollableController comments = DraggableScrollableController();
+
+HarborSheet.draggable(controller: comments, header: title, builder: ...);
+comments.animateTo(0.88, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic); // its field took focus
+```
+
+Rebuilt with a new `rest` before it is dragged, a sheet moves there, as a
+`DraggableScrollableSheet` does with a new `initialChildSize`; after a drag,
+move it with the controller.
 
 `sheetAnimationStyle:` takes an `AnimationStyle`, as `showModalBottomSheet`
 does: its `duration` and `curve` set how the sheet opens, `reverseDuration` and
