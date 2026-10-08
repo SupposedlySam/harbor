@@ -161,16 +161,22 @@ void main() {
   });
 
   // harbor's core imports no design library, so a Material app passes Material's localized
-  // label itself; the default is plain English.
+  // label itself; the default is the English that Material and Cupertino fall back to.
   testWidgets("a dialog barrier is announced with the label given, Material's by the documented recipe", (final tester) async {
     final BuildContext page = await _page(tester);
     BuildContext dialog = await _open(tester, page);
-    expect(ModalRoute.of(dialog)!.barrierLabel, 'Close dialog');
+    expect(ModalRoute.of(dialog)!.barrierLabel, 'Dismiss');
     Navigator.of(dialog).pop();
     await tester.pumpAndSettle();
 
     dialog = await _open(tester, page, barrierLabel: MaterialLocalizations.of(page).modalBarrierDismissLabel);
     expect(ModalRoute.of(dialog)!.barrierLabel, const DefaultMaterialLocalizations().modalBarrierDismissLabel);
+  });
+
+  testWidgets("a dialog barrier is showGeneralDialog's black by default, as a sheet's is", (final tester) async {
+    final BuildContext page = await _page(tester);
+    final BuildContext dialog = await _open(tester, page);
+    expect(ModalRoute.of(dialog)!.barrierColor, const Color(0x80000000));
   });
 
   testWidgets("a dialog's content is a route of its own for screen readers, named by semanticLabel", (final tester) async {

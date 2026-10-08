@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import 'barrier_label.dart';
 import 'controller.dart';
 
 /// Opens [builder]'s dialog over [context].
@@ -17,10 +18,10 @@ import 'controller.dart';
 /// for screen readers, and [semanticLabel] is the name they announce for it.
 ///
 /// [routeSettings] reach navigator observers and route-name analytics, and
-/// the barrier is announced with [barrierLabel] ('Close dialog' when none is
-/// given; a Material app passes
-/// `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
-/// localized one). [anchorPoint], [traversalEdgeBehavior] and [requestFocus]
+/// the barrier is announced with [barrierLabel] ('Dismiss' when none is
+/// given, the English Material and Cupertino fall back to; a Material app
+/// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
+/// localized one). [barrierColor] is `showGeneralDialog`'s, as a sheet's is. [anchorPoint], [traversalEdgeBehavior] and [requestFocus]
 /// are as on `showDialog`: the screen of a foldable the dialog opens on, what
 /// Tab does past its last control (the navigator's choice when null), and
 /// whether it takes focus. [animationStyle] sets the fade, 180 ms by default;
@@ -29,7 +30,7 @@ Future<T?> showHarborDialog<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
   final bool inheritClearWater = false,
-  final Color barrierColor = const Color(0x88000000),
+  final Color barrierColor = const Color(0x80000000),
   final bool barrierDismissible = true,
   final String? barrierLabel,
   final String? semanticLabel,
@@ -64,7 +65,7 @@ Future<T?> showHarborDialog<T>(
     _HarborDialogRoute<T>(
       barrierColor: barrierColor,
       barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel ?? 'Close dialog',
+      barrierLabel: barrierLabel ?? harborBarrierDismissLabel,
       settings: routeSettings,
       anchorPoint: anchorPoint,
       traversalEdgeBehavior: traversalEdgeBehavior,
