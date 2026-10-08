@@ -508,11 +508,19 @@ void main() {
     // No bottom coast, so the keyboard moving changes viewInsets and nothing else.
     const HarborTrialDevice device = HarborTrialDevice.iPhoneSE;
 
-    // Brings the keyboard in or out over ten frames, as the platform animates it.
-    Future<void> slideTide(final WidgetTester tester, {required final bool tideIn}) async {
+    // Brings the keyboard in or out over ten frames, as the platform animates it. On a phone that
+    // stops reporting its home indicator in padding under the keyboard, the padding goes with it.
+    Future<void> slideTide(
+      final WidgetTester tester, {
+      required final bool tideIn,
+      final HarborTrialDevice on = device,
+    }) async {
       for (int i = 1; i <= 10; i++) {
         final double share = tideIn ? i / 10 : 1 - i / 10;
-        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share);
+        final EdgeInsets coast = on.coastWhen(tideIn: share > 0);
+        tester.view
+          ..padding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
+          ..viewInsets = FakeViewPadding(bottom: on.tideHeight * share);
         await tester.pump(const Duration(milliseconds: 16));
       }
       // Long enough for the tide gauge to settle.
@@ -611,6 +619,75 @@ void main() {
         HarborMoored: 0,
         HarborFairway: 0,
       });
+    });
+
+    // A body that clears the tide takes the keyboard out of its view padding, as
+    // `MediaQueryData.removeViewInsets` does, so on a phone with a home indicator the steady
+    // coast's clamp is reached on every frame the keyboard moves. The iPhone SE above has no
+    // bottom coast and never reaches it.
+    // Breaks if: HarborWaters.of subscribes coast readers to the steady coast's clamp.
+    testWidgets('a coast-only moored block holds still while the keyboard rises over a home indicator', (final tester) async {
+      const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
+      final List<HarborTideState> tide = <HarborTideState>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                const HarborMoored(
+                  edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
+                  clear: HarborClear.coast,
+                  tide: false,
+                  child: SizedBox(height: 10),
+                ),
+                const _AspectReader(HarborWatersAspect.coast),
+                SizedBox(height: 10, child: _TideReader(tide)),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborMoored, _AspectReader, _TideReader});
+      await slideTide(tester, tideIn: true, on: phone);
+      expect(rebuilds[_TideReader], greaterThanOrEqualTo(10), reason: 'positive control: the keyboard moved on every frame');
+      // Once each, for the platform taking the home indicator out of the padding.
+      expect(rebuilds[HarborMoored], 1);
+      expect(rebuilds[_AspectReader], 1);
+    });
+
+    // The standard is `MediaQuery.viewPaddingOf`: it rebuilds when the view padding changes, and
+    // the steady coast should rebuild no more often than that while holding its value.
+    // Breaks if: steadyCoastOf depends on the tide gauge, which notifies on every frame.
+    testWidgets('the steady coast holds still while the keyboard rises over a home indicator', (final tester) async {
+      const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
+      final List<double> steady = <double>[];
+      final List<double> viewPadding = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                _Probe(
+                  (final BuildContext c) => steady.add(HarborWaters.steadyCoastOf(c, HarborEdge.bottom)),
+                  child: const SizedBox(height: 10),
+                ),
+                _Probe(
+                  (final BuildContext c) => viewPadding.add(MediaQuery.viewPaddingOf(c).bottom),
+                  child: const SizedBox(height: 10),
+                ),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      steady.clear();
+      viewPadding.clear();
+      await slideTide(tester, tideIn: true, on: phone);
+      expect(viewPadding.last, 0, reason: 'positive control: the body took the keyboard out of its view padding');
+      expect(steady, everyElement(phone.coast.bottom));
+      expect(steady.length, lessThanOrEqualTo(viewPadding.length));
     });
 
     // Breaks if: isInOf depends on the tide gauge as a whole, which notifies on every frame.

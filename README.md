@@ -226,16 +226,19 @@ falls as well as rises.
 Readers rebuild only for what they read. `HarborTide.of` follows every frame
 of the keyboard moving; `HarborTide.isInOf` hears it come and go, and
 `HarborWaters.of(context, aspect: HarborWatersAspect.docks)` holds still while
-it moves. Harbor's own content reads the same way: a mooring line, a horizontal
-fairway, open water or a dry dock in a page the keyboard runs under is not
-rebuilt as it rises. Only what lays out against it is.
+it moves, and so does the `coast` aspect, on a phone with a home indicator too.
+Harbor's own content reads the same way: a mooring line, a horizontal fairway,
+open water or a dry dock in a page the keyboard runs under is not rebuilt as it
+rises. Only what lays out against it is.
 
 `HarborWaters.steadyCoastOf(context, HarborEdge.bottom)` is the home
 indicator's height, held while the keyboard is up, as `viewPadding` is in
 Flutter: for a footer that keeps its size while the keyboard animates. A body
 that clears the tide has no `viewPadding` left at the bottom while the keyboard
-is up, so read it here. It is zero below a quay that absorbed the coast, and
-below anything that cast the edge off.
+is up, so read it here. It rebuilds its reader when the view padding changes,
+as `MediaQuery.viewPaddingOf` does, but not on every frame of the keyboard. It
+is zero below a quay that absorbed the coast, and below anything that cast the
+edge off.
 
 ## Harbor and Scaffold
 
