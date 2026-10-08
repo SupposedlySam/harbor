@@ -1,3 +1,7 @@
+## Unreleased
+
+* A tap on the iOS status bar scrolls only the page a `Scaffold` would: the one whose status bar band a tap at the screen's top left reaches. A page in a nested navigator no longer scrolls once a route covers that navigator (it scrolled to the top when uncovered), nor does a page under a full-screen overlay entry or the right-hand pane of a split view. A harbor with no top inset, and one inside a sheet that stops short of the status bar, no longer scrolls either, as a `Scaffold` does not.
+
 ## 0.2.0
 
 ### Breaking changes
