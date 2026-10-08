@@ -286,7 +286,7 @@ class SheetHeader extends StatelessWidget {
         child: HarborMooringLine(
           child: NavigationToolbar(
             middle: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Palette.foam)),
-            trailing: trailing ?? BrassButton(icon: Icons.close_rounded, tooltip: 'Close', onPressed: () => closeHarborSheet(context)),
+            trailing: trailing ?? BrassButton(icon: Icons.close_rounded, tooltip: 'Close', onPressed: () => HarborSheet.close(context)),
           ),
         ),
       ),

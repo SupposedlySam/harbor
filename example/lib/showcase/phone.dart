@@ -5,10 +5,11 @@ import 'package:harbor/harbor.dart';
 
 import '../art/palette.dart';
 import '../field_guide/stage.dart';
+import 'demos.dart';
 import 'timeline.dart';
 
 /// What the phone shows on screen, for the outlines the showcase draws over it.
-enum PhonePart { header, tabBar, composer, keyboard }
+enum PhonePart { header, tabBar, composer, keyboard, statusBar, homeIndicator, screen }
 
 /// A phone running a real harbor page, driven by [time].
 ///
@@ -25,6 +26,9 @@ class ShowcasePhone extends StatefulWidget {
 
   static const Size screen = Size(402, 874);
   static const EdgeInsets coast = EdgeInsets.only(top: 62, bottom: 34);
+
+  /// The page margin the phone's sea gives every harbor, and the mooring line keeps.
+  static const double margin = 14;
 
   @override
   State<ShowcasePhone> createState() => _ShowcasePhoneState();
@@ -66,6 +70,8 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
   @override
   Widget build(final BuildContext context) {
     final double keyboard = ShowcaseTimeline.keyboard(widget.time);
+    final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(widget.time);
+    final Widget? demo = showcaseDemo(chapter.key);
     final EdgeInsets viewPadding = ShowcasePhone.coast;
     // As Flutter computes it: the padding is what the view padding leaves after the keyboard.
     final EdgeInsets padding = EdgeInsets.only(top: viewPadding.top, bottom: math.max(0, viewPadding.bottom - keyboard));
@@ -87,19 +93,50 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
             data: ThemeData(useMaterial3: true, colorSchemeSeed: Palette.shallows, fontFamily: 'Georgia'),
             child: Material(
               color: const Color(0xFFF4F7FA),
-              child: Stack(
-                children: <Widget>[
-                  HarborSea(child: _Page(parts: widget.parts, scroll: _scroll, composerOut: ShowcaseTimeline.composerOut(widget.time))),
-                  const Positioned(left: 0, right: 0, top: 0, height: 62, child: IgnorePointer(child: StatusBarArt(island: true))),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: keyboard,
-                    child: KeyedSubtree(key: widget.parts[PhonePart.keyboard], child: const KeyboardArt()),
-                  ),
-                  if (keyboard < 1) const Positioned(left: 0, right: 0, bottom: 8, height: 5, child: HomeIndicatorArt()),
-                ],
+              child: KeyedSubtree(
+                key: widget.parts[PhonePart.screen],
+                child: Stack(
+                  children: <Widget>[
+                    ShowcaseClock(
+                      time: widget.time,
+                      child: HarborChartOverlay(
+                        enabled: chapter.key == 'chart',
+                        child: HarborSea(
+                          margin: const EdgeInsetsDirectional.symmetric(horizontal: ShowcasePhone.margin),
+                          child: KeyedSubtree(
+                            key: ValueKey<String>(demo == null ? 'harbor master' : chapter.key),
+                            child: demo ?? _Page(parts: widget.parts, scroll: _scroll, composerOut: ShowcaseTimeline.composerOut(widget.time)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      height: 62,
+                      child: IgnorePointer(child: KeyedSubtree(key: widget.parts[PhonePart.statusBar], child: const StatusBarArt(island: true))),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: keyboard,
+                      child: KeyedSubtree(key: widget.parts[PhonePart.keyboard], child: const KeyboardArt()),
+                    ),
+                    if (keyboard < 1)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: 34,
+                        child: KeyedSubtree(
+                          key: widget.parts[PhonePart.homeIndicator],
+                          child: const Padding(padding: EdgeInsets.only(top: 21, bottom: 8), child: HomeIndicatorArt()),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -115,17 +152,6 @@ class _Page extends StatelessWidget {
   final Map<PhonePart, GlobalKey> parts;
   final ScrollController scroll;
   final bool composerOut;
-
-  static const List<(String, String, IconData, Color)> _boats = <(String, String, IconData, Color)>[
-    ('Sea Breeze', 'Sailboat · berth 4', Icons.sailing, Color(0xFFE2463A)),
-    ('Old Faithful', 'Tug · berth 9', Icons.directions_boat, Color(0xFF2E7D5B)),
-    ('Marigold', 'Ferry · berth 2', Icons.directions_ferry, Color(0xFFF2C14E)),
-    ('Blue Heron', 'Trawler · berth 7', Icons.anchor, Color(0xFF3D5A98)),
-    ('Pearl', 'Yacht · berth 1', Icons.sailing, Color(0xFF8E44AD)),
-    ('Kestrel', 'Rowboat · berth 12', Icons.rowing, Color(0xFF16A085)),
-    ('Northwind', 'Sailboat · berth 5', Icons.sailing, Color(0xFFD35400)),
-    ('Dory', 'Rowboat · berth 14', Icons.rowing, Color(0xFF2E7D5B)),
-  ];
 
   @override
   Widget build(final BuildContext context) => Harbor(
@@ -155,43 +181,66 @@ class _Page extends StatelessWidget {
       ),
       HarborDock.quay(
         backdrop: const ColoredBox(color: Palette.deepSea),
-        child: KeyedSubtree(key: parts[PhonePart.tabBar], child: const _TabBar()),
+        child: KeyedSubtree(key: parts[PhonePart.tabBar], child: const ShowcaseTabBar()),
       ),
     ],
     body: HarborFairway(
       controller: scroll,
       slivers: <Widget>[
         SliverList.builder(
-          itemCount: _boats.length * 3,
+          itemCount: showcaseBoats.length * 3,
           itemBuilder: (final BuildContext context, final int i) {
-            final (String name, String detail, IconData icon, Color color) = _boats[i % _boats.length];
-            return HarborMooringLine(
-              child: Container(
-                height: 76,
-                margin: const EdgeInsets.symmetric(vertical: 5),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: Row(
-                  children: <Widget>[
-                    CircleAvatar(backgroundColor: color, child: Icon(icon, color: Colors.white)),
-                    const SizedBox(width: 14),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Palette.deepSea)),
-                        Text(detail, style: const TextStyle(fontSize: 14, color: Color(0xFF5B6B7A))),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return HarborMooringLine(child: BoatRow(index: i));
           },
         ),
       ],
     ),
   );
+}
+
+/// The boats in the showcase's lists.
+const List<(String, String, IconData, Color)> showcaseBoats = <(String, String, IconData, Color)>[
+  ('Sea Breeze', 'Sailboat · berth 4', Icons.sailing, Color(0xFFE2463A)),
+  ('Old Faithful', 'Tug · berth 9', Icons.directions_boat, Color(0xFF2E7D5B)),
+  ('Marigold', 'Ferry · berth 2', Icons.directions_ferry, Color(0xFFF2C14E)),
+  ('Blue Heron', 'Trawler · berth 7', Icons.anchor, Color(0xFF3D5A98)),
+  ('Pearl', 'Yacht · berth 1', Icons.sailing, Color(0xFF8E44AD)),
+  ('Kestrel', 'Rowboat · berth 12', Icons.rowing, Color(0xFF16A085)),
+  ('Northwind', 'Sailboat · berth 5', Icons.sailing, Color(0xFFD35400)),
+  ('Dory', 'Rowboat · berth 14', Icons.rowing, Color(0xFF2E7D5B)),
+];
+
+
+/// One boat in a list: its name, its berth, and a badge.
+class BoatRow extends StatelessWidget {
+  const BoatRow({super.key, required this.index});
+
+  final int index;
+
+  @override
+  Widget build(final BuildContext context) {
+    final (String name, String detail, IconData icon, Color color) = showcaseBoats[index % showcaseBoats.length];
+    return Container(
+      height: 76,
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: <Widget>[
+          CircleAvatar(backgroundColor: color, child: Icon(icon, color: Colors.white)),
+          const SizedBox(width: 14),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Palette.deepSea)),
+              Text(detail, style: const TextStyle(fontSize: 14, color: Color(0xFF5B6B7A))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Composer extends StatelessWidget {
@@ -219,20 +268,24 @@ class _Composer extends StatelessWidget {
   );
 }
 
-class _TabBar extends StatelessWidget {
-  const _TabBar();
+/// The tab bar, with [middle] in its middle when a chapter puts something there.
+class ShowcaseTabBar extends StatelessWidget {
+  const ShowcaseTabBar({super.key, this.middle});
+
+  final Widget? middle;
 
   @override
-  Widget build(final BuildContext context) => const SizedBox(
-    key: ValueKey<String>('showcase tab bar'),
+  Widget build(final BuildContext context) => SizedBox(
+    key: const ValueKey<String>('showcase tab bar'),
     height: 60,
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
-        Icon(Icons.anchor, color: Palette.brass, size: 28),
-        Icon(Icons.map_outlined, color: Colors.white70, size: 28),
-        Icon(Icons.forum_outlined, color: Colors.white70, size: 28),
-        Icon(Icons.settings_outlined, color: Colors.white70, size: 28),
+        const Icon(Icons.anchor, color: Palette.brass, size: 28),
+        const Icon(Icons.map_outlined, color: Colors.white70, size: 28),
+        ?middle,
+        const Icon(Icons.forum_outlined, color: Colors.white70, size: 28),
+        const Icon(Icons.settings_outlined, color: Colors.white70, size: 28),
       ],
     ),
   );

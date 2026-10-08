@@ -25,6 +25,14 @@ class HarborAnchor extends ChangeNotifier {
   RenderBox? get box => (_box != null && _box!.attached && _box!.hasSize) ? _box : null;
 
   void _attach(final RenderBox box) {
+    assert(() {
+      final RenderBox? previous = _box;
+      if (previous != null && !identical(previous, box)) {
+        (_debugPreviousBoxes ??= <RenderBox>{}).add(previous);
+        _debugScheduleSharedCheck();
+      }
+      return true;
+    }());
     _box = box;
     _moved();
   }
@@ -34,6 +42,49 @@ class HarborAnchor extends ChangeNotifier {
       _box = null;
       _moved();
     }
+    assert(() {
+      _debugPreviousBoxes?.remove(box);
+      return true;
+    }());
+  }
+
+  // The boxes a later attach replaced. As with a LayerLink's leaders, each one
+  // must detach by the end of the frame, or two points share this anchor.
+  Set<RenderBox>? _debugPreviousBoxes;
+  bool _debugSharedCheckScheduled = false;
+
+  void _debugScheduleSharedCheck() {
+    if (_debugSharedCheckScheduled) {
+      return;
+    }
+    _debugSharedCheckScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      _debugSharedCheckScheduled = false;
+      final Set<RenderBox> stillAttached = <RenderBox>{
+        for (final RenderBox previous in _debugPreviousBoxes ?? const <RenderBox>{})
+          if (previous.attached && !identical(previous, _box)) previous,
+      };
+      _debugPreviousBoxes = null;
+      if (stillAttached.isEmpty || _disposed) {
+        return;
+      }
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('More than one HarborAnchorPoint is using the same HarborAnchor${debugLabel == null ? '' : ' "$debugLabel"'}.'),
+          ErrorDescription(
+            'An anchor refers to one point. With several attached, a buoy anchored to it sits by whichever '
+            'laid out last, and when that one leaves the anchor has no point while the others are still there.',
+          ),
+          ErrorHint(
+            'Give each HarborAnchorPoint its own HarborAnchor, for example one per row of a list, '
+            'or wrap only the row whose buoy is showing.',
+          ),
+          if (_box case final RenderBox current) current.describeForError('The point the anchor is using'),
+          for (final RenderBox previous in stillAttached) previous.describeForError('Also attached'),
+        ]),
+        library: 'harbor',
+      ));
+    }, debugLabel: 'HarborAnchor.sharedCheck');
   }
 
   bool _pending = false;
@@ -851,6 +902,24 @@ abstract final class HarborSignals {
   /// after [duration] (or when the returned entry is lowered). If its harbor
   /// leaves (the page is popped), the signal moves to the port now on top.
   ///
+  /// [alignment] places the signal at an exact point instead of a slot, as
+  /// [HarborBuoy.alignment] places a buoy; give one or the other, or neither
+  /// for [HarborSignalSlot.high]. An [AlignmentDirectional] is resolved in the
+  /// reading direction of [context], the page that raised it, whose themes the
+  /// signal also keeps.
+  ///
+  /// The signal fades and scales in and out over [animationStyle] (220 ms each
+  /// way by default). [AnimationStyle.noAnimation] shows it as it is, for a
+  /// widget that brings its own entrance; [transitionBuilder] builds your own
+  /// entrance and exit from harbor's animation instead. Either way a lowered
+  /// signal stays at least 300 ms, so the widget's own exit can run. With
+  /// reduced motion it appears and leaves at once.
+  ///
+  /// The signal is a live region with a dismiss action, so a screen reader
+  /// announces it and can lower it, as it does a `SnackBar`. Give
+  /// [liveRegion] false when [builder]'s widget is its own live region: harbor
+  /// then adds no semantics, and the widget's node is the only one announced.
+  ///
   /// With no harbor above [context] (a bare `MaterialApp` in a widget test, a
   /// screen not yet built from a harbor), the signal goes to the nearest
   /// [Overlay], kept clear of `MediaQuery.padding` and `viewInsets`. With no
@@ -859,10 +928,15 @@ abstract final class HarborSignals {
   static HarborSignalEntry raise(
     final BuildContext context, {
     required final WidgetBuilder builder,
-    final HarborSignalSlot slot = HarborSignalSlot.high,
+    final HarborSignalSlot? slot,
+    final AlignmentGeometry? alignment,
     final Duration? duration = const Duration(seconds: 3),
     final HarborSignalTarget target = HarborSignalTarget.topmost,
+    final AnimationStyle? animationStyle,
+    final HarborSignalTransitionBuilder? transitionBuilder,
+    final bool liveRegion = true,
   }) {
+    assert(slot == null || alignment == null, 'Give a signal a slot or an alignment, not both.');
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
     // A signal is built in its harbor's buoy layer, not where it was raised, so it takes the
     // themes and text style of the place that raised it, as a sheet does. Without this a page
@@ -871,11 +945,14 @@ abstract final class HarborSignals {
     final HarborSignalEntry entry = HarborSignalEntry(
       // A Builder, so the builder's own context sees the captured themes, not only what it returns.
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
-      alignment: slot.alignment,
+      alignment: alignment?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr) ?? (slot ?? HarborSignalSlot.high).alignment,
       duration: duration,
       // Sent to the sea, a signal clears only the coast.
       avoidInGlobal: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context)?.clearWaterInGlobal() : null,
       raisedIn: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context) : null,
+      animationStyle: animationStyle,
+      transitionBuilder: transitionBuilder,
+      liveRegion: liveRegion,
     );
     final HarborController? controller = switch (target) {
       HarborSignalTarget.topmost => fleet?.topmost,
@@ -945,7 +1022,7 @@ class _OverlaySignalState extends State<_OverlaySignal> {
   void _changed() {
     if (!widget.entry.showing.value) {
       // Leave time for the signal's own exit animation.
-      _removal ??= Timer(const Duration(milliseconds: 300), () {
+      _removal ??= Timer(widget.entry.lingers, () {
         widget.host
           ..remove()
           ..dispose();
@@ -990,12 +1067,21 @@ class _Signal extends StatefulWidget {
 }
 
 class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  late final AnimationController _controller = AnimationController(vsync: this);
+  late final CurvedAnimation _animation = CurvedAnimation(
+    parent: _controller,
+    curve: widget.entry.animationStyle?.curve ?? Curves.linear,
+    reverseCurve: widget.entry.animationStyle?.reverseCurve,
+  );
+  late final Animation<double> _scale = Tween<double>(begin: 0.92, end: 1.0).animate(_animation);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _controller.duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220);
+    final bool reducedMotion = MediaQuery.disableAnimationsOf(context);
+    _controller
+      ..duration = reducedMotion ? Duration.zero : widget.entry.transitionDuration
+      ..reverseDuration = reducedMotion ? Duration.zero : widget.entry.reverseTransitionDuration;
     if (_controller.isDismissed && widget.entry.showing.value) {
       _controller.forward();
     }
@@ -1016,18 +1102,28 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     widget.entry.showing.removeListener(_changed);
+    _animation.dispose();
     _controller.dispose();
     super.dispose();
   }
 
+  bool get _still => widget.entry.transitionDuration == Duration.zero && widget.entry.reverseTransitionDuration == Duration.zero;
+
   @override
-  // A live region, so a screen reader announces the signal when it appears, as it does a SnackBar.
-  Widget build(final BuildContext context) => Semantics(
-    container: true,
-    liveRegion: true,
-    child: FadeTransition(
-      opacity: _controller,
-      child: ScaleTransition(scale: Tween<double>(begin: 0.92, end: 1.0).animate(_controller), child: widget.entry.builder(context)),
-    ),
-  );
+  Widget build(final BuildContext context) {
+    final HarborSignalEntry entry = widget.entry;
+    final Widget child = entry.builder(context);
+    final Widget shown = switch (entry.transitionBuilder) {
+      final HarborSignalTransitionBuilder transition => transition(context, _animation, child),
+      // Shown as it is, so a widget with its own entrance doesn't play two.
+      null when _still => child,
+      null => FadeTransition(opacity: _animation, child: ScaleTransition(scale: _scale, child: child)),
+    };
+    if (!entry.liveRegion) {
+      return shown;
+    }
+    // A live region, so a screen reader announces the signal when it appears, and a dismiss
+    // action to lower it, as a SnackBar has.
+    return Semantics(container: true, liveRegion: true, onDismiss: entry.lower, child: shown);
+  }
 }
