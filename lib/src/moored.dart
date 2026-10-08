@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
@@ -63,6 +64,22 @@ class HarborMoored extends StatelessWidget {
   final EdgeInsetsDirectional extra;
 
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<HarborEdge>('edges', edges, defaultValue: HarborEdge.all));
+    properties.add(EnumProperty<HarborClear>('clear', clear, defaultValue: HarborClear.everything));
+    properties.add(EnumProperty<HarborFollow>('follow', follow, defaultValue: HarborFollow.live));
+    properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
+    properties.add(FlagProperty('mooringLine', value: mooringLine, ifTrue: 'mooring line'));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('extra', extra, defaultValue: EdgeInsetsDirectional.zero),
+    );
+  }
 
   /// What a [HarborMoored] with these settings would pad [context] by.
   static EdgeInsetsDirectional clearanceOf(
@@ -134,6 +151,12 @@ class HarborMooringLine extends StatelessWidget {
 
   final HarborFollow follow;
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<HarborFollow>('follow', follow, defaultValue: HarborFollow.live));
+  }
 
   @override
   Widget build(final BuildContext context) => HarborMoored(

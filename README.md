@@ -564,6 +564,13 @@ the labels' font, so they read in widget tests and goldens rather than as
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
 
+The widget inspector and `debugDumpApp` show each harbor widget's settings, as
+they do a `SafeArea`'s or a `ListView`'s, leaving out the ones at their
+defaults: a `Harbor` lists its docks and buoys, and a dock reads as
+`HarborDock.pier(tide: float, debugLabel: "composer")`. The values (`HarborDock`,
+`HarborBuoy`, `HarborWake`, `HarborCoast`, `HarborTitleSafe`, `HarborSheetExtent`)
+are `Diagnosticable`, so they print the same way in a test failure or a log.
+
 Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (sheets,
 dialogs, signals and buoys keep off a hinge through `MediaQuery.displayFeatures`,
 not through the coast) and `HarborController.isPort` (signals find their port by

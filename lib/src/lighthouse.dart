@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -101,6 +102,18 @@ class HarborBeacon extends StatefulWidget {
 
   @override
   State<HarborBeacon> createState() => _HarborBeaconState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<HarborEdge>('edge', edge, defaultValue: HarborEdge.top));
+    properties.add(ObjectFlagProperty<ValueChanged<double>>.has('onObscured', onObscured));
+    properties.add(FlagProperty('keepInSight', value: keepInSight, ifTrue: 'keep in sight'));
+    properties.add(FlagProperty('onlyWhileFocused', value: onlyWhileFocused, ifTrue: 'only while focused'));
+    properties.add(FlagProperty('lift', value: lift, ifTrue: 'lift'));
+    properties.add(DoubleProperty('clearance', clearance, defaultValue: 0.0));
+    properties.add(FlagProperty('holdPosition', value: holdPosition, ifTrue: 'holding position'));
+  }
 }
 
 class _HarborBeaconState extends State<HarborBeacon> {
@@ -237,6 +250,15 @@ class HarborLighthouseRegion extends StatefulWidget {
 
   @override
   State<HarborLighthouseRegion> createState() => _LighthouseRegionState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 280)),
+    );
+    properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeOutCubic));
+  }
 }
 
 class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTickerProviderStateMixin {
