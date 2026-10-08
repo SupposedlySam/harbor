@@ -38,7 +38,7 @@ export 'src/make_way.dart';
 export 'src/moored.dart';
 export 'src/render_harbor.dart' show HarborSizing;
 export 'src/scale_model.dart';
-export 'src/sheet.dart';
+export 'src/sheet.dart' hide HarborNonModalSheetActions;
 export 'src/sticky.dart';
 export 'src/tide.dart' show HarborDryDock, HarborTide, HarborTidePhase, HarborTideStance, HarborTideState;
 export 'src/wake.dart' show HarborRest, HarborWake, HarborWakeKind, HarborWakeMask, HarborWakePainter, harborAlphaWake;
