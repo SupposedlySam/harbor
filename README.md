@@ -360,7 +360,9 @@ A flat fold, which has no width, may still be spanned.
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
-page is on top, and it leaves when its page is replaced or removed. A
+page is on top (from the first frame of that page's push until its pop has
+finished, since the sheet is drawn above every page rather than inside its
+own), and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
