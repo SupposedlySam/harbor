@@ -17,6 +17,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor_example/showcase/showcase.dart';
 import 'package:harbor_example/showcase/timeline.dart';
 
+import 'showcase_stamp.dart';
+
 final String? _out = Platform.environment['SHOWCASE_OUT'];
 
 /// flutter_test draws text in a box font unless real fonts are loaded under the names used.
@@ -99,6 +101,12 @@ void main() {
         final String name = stills != null ? 'still_${t.toStringAsFixed(1)}.png' : 'frame_${i.toString().padLeft(5, '0')}.png';
         File('${out.path}/$name').writeAsBytesSync(png!.buffer.asUint8List());
       });
+    }
+    // Every frame rendered and every caption fitted: stamp the sources this video came from, so
+    // test/showcase_media_test.dart can tell when the committed video goes stale. Stills are not a
+    // video, so only a full recording stamps.
+    if (stills == null) {
+      stampFile(Directory.current.path).writeAsStringSync('${showcaseStamp(Directory.current.path)}\n');
     }
   }, skip: _out == null);
 }
