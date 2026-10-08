@@ -62,16 +62,26 @@ class HarborBreakwater {
 
 /// A transient buoy raised by `HarborSignals.raise`.
 class HarborSignalEntry {
-  HarborSignalEntry({required this.builder, required this.alignment, required this.duration, this.avoidInGlobal});
+  HarborSignalEntry({required this.builder, required this.alignment, required this.duration, final Rect? avoidInGlobal, this.raisedIn})
+    : _avoidAtRaise = avoidInGlobal;
 
   final WidgetBuilder builder;
   final Alignment alignment;
   final Duration? duration;
 
+  /// The harbor the signal was raised from, whose clear water it also keeps inside.
+  final HarborController? raisedIn;
+
+  final Rect? _avoidAtRaise;
+
   /// The clear water of the harbor the signal was raised from, in global
   /// coordinates: the signal stays inside it too, so it clears that harbor's
   /// docks (a tab's own header) as well as its target's.
-  final Rect? avoidInGlobal;
+  ///
+  /// Read from that harbor's latest layout, not kept from the moment it was raised: a stored
+  /// rectangle boxed the signal into a foldable's cover screen after the device opened. The
+  /// rectangle from the raise is the fallback once that harbor has gone.
+  Rect? get avoidInGlobal => raisedIn?.clearWaterInGlobal() ?? _avoidAtRaise;
   final ValueNotifier<bool> showing = ValueNotifier<bool>(true);
   HarborController? owner;
 

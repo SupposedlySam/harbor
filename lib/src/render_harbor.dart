@@ -341,6 +341,7 @@ class RenderHarbor extends RenderBox
     // the new cover reaches the very next layout.
     if (attached && hasSize && SchedulerBinding.instance.schedulerPhase != SchedulerPhase.persistentCallbacks) {
       _edgeCoverage = _edgeCoverageNow();
+      _edgeCoverageHeight = size.height;
     }
     markNeedsLayout();
     markNeedsPaint();
@@ -391,15 +392,28 @@ class RenderHarbor extends RenderBox
   /// when it last painted.
   double _edgeCoverage = 0.0;
 
-  double _breakwaterInFrame() {
+  /// The height [_edgeCoverage] was measured against.
+  double _edgeCoverageHeight = 0.0;
+
+  /// The cover to lay out against at [height]. The cover is only known after it paints, so after
+  /// a turn or a fold the last measurement belongs to the old shape: used as pixels, a sheet over
+  /// 365 of portrait's 874 covered nearly all of landscape's 402 for a frame, and the page under
+  /// it overflowed. Scaled by the change in height instead, it starts close to where the sheet
+  /// will settle, and the next paint measures it exactly.
+  double _breakwaterInFrame(final double height) {
     final double coverage = _controller.breakwaterCoverage;
     final double fromBottom = coverage <= 0 ? 0.0 : math.max(0.0, coverage - _gapBelow);
-    return math.max(fromBottom, _edgeCoverage);
+    double edge = _edgeCoverage;
+    if (edge > 0 && _edgeCoverageHeight > 0 && height.isFinite && (height - _edgeCoverageHeight).abs() > 0.5) {
+      edge = edge * height / _edgeCoverageHeight;
+    }
+    return math.max(fromBottom, edge);
   }
 
   void _measureEdgeCoverage() {
     // The harbor itself may have moved under a still cover.
     final double covered = _edgeCoverageNow();
+    _edgeCoverageHeight = size.height;
     if ((covered - _edgeCoverage).abs() > 0.5) {
       _edgeCoverage = covered;
       SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
@@ -532,7 +546,7 @@ class RenderHarbor extends RenderBox
     );
 
     // 4. What is in the way on each edge, from the frame's edge.
-    final double breakwater = _breakwaterInFrame();
+    final double breakwater = _breakwaterInFrame(maxHeight);
     double wakeClearance(final HarborEdge edge) => far[edge]! > 0 ? (innerWake[edge]?.clearance ?? 0.0) : 0.0;
     double coastOf(final EdgeInsetsDirectional coast, final HarborEdge edge) =>
         math.max(HarborEdges.of(coast, edge), HarborEdges.of(g.minimum, edge));

@@ -241,6 +241,20 @@ class HarborBuoyLayer extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
+    // A signal keeps inside the clear water of the harbor that raised it, so it is placed again
+    // whenever that harbor's clear water moves (a turn, a foldable opening): read only at build,
+    // it stayed boxed into the shape the screen had when the signal went up.
+    final List<Listenable> raisers = <Listenable>[
+      for (final HarborSignalEntry signal in signals)
+        if (signal.raisedIn case final HarborController harbor) harbor.clearWater,
+    ];
+    if (raisers.isEmpty) {
+      return _build(context);
+    }
+    return ListenableBuilder(listenable: Listenable.merge(raisers), builder: (final BuildContext context, final Widget? _) => _build(context));
+  }
+
+  Widget _build(final BuildContext context) {
     final int lastModal = buoys.lastIndexWhere((final HarborBuoy b) => b.modal);
     final List<HarborBuoy> all = <HarborBuoy>[
       ...buoys,
@@ -678,6 +692,7 @@ abstract final class HarborSignals {
       duration: duration,
       // Sent to the sea, a signal clears only the coast.
       avoidInGlobal: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context)?.clearWaterInGlobal() : null,
+      raisedIn: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context) : null,
     );
     final HarborController? controller = switch (target) {
       HarborSignalTarget.topmost => fleet?.topmost,
