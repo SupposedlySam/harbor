@@ -269,7 +269,7 @@ them, as a `SnackBar` is. A signal whose widget is already its own live region
 `liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
-leave without moving. On iOS a tap on the
+leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
 status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
 as there only the page whose status bar band is on top at the screen's top left:
 a page under a route in an outer navigator, under an overlay, or in the
@@ -285,6 +285,9 @@ HarborController.of(context).makeWay(HarborEdge.top, mode: HarborYield.dark) // 
 
 Claims are counted and go to the nearest harbor that has a dock on that edge.
 A pontoon joins the harbor's docks on the next frame.
+`HarborController.of` throws a `FlutterError` when there is no harbor above the
+context, in release builds too, as `Scaffold.of` does; `HarborController.maybeOf`
+returns null instead.
 
 ## Buoys and signals
 
@@ -315,6 +318,9 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left. While its
 anchor is not in the tree, an anchored buoy is not shown and takes no taps.
+A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each row of a list
+its own; in debug builds two points left on one anchor are reported after the
+frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -508,6 +514,12 @@ comments.animateTo(0.88, duration: const Duration(milliseconds: 220), curve: Cur
 Rebuilt with a new `rest` before it is dragged, a sheet moves there, as a
 `DraggableScrollableSheet` does with a new `initialChildSize`; after a drag,
 move it with the controller.
+
+`sheetAnimationStyle:` takes an `AnimationStyle`, as `showModalBottomSheet`
+does: its `duration` and `curve` set how the sheet opens, `reverseDuration` and
+`reverseCurve` how it closes, and `AnimationStyle.noAnimation` opens and closes
+it at once. A dragged sheet stays under the finger whatever the curve, and
+reduced motion still wins.
 
 ## The lighthouse
 

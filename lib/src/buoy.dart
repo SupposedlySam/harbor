@@ -28,6 +28,14 @@ class HarborAnchor extends ChangeNotifier {
   RenderBox? get box => (_box != null && _box!.attached && _box!.hasSize) ? _box : null;
 
   void _attach(final RenderBox box) {
+    assert(() {
+      final RenderBox? previous = _box;
+      if (previous != null && !identical(previous, box)) {
+        (_debugPreviousBoxes ??= <RenderBox>{}).add(previous);
+        _debugScheduleSharedCheck();
+      }
+      return true;
+    }());
     _box = box;
     _moved();
   }
@@ -37,6 +45,49 @@ class HarborAnchor extends ChangeNotifier {
       _box = null;
       _moved();
     }
+    assert(() {
+      _debugPreviousBoxes?.remove(box);
+      return true;
+    }());
+  }
+
+  // The boxes a later attach replaced. As with a LayerLink's leaders, each one
+  // must detach by the end of the frame, or two points share this anchor.
+  Set<RenderBox>? _debugPreviousBoxes;
+  bool _debugSharedCheckScheduled = false;
+
+  void _debugScheduleSharedCheck() {
+    if (_debugSharedCheckScheduled) {
+      return;
+    }
+    _debugSharedCheckScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      _debugSharedCheckScheduled = false;
+      final Set<RenderBox> stillAttached = <RenderBox>{
+        for (final RenderBox previous in _debugPreviousBoxes ?? const <RenderBox>{})
+          if (previous.attached && !identical(previous, _box)) previous,
+      };
+      _debugPreviousBoxes = null;
+      if (stillAttached.isEmpty || _disposed) {
+        return;
+      }
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('More than one HarborAnchorPoint is using the same HarborAnchor${debugLabel == null ? '' : ' "$debugLabel"'}.'),
+          ErrorDescription(
+            'An anchor refers to one point. With several attached, a buoy anchored to it sits by whichever '
+            'laid out last, and when that one leaves the anchor has no point while the others are still there.',
+          ),
+          ErrorHint(
+            'Give each HarborAnchorPoint its own HarborAnchor, for example one per row of a list, '
+            'or wrap only the row whose buoy is showing.',
+          ),
+          if (_box case final RenderBox current) current.describeForError('The point the anchor is using'),
+          for (final RenderBox previous in stillAttached) previous.describeForError('Also attached'),
+        ]),
+        library: 'harbor',
+      ));
+    }, debugLabel: 'HarborAnchor.sharedCheck');
   }
 
   bool _pending = false;
