@@ -107,11 +107,10 @@ class HarborFairway extends StatelessWidget {
     final bool mooringLine = true,
   }) {
     final TextDirection direction = Directionality.of(context);
-    final HarborWatersData waters = HarborWaters.of(context);
     double end(final HarborEdge edge) {
       double value = HarborWaters.clearanceOf(context, edge);
       if (!edge.isVertical && mooringLine) {
-        value += HarborEdges.of(waters.margin, edge);
+        value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
       return value + HarborEdges.of(extra, edge);
     }
@@ -125,7 +124,10 @@ class HarborFairway extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final TextDirection direction = Directionality.of(context);
-    final HarborWatersData waters = HarborWaters.of(context);
+    // The docks carry the wakes; the coast and the margin are read only where
+    // they are used, so a carousel does not rebuild as the keyboard moves.
+    final HarborWatersData waters = HarborWaters.of(context, aspect: HarborWatersAspect.docks);
+    EdgeInsetsDirectional coast() => HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast;
     final bool vertical = scrollDirection == Axis.vertical;
     final HarborEdge leadingEdge = vertical
         ? (reverse ? HarborEdge.bottom : HarborEdge.top)
@@ -133,7 +135,7 @@ class HarborFairway extends StatelessWidget {
     double clearance(final HarborEdge edge) {
       double value = HarborWaters.clearanceOf(context, edge);
       if (!vertical && mooringLine) {
-        value += HarborEdges.of(waters.margin, edge);
+        value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
       return value + HarborEdges.of(padding, edge);
     }
@@ -146,7 +148,7 @@ class HarborFairway extends StatelessWidget {
     final bool leadsWithDock = slivers.isNotEmpty && slivers.first is HarborSliverDock && leadingEdge == HarborEdge.top;
     double absorbed = 0.0;
     if (leadsWithDock && HarborEdges.of(waters.docks, HarborEdge.top) <= 0) {
-      absorbed = math.min(leading, HarborEdges.of(waters.coast, HarborEdge.top));
+      absorbed = math.min(leading, HarborEdges.of(coast(), HarborEdge.top));
       leading -= absorbed;
     }
 
@@ -155,7 +157,7 @@ class HarborFairway extends StatelessWidget {
     final HarborWakeBand? band = waters.wakes[leadingEdge];
     double cover = band == null
         ? leading
-        : math.max(HarborWaters.clearanceOf(context, leadingEdge) - band.length, HarborEdges.of(waters.coast, leadingEdge));
+        : math.max(HarborWaters.clearanceOf(context, leadingEdge) - band.length, HarborEdges.of(coast(), leadingEdge));
     cover = math.max(0.0, math.min(cover, leading + absorbed) - absorbed);
 
     final Set<HarborEdge> castOff = vertical ? HarborEdge.vertical : HarborEdge.horizontal;
@@ -218,14 +220,13 @@ class HarborFairway extends StatelessWidget {
       AxisDirection.right => EdgeInsets.only(left: leadExtra, right: trailExtra),
       AxisDirection.left => EdgeInsets.only(left: trailExtra, right: leadExtra),
     };
-    // Content that starts in open water keeps the coast and docks it starts under.
-    final MediaQueryData openWaterMediaQuery = MediaQuery.of(context);
-    final HarborWatersData? openWaterWaters = HarborWaters.maybeRawOf(context);
     Widget first(final Widget sliver) {
       Widget result = leadsWithDock ? _SliverDockAbsorb(coast: absorbed, child: sliver) : sliver;
       if (startsInOpenWater) {
+        // Content that starts in open water keeps the coast and docks it starts under.
+        final HarborWatersData? openWaterWaters = HarborWaters.maybeRawOf(context);
         result = MediaQuery(
-          data: openWaterMediaQuery,
+          data: MediaQuery.of(context),
           child: openWaterWaters == null ? result : HarborWaters(data: openWaterWaters, child: result),
         );
       }

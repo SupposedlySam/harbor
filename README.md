@@ -190,6 +190,7 @@ the docks and the keyboard with no extra code.
 Harbor(bodyClearsTide: true, ...)   // default: the body ends at the waterline
 Harbor(bodyClearsTide: false, ...)  // the body runs under; content reads it
 HarborTide.of(context)              // height, remaining, highWater, phase
+HarborTide.isInOf(context)          // whether it is in, rebuilding only when that flips
 ```
 
 `MediaQuery.padding` never carries the keyboard. That stays in `viewInsets`,
@@ -198,6 +199,13 @@ bottom. `HarborTide.of(context).height` is still readable after a harbor
 has moved out of the keyboard's way: for information, never for layout.
 `highWater` is the last settled keyboard height in this orientation, and it
 falls as well as rises.
+
+Readers rebuild only for what they read. `HarborTide.of` follows every frame
+of the keyboard moving; `HarborTide.isInOf` hears it come and go, and
+`HarborWaters.of(context, aspect: HarborWatersAspect.docks)` holds still while
+it moves. Harbor's own content reads the same way: a mooring line, a horizontal
+fairway, open water or a dry dock in a page the keyboard runs under is not
+rebuilt as it rises. Only what lays out against it is.
 
 ## Harbor and Scaffold
 

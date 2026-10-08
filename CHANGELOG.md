@@ -1,3 +1,7 @@
+## Unreleased
+
+* Readers rebuild only for what they read. `HarborWaters.of` depends on `MediaQuery`'s padding (and, outside a harbor, its size) rather than all of it, and only where its `aspect` needs them. `HarborTide.isInOf` rebuilds when the keyboard comes or goes, not on every frame it moves. `HarborMoored`, `HarborMooringLine`, `HarborOpenWater`, `HarborDryDock` and a horizontal `HarborFairway` no longer rebuild while the keyboard animates. Layout is unchanged.
+
 ## 0.1.0
 
 The first harbor.

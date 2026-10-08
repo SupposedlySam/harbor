@@ -75,16 +75,17 @@ class HarborMoored extends StatelessWidget {
     final EdgeInsetsDirectional minimum = EdgeInsetsDirectional.zero,
     final EdgeInsetsDirectional extra = EdgeInsetsDirectional.zero,
   }) {
-    final HarborWatersData waters = HarborWaters.of(context);
+    // Each part of the waters is read only where it is used, so a mooring line
+    // in a list under the keyboard does not rebuild as the keyboard moves.
     double clearance(final HarborEdge edge) {
       if (!edges.contains(edge)) {
         return HarborEdges.of(extra, edge);
       }
       double value = switch ((clear, follow)) {
-        (HarborClear.coast, _) => HarborEdges.of(waters.coast, edge),
+        (HarborClear.coast, _) => HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
         (HarborClear.everything, HarborFollow.resting) => math.max(
-          HarborEdges.of(waters.coast, edge),
-          HarborEdges.of(waters.docksResting, edge),
+          HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
+          HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.docks).docksResting, edge),
         ),
         (HarborClear.everything, HarborFollow.live) => HarborWaters.clearanceOf(context, edge, tide: false),
       };
@@ -92,7 +93,7 @@ class HarborMoored extends StatelessWidget {
         value = math.max(value, MediaQuery.viewInsetsOf(context).bottom);
       }
       if (mooringLine) {
-        value += HarborEdges.of(waters.margin, edge);
+        value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
       return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(extra, edge);
     }
