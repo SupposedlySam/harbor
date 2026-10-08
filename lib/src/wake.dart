@@ -25,6 +25,10 @@ enum HarborWakeKind { none, fade, hairline }
 /// counts toward how far content rests from the dock ([restsAt]), so the band
 /// and the resting line can never drift apart. A hairline draws a line on the
 /// dock's inner face, for a bar that content scrolls up to rather than under.
+///
+/// See also:
+///
+///  * [ShaderMask] and [BackdropFilter], which a fade wake paints with.
 @immutable
 class HarborWake with Diagnosticable {
   const HarborWake._(this.kind, {this.length = 0.0, this.blurSigma = 0.0, this.color, this.restsAt = HarborRest.wakeEnd});

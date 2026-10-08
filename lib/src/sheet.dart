@@ -83,6 +83,10 @@ class HarborSheetExtent with Diagnosticable {
 ///
 /// The sheet keeps the coast at the bottom (the home indicator), so its footer
 /// clears it once and nothing else in it has to.
+///
+/// See also:
+///
+///  * [DraggableScrollableSheet], which [HarborSheet.draggable] is built on.
 class HarborSheet extends StatelessWidget {
   /// A sheet as tall as its content, up to [maxExtentFraction] of the space
   /// above the keyboard, past which its body scrolls.
@@ -118,7 +122,7 @@ class HarborSheet extends StatelessWidget {
     super.key,
     this.header,
     this.footer,
-    required Widget Function(BuildContext context, ScrollController controller) this.builder,
+    required ScrollableWidgetBuilder this.builder,
     this.extent = const HarborSheetExtent(),
     this.controller,
     this.expand = true,
@@ -137,7 +141,7 @@ class HarborSheet extends StatelessWidget {
   final Widget? header;
   final Widget? footer;
   final Widget? body;
-  final Widget Function(BuildContext context, ScrollController controller)? builder;
+  final ScrollableWidgetBuilder? builder;
   final HarborSheetExtent? extent;
 
   /// Drives a draggable sheet from outside it, as it drives a [DraggableScrollableSheet].
@@ -602,6 +606,11 @@ class HarborSheetController extends ChangeNotifier {
 /// [transitionAnimationController] slides the sheet in place of its own 280 ms
 /// slide, as it does a modal bottom sheet: the sheet runs it forward to open
 /// and back to close, and the caller disposes it.
+///
+/// See also:
+///
+///  * `showModalBottomSheet` and `ModalBottomSheetRoute`, the Material equivalent of a sheet with a
+///    barrier, and `ScaffoldState.showBottomSheet`, of one with [HarborSheetBarrier.none].
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,

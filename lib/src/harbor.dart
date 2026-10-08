@@ -40,6 +40,11 @@ import 'waters.dart';
 /// A harbor inside another sees the outer harbor's docks as part of its
 /// coast, as a component inside a page does. A [newPort] does not: a route or
 /// a sheet starts fresh, with only the coast.
+///
+/// See also:
+///
+///  * `Scaffold`, the closest Flutter widget, which has one app bar sized by its `preferredSize` and
+///    one bottom bar.
 class Harbor extends StatefulWidget {
   const Harbor({
     super.key,
@@ -507,6 +512,10 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
 ///
 /// A sea mounted inside another harbor is a world of its own, with its own
 /// tide gauge, fleet and signals: a phone drawn inside a page, or a preview.
+///
+/// See also:
+///
+///  * `MaterialApp.builder`, whose output `MaterialApp` wraps in its `ScaffoldMessenger`, above the [Navigator].
 class HarborSea extends StatelessWidget {
   const HarborSea({super.key, this.coast = HarborCoast.ambient, this.margin, required this.child});
 
