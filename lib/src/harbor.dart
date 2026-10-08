@@ -134,10 +134,42 @@ class Harbor extends StatefulWidget {
   State<Harbor> createState() => _HarborState();
 }
 
-class _HarborState extends State<Harbor> {
+class _HarborState extends State<Harbor> with WidgetsBindingObserver {
   HarborController? _controller;
   HarborTideGauge? _ownGauge;
   HarborFleet? _ownFleet;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// On iOS a tap on the status bar scrolls the page's primary scroll view to the top. Flutter
+  /// wires that up in `Scaffold` alone, and a page built from a harbor needs no Scaffold, so the
+  /// harbor does it: the first harbor of the route on top, with the Scaffold's own animation.
+  /// Every position is scrolled, not the controller, since a controller with two scroll views
+  /// attached (tabs sharing the primary controller) cannot animate as one.
+  @override
+  void handleStatusBarTap() {
+    super.handleStatusBarTap();
+    final HarborController? controller = _controller;
+    if (controller == null || widget._isSea || !controller.isRouteLevel || !(ModalRoute.of(context)?.isCurrent ?? true)) {
+      return;
+    }
+    final ScrollController? primary = PrimaryScrollController.maybeOf(context);
+    if (primary == null) {
+      return;
+    }
+    final bool still = MediaQuery.disableAnimationsOf(context);
+    for (final ScrollPosition position in List<ScrollPosition>.of(primary.positions)) {
+      if (still) {
+        position.jumpTo(0.0);
+      } else {
+        position.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOutCirc);
+      }
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -191,6 +223,7 @@ class _HarborState extends State<Harbor> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.leave();
     _ownGauge?.dispose();
     super.dispose();
