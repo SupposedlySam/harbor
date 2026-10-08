@@ -1,5 +1,6 @@
 ## Unreleased
 
+* With reduced motion (`MediaQuery.disableAnimations`), `HarborLighthouse.reveal`, and so a `HarborBeacon(keepInSight: true)`, jumps to where it reveals instead of scrolling there over its `duration`, and a `HarborLighthouseRegion` lifts its content at once, as docks, sheets, signals and dialogs already appear. A region also takes a new `duration` given after it is first built.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0

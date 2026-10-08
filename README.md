@@ -258,7 +258,7 @@ by keyboard focus and by screen readers, not only by taps. Signals are live
 regions, so screen readers announce them. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
-leave without moving. On iOS a tap on the
+leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
 status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
 
 ## Talking to the harbor
