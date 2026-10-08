@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
@@ -433,7 +434,9 @@ class _SheetHost {
     required this.presenter,
     required this.scopesRoute,
     required this.semanticLabel,
-  });
+  }) {
+    _shown.addListener(_moveTop);
+  }
 
   final WidgetBuilder builder;
   final double? maxWidth;
@@ -444,17 +447,28 @@ class _SheetHost {
   final bool scopesRoute;
   final String? semanticLabel;
 
-  final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
   HarborBreakwater? _breakwater;
   double _height = 0.0;
-  double _progress = 0.0;
   double? _dragExtent;
   double _available = 0.0;
-  double _tide = 0.0;
   VoidCallback? close;
 
   /// What slides the sheet in and out, for dragging it down by hand.
-  AnimationController? slide;
+  AnimationController? get slide => _slide;
+  AnimationController? _slide;
+  set slide(final AnimationController? slide) {
+    _slide = slide;
+    _shown.parent = slide?.drive(CurveTween(curve: _reveal)) ?? kAlwaysDismissedAnimation;
+  }
+
+  /// How much of the sheet shows: [slide] along the reveal curve.
+  final ProxyAnimation _shown = ProxyAnimation(kAlwaysDismissedAnimation);
+
+  /// What the sheet is painted with: [_shown], or all of it under reduced motion.
+  late Animation<double> _painted = _shown;
+
+  /// How much of the sheet is drawn this frame, as a fraction of its height.
+  double get _drawn => _painted.value;
 
   // The reveal is curved, so the drag goes through the curve's inverse to
   // keep the sheet under the finger.
@@ -499,6 +513,25 @@ class _SheetHost {
   /// Where the sheet's visible top is, in global coordinates.
   final ValueNotifier<double> topInGlobal = ValueNotifier<double>(double.infinity);
 
+  // The top as last painted, and how far the sheet showed and was dragged then.
+  double? _paintedTop;
+  double _paintedShown = 0.0;
+  double? _paintedExtent;
+
+  // A painted top reaches the page under the sheet a frame late, so as the sheet slides or is
+  // dragged its new top is worked out from the last painted one, before this frame lays out.
+  void _moveTop() {
+    final double? top = _paintedTop;
+    // In build or layout the pages under the sheet may already be laid out; paint measures it then.
+    if (top == null || SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      return;
+    }
+    final double? extent = _dragExtent;
+    final double? paintedExtent = _paintedExtent;
+    final double dragged = extent == null || paintedExtent == null ? 0.0 : (extent - paintedExtent) * _available;
+    topInGlobal.value = top - (_drawn - _paintedShown) * _height - dragged;
+  }
+
   void attach() {
     _breakwater ??= presenter?.addBreakwaterEdge(topInGlobal);
   }
@@ -509,6 +542,9 @@ class _SheetHost {
     if (_draggable && !fromSheet) {
       return;
     }
+    _paintedTop = top;
+    _paintedShown = _drawn;
+    _paintedExtent = _dragExtent;
     topInGlobal.value = top;
   }
 
@@ -520,43 +556,22 @@ class _SheetHost {
   bool get hasDragExtent => _dragExtent != null;
   bool _draggable = false;
 
-  void _update() {
-    if (_draggable && _dragExtent == null) {
-      // A draggable sheet's measured box is the whole screen; wait for its extent.
-      coverage.value = 0.0;
-      return;
-    }
-    final double height = _dragExtent != null ? _dragExtent! * _available + _tide : _height;
-    coverage.value = math.max(0.0, height * _progress);
-  }
+  void measured(final double height) => _height = height;
 
-  set progress(final double value) {
-    _progress = value;
-    _update();
-  }
-
-  void measured(final double height) {
-    if (height != _height) {
-      _height = height;
-      _update();
-    }
-  }
-
-  void reportExtent(final double extent, final double available, final double tide) {
+  void reportExtent(final double extent, final double available) {
     _dragExtent = extent;
     _available = available;
-    _tide = tide;
-    _update();
+    _moveTop();
   }
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
-  Widget build(final BuildContext context, final Animation<double> transition) =>
-      DisplayFeatureSubScreen(child: Builder(builder: (final BuildContext context) => _build(context, transition)));
+  Widget build(final BuildContext context) => DisplayFeatureSubScreen(child: Builder(builder: _build));
 
-  Widget _build(final BuildContext context, final Animation<double> transition) {
+  Widget _build(final BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     // With reduced motion the sheet is simply there: its route still takes its time, but nothing slides.
-    final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : transition;
+    final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : _shown;
+    _painted = animation;
     // Built inside the sheet, so its context can close the sheet.
     Widget sheet = Builder(builder: builder);
     // A sheet stops short of the status bar unless it keeps the top coast.
@@ -574,7 +589,6 @@ class _SheetHost {
     return _SheetHostScope(
       host: this,
       available: math.max(0.0, mediaQuery.size.height - tide - top),
-      tide: tide,
       child: MediaQuery.removePadding(
         context: context,
         removeTop: !keepsTopCoast,
@@ -585,7 +599,7 @@ class _SheetHost {
             builder: (final BuildContext context, final Widget? child) => ClipRect(
               child: Align(
                 alignment: Alignment.topCenter,
-                heightFactor: _reveal.transform(animation.value),
+                heightFactor: _drawn,
                 child: child,
               ),
             ),
@@ -602,16 +616,15 @@ class _SheetHost {
 }
 
 class _SheetHostScope extends InheritedWidget {
-  const _SheetHostScope({required this.host, required this.available, required this.tide, required super.child});
+  const _SheetHostScope({required this.host, required this.available, required super.child});
 
   final _SheetHost host;
   final double available;
-  final double tide;
 
   static _SheetHostScope? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<_SheetHostScope>();
 
-  void reportExtent(final double extent) => host.reportExtent(extent, available, tide);
+  void reportExtent(final double extent) => host.reportExtent(extent, available);
 
   void close() => host.close?.call();
 
@@ -706,21 +719,17 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
       }
       ..slide = controller
       ..attach();
-    animation!.addListener(_tick);
   }
-
-  void _tick() => host.progress = animation!.value;
 
   @override
   void dispose() {
-    animation?.removeListener(_tick);
     host.detach();
     super.dispose();
   }
 
   @override
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
-      host.build(context, animation);
+      host.build(context);
 
   // ModalRoute's barrier, with the tap hint ModalBottomSheetRoute gives its own: ModalRoute has no
   // field for one.
@@ -771,11 +780,10 @@ class _NonModalSheet<T> {
       ..close = _close
       ..slide = _animation
       ..attach();
-    _animation.addListener(() => host.progress = _animation.value);
     final ModalRoute<Object?>? route = this.route;
     _entry = OverlayEntry(
       builder: (final BuildContext context) {
-        final Widget sheet = host.build(context, _animation);
+        final Widget sheet = host.build(context);
         if (route == null) {
           return sheet;
         }
@@ -852,10 +860,11 @@ class _NonModalSheet<T> {
     }
     _closing = true;
     _leaveHistory();
-    host.detach();
     if (overlay.mounted) {
       await _animation.reverse();
     }
+    // The page keeps clear of the sheet until it has slid away, as it does under a sheet that is a route.
+    host.detach();
     _entry?.remove();
     _entry = null;
     _animation.dispose();
