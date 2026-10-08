@@ -37,6 +37,8 @@ enum HarborCoastStance {
 }
 
 /// Whether a dock is in service.
+///
+/// Despite its name, this is not a [State]: it is an enum, as [AnimationStatus] is.
 enum HarborDockState {
   /// In service: drawn, tappable, and its ground is taken.
   open,
@@ -75,6 +77,11 @@ enum HarborExtentPolicy {
 ///
 /// Docks on the same edge stack in the order they are listed, the way a
 /// `Column` or `Row` would lay them out.
+///
+/// See also:
+///
+///  * `Scaffold.appBar` and `Scaffold.bottomNavigationBar`, which are quays; under
+///    `Scaffold(extendBodyBehindAppBar: true)` an app bar is a pier.
 @immutable
 class HarborDock with Diagnosticable {
   /// A dock built out over the water: content sails under it.
@@ -88,6 +95,7 @@ class HarborDock with Diagnosticable {
     this.extentPolicy = HarborExtentPolicy.hold,
     this.duration = const Duration(milliseconds: 250),
     this.curve = Curves.easeInOutCubic,
+    this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
     this.withdrawsAtHighTide = false,
@@ -107,6 +115,7 @@ class HarborDock with Diagnosticable {
     this.extentPolicy = HarborExtentPolicy.hold,
     this.duration = const Duration(milliseconds: 250),
     this.curve = Curves.easeInOutCubic,
+    this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
     this.withdrawsAtHighTide = false,
@@ -139,6 +148,13 @@ class HarborDock with Diagnosticable {
   /// How long the dock takes to go dark, withdraw or return.
   final Duration duration;
   final Curve curve;
+
+  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
+  /// duration and curve. Its `duration` and `curve` are for returning and lighting up, and its
+  /// `reverseDuration` and `reverseCurve` for withdrawing and going dark; each falls back to the
+  /// forward one, then to [duration] and [curve]. [AnimationStyle.noAnimation] changes the dock's
+  /// state at once.
+  final AnimationStyle? animationStyle;
 
   /// Painted under the dock's whole ground, coast included: its surface, or a
   /// frosted glass. It never takes taps itself.
@@ -185,6 +201,7 @@ class HarborDock with Diagnosticable {
           extentPolicy: extentPolicy,
           duration: duration,
           curve: curve,
+          animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
           withdrawsAtHighTide: withdrawsAtHighTide,
@@ -202,6 +219,7 @@ class HarborDock with Diagnosticable {
           extentPolicy: extentPolicy,
           duration: duration,
           curve: curve,
+          animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
           withdrawsAtHighTide: withdrawsAtHighTide,

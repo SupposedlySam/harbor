@@ -16,6 +16,10 @@ import 'coast.dart';
 ///
 /// Mount it above the `Navigator` (in `MaterialApp.builder`) so routes, dialogs
 /// and sheets are all inside the model.
+///
+/// See also:
+///
+///  * [FittedBox], which scales the same way but leaves the real screen's `MediaQuery` in place.
 class HarborScaleModel extends StatelessWidget {
   const HarborScaleModel({
     super.key,

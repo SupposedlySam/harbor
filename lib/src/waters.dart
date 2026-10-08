@@ -323,6 +323,11 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
 ///
 /// For your own layer that pads by hand (or a third-party list given
 /// `HarborFairway.paddingOf`). The harbor's own widgets cast off for you.
+///
+/// See also:
+///
+///  * [MediaQuery.removePadding], which lowers `viewPadding` only by the padding it removes; this
+///    zeroes `viewPadding`, removes the keyboard with [tide], and zeroes harbor's own waters.
 class HarborCastOff extends StatelessWidget {
   const HarborCastOff({
     super.key,

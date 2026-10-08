@@ -40,6 +40,11 @@ import 'waters.dart';
 /// A harbor inside another sees the outer harbor's docks as part of its
 /// coast, as a component inside a page does. A [newPort] does not: a route or
 /// a sheet starts fresh, with only the coast.
+///
+/// See also:
+///
+///  * `Scaffold`, the closest Flutter widget, which has one app bar sized by its `preferredSize` and
+///    one bottom bar.
 class Harbor extends StatefulWidget {
   const Harbor({
     super.key,
@@ -111,12 +116,13 @@ class Harbor extends StatefulWidget {
   final bool bodyClearsTide;
 
   /// The mooring line: the margin content keeps from whatever is in its way,
-  /// for the content that asks for it. Null inherits it.
-  final EdgeInsetsDirectional? margin;
+  /// for the content that asks for it. Null inherits it. Resolved against the
+  /// reading direction where this harbor is built.
+  final EdgeInsetsGeometry? margin;
 
   /// The least the body keeps clear of on each edge, coast or not: the bottom
   /// of a phone with no home indicator.
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
 
   final HarborSizing sizing;
 
@@ -154,9 +160,9 @@ class Harbor extends StatefulWidget {
     properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: null));
     properties.add(FlagProperty('newPort', value: newPort, ifTrue: 'new port'));
     properties.add(FlagProperty('bodyClearsTide', value: bodyClearsTide, ifFalse: 'body runs under the tide'));
-    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(EnumProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill));
     properties.add(
@@ -306,6 +312,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
           )
         : steadyPadding;
     final double tide = ambient.viewInsets.bottom;
+    final EdgeInsetsDirectional minimum = HarborEdges.resolve(widget.minimum, direction);
     _ownGauge?.observe(tide, ambient.size);
 
     // Docks, with pontoons moored from deeper in the tree, by edge.
@@ -381,7 +388,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
       }
       for (int i = 0; i < fromEdge.length; i++) {
         final HarborDock dock = fromEdge[i];
-        final double coastHere = i == absorbing ? _coastFor(dock, edge, coast, coastSteady, tide) : 0.0;
+        final double coastHere = i == absorbing ? _coastFor(dock, edge, coast, coastSteady, tide, minimum) : 0.0;
         children.add(
           HarborSlot.dock(
             key: dock.key != null ? ValueKey<Object>((edge, dock.key!)) : ValueKey<Object>((edge, i, dock.kind)),
@@ -432,8 +439,11 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         inheritedWakes: widget.newPort || outer == null ? const <HarborEdge, HarborWakeBand>{} : outer.wakes,
         tide: tide,
         bodyClearsTide: widget.bodyClearsTide,
-        minimum: widget.minimum,
-        margin: widget.margin ?? outer?.margin ?? EdgeInsetsDirectional.zero,
+        minimum: minimum,
+        margin: switch (widget.margin) {
+          final EdgeInsetsGeometry margin => HarborEdges.resolve(margin, direction),
+          null => outer?.margin ?? EdgeInsetsDirectional.zero,
+        },
         sizing: widget.sizing,
         viewHeight: ambient.size.height,
         frameSize: widget.newPort || outer == null || outer.frameSize.isEmpty ? null : outer.frameSize,
@@ -460,6 +470,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
     final EdgeInsetsDirectional coast,
     final EdgeInsetsDirectional coastSteady,
     final double tide,
+    final EdgeInsetsDirectional minimum,
   ) {
     // What a dry dock holds runs to the screen's edge: no coast, no minimum.
     if (dock.effectiveCoast == HarborCoastStance.none) {
@@ -478,7 +489,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
           : HarborEdges.of(coast, edge),
       HarborCoastStance.none => 0.0,
     };
-    final double floor = HarborEdges.of(widget.minimum, edge) > dock.minimum ? HarborEdges.of(widget.minimum, edge) : dock.minimum;
+    final double floor = HarborEdges.of(minimum, edge) > dock.minimum ? HarborEdges.of(minimum, edge) : dock.minimum;
     return value > floor ? value : floor;
   }
 
@@ -501,13 +512,18 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
 ///
 /// A sea mounted inside another harbor is a world of its own, with its own
 /// tide gauge, fleet and signals: a phone drawn inside a page, or a preview.
+///
+/// See also:
+///
+///  * `MaterialApp.builder`, whose output `MaterialApp` wraps in its `ScaffoldMessenger`, above the [Navigator].
 class HarborSea extends StatelessWidget {
   const HarborSea({super.key, this.coast = HarborCoast.ambient, this.margin, required this.child});
 
   final HarborCoast coast;
 
-  /// The mooring line for the whole app.
-  final EdgeInsetsDirectional? margin;
+  /// The mooring line for the whole app, resolved against the reading
+  /// direction where the sea is mounted.
+  final EdgeInsetsGeometry? margin;
 
   final Widget child;
 
@@ -518,7 +534,7 @@ class HarborSea extends StatelessWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
-    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
   }
 
 }

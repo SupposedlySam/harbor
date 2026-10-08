@@ -43,6 +43,29 @@ Future<List<String>> _tabOrder(final WidgetTester tester, {final int presses = 4
   return order;
 }
 
+/// The node a screen reader reaches with [label], walking the semantics tree as it does. Finders
+/// read a render object's last semantics node, which outlives the node leaving the tree.
+SemanticsNode? _readOut(final WidgetTester tester, final String label) {
+  for (final SemanticsNode node in tester.semantics.simulatedAccessibilityTraversal()) {
+    if (node.label == label) {
+      return node;
+    }
+  }
+  return null;
+}
+
+/// [node]'s rect in the view's logical coordinates: every transform up to the root, which only
+/// scales to physical pixels.
+Rect _semanticsRect(final SemanticsNode node) {
+  Rect rect = node.rect;
+  for (SemanticsNode? at = node; at != null && at.parent != null; at = at.parent) {
+    if (at.transform case final Matrix4 transform) {
+      rect = MatrixUtils.transformRect(transform, rect);
+    }
+  }
+  return rect;
+}
+
 void main() {
   group('A hidden dock is out of reach', () {
     testWidgets('an open dock is focusable and read out (positive control)', (final tester) async {
@@ -154,11 +177,14 @@ void main() {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
       final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
       await tester.pumpAndSettle();
       tester.semantics.performAction(find.semantics.byFlag(SemanticsFlag.isLiveRegion), SemanticsAction.dismiss);
       expect(entry.showing.value, isFalse);
       await tester.pumpAndSettle();
       expect(find.text('Saved'), findsNothing);
+      expect(reason, HarborSignalClosedReason.dismiss);
       semantics.dispose();
     });
 
@@ -573,6 +599,110 @@ void main() {
         expect(position.pixels, 0.0);
       }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
     }
+  });
+
+  group('A buoy that is not shown is not read out', () {
+    Widget bubble() => Semantics(label: 'bubble', container: true, child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30));
+
+    Widget anchoredPage(final HarborAnchor anchor, final ValueNotifier<bool> anchored) => Harbor(
+      buoys: <HarborBuoy>[HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.below, child: bubble())],
+      body: Center(
+        child: ValueListenableBuilder<bool>(
+          valueListenable: anchored,
+          builder: (final BuildContext context, final bool value, final Widget? _) =>
+              value ? HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)) : const SizedBox.shrink(),
+        ),
+      ),
+    );
+
+    // Failed before: unpainted, the bubble was still in the semantics tree at the top-left corner.
+    testWidgets('an anchored buoy is read out only while its anchor is in the tree', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final HarborAnchor anchor = HarborAnchor();
+      addTearDown(anchor.dispose);
+      final ValueNotifier<bool> anchored = ValueNotifier<bool>(false);
+      addTearDown(anchored.dispose);
+      await tester.pumpSeaTrial(_app(anchoredPage(anchor, anchored)));
+      await tester.pump();
+      expect(_readOut(tester, 'bubble'), isNull);
+
+      anchored.value = true;
+      await tester.pump();
+      await tester.pump();
+      expect(_semanticsRect(_readOut(tester, 'bubble')!), tester.getRect(find.byKey(const ValueKey<String>('bubble'))));
+
+      anchored.value = false;
+      await tester.pump();
+      await tester.pump();
+      expect(_readOut(tester, 'bubble'), isNull);
+      semantics.dispose();
+    });
+
+    // Failed before: shown with its anchor out of the tree, the menu was read out at the overlay's
+    // top-left corner. A portal buoy is placed when it paints, not when it lays out, so each step
+    // here also fails if its semantics are not refreshed then.
+    testWidgets('a portal buoy is read out only while it is placed, where it is placed', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final HarborAnchor anchor = HarborAnchor();
+      addTearDown(anchor.dispose);
+      // How far below the row the anchor sits, or null while it is out of the tree.
+      final ValueNotifier<double?> anchorDrop = ValueNotifier<double?>(null);
+      addTearDown(anchorDrop.dispose);
+      final OverlayPortalController menu = OverlayPortalController();
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  HarborPortalBuoy(
+                    controller: menu,
+                    anchor: anchor,
+                    side: HarborBuoySide.below,
+                    buoyBuilder: (final BuildContext context) => bubble(),
+                    child: const SizedBox(width: 40, height: 40),
+                  ),
+                  ValueListenableBuilder<double?>(
+                    valueListenable: anchorDrop,
+                    builder: (final BuildContext context, final double? drop, final Widget? _) => drop == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: EdgeInsets.only(top: drop),
+                            child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      Future<void> settle() async {
+        await tester.pump();
+        await tester.pump();
+      }
+
+      menu.show();
+      await settle();
+      expect(_readOut(tester, 'bubble'), isNull);
+
+      anchorDrop.value = 0;
+      await settle();
+      final Rect placed = tester.getRect(find.byKey(const ValueKey<String>('bubble')));
+      expect(_semanticsRect(_readOut(tester, 'bubble')!), placed);
+
+      anchorDrop.value = 100;
+      await settle();
+      final Rect moved = tester.getRect(find.byKey(const ValueKey<String>('bubble')));
+      expect(moved, isNot(placed), reason: 'positive control: the menu followed its anchor');
+      expect(_semanticsRect(_readOut(tester, 'bubble')!), moved);
+
+      anchorDrop.value = null;
+      await settle();
+      expect(_readOut(tester, 'bubble'), isNull);
+      semantics.dispose();
+    });
   });
 
   // Scaffold scrolls only when its status bar region is what a tap at the screen's top left would
