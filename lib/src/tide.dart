@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -325,6 +326,14 @@ class HarborDryDock extends StatelessWidget {
   /// Whether [child] stays visible under a keyboard that does not cover it,
   /// such as a floating one.
   final bool showsChildAtHighTide;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      FlagProperty('showsChildAtHighTide', value: showsChildAtHighTide, ifTrue: 'shows child at high tide'),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {
