@@ -1,5 +1,9 @@
 ## Unreleased
 
+* **Breaking:** `HarborFairway.keyboardDismissBehavior` is nullable and unset by default, as on a `ScrollView`: it follows the fairway's `scrollBehavior`, or else the inherited `ScrollConfiguration`. Before, it was always `manual`, which overrode an app-wide `ScrollBehavior` that dismisses the keyboard on drag. Pass `ScrollViewKeyboardDismissBehavior.manual` to keep the old behaviour under such a behaviour.
+* `HarborFairway` takes the rest of `CustomScrollView`'s parameters, with the same defaults: `scrollBehavior`, `center`, `anchor`, `paintOrder`, `dragStartBehavior`, `restorationId` and `hitTestBehavior`. `HarborFairway.box` takes those a `SingleChildScrollView` has. With a `center`, both ends of the scroll rest clear of the docks, the center sliver rests clear of the leading docks, sliver docks after it pin at the docks' face, and reveals on either side of it keep clear. `anchor` is a fraction of the water between the docks, so `anchor: 1` follows the keyboard, and reveals account for it.
+* Keyed slivers in a fairway keep their state when they move, as in a `CustomScrollView`.
+
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0

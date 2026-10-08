@@ -190,6 +190,16 @@ whichever is larger, so a phone with a home button still keeps 16 under the last
 a `Column`, is as thick as its child: a row of chips as tall as the chips, its
 ends still clear.
 
+A fairway takes the rest of a `CustomScrollView`'s parameters, with the same
+names and defaults (the box form those of a `SingleChildScrollView`):
+`restorationId:` brings its scroll position back after the app is restarted, and
+`keyboardDismissBehavior:` left unset follows the app's `ScrollBehavior`. With a
+`center:`, both ends of the scroll still rest clear of the docks, and the center
+sliver starts clear of the leading ones. `anchor:` is the one that reads
+differently: it is a fraction of the water between the docks, not of the
+viewport that runs under them, so `anchor: 1` puts the center on a composer's
+face and lifts it with the keyboard.
+
 `clear: HarborClear.coast` keeps clear of the coast alone, without the keyboard.
 To keep clear of the coast and the keyboard but not a header, moor the bottom
 edge alone: the header is on the top edge, so it is left to the page.
