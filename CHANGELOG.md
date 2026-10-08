@@ -1,5 +1,7 @@
 ## Unreleased
 
+* `HarborSheet.close(context, [result])` closes the sheet `context` is in and completes the future that opened it with `result`, as `Navigator.pop(context, result)` does for a modal bottom sheet. A sheet with no barrier can now return a value: before, its future always completed with null. Back and `Navigator.pop` still close it with null, since it is not a route.
+* `closeHarborSheet` is deprecated in favour of `HarborSheet.close`, and still works.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0

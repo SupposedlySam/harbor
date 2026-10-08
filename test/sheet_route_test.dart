@@ -79,7 +79,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierLabel, 'Close sheet');
-    closeHarborSheet(sheet);
+    HarborSheet.close(sheet);
     await tester.pumpAndSettle();
 
     unawaited(showHarborSheet<void>(
@@ -294,5 +294,92 @@ void main() {
     expect(closed, isTrue);
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
+  });
+
+  // A picker sheet ("choose a folder") is awaited for its answer, as showModalBottomSheet is.
+  for (final HarborSheetBarrier barrier in HarborSheetBarrier.values) {
+    testWidgets('a sheet with barrier ${barrier.name} completes with the result it is closed with', (final tester) async {
+      final BuildContext page = await _page(tester);
+      late BuildContext sheet;
+      String? chosen;
+      bool closed = false;
+      unawaited(showHarborSheet<String>(
+        page,
+        barrier: barrier,
+        builder: (final BuildContext context) {
+          sheet = context;
+          return HarborSheet(body: _bar('folders', 200));
+        },
+      ).then((final String? result) {
+        chosen = result;
+        closed = true;
+      }));
+      await tester.pumpAndSettle();
+      HarborSheet.close(sheet, 'Archive');
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(chosen, 'Archive');
+      expect(find.byKey(const ValueKey<String>('folders')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
+    });
+  }
+
+  testWidgets('a sheet with no barrier closed by back completes with no result', (final tester) async {
+    final BuildContext page = await _page(tester);
+    bool closed = false;
+    String? chosen = 'unset';
+    unawaited(showHarborSheet<String>(
+      page,
+      barrier: HarborSheetBarrier.none,
+      builder: (final BuildContext context) => HarborSheet(body: _bar('folders', 200)),
+    ).then((final String? result) {
+      chosen = result;
+      closed = true;
+    }));
+    await tester.pumpAndSettle();
+    Navigator.pop(page, 'Archive');
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+    expect(chosen, isNull);
+    expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
+  });
+
+  testWidgets('a sheet in a route of its own closes that route with the result', (final tester) async {
+    final BuildContext page = await _page(tester);
+    late BuildContext sheet;
+    String? chosen;
+    unawaited(showGeneralDialog<String>(
+      context: page,
+      pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) => Builder(
+        builder: (final BuildContext context) {
+          sheet = context;
+          return HarborSheet(body: _bar('folders', 200));
+        },
+      ),
+    ).then((final String? result) => chosen = result));
+    await tester.pumpAndSettle();
+    HarborSheet.close(sheet, 'Archive');
+    await tester.pumpAndSettle();
+    expect(chosen, 'Archive');
+    expect(find.byKey(const ValueKey<String>('folders')), findsNothing);
+  });
+
+  testWidgets('closeHarborSheet still closes the sheet it is called from', (final tester) async {
+    final BuildContext page = await _page(tester);
+    late BuildContext sheet;
+    bool closed = false;
+    unawaited(showHarborSheet<void>(
+      page,
+      builder: (final BuildContext context) {
+        sheet = context;
+        return HarborSheet(body: _bar('folders', 200));
+      },
+    ).then((final void _) => closed = true));
+    await tester.pumpAndSettle();
+    // ignore: deprecated_member_use_from_same_package, the old name forwards to HarborSheet.close.
+    closeHarborSheet(sheet);
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+    expect(find.byKey(const ValueKey<String>('folders')), findsNothing);
   });
 }

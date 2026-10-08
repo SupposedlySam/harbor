@@ -366,6 +366,22 @@ own), and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
+```dart
+final Folder? folder = await showHarborSheet<Folder>(
+  context,
+  builder: (context) => HarborSheet(
+    body: FolderList(onPick: (folder) => HarborSheet.close(context, folder)),
+  ),
+);
+```
+
+`HarborSheet.close(context, result)` closes the sheet `context` is in and
+completes the future that opened it with `result`, as `Navigator.pop(context,
+result)` does for a modal bottom sheet. It works whatever the barrier, and on a
+sheet opened by `showModalBottomSheet` or `showGeneralDialog`, where it pops that
+route. A sheet with no barrier is not a route, so back and `Navigator.pop` close
+it with no result: it returns its value only through `HarborSheet.close`.
+
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given). It

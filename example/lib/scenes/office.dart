@@ -418,7 +418,7 @@ void showCargoManifest(final BuildContext context) => unawaited(
               children: <Widget>[
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => closeHarborSheet(context),
+                    onPressed: () => HarborSheet.close(context),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                       foregroundColor: Palette.foam,
@@ -433,7 +433,7 @@ void showCargoManifest(final BuildContext context) => unawaited(
                     label: 'Load cargo',
                     icon: Icons.inventory_rounded,
                     onPressed: () {
-                      closeHarborSheet(context);
+                      HarborSheet.close(context);
                       HarborSignals.raise(
                         context,
                         slot: HarborSignalSlot.low,
@@ -566,7 +566,7 @@ class _CharterBoardState extends State<_CharterBoard> {
             itemBuilder: (final BuildContext context, final int i) => BoatRow(
               boat: boats[i],
               onTap: () {
-                closeHarborSheet(context);
+                HarborSheet.close(context);
                 HarborSignals.raise(
                   context,
                   slot: HarborSignalSlot.low,

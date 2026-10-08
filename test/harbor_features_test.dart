@@ -784,7 +784,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsOneWidget);
-    closeHarborSheet(sheetContext);
+    HarborSheet.close(sheetContext);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsNothing);
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
