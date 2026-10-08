@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -1076,6 +1077,99 @@ void main() {
     expect(_rect(tester, 'title').top, 62);
   });
 
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.none, HarborSheetBarrier.dismissible]) {
+    testWidgets('the page lays out against a breakwater sheet where it is drawn, in every frame of its slide (${barrier.name})', (final tester) async {
+      late BuildContext pageContext;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Builder(
+              builder: (final BuildContext context) {
+                pageContext = context;
+                return const HarborMoored(edges: <HarborEdge>{HarborEdge.bottom}, child: SizedBox.expand(key: ValueKey<String>('page')));
+              },
+            ),
+          ),
+        ),
+      );
+      // Clear of the home indicator with no sheet up.
+      final double clear = _rect(tester, 'page').bottom;
+      void expectPageMeetsSheet(final String when) {
+        final double sheetTop = tester.getRect(find.byType(HarborSheet)).top;
+        expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
+      }
+
+      unawaited(showHarborSheet<void>(
+        pageContext,
+        breakwater: true,
+        barrier: barrier,
+        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
+      ));
+      for (int frame = 0; frame < 8; frame++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        expectPageMeetsSheet('opening, frame $frame');
+      }
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'page').bottom, 874 - 300);
+      closeHarborSheet(tester.element(find.byType(HarborSheet)));
+      for (int frame = 0; frame < 5; frame++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        expectPageMeetsSheet('closing, frame $frame');
+      }
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'page').bottom, clear);
+    });
+  }
+
+  testWidgets('the page lays out against a draggable breakwater sheet where it is drawn, as it slides in and is dragged', (final tester) async {
+    late BuildContext pageContext;
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          body: Builder(
+            builder: (final BuildContext context) {
+              pageContext = context;
+              return const HarborMoored(edges: <HarborEdge>{HarborEdge.bottom}, child: SizedBox.expand(key: ValueKey<String>('page')));
+            },
+          ),
+        ),
+      ),
+    );
+    final double clear = _rect(tester, 'page').bottom;
+    void expectPageMeetsSheet(final String when) {
+      final double sheetTop = _rect(tester, 'handle').top;
+      expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
+    }
+
+    unawaited(showHarborSheet<void>(
+      pageContext,
+      breakwater: true,
+      barrier: HarborSheetBarrier.none,
+      builder: (final BuildContext context) => HarborSheet.draggable(
+        header: _bar('handle', 40),
+        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+          controller: controller,
+          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+        ),
+      ),
+    ));
+    // The first frame measures the sheet; it follows from the next one on.
+    await tester.pump();
+    for (int frame = 0; frame < 6; frame++) {
+      await tester.pump(const Duration(milliseconds: 40));
+      expectPageMeetsSheet('opening, frame $frame');
+    }
+    await tester.pumpAndSettle();
+    final TestGesture drag = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey<String>('handle'))));
+    for (int step = 0; step < 4; step++) {
+      await drag.moveBy(const Offset(0, -30));
+      await tester.pump();
+      expectPageMeetsSheet('dragged up, step $step');
+    }
+    await drag.up();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('a draggable breakwater sheet reports its resting height, not the screen', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpSeaTrial(
@@ -1580,5 +1674,135 @@ void main() {
     await trial.raiseTide();
     expect(_rect(tester, 'footer').bottom, trial.waterline);
     expect(_rect(tester, 'footer').height, 40);
+  });
+
+  group('insets take EdgeInsetsGeometry, resolved against the reading direction', () {
+    Widget rtl(final Widget home, {final HarborCoast coast = HarborCoast.ambient, final EdgeInsetsGeometry? margin}) => MaterialApp(
+      builder: (final BuildContext context, final Widget? child) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: HarborSea(coast: coast, margin: margin, child: child!),
+      ),
+      home: Material(child: home),
+    );
+    Widget rows() => SliverList.builder(
+      itemCount: 30,
+      itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50),
+    );
+
+    testWidgets("the sea's mooring line keeps a physical left on the left", (final tester) async {
+      await tester.pumpSeaTrial(rtl(HarborMooringLine(child: _bar('row', 40)), margin: const EdgeInsets.only(left: 24)));
+      expect(_rect(tester, 'row').left, 24);
+      expect(_rect(tester, 'row').right, 402);
+    });
+
+    testWidgets("a harbor's margin and minimum keep a physical side where they say", (final tester) async {
+      await tester.pumpSeaTrial(
+        rtl(
+          Harbor(
+            margin: const EdgeInsets.only(right: 12),
+            minimum: const EdgeInsets.only(left: 30),
+            body: HarborMoored(mooringLine: true, child: _bar('form', 40)),
+          ),
+        ),
+      );
+      expect(_rect(tester, 'form').left, 30);
+      expect(_rect(tester, 'form').right, 402 - 12);
+    });
+
+    testWidgets("a fairway's padding and minimum keep a physical side where they say", (final tester) async {
+      await tester.pumpSeaTrial(
+        rtl(HarborFairway(padding: const EdgeInsets.only(left: 12), minimum: const EdgeInsets.only(bottom: 16), slivers: <Widget>[rows()])),
+        device: HarborTrialDevice.iPhoneSE,
+      );
+      expect(_rect(tester, 'row0').left, 12);
+      expect(_rect(tester, 'row0').right, 375);
+      await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'row29').bottom, 667 - 16);
+    });
+
+    testWidgets('a fairway sliver takes the same', (final tester) async {
+      await tester.pumpSeaTrial(
+        rtl(
+          CustomScrollView(
+            slivers: <Widget>[
+              HarborFairwaySliver(padding: const EdgeInsets.only(left: 12), minimum: const EdgeInsets.only(bottom: 16), sliver: rows()),
+            ],
+          ),
+        ),
+        device: HarborTrialDevice.iPhoneSE,
+      );
+      expect(_rect(tester, 'row0').left, 12);
+      await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'row29').bottom, 667 - 16);
+    });
+
+    testWidgets("paddingOf resolves its extra and minimum the way it resolves what it returns", (final tester) async {
+      late EdgeInsets padding;
+      await tester.pumpSeaTrial(
+        rtl(
+          Builder(
+            builder: (final BuildContext context) {
+              padding = HarborFairway.paddingOf(
+                context,
+                extra: const EdgeInsets.only(left: 5),
+                minimum: const EdgeInsetsDirectional.only(bottom: 16).add(const EdgeInsets.only(bottom: 4)),
+              );
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+        device: HarborTrialDevice.iPhoneSE,
+      );
+      expect(padding, const EdgeInsets.only(left: 5, top: 20, bottom: 20));
+    });
+
+    testWidgets("a moored widget's minimum and extra, and clearanceOf, keep a physical side where they say", (final tester) async {
+      late EdgeInsetsDirectional clearance;
+      await tester.pumpSeaTrial(
+        rtl(
+          Builder(
+            builder: (final BuildContext context) {
+              clearance = HarborMoored.clearanceOf(context, minimum: const EdgeInsets.only(left: 30), extra: const EdgeInsets.only(right: 6));
+              return HarborMoored(minimum: const EdgeInsets.only(left: 30), extra: const EdgeInsets.only(right: 6), child: _bar('form', 40));
+            },
+          ),
+        ),
+      );
+      expect(_rect(tester, 'form').left, 30);
+      expect(_rect(tester, 'form').right, 402 - 6);
+      expect(clearance, const EdgeInsetsDirectional.fromSTEB(6, 62, 30, 34));
+    });
+
+    testWidgets('a fixed coast and a fixed title-safe band keep a physical side where they say', (final tester) async {
+      Future<EdgeInsets> paddingUnder(final HarborCoast coast) async {
+        late EdgeInsets padding;
+        await tester.pumpSeaTrial(
+          rtl(
+            Builder(
+              builder: (final BuildContext context) {
+                padding = MediaQuery.paddingOf(context);
+                return const SizedBox.shrink();
+              },
+            ),
+            coast: coast,
+          ),
+        );
+        return padding;
+      }
+
+      expect(await paddingUnder(const HarborCoast.fixed(EdgeInsets.only(left: 40))), const EdgeInsets.only(left: 40));
+      expect(
+        await paddingUnder(const HarborCoast.titleSafe(HarborTitleSafe.fixed(EdgeInsets.only(left: 40)))),
+        const EdgeInsets.only(left: 40, top: 62, bottom: 34),
+      );
+    });
+
+    testWidgets('a directional inset still follows the reading direction', (final tester) async {
+      await tester.pumpSeaTrial(rtl(HarborMooringLine(child: _bar('row', 40)), margin: const EdgeInsetsDirectional.only(start: 24)));
+      expect(_rect(tester, 'row').right, 402 - 24);
+      expect(_rect(tester, 'row').left, 0);
+    });
   });
 }

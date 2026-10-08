@@ -84,12 +84,16 @@ Mount the sea once, above your `Navigator`:
 ```dart
 MaterialApp(
   builder: (context, child) => HarborSea(
-    margin: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+    margin: const EdgeInsets.symmetric(horizontal: 16),
     child: child!,
   ),
   home: const InboxPage(),
 );
 ```
+
+Every inset harbor takes (a margin, a minimum, a fairway's padding, a fixed
+coast) is an `EdgeInsetsGeometry`, as `Padding`'s is: `EdgeInsets` keeps to the
+side it names, and `EdgeInsetsDirectional` follows the reading direction.
 
 Build a page from a harbor:
 
@@ -279,7 +283,7 @@ them, as a `SnackBar` is. A signal whose widget is already its own live region
 `liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
-leave without moving. On iOS a tap on the
+leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
 status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
 as there only the page whose status bar band is on top at the screen's top left:
 a page under a route in an outer navigator, under an overlay, or in the
@@ -399,7 +403,8 @@ indicator in its coast, so its footer clears it exactly once. A draggable
 sheet's heights are fractions of the space between the status bar and the
 keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
-content keeps clear of it while it's up.
+content keeps clear of it while it's up: in the same frame as the sheet is
+drawn, as it slides in and out and as it is dragged.
 
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and signals and buoys keep to the screen that holds them, never across the hinge.
@@ -453,7 +458,10 @@ navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given), with
 `barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
 sheet is a semantics scope of its own, and screen readers announce its
-`semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
+`semanticLabel:` as it opens. The barrier's semantics end at the sheet's top, as
+a modal bottom sheet's do, and follow it as it slides or is dragged, so touch
+exploration over the sheet finds its content rather than the barrier. It spans
+the screen unless you give it a `maxWidth`.
 
 A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
 into it, an observer of page routes does not count it as a screen, a draggable sheet
@@ -573,6 +581,13 @@ the labels' font, so they read in widget tests and goldens rather than as
 `flutter_test`'s boxes. `HarborChart.snapshot(context)` returns the same as data.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
+
+The widget inspector and `debugDumpApp` show each harbor widget's settings, as
+they do a `SafeArea`'s or a `ListView`'s, leaving out the ones at their
+defaults: a `Harbor` lists its docks and buoys, and a dock reads as
+`HarborDock.pier(tide: float, debugLabel: "composer")`. The values (`HarborDock`,
+`HarborBuoy`, `HarborWake`, `HarborCoast`, `HarborTitleSafe`, `HarborSheetExtent`)
+are `Diagnosticable`, so they print the same way in a test failure or a log.
 
 Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (sheets,
 dialogs, signals and buoys keep off a hinge through `MediaQuery.displayFeatures`,
