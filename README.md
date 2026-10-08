@@ -11,10 +11,11 @@ them a place and a rule, so your content stops doing inset arithmetic.
 > them, or is open water. The tide (the keyboard) rises over whatever doesn't
 > float.**
 
-[![An illustrated harbor beside a phone running harbor. A pier is the header rows scroll under, a quay is the tab bar the list stops at, and the tide is the keyboard: a dock on pilings is covered, a floating one rides up.](https://raw.githubusercontent.com/SupposedlySam/harbor/main/doc/media/showcase.gif)](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
+[![An illustrated harbor beside a phone running harbor. A pier is the header rows scroll under, and a quay is the tab bar the list stops at.](https://raw.githubusercontent.com/SupposedlySam/harbor/main/doc/media/showcase.gif)](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
 
 *Left, a harbor. Right, a phone running the real package, driven by the same
-clock. ([Watch the video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4).)*
+clock. The GIF is the opening; [the narrated video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
+(four minutes) tours everything in the package, from the coast to sea trials.*
 
 Depends on the Flutter SDK only. Sea trials for widget tests come in a package
 of their own, `harbor_test`, so the test framework stays out of your app's
@@ -38,7 +39,7 @@ the keyboard) above everything.
 **Something on the same layer takes space. Something on a higher layer becomes
 padding for everything beneath it.**
 
-- A **quay** is a dock built on the shore. It takes its ground, and the body
+- A **quay** (pronounced "key") is a dock built on the shore. It takes its ground, and the body
   starts where it ends, like a `Column`.
 - A **pier** is a dock built out over the water. The body runs under it and is
   told, through `MediaQuery.padding`, how far it reaches.
@@ -72,6 +73,9 @@ header your list starts below.
 | **Scale model** | A fixed reference screen scaled to fit (TV) | `HarborScaleModel` |
 | **Chart** | Who holds which edge, at which layer | `HarborChart`, `HarborChartOverlay` |
 | **Sea trials** | Widget-test devices and tide control (`harbor_test`) | `pumpSeaTrial` |
+
+**Pronouncing them:** a **quay** is pronounced "key", as harbours have always said it.
+A **buoy** is pronounced "BOO-ee" in American English and "boy" in British; both are right.
 
 ## Getting started
 
@@ -536,7 +540,10 @@ real page on the phone.
 The video is narrated. `example/tool/narrate.py` voices each line of
 `example/lib/showcase/narration.tsv`, times every word, and checks that each
 clip says what the script says. The showcase's timeline is built from those
-timings, so the keyboard rises as "comes in" is spoken. Narration: the Kokoro-82M
+timings, so the keyboard rises as "comes in" is spoken. Chapters the
+panorama was not drawn for show the Field Guide's drawing of the real thing,
+and each runs a real harbor page on the phone: sheets, dialogs and signals open
+on the phone's own navigator as the narrator names them. Narration: the Kokoro-82M
 voice `am_liam`, generated on device by Kass.
 
 The **Harbor Field Guide** (the book button on the game's first page, or
