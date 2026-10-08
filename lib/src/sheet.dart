@@ -527,7 +527,11 @@ class _SheetHost {
     _update();
   }
 
-  Widget build(final BuildContext context, final Animation<double> transition) {
+  // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
+  Widget build(final BuildContext context, final Animation<double> transition) =>
+      DisplayFeatureSubScreen(child: Builder(builder: (final BuildContext context) => _build(context, transition)));
+
+  Widget _build(final BuildContext context, final Animation<double> transition) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     // With reduced motion the sheet is simply there: its route still takes its time, but nothing slides.
     final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : transition;

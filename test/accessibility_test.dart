@@ -172,6 +172,51 @@ void main() {
     expect(seen, red);
   });
 
+  group('A dialog', () {
+    Future<BuildContext> pumpPage(final WidgetTester tester, {final bool disableAnimations = false, final Color? pagePrimary}) async {
+      late BuildContext page;
+      final Widget probe = Builder(
+        builder: (final BuildContext context) {
+          page = context;
+          return const SizedBox.expand();
+        },
+      );
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(body: pagePrimary == null ? probe : Theme(data: ThemeData(colorScheme: ColorScheme.light(primary: pagePrimary)), child: probe)),
+          disableAnimations: disableAnimations,
+        ),
+      );
+      return page;
+    }
+
+    // Failed before: like sheets and signals, the builder ran outside the captured themes.
+    testWidgets("'s builder sees the theme of the page that opened it", (final tester) async {
+      const Color red = Color(0xFFFF0000);
+      final BuildContext page = await pumpPage(tester, pagePrimary: red);
+      Color? seen;
+      unawaited(showHarborDialog<void>(
+        page,
+        builder: (final BuildContext context) {
+          seen = Theme.of(context).colorScheme.primary;
+          return const SizedBox(width: 100, height: 100);
+        },
+      ));
+      await tester.pumpAndSettle();
+      expect(seen, red);
+    });
+
+    // Failed before: it faded in over 180 ms whatever the platform asked.
+    testWidgets('appears at once when the platform asks for reduced motion', (final tester) async {
+      final BuildContext page = await pumpPage(tester, disableAnimations: true);
+      unawaited(showHarborDialog<void>(page, builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('dialog'), width: 100, height: 100)));
+      await tester.pump();
+      await tester.pump();
+      final FadeTransition fade = tester.widget(find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byType(FadeTransition)).first);
+      expect(fade.opacity.value, 1.0);
+    });
+  });
+
   group('Reduced motion', () {
     /// Frames a dock takes to withdraw. One measurement per test, on a fresh tree: measuring
     /// twice in one test reused the first tree's dock state and measured nothing.

@@ -83,7 +83,8 @@ class HarborSeaTrial {
         right: device.coast.right,
         bottom: device.coast.bottom,
       )
-      ..viewInsets = FakeViewPadding(bottom: tideIn ? device.tideHeight : 0.0);
+      ..viewInsets = FakeViewPadding(bottom: tideIn ? device.tideHeight : 0.0)
+      ..displayFeatures = device.displayFeatures;
   }
 
   /// The clear water of the harbor nearest [finder]'s widget, in global

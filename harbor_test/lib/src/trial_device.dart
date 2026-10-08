@@ -1,3 +1,5 @@
+import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
+
 import 'package:flutter/widgets.dart';
 
 /// A device a harbor is put through its sea trials on: its screen, its coast
@@ -14,6 +16,7 @@ class HarborTrialDevice {
     required this.coast,
     required this.tideHeight,
     this.reportsCoastUnderTide = false,
+    this.displayFeatures = const <DisplayFeature>[],
   });
 
   final String name;
@@ -28,6 +31,10 @@ class HarborTrialDevice {
   /// Whether the platform keeps reporting the bottom inset while the keyboard
   /// covers it. iOS and Android both report zero.
   final bool reportsCoastUnderTide;
+
+  /// Folds and hinges, as the platform reports them in `MediaQuery.displayFeatures`. A hinge
+  /// has width and content should not cross it; a flat fold has none and content may span it.
+  final List<DisplayFeature> displayFeatures;
 
   /// An iPhone with a Dynamic Island and a home indicator.
   static const HarborTrialDevice iPhone17 = HarborTrialDevice(
@@ -69,12 +76,27 @@ class HarborTrialDevice {
     tideHeight: 200.0,
   );
 
-  /// A book-style foldable, open flat.
+  /// A book-style foldable, open flat: a fold down the middle with no width, which content may span.
   static const HarborTrialDevice foldableOpen = HarborTrialDevice(
     name: 'foldable open',
     size: Size(750.0, 832.0),
     coast: EdgeInsets.only(top: 24.0, bottom: 24.0),
     tideHeight: 330.0,
+    displayFeatures: <DisplayFeature>[
+      DisplayFeature(bounds: Rect.fromLTRB(375.0, 0.0, 375.0, 832.0), type: DisplayFeatureType.fold, state: DisplayFeatureState.postureFlat),
+    ],
+  );
+
+  /// A dual-screen device spanned across both screens: two 540-wide screens either side of a
+  /// 34-wide hinge, which nothing should be placed across.
+  static const HarborTrialDevice dualScreenOpen = HarborTrialDevice(
+    name: 'dual screen open',
+    size: Size(1114.0, 720.0),
+    coast: EdgeInsets.only(top: 24.0, bottom: 24.0),
+    tideHeight: 300.0,
+    displayFeatures: <DisplayFeature>[
+      DisplayFeature(bounds: Rect.fromLTRB(540.0, 0.0, 574.0, 720.0), type: DisplayFeatureType.hinge, state: DisplayFeatureState.postureFlat),
+    ],
   );
 
   /// A dual-screen device on its cover screen: an inset down the right side.

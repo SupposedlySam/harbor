@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show DisplayFeature, DisplayFeatureState;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -301,14 +303,23 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(final BuildContext context) =>
-      _RenderBuoyLayer(buoys, Directionality.maybeOf(context) ?? TextDirection.ltr);
+      _RenderBuoyLayer(buoys, Directionality.maybeOf(context) ?? TextDirection.ltr).._avoid = _hinges(context);
 
   @override
   void updateRenderObject(final BuildContext context, final _RenderBuoyLayer renderObject) {
     renderObject
       ..buoys = buoys
-      ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
+      ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr
+      ..avoid = _hinges(context);
   }
+
+  /// The hinges and half-open folds a buoy keeps off, chosen as `DisplayFeatureSubScreen` chooses
+  /// them: a flat fold has no width and content may span it. Read through `displayFeaturesOf`
+  /// alone, so the layer is not rebuilt for every other change to `MediaQuery`.
+  static List<Rect> _hinges(final BuildContext context) => <Rect>[
+    for (final DisplayFeature feature in MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[])
+      if (feature.bounds.shortestSide > 0 || feature.state == DisplayFeatureState.postureHalfOpened) feature.bounds,
+  ];
 }
 
 class _BuoyParentData extends ContainerBoxParentData<RenderBox> {}
@@ -318,6 +329,36 @@ class _RenderBuoyLayer extends RenderBox
   _RenderBuoyLayer(this._buoys, this._textDirection);
 
   List<HarborBuoy> _buoys;
+
+  List<Rect> _avoid = const <Rect>[];
+  set avoid(final List<Rect> value) {
+    if (listEquals(value, _avoid)) {
+      return;
+    }
+    _avoid = value;
+    markNeedsLayout();
+  }
+
+  /// [water], or the one screen of it that holds [buoy]'s alignment point when a hinge splits it.
+  /// A point on the hinge itself goes to the screen where reading starts, as a dialog does. Laid
+  /// out in the layer's own coordinates, taken to be the screen's, as `DisplayFeatureSubScreen` does.
+  Rect _screenFor(final HarborBuoy buoy, final Rect water) {
+    if (_avoid.isEmpty) {
+      return water;
+    }
+    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, _avoid).toList();
+    if (screens.length < 2) {
+      return screens.isEmpty ? water : screens.single;
+    }
+    final Offset point = buoy.alignment.resolve(_textDirection).withinRect(water);
+    for (final Rect screen in screens) {
+      if (screen.contains(point)) {
+        return screen;
+      }
+    }
+    screens.sort((final Rect a, final Rect b) => a.left.compareTo(b.left));
+    return _textDirection == TextDirection.rtl ? screens.last : screens.first;
+  }
 
   TextDirection _textDirection;
   set textDirection(final TextDirection value) {
@@ -391,7 +432,9 @@ class _RenderBuoyLayer extends RenderBox
       final HarborBuoy buoy = _buoys[i];
       final Rect? within = buoy.within;
       final Rect bounded = within == null || !within.overlaps(_clear) ? _clear : _clear.intersect(within);
-      final Rect water = buoy.margin.resolve(_textDirection).deflateRect(bounded);
+      final Rect water = buoy.anchor == null
+          ? _screenFor(buoy, buoy.margin.resolve(_textDirection).deflateRect(bounded))
+          : buoy.margin.resolve(_textDirection).deflateRect(bounded);
       child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
       // Anchored buoys are placed when they paint, once their anchors have a size.
       data.offset = buoy.anchor == null ? buoy.alignment.resolve(_textDirection).inscribe(child.size, water).topLeft : data.offset;

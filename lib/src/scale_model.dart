@@ -121,7 +121,8 @@ Future<T?> showHarborDialog<T>(
       barrierLabel: 'Close dialog',
       transitionDuration: const Duration(milliseconds: 180),
       pageBuilder: (final BuildContext context, final Animation<double> animation, final Animation<double> _) {
-        Widget dialog = themes.wrap(builder(context));
+        // A Builder, so the builder's own context sees the captured themes (as for sheets and signals).
+        Widget dialog = themes.wrap(Builder(builder: builder));
         final EdgeInsets? insets = inherited;
         if (insets != null) {
           final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -134,7 +135,11 @@ Future<T?> showHarborDialog<T>(
             child: dialog,
           );
         }
-        return FadeTransition(opacity: animation, child: dialog);
+        // Kept to one screen of a foldable, never across its hinge, as a Material dialog is; and with
+        // reduced motion it is simply there.
+        return DisplayFeatureSubScreen(
+          child: FadeTransition(opacity: MediaQuery.disableAnimationsOf(context) ? kAlwaysCompleteAnimation : animation, child: dialog),
+        );
       },
     ),
   );

@@ -1,5 +1,8 @@
 ## Unreleased
 
+* Sheets, dialogs, signals and buoys keep off a foldable's hinge, as Material's dialogs and bottom sheets do: each is kept to one screen. A flat fold, which has no width, may still be spanned. `HarborTrialDevice` gains `displayFeatures`; `foldableOpen` declares its fold, and the new `dualScreenOpen` a hinge.
+* A dialog's builder sees the opener's themes, and a dialog appears without fading under reduced motion, as sheets and signals already do.
+
 * A sheet with no barrier is tied to the page that opened it: back closes it before the page, the iOS back swipe stands aside while it is up, it hides while another page is on top, and it leaves when its page is replaced. Before, back popped the page from under it, and opened from above the page's harbor it could outlive the page.
 
 * After a turn or a foldable opening, a page under a breakwater sheet is no longer laid out for one frame against the cover the sheet had in the old shape (it could overflow), and a signal follows the clear water of the harbor that raised it instead of staying boxed into the old screen.
