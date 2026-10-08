@@ -177,11 +177,14 @@ void main() {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
       final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
       await tester.pumpAndSettle();
       tester.semantics.performAction(find.semantics.byFlag(SemanticsFlag.isLiveRegion), SemanticsAction.dismiss);
       expect(entry.showing.value, isFalse);
       await tester.pumpAndSettle();
       expect(find.text('Saved'), findsNothing);
+      expect(reason, HarborSignalClosedReason.dismiss);
       semantics.dispose();
     });
 
