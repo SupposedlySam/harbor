@@ -430,7 +430,11 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
   ];
 }
 
-class _BuoyParentData extends ContainerBoxParentData<RenderBox> {}
+class _BuoyParentData extends ContainerBoxParentData<RenderBox> {
+  /// Whether the last paint painted this buoy. An anchored buoy is not painted while its anchor
+  /// has no box, and its offset is then stale, so it takes no taps either.
+  bool painted = false;
+}
 
 class _RenderBuoyLayer extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, _BuoyParentData>, RenderBoxContainerDefaultsMixin<RenderBox, _BuoyParentData> {
@@ -559,6 +563,7 @@ class _RenderBuoyLayer extends RenderBox
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
       final RenderBox? anchorBox = buoy.anchor?.box;
+      data.painted = buoy.anchor == null || anchorBox != null;
       if (buoy.anchor != null) {
         if (anchorBox == null) {
           child = data.nextSibling;
@@ -582,8 +587,26 @@ class _RenderBuoyLayer extends RenderBox
   }
 
   @override
-  bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) =>
-      defaultHitTestChildren(result, position: position);
+  bool paintsChild(final RenderBox child) => (child.parentData! as _BuoyParentData).painted;
+
+  @override
+  bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) {
+    RenderBox? child = lastChild;
+    while (child != null) {
+      final _BuoyParentData data = child.parentData! as _BuoyParentData;
+      final RenderBox shown = child;
+      if (data.painted &&
+          result.addWithPaintOffset(
+            offset: data.offset,
+            position: position,
+            hitTest: (final BoxHitTestResult result, final Offset transformed) => shown.hitTest(result, position: transformed),
+          )) {
+        return true;
+      }
+      child = data.previousSibling;
+    }
+    return false;
+  }
 }
 
 /// An anchored buoy opened from anywhere: a menu from a list row, a popover

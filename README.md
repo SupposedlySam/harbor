@@ -302,7 +302,8 @@ HarborSignals.raise(
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
-reading order, so `before` is on the right under right-to-left.
+reading order, so `before` is on the right under right-to-left. While its
+anchor is not in the tree, an anchored buoy is not shown and takes no taps.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -380,25 +381,32 @@ A flat fold, which has no width, may still be spanned.
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
-page is on top, and it leaves when its page is replaced or removed. A
+page is on top (from the first frame of that page's push until its pop has
+finished, since the sheet is drawn above every page rather than inside its
+own), and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
-screen reader announces for the barrier ('Close sheet' when none is given). It
-spans the screen unless you give it a `maxWidth`.
+screen reader announces for the barrier ('Close sheet' when none is given), with
+`barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
+sheet is a semantics scope of its own, and screen readers announce its
+`semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
-passes Material's pieces in, three lines that `showModalBottomSheet` would have
+passes Material's pieces in, the lines that `showModalBottomSheet` would have
 filled in for it:
 
 ```dart
+final MaterialLocalizations localizations = MaterialLocalizations.of(context);
 showHarborSheet(
   context,
   routeSettings: const RouteSettings(name: 'reply'),
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+  barrierLabel: localizations.modalBarrierDismissLabel,
+  barrierOnTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+  semanticLabel: localizations.dialogLabel,          // on iOS Material leaves it unnamed: pass null there
   maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
   builder: (_) => HarborSheet(
     contentBuilder: (context, content) => Material( // text fields and ink work in it
