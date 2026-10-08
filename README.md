@@ -403,6 +403,12 @@ go under half shown. A draggable sheet always closes below its floor, and its
 rest and its ceiling). A draggable sheet opened some other way, by
 `showModalBottomSheet` or `showGeneralDialog`, closes that route instead.
 
+`sheetAnimationStyle:` takes an `AnimationStyle`, as `showModalBottomSheet`
+does: its `duration` and `curve` set how the sheet opens, `reverseDuration` and
+`reverseCurve` how it closes, and `AnimationStyle.noAnimation` opens and closes
+it at once. A dragged sheet stays under the finger whatever the curve, and
+reduced motion still wins.
+
 ## The lighthouse
 
 ```dart

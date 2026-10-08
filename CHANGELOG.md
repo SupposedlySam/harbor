@@ -1,3 +1,7 @@
+## Unreleased
+
+* `showHarborSheet(sheetAnimationStyle:)`: an `AnimationStyle`, as on `showModalBottomSheet`, sets how a sheet opens and closes, with or without a barrier: `duration` and `curve` going in, `reverseDuration` and `reverseCurve` going out, and `AnimationStyle.noAnimation` for none. A dragged sheet follows the finger with no curve and goes on along the curve when let go, so it stays under the finger with any curve, one that overshoots included. Reduced motion still wins.
+
 ## 0.2.0
 
 ### Breaking changes

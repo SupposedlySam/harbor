@@ -28,13 +28,17 @@ Future<BuildContext> _page(
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
   final ThemeData? theme,
   final List<NavigatorObserver> observers = const <NavigatorObserver>[],
+  final bool disableAnimations = false,
 }) async {
   late BuildContext pageContext;
   await tester.pumpSeaTrial(
     MaterialApp(
       theme: theme,
       navigatorObservers: observers,
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+      builder: (final BuildContext context, final Widget? child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
+        child: HarborSea(child: child!),
+      ),
       home: Material(
         child: Harbor(
           body: Builder(
@@ -294,5 +298,130 @@ void main() {
     expect(closed, isTrue);
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
+  });
+
+  group('A sheet takes an AnimationStyle, as a modal bottom sheet does', () {
+    // How much of a 300-high sheet shows, from where its content's top is: the sheet is revealed
+    // from the bottom of the screen up.
+    Future<double> rest(final WidgetTester tester, final BuildContext page, {final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible}) async {
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: barrier,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 300)),
+      ));
+      await tester.pumpAndSettle();
+      final double top = _rect(tester, 'content').top;
+      closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+      await tester.pumpAndSettle();
+      return top;
+    }
+
+    double shown(final WidgetTester tester, final double restTop) {
+      final double screen = tester.view.physicalSize.height / tester.view.devicePixelRatio;
+      return (screen - _rect(tester, 'content').top) / (screen - restTop);
+    }
+
+    void open(final BuildContext page, final AnimationStyle style, {final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible, final bool dragToClose = false}) =>
+        unawaited(showHarborSheet<void>(
+          page,
+          barrier: barrier,
+          sheetAnimationStyle: style,
+          builder: (final BuildContext context) => HarborSheet(dragToClose: dragToClose, body: _bar('content', 300)),
+        ));
+
+    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.none]) {
+      testWidgets('its duration and curve set how a sheet opens (${barrier.name})', (final tester) async {
+        final BuildContext page = await _page(tester);
+        final double restTop = await rest(tester, page, barrier: barrier);
+        open(page, const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.linear), barrier: barrier);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        // Half way through a linear second it is half shown (the default would be done by now).
+        expect(shown(tester, restTop), closeTo(0.5, 0.02));
+        await tester.pumpAndSettle();
+        expect(_rect(tester, 'content').top, restTop);
+      });
+
+      testWidgets('its reverse duration and curve set how a sheet closes (${barrier.name})', (final tester) async {
+        final BuildContext page = await _page(tester);
+        final double restTop = await rest(tester, page, barrier: barrier);
+        open(
+          page,
+          const AnimationStyle(reverseDuration: Duration(milliseconds: 1000), reverseCurve: Curves.linear),
+          barrier: barrier,
+        );
+        await tester.pumpAndSettle();
+        closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(shown(tester, restTop), closeTo(0.75, 0.02));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey<String>('content')), findsNothing);
+      });
+
+      testWidgets('AnimationStyle.noAnimation opens and closes a sheet at once (${barrier.name})', (final tester) async {
+        final BuildContext page = await _page(tester);
+        final double restTop = await rest(tester, page, barrier: barrier);
+        open(page, AnimationStyle.noAnimation, barrier: barrier);
+        await tester.pump();
+        await tester.pump();
+        expect(_rect(tester, 'content').top, restTop);
+        closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+        await tester.pump();
+        await tester.pump();
+        expect(find.byKey(const ValueKey<String>('content')), findsNothing);
+      });
+    }
+
+    testWidgets('reduced motion still wins over a slow style', (final tester) async {
+      final BuildContext page = await _page(tester, disableAnimations: true);
+      open(page, const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.linear));
+      await tester.pump();
+      await tester.pump();
+      final double firstFrame = _rect(tester, 'content').top;
+      await tester.pumpAndSettle();
+      expect(firstFrame, _rect(tester, 'content').top);
+    });
+
+    // The curve is any curve, not only one that can be inverted: easeOutBack overshoots.
+    testWidgets('a dragged sheet with a custom curve stays under the finger and springs back by it', (final tester) async {
+      final BuildContext page = await _page(tester);
+      open(page, const AnimationStyle(curve: Curves.easeOutBack), dragToClose: true);
+      await tester.pumpAndSettle();
+      final Rect rest = _rect(tester, 'content');
+      final TestGesture gesture = await tester.startGesture(rest.center);
+      await gesture.moveBy(const Offset(0, 20));
+      await gesture.moveBy(const Offset(0, 80));
+      await tester.pump();
+      expect(_rect(tester, 'content').top, closeTo(rest.top + 100, 1));
+      await gesture.moveBy(const Offset(0, -40));
+      await tester.pump();
+      expect(_rect(tester, 'content').top, closeTo(rest.top + 60, 1));
+      await gesture.up();
+      await tester.pump();
+      // Let go, it moves on from where the finger left it, with no jump.
+      expect(_rect(tester, 'content').top, closeTo(rest.top + 60, 1));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'content'), rest);
+    });
+
+    testWidgets('a sheet caught while it opens stays under the finger', (final tester) async {
+      final BuildContext page = await _page(tester);
+      final double restTop = await rest(tester, page);
+      open(page, const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.easeOutBack), dragToClose: true);
+      await tester.pump();
+      // Still on its way up, short of the overshoot.
+      await tester.pump(const Duration(milliseconds: 250));
+      final double caught = _rect(tester, 'content').top;
+      expect(caught, greaterThan(restTop));
+      final TestGesture gesture = await tester.startGesture(Offset(200, caught + 20));
+      await gesture.moveBy(const Offset(0, 20));
+      await gesture.moveBy(const Offset(0, 10));
+      await tester.pump();
+      expect(_rect(tester, 'content').top, closeTo(caught + 30, 1));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'content').top, restTop);
+    });
   });
 }

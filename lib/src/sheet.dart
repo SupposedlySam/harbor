@@ -161,6 +161,7 @@ class HarborSheet extends StatelessWidget {
     final _SheetHostScope? host = _SheetHostScope.maybeOf(context);
     assert(host != null, 'HarborSheet(dragToClose: true) closes only a sheet that showHarborSheet opened.');
     return GestureDetector(
+      onVerticalDragStart: (final DragStartDetails _) => host?.host.dragStart(),
       onVerticalDragUpdate: (final DragUpdateDetails details) => host?.host.dragBy(details.primaryDelta ?? 0.0),
       onVerticalDragEnd: (final DragEndDetails details) => host?.host.dragEnd(details.primaryVelocity ?? 0.0),
       child: sheet,
@@ -366,6 +367,14 @@ enum HarborSheetBarrier {
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
 /// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
+///
+/// [sheetAnimationStyle] sets how the sheet slides in and out, as it does for
+/// `showModalBottomSheet`: by default it opens over 280 ms and closes over 220 ms
+/// (280 ms both ways with [HarborSheetBarrier.none]), along [Curves.easeOutCubic]
+/// both ways. [AnimationStyle.noAnimation] opens and closes it at once. Whatever
+/// the style leaves out keeps its default; as on a modal bottom sheet, `curve`
+/// alone does not set the reverse curve. Reduced motion
+/// (`MediaQuery.disableAnimations`) still wins: the sheet is simply there.
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
@@ -377,6 +386,7 @@ Future<T?> showHarborSheet<T>(
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
+  final AnimationStyle? sheetAnimationStyle,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -390,6 +400,7 @@ Future<T?> showHarborSheet<T>(
     maxWidth: maxWidth,
     keepsTopCoast: keepsTopCoast,
     presenter: breakwater ? presenter : null,
+    animationStyle: sheetAnimationStyle,
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
@@ -407,17 +418,25 @@ Future<T?> showHarborSheet<T>(
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
       barrierLabel: barrierLabel ?? 'Close sheet',
       settings: routeSettings,
+      animationStyle: sheetAnimationStyle,
     ),
   );
 }
 
 class _SheetHost {
-  _SheetHost({required this.builder, required this.maxWidth, required this.keepsTopCoast, required this.presenter});
+  _SheetHost({
+    required this.builder,
+    required this.maxWidth,
+    required this.keepsTopCoast,
+    required this.presenter,
+    required this.animationStyle,
+  });
 
   final WidgetBuilder builder;
   final double? maxWidth;
   final bool keepsTopCoast;
   final HarborController? presenter;
+  final AnimationStyle? animationStyle;
 
   final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
   HarborBreakwater? _breakwater;
@@ -428,25 +447,41 @@ class _SheetHost {
   double _tide = 0.0;
   VoidCallback? close;
 
+  static const Curve _defaultCurve = Curves.easeOutCubic;
+
+  Curve get _curve => animationStyle?.curve ?? _defaultCurve;
+  Curve get _reverseCurve => animationStyle?.reverseCurve ?? _defaultCurve;
+
+  AnimationController? _slide;
+
+  /// How much of the sheet shows: [slide] along the curve, or [slide] itself while it is dragged.
+  final ProxyAnimation _shown = ProxyAnimation(kAlwaysDismissedAnimation);
+  CurvedAnimation? _curved;
+
   /// What slides the sheet in and out, for dragging it down by hand.
-  AnimationController? slide;
+  AnimationController? get slide => _slide;
+  set slide(final AnimationController? slide) {
+    _slide = slide;
+    _follow(_curve, _reverseCurve);
+  }
 
-  // The reveal is curved, so the drag goes through the curve's inverse to
-  // keep the sheet under the finger.
-  static const Curve _reveal = Curves.easeOutCubic;
+  void _follow(final Curve curve, final Curve reverseCurve) {
+    _curved?.dispose();
+    final AnimationController? slide = _slide;
+    _curved = slide == null ? null : CurvedAnimation(parent: slide, curve: curve, reverseCurve: reverseCurve);
+    _shown.parent = _curved ?? kAlwaysDismissedAnimation;
+  }
 
-  static double _unreveal(final double shown) {
-    double low = 0.0;
-    double high = 1.0;
-    for (int i = 0; i < 24; i++) {
-      final double mid = (low + high) / 2;
-      if (_reveal.transform(mid) < shown) {
-        low = mid;
-      } else {
-        high = mid;
-      }
+  // As a modal bottom sheet does, a dragged sheet follows its controller with no curve, so it stays
+  // under the finger whatever the curve is (one that overshoots has no inverse). Caught while it
+  // moves, the controller first takes what is shown, so nothing jumps.
+  void dragStart() {
+    final AnimationController? slide = this.slide;
+    if (slide == null) {
+      return;
     }
-    return (low + high) / 2;
+    slide.value = _shown.value;
+    _shown.parent = slide;
   }
 
   void dragBy(final double delta) {
@@ -454,8 +489,7 @@ class _SheetHost {
     if (slide == null || _height <= 0) {
       return;
     }
-    final double shown = (_reveal.transform(slide.value) - delta / _height).clamp(0.0, 1.0);
-    slide.value = _unreveal(shown);
+    slide.value -= delta / _height;
   }
 
   void dragEnd(final double velocity) {
@@ -463,12 +497,20 @@ class _SheetHost {
     if (slide == null) {
       return;
     }
+    // On from where the finger let go, along the curve for what is left of the way.
+    _follow(Split(slide.value, endCurve: _curve), Split(slide.value, endCurve: _reverseCurve));
     // As a modal bottom sheet has it: a fling down, or let go under half shown.
-    if (velocity > 700 || _reveal.transform(slide.value) < 0.5) {
+    if (velocity > 700 || slide.value < 0.5) {
       close?.call();
     } else {
       unawaited(slide.forward());
     }
+  }
+
+  void dispose() {
+    _shown.parent = kAlwaysDismissedAnimation;
+    _curved?.dispose();
+    _curved = null;
   }
 
   /// Where the sheet's visible top is, in global coordinates.
@@ -525,13 +567,12 @@ class _SheetHost {
   }
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
-  Widget build(final BuildContext context, final Animation<double> transition) =>
-      DisplayFeatureSubScreen(child: Builder(builder: (final BuildContext context) => _build(context, transition)));
+  Widget build(final BuildContext context) => DisplayFeatureSubScreen(child: Builder(builder: _build));
 
-  Widget _build(final BuildContext context, final Animation<double> transition) {
+  Widget _build(final BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     // With reduced motion the sheet is simply there: its route still takes its time, but nothing slides.
-    final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : transition;
+    final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : _shown;
     // Built inside the sheet, so its context can close the sheet.
     Widget sheet = Builder(builder: builder);
     // A sheet stops short of the status bar unless it keeps the top coast.
@@ -555,7 +596,8 @@ class _SheetHost {
             builder: (final BuildContext context, final Widget? child) => ClipRect(
               child: Align(
                 alignment: Alignment.topCenter,
-                heightFactor: _reveal.transform(animation.value),
+                // A curve may start below zero, as Curves.easeInBack does.
+                heightFactor: math.max(0.0, animation.value),
                 child: child,
               ),
             ),
@@ -638,9 +680,16 @@ class _RenderMeasureHeight extends RenderProxyBox {
 }
 
 class _HarborSheetRoute<T> extends PopupRoute<T> {
-  _HarborSheetRoute({required this.host, required this.barrierColor, required this.barrierLabel, super.settings});
+  _HarborSheetRoute({
+    required this.host,
+    required this.barrierColor,
+    required this.barrierLabel,
+    required this.animationStyle,
+    super.settings,
+  });
 
   final _SheetHost host;
+  final AnimationStyle? animationStyle;
 
   @override
   final Color barrierColor;
@@ -652,10 +701,10 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   final String barrierLabel;
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 280);
+  Duration get transitionDuration => animationStyle?.duration ?? const Duration(milliseconds: 280);
 
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 220);
+  Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? const Duration(milliseconds: 220);
 
   @override
   void install() {
@@ -676,13 +725,15 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   void dispose() {
     animation?.removeListener(_tick);
-    host.detach();
+    host
+      ..detach()
+      ..dispose();
     super.dispose();
   }
 
   @override
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
-      host.build(context, animation);
+      host.build(context);
 }
 
 class _NonModalSheet<T> {
@@ -700,7 +751,8 @@ class _NonModalSheet<T> {
   LocalHistoryEntry? _history;
   late final AnimationController _animation = AnimationController(
     vsync: overlay,
-    duration: const Duration(milliseconds: 280),
+    duration: host.animationStyle?.duration ?? const Duration(milliseconds: 280),
+    reverseDuration: host.animationStyle?.reverseDuration ?? const Duration(milliseconds: 280),
   );
   OverlayEntry? _entry;
   final Completer<T?> _done = Completer<T?>();
@@ -714,7 +766,7 @@ class _NonModalSheet<T> {
     final ModalRoute<Object?>? route = this.route;
     _entry = OverlayEntry(
       builder: (final BuildContext context) {
-        final Widget sheet = host.build(context, _animation);
+        final Widget sheet = host.build(context);
         if (route == null) {
           return sheet;
         }
@@ -775,6 +827,7 @@ class _NonModalSheet<T> {
     } on Object {
       // The overlay is already going.
     }
+    host.dispose();
     _animation.dispose();
     if (!_done.isCompleted) {
       _done.complete(null);
@@ -793,6 +846,7 @@ class _NonModalSheet<T> {
     }
     _entry?.remove();
     _entry = null;
+    host.dispose();
     _animation.dispose();
     if (!_done.isCompleted) {
       _done.complete(null);
