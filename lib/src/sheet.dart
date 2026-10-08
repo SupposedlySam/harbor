@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart' show Material, MaterialLocalizations, MaterialType, Theme, ThemeData;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -57,7 +56,7 @@ class HarborSheet extends StatelessWidget {
     this.footerTide = HarborTideStance.float,
     this.maxExtentFraction = 0.9,
     this.debugLabel,
-    this.material = false,
+    this.contentBuilder,
     this.clip,
     this.dragToClose = false,
   }) : builder = null,
@@ -79,7 +78,7 @@ class HarborSheet extends StatelessWidget {
     this.footerMinimum = 16.0,
     this.footerTide = HarborTideStance.float,
     this.debugLabel,
-    this.material = false,
+    this.contentBuilder,
     this.clip,
   }) : body = null,
        maxExtentFraction = null,
@@ -100,9 +99,21 @@ class HarborSheet extends StatelessWidget {
   final double? maxExtentFraction;
   final String? debugLabel;
 
-  /// Puts a transparent [Material] over the [surface], so text fields and ink
-  /// work in the sheet. It keeps the text style the sheet was opened with.
-  final bool material;
+  /// Wraps everything over the [surface] (header, body and footer), above the surface so ink
+  /// shows. For a Material app, so text fields and ink work in the sheet:
+  ///
+  /// ```dart
+  /// contentBuilder: (context, content) => Material(
+  ///   type: MaterialType.transparency,
+  ///   textStyle: DefaultTextStyle.of(context).style, // keep the opener's text style
+  ///   child: content,
+  /// ),
+  /// ```
+  ///
+  /// harbor's core imports no design library: Flutter 3.47 moved Material and Cupertino into
+  /// packages of their own (`material_ui`, `cupertino_ui`), and a layout package should not choose
+  /// one for every app that uses it.
+  final TransitionBuilder? contentBuilder;
 
   /// Clips the sheet to this shape, so a body that runs edge to edge (a photo)
   /// follows the surface's rounded top.
@@ -161,11 +172,8 @@ class HarborSheet extends StatelessWidget {
       fit: StackFit.passthrough,
       children: <Widget>[
         Positioned.fill(child: surface ?? const SizedBox.shrink()),
-        // Over the surface, not around it: ink paints under the Material's child.
-        if (material)
-          Material(type: MaterialType.transparency, textStyle: DefaultTextStyle.of(context).style, child: content)
-        else
-          content,
+        // Over the surface, not around it: ink paints under a Material's child.
+        if (contentBuilder case final TransitionBuilder wrap) wrap(context, content) else content,
       ],
     );
     final ShapeBorder? clip = this.clip;
@@ -348,15 +356,16 @@ enum HarborSheetBarrier {
 /// dragged, and that harbor's content keeps clear of it: a fairway's last row
 /// stays reachable, a lifted canvas element stays in sight.
 ///
-/// The sheet is a route, as a modal bottom sheet is: [routeSettings] reach
-/// navigator observers and route-name analytics, and the barrier is announced
-/// with [barrierLabel], or Material's dismiss label when the app has Material
-/// localizations. A sheet with [HarborSheetBarrier.none] is not a route, so it
+/// A sheet with a barrier is a route, as a modal bottom sheet is: [routeSettings]
+/// reach navigator observers and route-name analytics, and the barrier is
+/// announced with [barrierLabel] ('Close sheet' when none is given; a Material app
+/// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
+/// localized one). A sheet with [HarborSheetBarrier.none] is not a route, so it
 /// has neither.
 ///
-/// [maxWidth] caps a sheet on a wide screen. With [maxWidthFromTheme] and no
-/// [maxWidth], the cap is [BottomSheetThemeData.constraints]' width, or
-/// Material 3's 640 when that theme sets none, as `showModalBottomSheet` has it.
+/// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
+/// bottom sheet theme's cap passes
+/// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
@@ -368,7 +377,6 @@ Future<T?> showHarborSheet<T>(
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
-  final bool maxWidthFromTheme = false,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -379,7 +387,7 @@ Future<T?> showHarborSheet<T>(
     // A Builder, so the builder's own context sees the captured themes, not only what it returns:
     // `Theme.of(context)` in a sheet's builder read the navigator's theme, not the page's.
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
-    maxWidth: maxWidth ?? (maxWidthFromTheme ? _themedMaxWidth(context) : null),
+    maxWidth: maxWidth,
     keepsTopCoast: keepsTopCoast,
     presenter: breakwater ? presenter : null,
   );
@@ -397,21 +405,10 @@ Future<T?> showHarborSheet<T>(
     _HarborSheetRoute<T>(
       host: host,
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
-      barrierLabel:
-          barrierLabel ??
-          Localizations.of<MaterialLocalizations>(context, MaterialLocalizations)?.modalBarrierDismissLabel ??
-          'Close sheet',
+      barrierLabel: barrierLabel ?? 'Close sheet',
       settings: routeSettings,
     ),
   );
-}
-
-// Material 3's bottom sheet width; its defaults are private to Material.
-const double _material3SheetMaxWidth = 640.0;
-
-double? _themedMaxWidth(final BuildContext context) {
-  final ThemeData theme = Theme.of(context);
-  return theme.bottomSheetTheme.constraints?.maxWidth ?? (theme.useMaterial3 ? _material3SheetMaxWidth : null);
 }
 
 class _SheetHost {

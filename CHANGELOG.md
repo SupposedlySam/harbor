@@ -15,9 +15,9 @@
 * `HarborFairway.box` takes its child's size across the scroll when that axis is unbounded, so a horizontal row in a `Column` is as tall as its content instead of throwing.
 * Docs: mooring the bottom edge alone clears the coast and the keyboard but not a header; `HarborCoastFeature.hinge` and `HarborController.isPort` are reserved and not yet read.
 * `showHarborSheet(routeSettings:)`: the sheet's route carries its settings, so navigator observers and route-name analytics see it.
-* `showHarborSheet(barrierLabel:)`: the barrier reads Material's dismiss label when the app has Material localizations, `'Close sheet'` otherwise, or the label given.
-* `showHarborSheet(maxWidthFromTheme: true)`: the sheet's width comes from `BottomSheetThemeData.constraints`, or Material 3's 640 when the theme sets none. Without it, a sheet still spans the screen.
-* `HarborSheet(material: true)`: a transparent `Material` over the surface, so text fields and ink work in a sheet. It keeps the opener's text style.
+* `showHarborSheet(barrierLabel:)`: what a screen reader announces for the barrier, `'Close sheet'` when none is given. A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+* `HarborSheet(contentBuilder:)`: wraps the header, body and footer above the surface. A Material app wraps them in a transparent `Material` so text fields and ink work (the README has the recipe, with the bottom sheet theme's width).
+* harbor's core imports no design library, and a test keeps it that way: Flutter 3.47 moved Material and Cupertino into `material_ui` and `cupertino_ui`.
 * `HarborSheet(clip:)`: clips the sheet to a shape, so an edge-to-edge body follows the surface's rounded top.
 * `HarborSheet(dragToClose: true)`: a content-sized sheet can be dragged down to close. Off by default.
 * `HarborSheetExtent(snapSizes:)`: the heights a draggable sheet snaps to. A fling on its header goes to the next one its way, as a fling on its list does.

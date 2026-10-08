@@ -358,23 +358,31 @@ page is on top, and it leaves when its page is replaced or removed. A
 the page instead.
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
-navigator observers and route-name analytics, and the barrier reads Material's
-dismiss label when the app has Material localizations (`barrierLabel:` to say
-something else). It spans the screen unless you give it a `maxWidth`;
-`maxWidthFromTheme: true` takes the width from `BottomSheetThemeData.constraints`,
-or Material 3's 640 when the theme sets none, as `showModalBottomSheet` does.
+navigator observers and route-name analytics, and `barrierLabel:` is what a
+screen reader announces for the barrier ('Close sheet' when none is given). It
+spans the screen unless you give it a `maxWidth`.
+
+harbor imports no design library: it sits on Flutter's widgets layer, and since
+Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
+passes Material's pieces in, three lines that `showModalBottomSheet` would have
+filled in for it:
 
 ```dart
 showHarborSheet(
   context,
   routeSettings: const RouteSettings(name: 'reply'),
-  maxWidthFromTheme: true,
+  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+  maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
   builder: (_) => HarborSheet(
-    material: true,                        // text fields and ink work in it
-    clip: const RoundedRectangleBorder(    // a photo at the top keeps the corners
+    contentBuilder: (context, content) => Material( // text fields and ink work in it
+      type: MaterialType.transparency,
+      textStyle: DefaultTextStyle.of(context).style,
+      child: content,
+    ),
+    clip: const RoundedRectangleBorder(             // a photo at the top keeps the corners
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
-    dragToClose: true,                     // drag it down to close
+    dragToClose: true,                              // drag it down to close
     surface: const ColoredBox(color: Colors.white),
     body: composer,
   ),

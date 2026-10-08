@@ -65,7 +65,9 @@ void main() {
     expect(observer.pushed.last.settings.arguments, 7);
   });
 
-  testWidgets('a sheet barrier reads the Material dismiss label, or the one given', (final tester) async {
+  // harbor's core imports no design library, so a Material app passes Material's localized
+  // label itself; the default is plain English.
+  testWidgets('a sheet barrier is announced with the label given, Material\'s by the documented recipe', (final tester) async {
     final BuildContext page = await _page(tester);
     late BuildContext sheet;
     unawaited(showHarborSheet<void>(
@@ -76,20 +78,20 @@ void main() {
       },
     ));
     await tester.pumpAndSettle();
-    expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultMaterialLocalizations().modalBarrierDismissLabel);
+    expect(ModalRoute.of(sheet)!.barrierLabel, 'Close sheet');
     closeHarborSheet(sheet);
     await tester.pumpAndSettle();
 
     unawaited(showHarborSheet<void>(
       page,
-      barrierLabel: 'Close the share sheet',
+      barrierLabel: MaterialLocalizations.of(page).modalBarrierDismissLabel,
       builder: (final BuildContext context) {
         sheet = context;
         return const HarborSheet(body: SizedBox(height: 200));
       },
     ));
     await tester.pumpAndSettle();
-    expect(ModalRoute.of(sheet)!.barrierLabel, 'Close the share sheet');
+    expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultMaterialLocalizations().modalBarrierDismissLabel);
   });
 
   testWidgets('a sheet barrier has a label without Material localizations', (final tester) async {
@@ -129,57 +131,41 @@ void main() {
     expect(_rect(tester, 'content').width, 1920);
   });
 
-  testWidgets('a sheet takes its width from the bottom sheet theme when asked', (final tester) async {
+  testWidgets('maxWidth caps a sheet on a wide screen, centred', (final tester) async {
     final BuildContext page = await _page(tester, device: HarborTrialDevice.television);
-    unawaited(showHarborSheet<void>(
-      page,
-      maxWidthFromTheme: true,
-      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-    ));
+    unawaited(showHarborSheet<void>(page, maxWidth: 640, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))));
     await tester.pumpAndSettle();
-    // Material 3's cap, as showModalBottomSheet has it, centered.
     expect(_rect(tester, 'content').width, 640);
     expect(_rect(tester, 'content').center.dx, 960);
   });
 
-  testWidgets('a themed sheet width follows BottomSheetThemeData.constraints, and maxWidth beats both', (final tester) async {
+  testWidgets("a Material app's bottom sheet theme width, by the documented recipe", (final tester) async {
     final BuildContext page = await _page(
       tester,
       device: HarborTrialDevice.television,
       theme: ThemeData(bottomSheetTheme: const BottomSheetThemeData(constraints: BoxConstraints(maxWidth: 480))),
     );
-    late BuildContext sheet;
     unawaited(showHarborSheet<void>(
       page,
-      maxWidthFromTheme: true,
-      builder: (final BuildContext context) {
-        sheet = context;
-        return HarborSheet(body: _bar('content', 200));
-      },
-    ));
-    await tester.pumpAndSettle();
-    expect(_rect(tester, 'content').width, 480);
-    closeHarborSheet(sheet);
-    await tester.pumpAndSettle();
-
-    unawaited(showHarborSheet<void>(
-      page,
-      maxWidth: 720,
-      maxWidthFromTheme: true,
+      maxWidth: Theme.of(page).bottomSheetTheme.constraints?.maxWidth ?? 640,
       builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
     ));
     await tester.pumpAndSettle();
-    expect(_rect(tester, 'content').width, 720);
+    expect(_rect(tester, 'content').width, 480);
   });
 
-  testWidgets('a sheet with a Material parent hosts a text field and keeps the page text style', (final tester) async {
+  testWidgets('a sheet whose content is wrapped in Material hosts a text field and keeps the page text style', (final tester) async {
     final BuildContext page = await _page(tester);
     unawaited(showHarborSheet<void>(
       page,
       builder: (final BuildContext context) => DefaultTextStyle(
         style: const TextStyle(fontSize: 21, color: Colors.teal),
         child: HarborSheet(
-          material: true,
+          contentBuilder: (final BuildContext context, final Widget? content) => Material(
+            type: MaterialType.transparency,
+            textStyle: DefaultTextStyle.of(context).style,
+            child: content,
+          ),
           body: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
