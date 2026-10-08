@@ -54,24 +54,37 @@ class HarborSeaTrial {
   bool get tideIn => _tideIn;
 
   /// Brings the keyboard in.
-  Future<void> raiseTide({final bool settle = false}) => setTide(tideIn: true, settle: settle);
+  Future<void> raiseTide({final bool settle = false, final Duration? pumpFor}) =>
+      setTide(tideIn: true, settle: settle, pumpFor: pumpFor);
 
   /// Takes the keyboard out.
-  Future<void> lowerTide({final bool settle = false}) => setTide(tideIn: false, settle: settle);
+  Future<void> lowerTide({final bool settle = false, final Duration? pumpFor}) =>
+      setTide(tideIn: false, settle: settle, pumpFor: pumpFor);
 
-  /// Moves the keyboard, then pumps long enough for the harbor to follow
-  /// (its docks to slide, its tide gauge to settle). With [settle], it pumps
-  /// until nothing is animating instead, which never ends on a screen with an
-  /// endless animation (a rolling sea).
-  Future<void> setTide({required final bool tideIn, final bool settle = false}) async {
+  static const Duration _followTime = Duration(milliseconds: 600);
+  static const Duration _pumpStep = Duration(milliseconds: 50);
+
+  /// Moves the keyboard, pumps a frame, then lets [pumpFor] pass: by default
+  /// 600 ms, long enough for the harbor to follow (its docks to slide, its tide
+  /// gauge to settle). A [pumpFor] of [Duration.zero] stops at that first
+  /// frame, as a `tester.pump()` after setting `tester.view.viewInsets` would,
+  /// so a test can see the moment the keyboard arrives. With [settle], it pumps
+  /// until nothing is animating instead, as `pumpAndSettle` does, which never
+  /// ends on a screen with an endless animation (a rolling sea).
+  Future<void> setTide({required final bool tideIn, final bool settle = false, final Duration? pumpFor}) async {
+    assert(!settle || pumpFor == null, 'Give settle or pumpFor, not both.');
+    assert(pumpFor == null || pumpFor >= Duration.zero, 'pumpFor cannot be negative.');
     _apply(tideIn: tideIn);
     if (settle) {
       await _tester.pumpAndSettle();
       return;
     }
     await _tester.pump();
-    for (int i = 0; i < 12; i++) {
-      await _tester.pump(const Duration(milliseconds: 50));
+    Duration remaining = pumpFor ?? _followTime;
+    while (remaining > Duration.zero) {
+      final Duration step = remaining < _pumpStep ? remaining : _pumpStep;
+      await _tester.pump(step);
+      remaining -= step;
     }
   }
 

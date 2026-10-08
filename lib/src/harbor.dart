@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -132,12 +134,48 @@ class Harbor extends StatefulWidget {
 
   @override
   State<Harbor> createState() => _HarborState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    for (final (String name, List<HarborDock> docks) in <(String, List<HarborDock>)>[
+      ('top', top),
+      ('bottom', bottom),
+      ('start', start),
+      ('end', end),
+    ]) {
+      properties.add(
+        IterableProperty<HarborDock>(name, docks, level: docks.isEmpty ? DiagnosticLevel.fine : DiagnosticLevel.info),
+      );
+    }
+    properties.add(
+      IterableProperty<HarborBuoy>('buoys', buoys, level: buoys.isEmpty ? DiagnosticLevel.fine : DiagnosticLevel.info),
+    );
+    properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: null));
+    properties.add(FlagProperty('newPort', value: newPort, ifTrue: 'new port'));
+    properties.add(FlagProperty('bodyClearsTide', value: bodyClearsTide, ifFalse: 'body runs under the tide'));
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(EnumProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill));
+    properties.add(
+      PercentProperty(
+        'maxExtentFraction',
+        maxExtentFraction,
+        level: maxExtentFraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info,
+      ),
+    );
+    properties.add(ObjectFlagProperty<HarborWakePainter>.has('wakePainter', wakePainter));
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
+  }
 }
 
 class _HarborState extends State<Harbor> with WidgetsBindingObserver {
   HarborController? _controller;
   HarborTideGauge? _ownGauge;
   HarborFleet? _ownFleet;
+  final GlobalKey _statusBarKey = GlobalKey();
 
   @override
   void initState() {
@@ -147,14 +185,15 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
 
   /// On iOS a tap on the status bar scrolls the page's primary scroll view to the top. Flutter
   /// wires that up in `Scaffold` alone, and a page built from a harbor needs no Scaffold, so the
-  /// harbor does it: the first harbor of the route on top, with the Scaffold's own animation.
+  /// harbor does it, with the Scaffold's own animation and the Scaffold's own test of which page
+  /// was tapped: the one whose status bar band a tap at the screen's top left would hit. A page
+  /// covered from outside its own navigator, by an overlay, or beside the one at the left is not.
   /// Every position is scrolled, not the controller, since a controller with two scroll views
   /// attached (tabs sharing the primary controller) cannot animate as one.
   @override
   void handleStatusBarTap() {
     super.handleStatusBarTap();
-    final HarborController? controller = _controller;
-    if (controller == null || widget._isSea || !controller.isRouteLevel || !(ModalRoute.of(context)?.isCurrent ?? true)) {
+    if (widget._isSea || !_statusBarHitAtOrigin()) {
       return;
     }
     final ScrollController? primary = PrimaryScrollController.maybeOf(context);
@@ -169,6 +208,16 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         position.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOutCirc);
       }
     }
+  }
+
+  bool _statusBarHitAtOrigin() {
+    final RenderObject? band = _statusBarKey.currentContext?.findRenderObject();
+    if (band == null) {
+      return false;
+    }
+    final HitTestResult result = HitTestResult();
+    WidgetsBinding.instance.hitTestInView(result, Offset.zero, View.of(context).viewId);
+    return result.path.any((final HitTestEntry entry) => identical(entry.target, band));
   }
 
   @override
@@ -354,6 +403,17 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
       }
     }
 
+    if (!widget._isSea && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS)) {
+      children.add(
+        HarborSlot.statusBar(
+          child: SizedBox(
+            height: ambient.padding.top,
+            child: MetaData(key: _statusBarKey, behavior: HitTestBehavior.translucent, child: const SizedBox.expand()),
+          ),
+        ),
+      );
+    }
+
     children.add(
       HarborSlot.buoys(
         child: HarborBuoyLayer(buoys: widget.buoys, signals: controller.signals),
@@ -453,5 +513,12 @@ class HarborSea extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => Harbor._sea(coast: coast, margin: margin, body: child);
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+  }
 
 }

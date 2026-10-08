@@ -5,6 +5,7 @@
 * `pumpSeaTrial(textScaleFactor:)` sets the text scale the platform reports, and clears it when the test ends.
 * `HarborTrialDevice.copyWith`.
 * `clearWaterAround` fails the test with a `TestFailure` when no harbor is around the finder, instead of throwing a `StateError`.
+* `raiseTide`, `lowerTide` and `setTide` take `pumpFor:`, how long to pump after the keyboard moves (600 ms when not given, as before). `pumpFor: Duration.zero` pumps one frame, so a test can check the first frame after the keyboard arrives, or run its own timers from there.
 
 ## 0.1.0
 
