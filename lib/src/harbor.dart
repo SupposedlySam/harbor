@@ -155,9 +155,9 @@ class Harbor extends StatefulWidget {
     properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: null));
     properties.add(FlagProperty('newPort', value: newPort, ifTrue: 'new port'));
     properties.add(FlagProperty('bodyClearsTide', value: bodyClearsTide, ifFalse: 'body runs under the tide'));
-    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(EnumProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill));
     properties.add(
@@ -525,7 +525,7 @@ class HarborSea extends StatelessWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
-    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('margin', margin, defaultValue: null));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
   }
 
 }

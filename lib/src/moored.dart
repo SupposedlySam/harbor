@@ -74,10 +74,10 @@ class HarborMoored extends StatelessWidget {
     properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
     properties.add(FlagProperty('mooringLine', value: mooringLine, ifTrue: 'mooring line'));
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('extra', extra, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('extra', extra, defaultValue: EdgeInsetsDirectional.zero),
     );
   }
 

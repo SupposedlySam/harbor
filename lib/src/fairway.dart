@@ -130,10 +130,10 @@ class HarborFairway extends StatelessWidget {
     properties.add(FlagProperty('shrinkWrap', value: shrinkWrap, ifTrue: 'shrink-wrapping', showName: true));
     properties.add(DiagnosticsProperty<ScrollCacheExtent>('scrollCacheExtent', scrollCacheExtent, defaultValue: null));
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(FlagProperty('mooringLine', value: mooringLine, ifFalse: 'no mooring line'));
     properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
@@ -662,10 +662,10 @@ class HarborFairwaySliver extends StatelessWidget {
     properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
     properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(
-      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
   }
 

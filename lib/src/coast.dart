@@ -58,7 +58,7 @@ class HarborTitleSafe with Diagnosticable {
     properties.add(
       PercentProperty('fraction', _fraction, level: _fraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info),
     );
-    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('insets', _fixed, defaultValue: null));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('insets', _fixed, defaultValue: null));
   }
 }
 
@@ -176,7 +176,7 @@ class HarborCoast with Diagnosticable {
     if (this == none) {
       return;
     }
-    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('fixedInsets', fixedInsets, defaultValue: null));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('fixedInsets', fixedInsets, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborTitleSafe>('titleSafe', titleSafe, defaultValue: null));
     properties.add(FlagProperty('calmTide', value: calmTide, ifTrue: 'calm tide'));
   }
