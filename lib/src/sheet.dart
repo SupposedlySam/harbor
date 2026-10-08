@@ -338,10 +338,12 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
 
 /// How a sheet sits over the page that opened it.
 enum HarborSheetBarrier {
-  /// A dimmed barrier that closes the sheet when tapped.
+  /// A dimmed barrier that closes the sheet when tapped, unless the sheet is
+  /// opened with `isDismissible: false`.
   dismissible,
 
-  /// A clear barrier: the page stays visible, and taps on it close the sheet.
+  /// A clear barrier: the page stays visible, and taps on it close the sheet,
+  /// unless the sheet is opened with `isDismissible: false`.
   clear,
 
   /// No barrier at all: the page stays live underneath (a drawer that covers
@@ -363,6 +365,15 @@ enum HarborSheetBarrier {
 /// localized one). A sheet with [HarborSheetBarrier.none] is not a route, so it
 /// has neither.
 ///
+/// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
+/// stays until it is answered; back still closes it, as it closes a modal
+/// bottom sheet. [requestFocus] is the route's: given false, focus stays where
+/// it was in the page, and left null, the navigator decides. A sheet with no
+/// barrier has no barrier to tap and is not a route, so neither applies to it.
+///
+/// [anchorPoint] picks the screen a sheet opens on, on a device with a hinge:
+/// the one nearest it, as for [DisplayFeatureSubScreen].
+///
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
 /// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
@@ -371,9 +382,12 @@ Future<T?> showHarborSheet<T>(
   required final WidgetBuilder builder,
   final bool breakwater = false,
   final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
+  final bool isDismissible = true,
   final Color barrierColor = const Color(0x66000000),
   final double? maxWidth,
   final bool useRootNavigator = false,
+  final Offset? anchorPoint,
+  final bool? requestFocus,
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
@@ -389,6 +403,7 @@ Future<T?> showHarborSheet<T>(
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
     maxWidth: maxWidth,
     keepsTopCoast: keepsTopCoast,
+    anchorPoint: anchorPoint,
     presenter: breakwater ? presenter : null,
   );
   if (barrier == HarborSheetBarrier.none) {
@@ -405,18 +420,27 @@ Future<T?> showHarborSheet<T>(
     _HarborSheetRoute<T>(
       host: host,
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
+      barrierDismissible: isDismissible,
       barrierLabel: barrierLabel ?? 'Close sheet',
       settings: routeSettings,
+      requestFocus: requestFocus,
     ),
   );
 }
 
 class _SheetHost {
-  _SheetHost({required this.builder, required this.maxWidth, required this.keepsTopCoast, required this.presenter});
+  _SheetHost({
+    required this.builder,
+    required this.maxWidth,
+    required this.keepsTopCoast,
+    required this.anchorPoint,
+    required this.presenter,
+  });
 
   final WidgetBuilder builder;
   final double? maxWidth;
   final bool keepsTopCoast;
+  final Offset? anchorPoint;
   final HarborController? presenter;
 
   final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
@@ -526,7 +550,7 @@ class _SheetHost {
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
   Widget build(final BuildContext context, final Animation<double> transition) =>
-      DisplayFeatureSubScreen(child: Builder(builder: (final BuildContext context) => _build(context, transition)));
+      DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: (final BuildContext context) => _build(context, transition)));
 
   Widget _build(final BuildContext context, final Animation<double> transition) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -638,7 +662,14 @@ class _RenderMeasureHeight extends RenderProxyBox {
 }
 
 class _HarborSheetRoute<T> extends PopupRoute<T> {
-  _HarborSheetRoute({required this.host, required this.barrierColor, required this.barrierLabel, super.settings});
+  _HarborSheetRoute({
+    required this.host,
+    required this.barrierColor,
+    required this.barrierDismissible,
+    required this.barrierLabel,
+    super.settings,
+    super.requestFocus,
+  });
 
   final _SheetHost host;
 
@@ -646,7 +677,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   final Color barrierColor;
 
   @override
-  bool get barrierDismissible => true;
+  final bool barrierDismissible;
 
   @override
   final String barrierLabel;

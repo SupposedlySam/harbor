@@ -28,6 +28,7 @@ Future<BuildContext> _page(
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
   final ThemeData? theme,
   final List<NavigatorObserver> observers = const <NavigatorObserver>[],
+  final FocusNode? focusNode,
 }) async {
   late BuildContext pageContext;
   await tester.pumpSeaTrial(
@@ -40,7 +41,8 @@ Future<BuildContext> _page(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
-              return const SizedBox.expand(key: ValueKey<String>('page'));
+              const Widget page = SizedBox.expand(key: ValueKey<String>('page'));
+              return focusNode == null ? page : Focus(focusNode: focusNode, child: page);
             },
           ),
         ),
@@ -123,6 +125,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierLabel, 'Close sheet');
   });
+
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.clear]) {
+    testWidgets('a sheet that is not dismissible ignores a barrier tap and closes on back (barrier: ${barrier.name})', (final tester) async {
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: barrier,
+        isDismissible: false,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(200, 120));
+      await tester.pumpAndSettle();
+      expect(closed, isFalse);
+      expect(find.byKey(const ValueKey<String>('content')), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(find.byKey(const ValueKey<String>('content')), findsNothing);
+    });
+  }
+
+  for (final bool requestFocus in <bool>[true, false]) {
+    testWidgets('a sheet opened with requestFocus: $requestFocus ${requestFocus ? 'takes' : 'leaves'} the focus', (final tester) async {
+      final FocusNode field = FocusNode(debugLabel: 'page field');
+      addTearDown(field.dispose);
+      final BuildContext page = await _page(tester, focusNode: field);
+      field.requestFocus();
+      await tester.pump();
+      expect(field.hasPrimaryFocus, isTrue);
+      unawaited(showHarborSheet<void>(
+        page,
+        requestFocus: requestFocus,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ));
+      await tester.pumpAndSettle();
+      expect(field.hasPrimaryFocus, !requestFocus);
+    });
+  }
 
   testWidgets('a sheet spans the screen by default, however wide', (final tester) async {
     final BuildContext page = await _page(tester, device: HarborTrialDevice.television);

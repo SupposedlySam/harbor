@@ -371,6 +371,11 @@ navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given). It
 spans the screen unless you give it a `maxWidth`.
 
+Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
+makes a sheet the user has to answer: a tap on the barrier does nothing, and
+back still closes it. `requestFocus: false` leaves focus in the page.
+`anchorPoint:` picks which screen of a dual-screen device it opens on.
+
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
 passes Material's pieces in, three lines that `showModalBottomSheet` would have
@@ -398,7 +403,9 @@ showHarborSheet(
 );
 ```
 
-`dragToClose:` is off by default. With it on, a content-sized sheet follows the
+`dragToClose:` is off by default, where `showModalBottomSheet`'s `enableDrag` is
+on, so a Material app that wants its sheets to follow a downward drag turns it on,
+as above. With it on, a content-sized sheet follows the
 finger down by any part that doesn't scroll, and closes on a fling or when let
 go under half shown. A draggable sheet always closes below its floor, and its
 `HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its

@@ -1,5 +1,7 @@
 ## Unreleased
 
+* `showHarborSheet(isDismissible:, requestFocus:, anchorPoint:)`, as `showModalBottomSheet` has them. With `isDismissible: false` a tap on the barrier (dimmed or clear) does nothing and back still closes the sheet; before, every barrier closed its sheet on a tap. `requestFocus` is passed to the sheet's route, and `anchorPoint` picks the screen a sheet opens on beside a hinge.
+
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0
