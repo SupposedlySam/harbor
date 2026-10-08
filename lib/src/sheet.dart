@@ -576,16 +576,24 @@ class HarborSheetController extends ChangeNotifier {
 /// [SemanticsConfiguration.namesRoute].
 ///
 /// A sheet with [HarborSheetBarrier.none] is not a route, so it has none of
-/// these.
+/// these. It is not modal either, as a persistent bottom sheet is not: focus moves
+/// freely between it and the page. It is a [FocusScope] of its own, as a route
+/// is, so Tab goes through the sheet in order and then on to the page, and Escape
+/// (a [DismissIntent]) closes it, as back does, from focus in the sheet or in a
+/// harbor on the page that opened it.
+///
+/// [requestFocus] is whether the sheet takes focus when it opens, as
+/// [Route.requestFocus]. Left null, a sheet that is a route follows
+/// [Navigator.requestFocus], and a sheet with no barrier leaves focus where it
+/// was, as a persistent bottom sheet does.
 ///
 /// The future completes with the result given to [HarborSheet.close], or with
 /// null when the sheet is closed some other way.
 ///
 /// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
 /// stays until it is answered; back still closes it, as it closes a modal
-/// bottom sheet. [requestFocus] is the route's: given false, focus stays where
-/// it was in the page, and left null, the navigator decides. A sheet with no
-/// barrier has no barrier to tap and is not a route, so neither applies to it.
+/// bottom sheet. A sheet with no barrier has no barrier to tap, so it does not
+/// apply to one.
 ///
 /// [anchorPoint] picks the screen a sheet opens on, on a device with a hinge:
 /// the one nearest it, as for [DisplayFeatureSubScreen].
@@ -656,8 +664,10 @@ Future<T?> showHarborSheet<T>(
     // and it leaves when its page does. It also leaves with the harbor that opened it.
     final _NonModalSheet<T> sheet = _NonModalSheet<T>(
       host: host,
+      navigator: navigator,
       overlay: overlay,
       route: ModalRoute.of(context),
+      requestFocus: requestFocus ?? false,
       transition: transitionAnimationController,
     );
     void presenterLeft() => sheet.closeNow();
@@ -1101,18 +1111,26 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 }
 
 class _NonModalSheet<T> {
-  _NonModalSheet({required this.host, required this.overlay, required this.route, final AnimationController? transition})
-    : _animation =
-          transition ??
-          AnimationController(
-            vsync: overlay,
-            duration: host.animationStyle?.duration ?? const Duration(milliseconds: 280),
-            reverseDuration: host.animationStyle?.reverseDuration ?? const Duration(milliseconds: 280),
-          ),
-      _ownsAnimation = transition == null;
+  _NonModalSheet({
+    required this.host,
+    required this.navigator,
+    required this.overlay,
+    required this.route,
+    required this.requestFocus,
+    final AnimationController? transition,
+  }) : _animation =
+           transition ??
+           AnimationController(
+             vsync: overlay,
+             duration: host.animationStyle?.duration ?? const Duration(milliseconds: 280),
+             reverseDuration: host.animationStyle?.reverseDuration ?? const Duration(milliseconds: 280),
+           ),
+       _ownsAnimation = transition == null;
 
   final _SheetHost host;
+  final NavigatorState navigator;
   final OverlayState overlay;
+  final bool requestFocus;
 
   /// The page that opened the sheet. Tied to it with a local history entry, so back (and a
   /// pop) closes the sheet before the page, and the iOS back swipe stands aside while it is up.
@@ -1128,6 +1146,14 @@ class _NonModalSheet<T> {
   OverlayEntry? _entry;
   final Completer<T?> _done = Completer<T?>();
 
+  // A scope of its own beside the page's, with its navigator's edge behaviour, as a route's
+  // scope is: at the sheet's last control, Tab does what it does at a route's. Without it the
+  // sheet's controls sat in the navigator's own scope, and under a navigator that keeps Tab inside
+  // each route, Tab left the sheet for the page and never came back.
+  late final FocusScopeNode _focus = FocusScopeNode(debugLabel: 'HarborSheet (no barrier)')
+    ..traversalEdgeBehavior = navigator.widget.routeTraversalEdgeBehavior
+    ..directionalTraversalEdgeBehavior = navigator.widget.routeDirectionalTraversalEdgeBehavior;
+
   Future<T?> open() {
     host
       ..close = ([final Object? result]) {
@@ -1142,7 +1168,13 @@ class _NonModalSheet<T> {
     final ModalRoute<Object?>? route = this.route;
     _entry = OverlayEntry(
       builder: (final BuildContext context) {
-        final Widget sheet = host.build(context);
+        final Widget sheet = Actions(
+          actions: <Type, Action<Intent>>{
+            // Only while open, so a closing sheet leaves Escape to the widgets above.
+            if (!_closing) DismissIntent: _CloseSheetAction(_close),
+          },
+          child: _NonModalSheetFocus(scope: _focus, requestFocus: requestFocus, child: host.build(context)),
+        );
         if (route == null) {
           return sheet;
         }
@@ -1165,6 +1197,7 @@ class _NonModalSheet<T> {
     );
     overlay.insert(_entry!);
     if (route != null) {
+      _HarborPageSheets.of(route).add(this);
       _history = LocalHistoryEntry(
         onRemove: () {
           _history = null;
@@ -1184,6 +1217,9 @@ class _NonModalSheet<T> {
     final LocalHistoryEntry? history = _history;
     _history = null;
     final ModalRoute<Object?>? route = this.route;
+    if (route != null) {
+      _HarborPageSheets.of(route).remove(this);
+    }
     if (history != null && route != null && route.isActive) {
       route.removeLocalHistoryEntry(history);
     }
@@ -1218,6 +1254,7 @@ class _NonModalSheet<T> {
       // The overlay is already going.
     }
     host.dispose();
+    _focus.dispose();
     _leave();
   }
 
@@ -1226,6 +1263,7 @@ class _NonModalSheet<T> {
       return;
     }
     _closing = true;
+    _entry!.markNeedsBuild();
     _leaveHistory();
     if (overlay.mounted) {
       await _animation.reverse();
@@ -1235,12 +1273,116 @@ class _NonModalSheet<T> {
     _entry?.remove();
     _entry = null;
     host.dispose();
+    _focus.dispose();
     // The result first: _leave completes with null when nothing has.
     if (!_done.isCompleted) {
       _done.complete(result);
     }
     _leave();
   }
+}
+
+/// Takes focus for a sheet with no barrier when it opens, if asked, as a drawer does: its scope
+/// becomes the first focus of the navigator's, so a child with `autofocus: true` takes it from
+/// there. When the sheet goes, the navigator's scope falls back to the page, and the page to what
+/// it had focused.
+class _NonModalSheetFocus extends StatefulWidget {
+  const _NonModalSheetFocus({required this.scope, required this.requestFocus, required this.child});
+
+  final FocusScopeNode scope;
+  final bool requestFocus;
+  final Widget child;
+
+  @override
+  State<_NonModalSheetFocus> createState() => _NonModalSheetFocusState();
+}
+
+class _NonModalSheetFocusState extends State<_NonModalSheetFocus> {
+  bool _opened = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_opened && widget.requestFocus) {
+      FocusScope.of(context).setFirstFocus(widget.scope);
+    }
+    _opened = true;
+  }
+
+  @override
+  Widget build(final BuildContext context) => FocusScope.withExternalFocusNode(focusScopeNode: widget.scope, child: widget.child);
+}
+
+/// The sheets with no barrier open over a page, in the order they opened.
+class _HarborPageSheets extends ChangeNotifier {
+  static final Expando<_HarborPageSheets> _pages = Expando<_HarborPageSheets>('HarborPageSheets');
+
+  static _HarborPageSheets of(final ModalRoute<Object?> route) => _pages[route] ??= _HarborPageSheets();
+
+  final List<_NonModalSheet<Object?>> _open = <_NonModalSheet<Object?>>[];
+
+  _NonModalSheet<Object?>? get top => _open.isEmpty ? null : _open.last;
+
+  void add(final _NonModalSheet<Object?> sheet) {
+    _open.add(sheet);
+    notifyListeners();
+  }
+
+  void remove(final _NonModalSheet<Object?> sheet) {
+    if (!_open.remove(sheet)) {
+      return;
+    }
+    // A sheet that leaves with its harbor goes while the tree is being torn down, when the
+    // harbors listening cannot rebuild yet.
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((final Duration _) => notifyListeners());
+    } else {
+      notifyListeners();
+    }
+  }
+}
+
+/// Escape (a [DismissIntent]) from anywhere in a harbor closes the top sheet with no barrier
+/// over its page, as back does. With none open it is left to the widgets above, as
+/// `RawMenuAnchor` leaves it while its menu is closed: a page route answers Escape with an action
+/// that is disabled, which would stop the search there.
+class HarborNonModalSheetActions extends StatelessWidget {
+  const HarborNonModalSheetActions({super.key, required this.route, required this.child});
+
+  /// The page whose sheets this closes; with none, Escape passes through.
+  final ModalRoute<Object?>? route;
+  final Widget child;
+
+  @override
+  Widget build(final BuildContext context) {
+    final ModalRoute<Object?>? route = this.route;
+    if (route == null) {
+      return child;
+    }
+    final _HarborPageSheets sheets = _HarborPageSheets.of(route);
+    return ListenableBuilder(
+      listenable: sheets,
+      builder: (final BuildContext context, final Widget? child) {
+        final _NonModalSheet<Object?>? top = sheets.top;
+        return Actions(
+          actions: <Type, Action<Intent>>{
+            if (top != null) DismissIntent: _CloseSheetAction(top._close),
+          },
+          child: child!,
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _CloseSheetAction extends DismissAction {
+  _CloseSheetAction(this._close);
+
+  final Future<void> Function() _close;
+
+  @override
+  void invoke(final DismissIntent intent) => unawaited(_close());
 }
 
 /// Closes the sheet [context] is in, whichever way it was opened.
