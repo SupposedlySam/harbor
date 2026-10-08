@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -114,6 +115,40 @@ class HarborFairway extends StatelessWidget {
 
   /// Whether this is the box form, which can take its cross axis from its child.
   final bool _hugsChild;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    // The fields a scroll view has read as `ScrollView` shows them, scrollDirection even at its default.
+    properties.add(EnumProperty<Axis>('scrollDirection', scrollDirection));
+    properties.add(FlagProperty('reverse', value: reverse, ifTrue: 'reversed', showName: true));
+    properties.add(
+      DiagnosticsProperty<ScrollController>('controller', controller, showName: false, defaultValue: null),
+    );
+    properties.add(FlagProperty('primary', value: primary, ifTrue: 'using primary controller', showName: true));
+    properties.add(DiagnosticsProperty<ScrollPhysics>('physics', physics, showName: false, defaultValue: null));
+    properties.add(FlagProperty('shrinkWrap', value: shrinkWrap, ifTrue: 'shrink-wrapping', showName: true));
+    properties.add(DiagnosticsProperty<ScrollCacheExtent>('scrollCacheExtent', scrollCacheExtent, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(FlagProperty('mooringLine', value: mooringLine, ifFalse: 'no mooring line'));
+    properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
+    properties.add(FlagProperty('wake', value: wake, ifFalse: 'no wake'));
+    properties.add(FlagProperty('startsInOpenWater', value: startsInOpenWater, ifTrue: 'starts in open water'));
+    properties.add(
+      EnumProperty<ScrollViewKeyboardDismissBehavior>(
+        'keyboardDismissBehavior',
+        keyboardDismissBehavior,
+        defaultValue: ScrollViewKeyboardDismissBehavior.manual,
+      ),
+    );
+    properties.add(EnumProperty<Clip>('clipBehavior', clipBehavior, defaultValue: Clip.hardEdge));
+    properties.add(IntProperty('semanticChildCount', semanticChildCount, defaultValue: null));
+  }
 
   /// The scroll padding a third-party list should use to sail this fairway's
   /// way: clearance at both ends along [axis], at least [minimum], plus
@@ -622,6 +657,19 @@ class HarborFairwaySliver extends StatelessWidget {
   final Widget sliver;
 
   @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
+    properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsDirectional>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+  }
+
+  @override
   Widget build(final BuildContext context) {
     final AxisDirection axis = Scrollable.maybeOf(context)?.axisDirection ?? AxisDirection.down;
     final TextDirection direction = Directionality.of(context);
@@ -665,6 +713,15 @@ class HarborSliverDock extends StatelessWidget {
   final Widget child;
   final Widget? backdrop;
   final HitTestBehavior hitTestBehavior;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
+    properties.add(
+      EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {
