@@ -435,10 +435,16 @@ rest and its ceiling). A draggable sheet opened some other way, by
 
 ```dart
 HarborBeacon(onObscured: (covered) => titleOpacity.value = covered, child: heroTitle);
-HarborBeacon(keepInSight: true, child: field);            // re-reveals as the keyboard rises
+HarborBeacon(keepInSight: true, child: field);            // re-reveals as the keyboard rises or focus moves in
 HarborLighthouseRegion(child: canvas)                     // + HarborBeacon(lift: true, clearance: 80)
 HarborLighthouse.reveal(context, clearance: 24);
 ```
+
+A focused field reveals its own caret, as `EditableText` does. A beacon kept in
+sight reveals all of itself: when the keyboard rises, and when focus moves into
+it from outside, by a tap or the keyboard's next action. So a field and the
+button under it come up together, `clearance` clear of the keyboard.
+`onlyWhileFocused: true` keeps the rest of a form's beacons still.
 
 ## TV
 
