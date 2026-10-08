@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show DisplayFeature, DisplayFeatureState;
 
-import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -18,6 +18,9 @@ class HarborAnchor extends ChangeNotifier {
 
   final String? debugLabel;
 
+  @override
+  String toString() => debugLabel == null ? describeIdentity(this) : '${describeIdentity(this)}($debugLabel)';
+
   RenderBox? _box;
   bool _disposed = false;
 
@@ -25,6 +28,14 @@ class HarborAnchor extends ChangeNotifier {
   RenderBox? get box => (_box != null && _box!.attached && _box!.hasSize) ? _box : null;
 
   void _attach(final RenderBox box) {
+    assert(() {
+      final RenderBox? previous = _box;
+      if (previous != null && !identical(previous, box)) {
+        (_debugPreviousBoxes ??= <RenderBox>{}).add(previous);
+        _debugScheduleSharedCheck();
+      }
+      return true;
+    }());
     _box = box;
     _moved();
   }
@@ -34,6 +45,49 @@ class HarborAnchor extends ChangeNotifier {
       _box = null;
       _moved();
     }
+    assert(() {
+      _debugPreviousBoxes?.remove(box);
+      return true;
+    }());
+  }
+
+  // The boxes a later attach replaced. As with a LayerLink's leaders, each one
+  // must detach by the end of the frame, or two points share this anchor.
+  Set<RenderBox>? _debugPreviousBoxes;
+  bool _debugSharedCheckScheduled = false;
+
+  void _debugScheduleSharedCheck() {
+    if (_debugSharedCheckScheduled) {
+      return;
+    }
+    _debugSharedCheckScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      _debugSharedCheckScheduled = false;
+      final Set<RenderBox> stillAttached = <RenderBox>{
+        for (final RenderBox previous in _debugPreviousBoxes ?? const <RenderBox>{})
+          if (previous.attached && !identical(previous, _box)) previous,
+      };
+      _debugPreviousBoxes = null;
+      if (stillAttached.isEmpty || _disposed) {
+        return;
+      }
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('More than one HarborAnchorPoint is using the same HarborAnchor${debugLabel == null ? '' : ' "$debugLabel"'}.'),
+          ErrorDescription(
+            'An anchor refers to one point. With several attached, a buoy anchored to it sits by whichever '
+            'laid out last, and when that one leaves the anchor has no point while the others are still there.',
+          ),
+          ErrorHint(
+            'Give each HarborAnchorPoint its own HarborAnchor, for example one per row of a list, '
+            'or wrap only the row whose buoy is showing.',
+          ),
+          if (_box case final RenderBox current) current.describeForError('The point the anchor is using'),
+          for (final RenderBox previous in stillAttached) previous.describeForError('Also attached'),
+        ]),
+        library: 'harbor',
+      ));
+    }, debugLabel: 'HarborAnchor.sharedCheck');
   }
 
   bool _pending = false;
@@ -71,6 +125,12 @@ class HarborAnchorPoint extends SingleChildRenderObjectWidget {
   @override
   void updateRenderObject(final BuildContext context, final RenderObject renderObject) {
     (renderObject as _RenderAnchorPoint).anchor = anchor;
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
   }
 }
 
@@ -186,7 +246,7 @@ Offset _anchoredOffset({
 /// Give buoys to [Harbor.buoys]. A modal buoy hides the buoys listed before it
 /// while it is up (a menu over a tooltip).
 @immutable
-class HarborBuoy {
+class HarborBuoy with Diagnosticable {
   /// A buoy at [alignment] within the clear water, [margin] in from its edges.
   const HarborBuoy({
     this.key,
@@ -252,6 +312,36 @@ class HarborBuoy {
   /// Keeps the buoy inside this rectangle (in the harbor's own coordinates)
   /// as well as inside the clear water.
   final Rect? within;
+
+  @override
+  String toStringShort() =>
+      anchor == null ? objectRuntimeType(this, 'HarborBuoy') : '${objectRuntimeType(this, 'HarborBuoy')}.anchored';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
+    if (anchor == null) {
+      properties.add(
+        DiagnosticsProperty<AlignmentGeometry>('alignment', alignment, defaultValue: Alignment.bottomCenter),
+      );
+      properties.add(
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(16.0)),
+      );
+      properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
+    } else {
+      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
+      properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
+      properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+      properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+      properties.add(
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)),
+      );
+    }
+    properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
+    properties.add(ObjectFlagProperty<VoidCallback>.has('onDismiss', onDismiss));
+    properties.add(ColorProperty('barrierColor', barrierColor, defaultValue: const Color(0x00000000)));
+  }
 }
 
 /// The layer a harbor floats its buoys in.
@@ -657,6 +747,18 @@ class HarborPortalBuoy extends StatefulWidget {
 
   @override
   State<HarborPortalBuoy> createState() => _HarborPortalBuoyState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<OverlayPortalController>('controller', controller));
+    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor, defaultValue: null));
+    properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
+    properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+    properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)));
+    properties.add(FlagProperty('flips', value: flips, ifFalse: 'no flip'));
+  }
 }
 
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {

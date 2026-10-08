@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -1074,6 +1075,99 @@ void main() {
       ),
     );
     expect(_rect(tester, 'title').top, 62);
+  });
+
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.none, HarborSheetBarrier.dismissible]) {
+    testWidgets('the page lays out against a breakwater sheet where it is drawn, in every frame of its slide (${barrier.name})', (final tester) async {
+      late BuildContext pageContext;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Builder(
+              builder: (final BuildContext context) {
+                pageContext = context;
+                return const HarborMoored(edges: <HarborEdge>{HarborEdge.bottom}, child: SizedBox.expand(key: ValueKey<String>('page')));
+              },
+            ),
+          ),
+        ),
+      );
+      // Clear of the home indicator with no sheet up.
+      final double clear = _rect(tester, 'page').bottom;
+      void expectPageMeetsSheet(final String when) {
+        final double sheetTop = tester.getRect(find.byType(HarborSheet)).top;
+        expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
+      }
+
+      unawaited(showHarborSheet<void>(
+        pageContext,
+        breakwater: true,
+        barrier: barrier,
+        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
+      ));
+      for (int frame = 0; frame < 8; frame++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        expectPageMeetsSheet('opening, frame $frame');
+      }
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'page').bottom, 874 - 300);
+      closeHarborSheet(tester.element(find.byType(HarborSheet)));
+      for (int frame = 0; frame < 5; frame++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        expectPageMeetsSheet('closing, frame $frame');
+      }
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'page').bottom, clear);
+    });
+  }
+
+  testWidgets('the page lays out against a draggable breakwater sheet where it is drawn, as it slides in and is dragged', (final tester) async {
+    late BuildContext pageContext;
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          body: Builder(
+            builder: (final BuildContext context) {
+              pageContext = context;
+              return const HarborMoored(edges: <HarborEdge>{HarborEdge.bottom}, child: SizedBox.expand(key: ValueKey<String>('page')));
+            },
+          ),
+        ),
+      ),
+    );
+    final double clear = _rect(tester, 'page').bottom;
+    void expectPageMeetsSheet(final String when) {
+      final double sheetTop = _rect(tester, 'handle').top;
+      expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
+    }
+
+    unawaited(showHarborSheet<void>(
+      pageContext,
+      breakwater: true,
+      barrier: HarborSheetBarrier.none,
+      builder: (final BuildContext context) => HarborSheet.draggable(
+        header: _bar('handle', 40),
+        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+          controller: controller,
+          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+        ),
+      ),
+    ));
+    // The first frame measures the sheet; it follows from the next one on.
+    await tester.pump();
+    for (int frame = 0; frame < 6; frame++) {
+      await tester.pump(const Duration(milliseconds: 40));
+      expectPageMeetsSheet('opening, frame $frame');
+    }
+    await tester.pumpAndSettle();
+    final TestGesture drag = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey<String>('handle'))));
+    for (int step = 0; step < 4; step++) {
+      await drag.moveBy(const Offset(0, -30));
+      await tester.pump();
+      expectPageMeetsSheet('dragged up, step $step');
+    }
+    await drag.up();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('a draggable breakwater sheet reports its resting height, not the screen', (final tester) async {
