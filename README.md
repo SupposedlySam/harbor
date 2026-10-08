@@ -38,7 +38,7 @@ the keyboard) above everything.
 **Something on the same layer takes space. Something on a higher layer becomes
 padding for everything beneath it.**
 
-- A **quay** is a dock built on the shore. It takes its ground, and the body
+- A **quay** (pronounced "key") is a dock built on the shore. It takes its ground, and the body
   starts where it ends, like a `Column`.
 - A **pier** is a dock built out over the water. The body runs under it and is
   told, through `MediaQuery.padding`, how far it reaches.
@@ -72,6 +72,9 @@ header your list starts below.
 | **Scale model** | A fixed reference screen scaled to fit (TV) | `HarborScaleModel` |
 | **Chart** | Who holds which edge, at which layer | `HarborChart`, `HarborChartOverlay` |
 | **Sea trials** | Widget-test devices and tide control (`harbor_test`) | `pumpSeaTrial` |
+
+**Pronouncing them:** a **quay** is pronounced "key", as harbours have always said it.
+A **buoy** is pronounced "BOO-ee" in American English and "boy" in British; both are right.
 
 ## Getting started
 

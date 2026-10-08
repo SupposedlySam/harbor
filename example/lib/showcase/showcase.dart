@@ -104,14 +104,23 @@ class _Caption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Row(
             children: <Widget>[
-              Text(
-                chapter.term,
-                style: TextStyle(
-                  fontFamily: install ? 'Menlo' : 'Georgia',
-                  fontSize: install ? 34 : 46,
-                  fontWeight: FontWeight.w700,
-                  color: Palette.brass,
-                ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    chapter.term,
+                    style: TextStyle(
+                      fontFamily: install ? 'Menlo' : 'Georgia',
+                      fontSize: install ? 34 : 46,
+                      fontWeight: FontWeight.w700,
+                      color: Palette.brass,
+                    ),
+                  ),
+                  // How the word is pronounced, for the words whose spelling does not tell you.
+                  if (chapter.pronounced case final String pronounced)
+                    Text(pronounced, style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontStyle: FontStyle.italic, color: Palette.foam.withValues(alpha: 0.8))),
+                ],
               ),
               const SizedBox(width: 28),
               Container(width: 2, height: 52, color: Palette.brass.withValues(alpha: 0.5)),
