@@ -64,6 +64,11 @@ class HarborTitleSafe with Diagnosticable {
 
 /// Where a harbor's coast comes from. Set it once, on [HarborSea] or on the
 /// first [Harbor]; everything beneath inherits it.
+///
+/// See also:
+///
+///  * [MediaQueryData.padding] and [MediaQueryData.viewPadding], the insets the ambient coast is read
+///    from.
 @immutable
 class HarborCoast with Diagnosticable {
   const HarborCoast._({this.titleSafe, this.fixedInsets, this.calmTide = false});

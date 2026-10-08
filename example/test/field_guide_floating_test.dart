@@ -363,11 +363,11 @@ void main() {
     expect(bubble().center.dx, _near(boat.center.dx));
     expect(_code(tester), contains('side: HarborBuoySide.below,'));
 
-    await _tap(tester, 'side: before');
+    await _tap(tester, 'side: start');
     expect(bubble().right, _near(boat.left - 8 * s));
     expect(bubble().center.dy, _near(boat.center.dy));
 
-    await _tap(tester, 'side: after');
+    await _tap(tester, 'side: end');
     expect(bubble().left, _near(boat.right + 8 * s));
     expect(bubble().center.dy, _near(boat.center.dy));
 
@@ -601,10 +601,10 @@ void main() {
     }
   });
 
-  testWidgets('HarborSignals.raise: a signal is lowered after three seconds', (final WidgetTester tester) async {
+  testWidgets('HarborSignals.raise: a signal is lowered after four seconds', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('signals'));
     await _tapStage(tester, 'raise middle');
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 3));
     expect(_key('signal'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(_step);

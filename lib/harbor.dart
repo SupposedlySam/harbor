@@ -10,6 +10,7 @@ export 'src/buoy.dart'
         HarborAnchor,
         HarborAnchorPoint,
         HarborBuoy,
+        HarborBuoyCrossAlignment,
         HarborBuoySide,
         HarborPortalBuoy,
         HarborSignalSlot,
@@ -25,6 +26,7 @@ export 'src/controller.dart'
         HarborDockRecord,
         HarborFleet,
         HarborLayoutRecord,
+        HarborSignalClosedReason,
         HarborSignalEntry,
         HarborSignalTransitionBuilder,
         HarborYield;
