@@ -205,7 +205,20 @@ class HarborSheet extends StatelessWidget {
       return sheet;
     }
     final _SheetHostScope? host = _SheetHostScope.maybeOf(context);
-    assert(host != null, 'HarborSheet(dragToClose: true) closes only a sheet that showHarborSheet opened.');
+    assert(() {
+      if (host != null) {
+        return true;
+      }
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('HarborSheet(dragToClose: true) was built outside a sheet that showHarborSheet opened.'),
+        ErrorDescription('Dragging to close needs the sheet showHarborSheet opened to close, and none is above this HarborSheet.'),
+        ErrorHint(
+          'Open the sheet with showHarborSheet, or pass dragToClose: false where the HarborSheet is shown some other way, '
+          'such as inside a page or a dialog.',
+        ),
+        context.describeElement('The HarborSheet was'),
+      ]);
+    }());
     return GestureDetector(
       onVerticalDragStart: (final DragStartDetails _) => host?.host.dragStart(),
       onVerticalDragUpdate: (final DragUpdateDetails details) => host?.host.dragBy(details.primaryDelta ?? 0.0),

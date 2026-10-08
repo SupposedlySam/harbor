@@ -285,6 +285,9 @@ HarborController.of(context).makeWay(HarborEdge.top, mode: HarborYield.dark) // 
 
 Claims are counted and go to the nearest harbor that has a dock on that edge.
 A pontoon joins the harbor's docks on the next frame.
+`HarborController.of` throws a `FlutterError` when there is no harbor above the
+context, in release builds too, as `Scaffold.of` does; `HarborController.maybeOf`
+returns null instead.
 
 ## Buoys and signals
 
@@ -315,6 +318,9 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left. While its
 anchor is not in the tree, an anchored buoy is not shown and takes no taps.
+A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each row of a list
+its own; in debug builds two points left on one anchor are reported after the
+frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
