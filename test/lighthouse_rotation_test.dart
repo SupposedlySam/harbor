@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 
 /// Puts the view in [device]'s shape, with its keyboard up or down, as a turn would.
 void _turnTo(final WidgetTester tester, final HarborTrialDevice device, {required final bool tideIn}) {

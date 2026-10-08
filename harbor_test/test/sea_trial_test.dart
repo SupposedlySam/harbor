@@ -1,0 +1,51 @@
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:harbor/harbor.dart';
+import 'package:harbor_test/harbor_test.dart';
+
+const double _composerHeight = 44;
+
+Widget _page() => const HarborSea(
+  child: Harbor(
+    bottom: <HarborDock>[
+      HarborDock.quay(
+        tide: HarborTideStance.float,
+        child: SizedBox(key: ValueKey<String>('composer'), height: _composerHeight),
+      ),
+    ],
+    body: SizedBox.expand(key: ValueKey<String>('body')),
+  ),
+);
+
+void main() {
+  testWidgets('puts the device on the view and moves its tide', (final tester) async {
+    const HarborTrialDevice device = HarborTrialDevice.iPhone17;
+    final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+
+    expect(tester.view.physicalSize, device.size);
+    expect(trial.waterline, device.size.height);
+    expect(
+      tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom,
+      device.size.height - device.coast.bottom,
+    );
+
+    await trial.raiseTide();
+
+    expect(trial.tideIn, isTrue);
+    expect(trial.waterline, device.size.height - device.tideHeight);
+    expect(tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom, trial.waterline);
+  });
+
+  testWidgets('reports the clear water and the docks around a widget', (final tester) async {
+    const HarborTrialDevice device = HarborTrialDevice.iPhone17;
+    final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+    final Finder body = find.byKey(const ValueKey<String>('body'));
+
+    final Rect clearWater = trial.clearWaterAround(body);
+
+    expect(clearWater.top, device.coast.top);
+    expect(clearWater.bottom, device.size.height - device.coast.bottom - _composerHeight);
+    expect(trial.docksAround(body).single.edge, HarborEdge.bottom);
+    expect(find.byKey(const ValueKey<String>('composer')), isNot(isInClearWater(clearWater)));
+  });
+}

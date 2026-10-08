@@ -26,6 +26,8 @@ Accessibility and Flutter's conventions for custom widgets.
 * Docks, signals and sheets honour `MediaQuery.disableAnimations`: with reduced motion they appear and leave without moving.
 * On iOS, a tap on the status bar scrolls a harbor page's primary scroll view to the top, as it does under a `Scaffold`.
 * **Breaking:** `HarborBuoy.alignment` is an `AlignmentGeometry`, and `HarborBuoy.margin` and `HarborPortalBuoy.margin` are `EdgeInsetsGeometry`, so `AlignmentDirectional.bottomEnd` places a buoy by reading direction. Code passing `Alignment` and `EdgeInsets` still compiles; code reading `.alignment` or `.margin` as the physical types needs a `resolve(textDirection)`.
+* **Breaking:** sea trials moved to their own package, `harbor_test`, so harbor no longer depends on `flutter_test` and an app that depends on harbor no longer gets the test framework in its own dependencies. Add `harbor_test` as a `dev_dependency` and import `package:harbor_test/harbor_test.dart` in place of `package:harbor/testing.dart`. `pumpSeaTrial`, `HarborTrialDevice` and `isInClearWater` are unchanged.
+* `package:harbor/testing.dart` is now empty and deprecated: the analyzer reports where it is imported, with a pointer to `harbor_test`. It is removed in the next release.
 
 ## 0.1.0
 

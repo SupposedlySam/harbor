@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 
 const double _headerHeight = 50;
 const double _navHeight = 56;

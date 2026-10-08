@@ -41,3 +41,8 @@ CLAUDE.md
 .fvmrc
 tool/
 doc/
+
+# harbor_test/ is a package of its own, published from its own directory, and it is NOT listed
+# here: pub applies these rules to a nested package too, so excluding it would leave its own
+# archive empty. It rides in harbor's archive as the example does, and harbor_test/.pubignore
+# keeps its build output, lockfile and override out of both.

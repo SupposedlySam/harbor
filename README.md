@@ -11,13 +11,15 @@ them a place and a rule, so your content stops doing inset arithmetic.
 > them, or is open water. The tide (the keyboard) rises over whatever doesn't
 > float.**
 
-Depends on the Flutter SDK only. `package:harbor/testing.dart` adds sea trials
-for widget tests.
+Depends on the Flutter SDK only. Sea trials for widget tests come in a package
+of their own, `harbor_test`, so the test framework stays out of your app's
+dependencies.
 
 ## Installing
 
 ```sh
 flutter pub add harbor
+flutter pub add dev:harbor_test   # sea trials, for widget tests
 ```
 
 MIT licensed.
@@ -64,7 +66,7 @@ header your list starts below.
 | **Lighthouse** | Keeps things in sight: reveal, lift, coverage | `HarborLighthouse`, `HarborBeacon` |
 | **Scale model** | A fixed reference screen scaled to fit (TV) | `HarborScaleModel` |
 | **Chart** | Who holds which edge, at which layer | `HarborChart`, `HarborChartOverlay` |
-| **Sea trials** | Widget-test devices and tide control | `pumpSeaTrial` |
+| **Sea trials** | Widget-test devices and tide control (`harbor_test`) | `pumpSeaTrial` |
 
 ## Getting started
 
@@ -414,8 +416,12 @@ reports a fold or hinge, and no layout splits around one) and
 
 ## Sea trials
 
+Sea trials are in `harbor_test`, a dev dependency beside harbor
+(`flutter pub add dev:harbor_test`). It brings `flutter_test`, which harbor
+itself does not depend on.
+
 ```dart
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 
 testWidgets('the composer rides the keyboard', (tester) async {
   final trial = await tester.pumpSeaTrial(app, device: HarborTrialDevice.androidThreeButton);
@@ -428,6 +434,9 @@ Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen`, `dualScreenCover`, `television`, plus the
 `phones` and `all` lists. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
+
+`package:harbor/testing.dart`, where sea trials used to be, is now empty and
+deprecated: importing it points to `harbor_test`. It goes in the next release.
 
 ## Example
 

@@ -92,6 +92,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  harbor_test:
+    dependency: "direct dev"
+    description:
+      path: "../harbor_test"
+      relative: true
+    source: path
+    version: "0.1.0"
   integration_test:
     dependency: "direct dev"
     description: flutter

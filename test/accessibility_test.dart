@@ -11,7 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 
 Widget _app(final Widget home, {final bool disableAnimations = false, final TextDirection direction = TextDirection.ltr}) => MaterialApp(
   builder: (final BuildContext context, final Widget? child) => Directionality(

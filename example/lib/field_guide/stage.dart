@@ -6,7 +6,7 @@ import 'package:harbor/harbor.dart';
 import '../art/palette.dart';
 
 /// A phone the stage pretends to be: its screen, its coast and how high its
-/// keyboard comes in. Mirrors the sea-trial devices in `package:harbor/testing.dart`.
+/// keyboard comes in. Mirrors the sea-trial devices in `package:harbor_test`.
 @immutable
 class StageDevice {
   const StageDevice({required this.name, required this.size, required this.coast, required this.tideHeight, this.island = false, this.tv = false});
