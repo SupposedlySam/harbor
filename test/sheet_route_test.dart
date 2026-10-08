@@ -26,14 +26,15 @@ Iterable<SemanticsNode> _ancestors(final SemanticsNode node) sync* {
 /// Where [node] sits on the screen, in logical pixels.
 Rect _globalRect(final SemanticsNode node) {
   Rect rect = node.rect;
-  // The root's transform is the device pixel ratio.
-  for (SemanticsNode? at = node; at != null && at.parent != null; at = at.parent) {
-    final Matrix4? transform = at.transform;
-    if (transform != null) {
+  // Every transform up to and including the root, which leaves the rect in physical pixels however
+  // deep the view's scale sits, then back to logical ones by the view's own ratio.
+  for (SemanticsNode? at = node; at != null; at = at.parent) {
+    if (at.transform case final Matrix4 transform) {
       rect = MatrixUtils.transformRect(transform, rect);
     }
   }
-  return rect;
+  final double ratio = WidgetsBinding.instance.platformDispatcher.implicitView!.devicePixelRatio;
+  return Rect.fromLTRB(rect.left / ratio, rect.top / ratio, rect.right / ratio, rect.bottom / ratio);
 }
 
 class _Observer extends NavigatorObserver {
