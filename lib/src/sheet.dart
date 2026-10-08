@@ -362,8 +362,17 @@ enum HarborSheetBarrier {
 /// reach navigator observers and route-name analytics, and the barrier is
 /// announced with [barrierLabel] ('Close sheet' when none is given; a Material app
 /// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
-/// localized one). A sheet with [HarborSheetBarrier.none] is not a route, so it
-/// has neither.
+/// localized one). [barrierOnTapHint] says what tapping the barrier does, read
+/// as 'Double tap to …' ('Double tap to activate' when none is given), as
+/// `ModalBottomSheetRoute.barrierOnTapHint` does.
+///
+/// Like a modal bottom sheet, a sheet that is a route is a semantics scope of its
+/// own: it scopes and names its route, and screen readers announce
+/// [semanticLabel] as it opens and closes. See
+/// [SemanticsConfiguration.namesRoute].
+///
+/// A sheet with [HarborSheetBarrier.none] is not a route, so it has none of
+/// these.
 ///
 /// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
 /// stays until it is answered; back still closes it, as it closes a modal
@@ -391,6 +400,8 @@ Future<T?> showHarborSheet<T>(
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
+  final String? barrierOnTapHint,
+  final String? semanticLabel,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -405,6 +416,8 @@ Future<T?> showHarborSheet<T>(
     keepsTopCoast: keepsTopCoast,
     anchorPoint: anchorPoint,
     presenter: breakwater ? presenter : null,
+    scopesRoute: barrier != HarborSheetBarrier.none,
+    semanticLabel: semanticLabel,
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
@@ -422,6 +435,7 @@ Future<T?> showHarborSheet<T>(
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
       barrierDismissible: isDismissible,
       barrierLabel: barrierLabel ?? 'Close sheet',
+      barrierOnTapHint: barrierOnTapHint,
       settings: routeSettings,
       requestFocus: requestFocus,
     ),
@@ -435,6 +449,8 @@ class _SheetHost {
     required this.keepsTopCoast,
     required this.anchorPoint,
     required this.presenter,
+    required this.scopesRoute,
+    required this.semanticLabel,
   });
 
   final WidgetBuilder builder;
@@ -442,6 +458,10 @@ class _SheetHost {
   final bool keepsTopCoast;
   final Offset? anchorPoint;
   final HarborController? presenter;
+
+  /// Whether the sheet is a route of its own; one with no barrier is not.
+  final bool scopesRoute;
+  final String? semanticLabel;
 
   final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
   HarborBreakwater? _breakwater;
@@ -564,6 +584,11 @@ class _SheetHost {
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity, maxHeight: math.max(0.0, mediaQuery.size.height - top)),
       child: sheet,
     );
+    if (scopesRoute) {
+      // As a modal bottom sheet's: the route is the sheet, so the scope is the sheet's box, not the
+      // screen the barrier covers.
+      sheet = Semantics(scopesRoute: true, namesRoute: true, explicitChildNodes: true, label: semanticLabel, child: sheet);
+    }
     final double tide = mediaQuery.viewInsets.bottom;
     return _SheetHostScope(
       host: this,
@@ -667,6 +692,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
     required this.barrierColor,
     required this.barrierDismissible,
     required this.barrierLabel,
+    required this.barrierOnTapHint,
     super.settings,
     super.requestFocus,
   });
@@ -681,6 +707,8 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 
   @override
   final String barrierLabel;
+
+  final String? barrierOnTapHint;
 
   @override
   Duration get transitionDuration => const Duration(milliseconds: 280);
@@ -714,6 +742,29 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
       host.build(context, animation);
+
+  // ModalRoute's barrier, with the tap hint ModalBottomSheetRoute gives its own: ModalRoute has no
+  // field for one.
+  @override
+  Widget buildModalBarrier() {
+    if (barrierColor.a != 0 && !offstage) {
+      return AnimatedModalBarrier(
+        color: animation!.drive(
+          ColorTween(begin: barrierColor.withValues(alpha: 0.0), end: barrierColor).chain(CurveTween(curve: barrierCurve)),
+        ),
+        dismissible: barrierDismissible,
+        semanticsLabel: barrierLabel,
+        barrierSemanticsDismissible: semanticsDismissible,
+        semanticsOnTapHint: barrierOnTapHint,
+      );
+    }
+    return ModalBarrier(
+      dismissible: barrierDismissible,
+      semanticsLabel: barrierLabel,
+      barrierSemanticsDismissible: semanticsDismissible,
+      semanticsOnTapHint: barrierOnTapHint,
+    );
+  }
 }
 
 class _NonModalSheet<T> {
