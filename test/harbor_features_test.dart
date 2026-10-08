@@ -250,6 +250,73 @@ void main() {
     expect(_rect(tester, 'before').left, _rect(tester, 'button').right + 8);
   });
 
+  testWidgets('an anchored buoy whose anchor is not in the tree takes no taps', (final tester) async {
+    final HarborAnchor anchor = HarborAnchor();
+    addTearDown(anchor.dispose);
+    int pageTaps = 0;
+    int bubbleTaps = 0;
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          buoys: <HarborBuoy>[
+            HarborBuoy.anchored(
+              anchor: anchor,
+              child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => bubbleTaps++, child: _box('bubble', 100, 30)),
+            ),
+          ],
+          body: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => pageTaps++, child: const SizedBox.expand()),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tapAt(const Offset(10, 10));
+    expect(pageTaps, 1);
+    expect(bubbleTaps, 0);
+  });
+
+  testWidgets('an anchored buoy whose anchor leaves takes no taps where it last sat', (final tester) async {
+    final HarborAnchor anchor = HarborAnchor();
+    addTearDown(anchor.dispose);
+    final ValueNotifier<bool> anchored = ValueNotifier<bool>(true);
+    addTearDown(anchored.dispose);
+    int pageTaps = 0;
+    int bubbleTaps = 0;
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          buoys: <HarborBuoy>[
+            HarborBuoy.anchored(
+              anchor: anchor,
+              child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => bubbleTaps++, child: _box('bubble', 100, 30)),
+            ),
+          ],
+          body: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => pageTaps++,
+            child: Center(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: anchored,
+                builder: (final BuildContext context, final bool value, final Widget? _) =>
+                    value ? HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40)) : const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final Offset bubbleCenter = _rect(tester, 'bubble').center;
+    await tester.tapAt(bubbleCenter);
+    expect(bubbleTaps, 1);
+
+    anchored.value = false;
+    await tester.pump();
+    await tester.pump();
+    await tester.tapAt(bubbleCenter);
+    expect(pageTaps, 1);
+    expect(bubbleTaps, 1);
+  });
+
   group('A portal buoy', () {
     Widget page({required final OverlayPortalController menu, required final Alignment rowAt, final TextDirection? direction}) {
       final Widget harbor = Harbor(

@@ -779,14 +779,18 @@ class _NonModalSheet<T> {
         if (route == null) {
           return sheet;
         }
-        // Hidden, and out of reach, while another page is on top of the one that opened it.
+        // Hidden, and out of reach, while another page is on top of the one that opened it. The
+        // navigator keeps this entry above every page, so it cannot sit under a leaving page as a
+        // persistent bottom sheet does; it waits for that page to finish leaving instead, where
+        // isCurrent alone shows it as soon as the pop starts.
         return ListenableBuilder(
           listenable: Listenable.merge(<Listenable?>[route.animation, route.secondaryAnimation]),
           builder: (final BuildContext context, final Widget? child) {
             if (!route.isActive) {
               WidgetsBinding.instance.addPostFrameCallback((final Duration _) => closeNow());
             }
-            return Visibility(visible: route.isCurrent, maintainState: true, child: child!);
+            final bool uncovered = route.isCurrent && (route.secondaryAnimation?.isDismissed ?? true);
+            return Visibility(visible: uncovered, maintainState: true, child: child!);
           },
           child: sheet,
         );
