@@ -215,8 +215,12 @@ class HarborBuoy {
 
   final Key? key;
   final Widget child;
-  final Alignment alignment;
-  final EdgeInsets margin;
+  /// Where the buoy sits in the clear water. An [AlignmentDirectional] follows the reading
+  /// direction, as a Material floating action button does.
+  final AlignmentGeometry alignment;
+
+  /// How far in from the clear water's edges; an [EdgeInsetsDirectional] follows the reading direction.
+  final EdgeInsetsGeometry margin;
   final bool modal;
   final HarborAnchor? anchor;
   final HarborBuoySide side;
@@ -300,14 +304,15 @@ class _RenderBuoyLayer extends RenderBox
   _RenderBuoyLayer(this._buoys, this._textDirection);
 
   List<HarborBuoy> _buoys;
+
   TextDirection _textDirection;
   set textDirection(final TextDirection value) {
-    if (value != _textDirection) {
-      _textDirection = value;
-      markNeedsPaint();
+    if (value == _textDirection) {
+      return;
     }
+    _textDirection = value;
+    markNeedsLayout();
   }
-
   final Set<HarborAnchor> _listening = <HarborAnchor>{};
 
   set buoys(final List<HarborBuoy> value) {
@@ -372,10 +377,10 @@ class _RenderBuoyLayer extends RenderBox
       final HarborBuoy buoy = _buoys[i];
       final Rect? within = buoy.within;
       final Rect bounded = within == null || !within.overlaps(_clear) ? _clear : _clear.intersect(within);
-      final Rect water = buoy.margin.deflateRect(bounded);
+      final Rect water = buoy.margin.resolve(_textDirection).deflateRect(bounded);
       child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
       // Anchored buoys are placed when they paint, once their anchors have a size.
-      data.offset = buoy.anchor == null ? buoy.alignment.inscribe(child.size, water).topLeft : data.offset;
+      data.offset = buoy.anchor == null ? buoy.alignment.resolve(_textDirection).inscribe(child.size, water).topLeft : data.offset;
       child = data.nextSibling;
       i++;
     }
@@ -396,7 +401,7 @@ class _RenderBuoyLayer extends RenderBox
           continue;
         }
         data.offset = _anchoredOffset(
-          water: buoy.margin.deflateRect(_clear),
+          water: buoy.margin.resolve(_textDirection).deflateRect(_clear),
           at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
           size: child.size,
           side: buoy.side,
@@ -456,7 +461,7 @@ class HarborPortalBuoy extends StatefulWidget {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
-  final EdgeInsets margin;
+  final EdgeInsetsGeometry margin;
 
   /// Whether the buoy goes to the opposite side of its anchor when [side] has
   /// no room and that side has.
@@ -513,7 +518,7 @@ class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
   final HarborBuoySide side;
   final double gap;
   final double overlap;
-  final EdgeInsets margin;
+  final EdgeInsetsGeometry margin;
   final bool flips;
   final TextDirection textDirection;
 
@@ -575,7 +580,7 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     final Rect clear = box == null || layout == null || !box.attached || !box.hasSize
         ? Offset.zero & size
         : MatrixUtils.transformRect(box.getTransformTo(this), layout.clearWater);
-    return _config.margin.deflateRect(clear);
+    return _config.margin.resolve(_config.textDirection).deflateRect(clear);
   }
 
   @override
@@ -589,7 +594,7 @@ class _RenderPortalBuoy extends RenderShiftedBox {
       // Only the water's size is known while laying out: the harbor's last
       // one. A change to it lays the buoy out again.
       final Rect? clear = _config.harbor?.lastLayout?.clearWater;
-      final Rect water = _config.margin.deflateRect(clear ?? Offset.zero & size);
+      final Rect water = _config.margin.resolve(_config.textDirection).deflateRect(clear ?? Offset.zero & size);
       child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
     }
   }
@@ -662,8 +667,13 @@ abstract final class HarborSignals {
     final HarborSignalTarget target = HarborSignalTarget.topmost,
   }) {
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
+    // A signal is built in its harbor's buoy layer, not where it was raised, so it takes the
+    // themes and text style of the place that raised it, as a sheet does. Without this a page
+    // that wraps itself in its own Theme raised a toast in the app's theme.
+    final CapturedThemes themes = InheritedTheme.capture(from: context, to: null);
     final HarborSignalEntry entry = HarborSignalEntry(
-      builder: builder,
+      // A Builder, so the builder's own context sees the captured themes, not only what it returns.
+      builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
       alignment: slot.alignment,
       duration: duration,
       // Sent to the sea, a signal clears only the coast.
@@ -782,8 +792,16 @@ class _Signal extends StatefulWidget {
 }
 
 class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220))
-    ..forward();
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220);
+    if (_controller.isDismissed && widget.entry.showing.value) {
+      _controller.forward();
+    }
+  }
 
   @override
   void initState() {
@@ -805,8 +823,13 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
   }
 
   @override
-  Widget build(final BuildContext context) => FadeTransition(
-    opacity: _controller,
-    child: ScaleTransition(scale: Tween<double>(begin: 0.92, end: 1.0).animate(_controller), child: widget.entry.builder(context)),
+  // A live region, so a screen reader announces the signal when it appears, as it does a SnackBar.
+  Widget build(final BuildContext context) => Semantics(
+    container: true,
+    liveRegion: true,
+    child: FadeTransition(
+      opacity: _controller,
+      child: ScaleTransition(scale: Tween<double>(begin: 0.92, end: 1.0).animate(_controller), child: widget.entry.builder(context)),
+    ),
   );
 }

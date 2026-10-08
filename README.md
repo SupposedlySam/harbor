@@ -244,6 +244,15 @@ counted twice, but every dock then rides up above the keyboard: a tab bar on pil
 instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave the Scaffold's
 `appBar`, `bottomNavigationBar` and `floatingActionButton` empty and use docks and buoys instead.
 
+## Accessibility
+
+What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
+by keyboard focus and by screen readers, not only by taps. Signals are live
+regions, so screen readers announce them. Sheets and signals keep the themes of
+the page they came from. With reduced motion (`MediaQuery.disableAnimations`)
+docks, signals and sheets appear and leave without moving. On iOS a tap on the
+status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
+
 ## Talking to the harbor
 
 ```dart
@@ -274,6 +283,8 @@ HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left.
+`alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
+puts a button where a right-to-left reader expects it.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the

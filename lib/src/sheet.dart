@@ -234,6 +234,10 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
         target = snaps.reduce((final double a, final double b) => (size - a).abs() <= (size - b).abs() ? a : b);
       }
     }
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.jumpTo(target);
+      return;
+    }
     unawaited(_controller.animateTo(target, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic));
   }
 
@@ -372,7 +376,9 @@ Future<T?> showHarborSheet<T>(
   // text style of the page that opened it, as a modal bottom sheet does.
   final CapturedThemes themes = InheritedTheme.capture(from: context, to: navigator.context);
   final _SheetHost host = _SheetHost(
-    builder: (final BuildContext context) => themes.wrap(builder(context)),
+    // A Builder, so the builder's own context sees the captured themes, not only what it returns:
+    // `Theme.of(context)` in a sheet's builder read the navigator's theme, not the page's.
+    builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
     maxWidth: maxWidth ?? (maxWidthFromTheme ? _themedMaxWidth(context) : null),
     keepsTopCoast: keepsTopCoast,
     presenter: breakwater ? presenter : null,
@@ -520,8 +526,10 @@ class _SheetHost {
     _update();
   }
 
-  Widget build(final BuildContext context, final Animation<double> animation) {
+  Widget build(final BuildContext context, final Animation<double> transition) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
+    // With reduced motion the sheet is simply there: its route still takes its time, but nothing slides.
+    final Animation<double> animation = mediaQuery.disableAnimations ? kAlwaysCompleteAnimation : transition;
     // Built inside the sheet, so its context can close the sheet.
     Widget sheet = Builder(builder: builder);
     // A sheet stops short of the status bar unless it keeps the top coast.

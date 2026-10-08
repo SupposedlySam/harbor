@@ -66,13 +66,25 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _setDurations();
+  }
+
+  @override
   void didUpdateWidget(final HarborDockSlot oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _presence.duration = widget.dock.duration;
-    _light.duration = widget.dock.duration;
+    _setDurations();
     if (widget.state != oldWidget.state) {
       _apply(widget.state);
     }
+  }
+
+  /// The dock's own duration, or none when the platform asks for reduced motion.
+  void _setDurations() {
+    final Duration duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : widget.dock.duration;
+    _presence.duration = duration;
+    _light.duration = duration;
   }
 
   void _apply(final HarborDockState state) {
@@ -125,9 +137,18 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
           extentFactor: _extentFactor(presence),
           restingExtent: dock.restingExtent,
           hairline: wake.kind == HarborWakeKind.hairline ? wake : null,
-          child: IgnorePointer(
-            ignoring: hidden,
-            child: Opacity(opacity: light, child: child),
+          // A dock that is dark or leaving is out of reach in every way, not only for taps:
+          // keyboard focus and screen readers skip it too. Opacity alone hid a dark dock from
+          // screen readers but not from Tab, and a withdrawn one was still read out and focused.
+          child: ExcludeFocus(
+            excluding: hidden,
+            child: ExcludeSemantics(
+              excluding: hidden,
+              child: IgnorePointer(
+                ignoring: hidden,
+                child: Opacity(opacity: light, child: child),
+              ),
+            ),
           ),
         );
       },

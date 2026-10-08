@@ -17,6 +17,15 @@
 * Fixed: a draggable sheet in a route `showHarborSheet` did not open (`showModalBottomSheet`, `showGeneralDialog`) did nothing when dragged below its floor; it now closes that route.
 * `HarborPortalBuoy`: an anchored buoy opened from anywhere in the tree (a menu from a list row, a popover from a button), built on `OverlayPortal`. It is placed in the nearest harbor's clear water by its child or a `HarborAnchor`, flips to the other side of its anchor when its side has no room, and is held inside the clear water otherwise.
 * `HarborBuoySide.before` and `.after` are in reading order: under right-to-left, an anchored buoy `before` its anchor sits on its right. They were placed as if left-to-right.
+Accessibility and Flutter's conventions for custom widgets.
+
+* A dock that is dark or withdrawn is skipped by keyboard focus and by screen readers. Before, Tab still reached a dark dock's controls, and a withdrawn dock was still read out and focusable.
+* A signal is a live region, so screen readers announce it as it appears.
+* A signal keeps the themes of the place that raised it, as a sheet does.
+* A sheet's builder sees the opener's themes in its own `context`. Before, they reached only the widgets below what the builder returned.
+* Docks, signals and sheets honour `MediaQuery.disableAnimations`: with reduced motion they appear and leave without moving.
+* On iOS, a tap on the status bar scrolls a harbor page's primary scroll view to the top, as it does under a `Scaffold`.
+* **Breaking:** `HarborBuoy.alignment` is an `AlignmentGeometry`, and `HarborBuoy.margin` and `HarborPortalBuoy.margin` are `EdgeInsetsGeometry`, so `AlignmentDirectional.bottomEnd` places a buoy by reading direction. Code passing `Alignment` and `EdgeInsets` still compiles; code reading `.alignment` or `.margin` as the physical types needs a `resolve(textDirection)`.
 
 ## 0.1.0
 

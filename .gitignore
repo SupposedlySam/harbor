@@ -37,3 +37,5 @@ migrate_working_dir/
 lamp.lock
 .llm_chat/
 .harbor_owner/
+# Claude Code agent worktrees
+.claude/worktrees/
