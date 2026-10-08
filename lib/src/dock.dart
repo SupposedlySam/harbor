@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'tide.dart';
@@ -82,7 +83,7 @@ enum HarborExtentPolicy {
 ///  * `Scaffold.appBar` and `Scaffold.bottomNavigationBar`, which are quays; under
 ///    `Scaffold(extendBodyBehindAppBar: true)` an app bar is a pier.
 @immutable
-class HarborDock {
+class HarborDock with Diagnosticable {
   /// A dock built out over the water: content sails under it.
   const HarborDock.pier({
     this.key,
@@ -102,7 +103,7 @@ class HarborDock {
     this.debugLabel,
   }) : kind = HarborDockKind.pier;
 
-  /// A dock built on the shore: the body starts where it ends.
+  /// A dock built on the shore: the body starts where it ends. A quay is pronounced "key".
   const HarborDock.quay({
     this.key,
     required this.child,
@@ -215,4 +216,32 @@ class HarborDock {
           minimum: minimum,
           debugLabel: debugLabel,
         );
+
+  @override
+  String toStringShort() => '${objectRuntimeType(this, 'HarborDock')}.${kind.name}';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
+    properties.add(DiagnosticsProperty<HarborWake>('wake', wake, defaultValue: HarborWake.none));
+    properties.add(EnumProperty<HarborTideStance>('tide', tide, defaultValue: HarborTideStance.pilings));
+    properties.add(EnumProperty<HarborCoastStance>('coast', coast, defaultValue: null));
+    properties.add(EnumProperty<HarborDockState>('state', state, defaultValue: HarborDockState.open));
+    properties.add(
+      EnumProperty<HarborExtentPolicy>('extentPolicy', extentPolicy, defaultValue: HarborExtentPolicy.hold),
+    );
+    properties.add(
+      DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 250)),
+    );
+    properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeInOutCubic));
+    properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
+    properties.add(
+      EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
+    );
+    properties.add(FlagProperty('withdrawsAtHighTide', value: withdrawsAtHighTide, ifTrue: 'withdraws at high tide'));
+    properties.add(DoubleProperty('restingExtent', restingExtent, defaultValue: null));
+    properties.add(DoubleProperty('minimum', minimum, defaultValue: 0.0));
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
+  }
 }

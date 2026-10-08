@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
@@ -32,6 +33,14 @@ class HarborMakeWay extends StatefulWidget {
 
   @override
   State<HarborMakeWay> createState() => _HarborMakeWayState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<HarborEdge>('edge', edge));
+    properties.add(EnumProperty<HarborYield>('mode', mode, defaultValue: HarborYield.withdraw));
+    properties.add(FlagProperty('active', value: active, ifFalse: 'inactive'));
+  }
 }
 
 class _HarborMakeWayState extends State<HarborMakeWay> {
@@ -101,6 +110,14 @@ class HarborPontoon extends StatefulWidget {
 
   @override
   State<HarborPontoon> createState() => _HarborPontoonState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<HarborEdge>('edge', edge));
+    properties.add(DiagnosticsProperty<HarborDock>('dock', dock));
+    properties.add(FlagProperty('active', value: active, ifFalse: 'inactive'));
+  }
 }
 
 class _HarborPontoonState extends State<HarborPontoon> {

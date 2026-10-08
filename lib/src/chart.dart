@@ -166,6 +166,13 @@ class HarborChartOverlay extends StatefulWidget {
 
   @override
   State<HarborChartOverlay> createState() => _HarborChartOverlayState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(FlagProperty('enabled', value: enabled, ifFalse: 'disabled'));
+    properties.add(DiagnosticsProperty<TextStyle>('labelStyle', labelStyle, defaultValue: null));
+  }
 }
 
 class _HarborChartOverlayState extends State<HarborChartOverlay> with SingleTickerProviderStateMixin {

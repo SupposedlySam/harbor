@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
@@ -21,7 +22,7 @@ enum HarborCoastFeature {
 /// A TV's title-safe area: the band at each edge a television may crop or
 /// overscan, which content must stay out of.
 @immutable
-class HarborTitleSafe {
+class HarborTitleSafe with Diagnosticable {
   /// The same fraction of the screen's width on the sides and of its height
   /// at the top and bottom, as broadcast title-safe guides are given.
   const HarborTitleSafe.fraction(final double fraction) : _fraction = fraction, _fixed = null;
@@ -46,6 +47,18 @@ class HarborTitleSafe {
 
   @override
   int get hashCode => Object.hash(_fraction, _fixed);
+
+  @override
+  String toStringShort() => '${objectRuntimeType(this, 'HarborTitleSafe')}.${_fraction == null ? 'fixed' : 'fraction'}';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      PercentProperty('fraction', _fraction, level: _fraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info),
+    );
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('insets', _fixed, defaultValue: null));
+  }
 }
 
 /// Where a harbor's coast comes from. Set it once, on [HarborSea] or on the
@@ -56,7 +69,7 @@ class HarborTitleSafe {
 ///  * [MediaQueryData.padding] and [MediaQueryData.viewPadding], the insets the ambient coast is read
 ///    from.
 @immutable
-class HarborCoast {
+class HarborCoast with Diagnosticable {
   const HarborCoast._({this.titleSafe, this.fixedInsets, this.calmTide = false});
 
   /// The platform's insets, as `MediaQuery` reports them. The default.
@@ -145,4 +158,27 @@ class HarborCoast {
 
   @override
   int get hashCode => Object.hash(titleSafe, fixedInsets, calmTide);
+
+  @override
+  String toStringShort() {
+    final String name = this == ambient
+        ? 'ambient'
+        : this == none
+        ? 'none'
+        : fixedInsets != null
+        ? 'fixed'
+        : 'titleSafe';
+    return '${objectRuntimeType(this, 'HarborCoast')}.$name';
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    if (this == none) {
+      return;
+    }
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('fixedInsets', fixedInsets, defaultValue: null));
+    properties.add(DiagnosticsProperty<HarborTitleSafe>('titleSafe', titleSafe, defaultValue: null));
+    properties.add(FlagProperty('calmTide', value: calmTide, ifTrue: 'calm tide'));
+  }
 }

@@ -349,7 +349,7 @@ class _ChannelPageState extends State<ChannelPage> {
                 final PhotoScene scene = PhotoScene.values[i % PhotoScene.values.length];
                 return GestureDetector(
                   onTap: () {
-                    closeHarborSheet(context);
+                    HarborSheet.close(context);
                     _post('📷 A snapshot: ${_photoTitle(scene)}');
                   },
                   child: PhotoTile(scene: scene, hull: Palette.hulls[i % Palette.hulls.length]),

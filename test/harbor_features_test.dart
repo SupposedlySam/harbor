@@ -851,7 +851,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsOneWidget);
-    closeHarborSheet(sheetContext);
+    HarborSheet.close(sheetContext);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsNothing);
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
@@ -971,6 +971,66 @@ void main() {
     await trial.raiseTide();
     await tester.pump(const Duration(milliseconds: 400));
     expect(_rect(tester, 'field').bottom, lessThanOrEqualTo(trial.waterline - 16 + 0.5));
+  });
+
+  group('focus moving into a beacon kept in sight with the keyboard up', () {
+    Future<HarborSeaTrial> pumpForm(final WidgetTester tester, final FocusNode first, final FocusNode second) =>
+        tester.pumpSeaTrial(
+          _app(
+            Harbor(
+              body: HarborFairway(
+                slivers: <Widget>[
+                  SliverToBoxAdapter(child: TextField(focusNode: first)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 520)),
+                  SliverToBoxAdapter(
+                    child: HarborBeacon(
+                      keepInSight: true,
+                      onlyWhileFocused: true,
+                      clearance: 16,
+                      child: Column(
+                        key: const ValueKey<String>('group'),
+                        children: <Widget>[
+                          TextField(key: const ValueKey<String>('second'), focusNode: second),
+                          _box('submit', 120, 56),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 1200)),
+                ],
+              ),
+            ),
+          ),
+        );
+
+    for (final (String how, void Function(FocusNode first, FocusNode second) move)
+        in <(String, void Function(FocusNode, FocusNode))>[
+          ('a tap', (final FocusNode first, final FocusNode second) => second.requestFocus()),
+          ('the next-field action', (final FocusNode first, final FocusNode second) => first.nextFocus()),
+        ]) {
+      testWidgets('by $how reveals the whole beacon, not only the field\'s caret', (final tester) async {
+        final FocusNode first = FocusNode();
+        final FocusNode second = FocusNode();
+        addTearDown(first.dispose);
+        addTearDown(second.dispose);
+        final HarborSeaTrial trial = await pumpForm(tester, first, second);
+        first.requestFocus();
+        await tester.pump();
+        await trial.raiseTide(settle: true);
+        expect(
+          tester.getRect(find.byKey(const ValueKey<String>('submit'), skipOffstage: false)).top,
+          greaterThan(trial.waterline),
+          reason: 'it starts under the keyboard',
+        );
+
+        move(first, second);
+        await tester.pumpAndSettle();
+        expect(second.hasPrimaryFocus, isTrue);
+        final Finder group = find.byKey(const ValueKey<String>('group'));
+        expect(group, isInClearWater(trial.clearWaterAround(group)));
+        expect(_rect(tester, 'submit').bottom, moreOrLessEquals(trial.waterline - 16, epsilon: 0.5));
+      });
+    }
   });
 
   testWidgets('a signal skips a new port embedded in a page', (final tester) async {
@@ -1308,7 +1368,7 @@ void main() {
     await tester.pumpSeaTrial(
       _app(
         Harbor(
-          wakePainter: harborAlphaWake,
+          wakePainter: HarborWakeMask.alphaWake,
           top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(), child: _bar('header', 50))],
           body: const HarborFairway(slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))]),
         ),
