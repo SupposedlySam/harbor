@@ -93,7 +93,7 @@ class HarborAnchor extends ChangeNotifier {
   bool _pending = false;
 
   void _moved() {
-    if (_pending || _disposed) {
+    if (_pending || _disposed || !hasListeners) {
       return;
     }
     _pending = true;
@@ -582,44 +582,21 @@ class _RenderBuoyLayer extends RenderBox
     _textDirection = value;
     markNeedsLayout();
   }
-  final Set<HarborAnchor> _listening = <HarborAnchor>{};
 
   set buoys(final List<HarborBuoy> value) {
     _buoys = value;
-    _syncAnchors();
     markNeedsLayout();
   }
 
-  void _syncAnchors() {
-    final Set<HarborAnchor> wanted = <HarborAnchor>{
-      for (final HarborBuoy b in _buoys)
-        if (b.anchor != null) b.anchor!,
-    };
-    for (final HarborAnchor a in _listening.difference(wanted)) {
-      a.removeListener(markNeedsLayout);
-    }
-    if (attached) {
-      for (final HarborAnchor a in wanted.difference(_listening)) {
-        a.addListener(markNeedsLayout);
-      }
-    }
-    _listening
-      ..clear()
-      ..addAll(attached ? wanted : <HarborAnchor>{});
-  }
-
+  // Its own layer, since it is painted again every frame while it has an anchored buoy.
   @override
-  void attach(final PipelineOwner owner) {
-    super.attach(owner);
-    _syncAnchors();
-  }
+  bool get isRepaintBoundary => true;
+
+  final _FollowEveryFrame _follow = _FollowEveryFrame();
 
   @override
   void detach() {
-    for (final HarborAnchor a in _listening) {
-      a.removeListener(markNeedsLayout);
-    }
-    _listening.clear();
+    _follow.cancel();
     super.detach();
   }
 
@@ -659,6 +636,9 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
+    if (_buoys.any((final HarborBuoy b) => b.anchor != null)) {
+      _follow.next(markNeedsPaint);
+    }
     RenderBox? child = firstChild;
     int i = 0;
     while (child != null) {
@@ -868,14 +848,18 @@ class _RenderPortalBuoy extends RenderShiftedBox {
   bool _placed = false;
 
   void _listen(final _PortalBuoyLayout c) {
-    c.anchor.addListener(markNeedsPaint);
     c.harbor?.clearWater.addListener(markNeedsLayout);
   }
 
   void _unlisten(final _PortalBuoyLayout c) {
-    c.anchor.removeListener(markNeedsPaint);
     c.harbor?.clearWater.removeListener(markNeedsLayout);
   }
+
+  // Its own layer, since it is painted again every frame.
+  @override
+  bool get isRepaintBoundary => true;
+
+  final _FollowEveryFrame _follow = _FollowEveryFrame();
 
   @override
   void attach(final PipelineOwner owner) {
@@ -885,6 +869,7 @@ class _RenderPortalBuoy extends RenderShiftedBox {
 
   @override
   void detach() {
+    _follow.cancel();
     _unlisten(_config);
     super.detach();
   }
@@ -919,6 +904,7 @@ class _RenderPortalBuoy extends RenderShiftedBox {
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
+    _follow.next(markNeedsPaint);
     final RenderBox? child = this.child;
     final RenderBox? anchorBox = _config.anchor.box;
     final bool placed = child != null && anchorBox != null;
@@ -961,6 +947,29 @@ class _RenderPortalBuoy extends RenderShiftedBox {
   @override
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) =>
       _placed && super.hitTestChildren(result, position: position);
+}
+
+/// Paints an anchored buoy again at the start of every frame that is drawn, as
+/// `OverlayPortal.overlayChildLayoutBuilder` lays its child out again, so the
+/// buoy is placed by where its anchor is in that frame. An anchor that scrolls
+/// is moved without being laid out or painted (a list row is its own layer), so
+/// it cannot say that it moved in time, or at all. Asks for no frame itself.
+class _FollowEveryFrame {
+  int? _id;
+
+  void next(final VoidCallback repaint) {
+    _id ??= SchedulerBinding.instance.scheduleFrameCallback((final Duration _) {
+      _id = null;
+      repaint();
+    }, scheduleNewFrame: false);
+  }
+
+  void cancel() {
+    if (_id case final int id) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(id);
+      _id = null;
+    }
+  }
 }
 
 /// Where a signal is raised within the clear water of its harbor.

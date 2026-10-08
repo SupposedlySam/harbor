@@ -339,8 +339,10 @@ An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
 right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
 deprecated.) While its anchor is not in the tree, an anchored buoy is not shown,
-takes no taps and is not read out by screen readers. A `HarborAnchor` refers to
-one `HarborAnchorPoint`, so give each row of a list its own; in debug builds two
+takes no taps and is not read out by screen readers. It is placed again in every
+frame that is drawn, so it moves with its anchor in the same frame, a row
+scrolling under an open menu included. A `HarborAnchor` refers to one
+`HarborAnchorPoint`, so give each row of a list its own; in debug builds two
 points left on one anchor are reported after the frame, as two leaders on one
 `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`

@@ -376,6 +376,32 @@ void main() {
     expect(bubbleTaps, 1);
   });
 
+  testWidgets('an anchored buoy follows its row as the list scrolls, in the same frame', (final tester) async {
+    final HarborAnchor anchor = HarborAnchor();
+    addTearDown(anchor.dispose);
+    final ScrollController scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          buoys: <HarborBuoy>[HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.below, child: _box('menu', 200, 120))],
+          body: ListView.builder(
+            controller: scroll,
+            itemCount: 40,
+            itemBuilder: (final BuildContext context, final int i) =>
+                i == 3 ? HarborAnchorPoint(anchor: anchor, child: _box('row', 300, 48)) : const SizedBox(height: 48),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
+
+    scroll.jumpTo(60);
+    await tester.pump();
+    expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
+  });
+
   group('A portal buoy', () {
     Widget page({required final OverlayPortalController menu, required final Alignment rowAt, final TextDirection? direction}) {
       final Widget harbor = Harbor(
@@ -433,6 +459,37 @@ void main() {
       await trial.raiseTide();
       expect(_rect(tester, 'menu').bottom, _rect(tester, 'row').top - 8);
       expect(_rect(tester, 'menu').bottom, lessThanOrEqualTo(trial.waterline));
+    });
+
+    testWidgets('follows its row as the list scrolls, in the same frame', (final tester) async {
+      final OverlayPortalController menu = OverlayPortalController();
+      final ScrollController scroll = ScrollController();
+      addTearDown(scroll.dispose);
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: ListView.builder(
+              controller: scroll,
+              itemCount: 40,
+              itemBuilder: (final BuildContext context, final int i) => i == 3
+                  ? HarborPortalBuoy(
+                      controller: menu,
+                      side: HarborBuoySide.below,
+                      buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+                      child: _box('row', 300, 48),
+                    )
+                  : const SizedBox(height: 48),
+            ),
+          ),
+        ),
+      );
+      menu.show();
+      await tester.pump();
+      expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
+
+      scroll.jumpTo(60);
+      await tester.pump();
+      expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
     });
 
     testWidgets('takes taps where it is placed, and lets the rest reach the page', (final tester) async {
