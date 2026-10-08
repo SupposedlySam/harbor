@@ -6,13 +6,15 @@ import 'narration.dart';
 
 /// One chapter of the showcase: a harbor word, the plain word for it, and when it plays.
 class ShowcaseChapter {
-  const ShowcaseChapter({required this.term, required this.meaning, required this.start, required this.end, this.pronounced});
+  const ShowcaseChapter({required this.key, required this.term, required this.start, required this.end, this.pronounced});
+
+  /// The chapter's name in narration.tsv.
+  final String key;
 
   final String term;
 
   /// How the term is pronounced, when its spelling does not tell you ("key" for quay).
   final String? pronounced;
-  final String meaning;
   final double start;
   final double end;
 
@@ -41,29 +43,43 @@ abstract final class ShowcaseTimeline {
     return lines.isEmpty ? 0.0 : math.max(0.0, lines.first.start - _lead);
   }
 
-  static ShowcaseChapter _chapter(final String key, final String next, {required final String term, required final String meaning, final String? pronounced}) =>
-      ShowcaseChapter(term: term, meaning: meaning, pronounced: pronounced, start: key == 'intro' ? 0.0 : _startOf(key), end: next.isEmpty ? Narration.end : _startOf(next));
+  static ShowcaseChapter _chapter(final String key, final String next, {required final String term, final String? pronounced}) =>
+      ShowcaseChapter(key: key, term: term, pronounced: pronounced, start: key == 'intro' ? 0.0 : _startOf(key), end: next.isEmpty ? Narration.end : _startOf(next));
 
   static final ShowcaseChapter intro = _chapter(
     'intro',
     'pier',
     term: 'harbor',
-    meaning: 'Every screen has something pushing in from its edges. harbor gives each one a place.',
   );
-  static final ShowcaseChapter pier = _chapter('pier', 'quay', term: 'Pier', meaning: 'A header your content scrolls under.');
-  static final ShowcaseChapter quay = _chapter('quay', 'tide', term: 'Quay', pronounced: 'pronounced “key”', meaning: 'A tab bar your content stops at.');
+  static final ShowcaseChapter pier = _chapter('pier', 'quay', term: 'Pier');
+  static final ShowcaseChapter quay = _chapter('quay', 'tide', term: 'Quay', pronounced: 'pronounced “key”');
   static final ShowcaseChapter tide = _chapter(
     'tide',
     'outro',
     term: 'Tide',
-    meaning: 'The keyboard. A dock on pilings stays put and is covered; a floating one rides up.',
   );
   static final ShowcaseChapter outro = _chapter(
     'outro',
     '',
     term: 'flutter pub add harbor',
-    meaning: 'Docks claim the edges. Everything else moors clear of them.',
   );
+
+  /// The line of the narration on screen at [t]: the latest line of the current chapter that has
+  /// started, or, in the moment before a chapter's first line, that first line. The caption shows
+  /// exactly what the narrator says, so the video reads the same with the sound off.
+  static String lineAt(final double t) {
+    final List<NarrationLine> lines = Narration.of(chapterAt(t).key);
+    if (lines.isEmpty) {
+      return '';
+    }
+    NarrationLine shown = lines.first;
+    for (final NarrationLine line in lines) {
+      if (line.start <= t) {
+        shown = line;
+      }
+    }
+    return shown.text;
+  }
 
   static List<ShowcaseChapter> get chapters => <ShowcaseChapter>[intro, pier, quay, tide, outro];
 

@@ -81,6 +81,13 @@ void main() {
       // timeline after that layout, as it does one frame later in the running app.
       await tester.pump(step);
       await tester.pump();
+      // Drawn in the real fonts here, so this is where a caption too long for its area is caught:
+      // the video would show it cut off.
+      final Finder caption = find.byKey(const ValueKey<String>('caption line'));
+      if (caption.evaluate().isNotEmpty) {
+        final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(find.descendant(of: caption, matching: find.byType(RichText)));
+        expect(paragraph.didExceedMaxLines, isFalse, reason: 'caption cut off at ${t.toStringAsFixed(1)} s: ${tester.widget<Text>(caption).data}');
+      }
       if (stills != null && !stills.any((final double s) => (s - t).abs() < 0.5 / fps)) {
         continue;
       }

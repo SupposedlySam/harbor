@@ -83,7 +83,10 @@ class _Bezel extends StatelessWidget {
   );
 }
 
-/// The caption: the harbor word, and the plain word for it.
+/// The caption: the harbor word, and the line the narrator is saying, word for word.
+///
+/// Lines swap at once as each is spoken, with no fade or scroll: the eye belongs on the harbor and
+/// the phone, and someone watching without sound reads exactly what is being said.
 class _Caption extends StatelessWidget {
   const _Caption({required this.time});
 
@@ -92,15 +95,10 @@ class _Caption extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(time);
-    // Fade in at the start of each chapter and out at its end, so captions never cut.
-    final double opacity = ShowcaseTimeline.ease(time, chapter.start, chapter.start + 0.5) *
-        (1 - ShowcaseTimeline.ease(time, chapter.end - 0.4, chapter.end));
     final bool install = chapter == ShowcaseTimeline.outro;
     return ColoredBox(
       color: Palette.deepSea,
-      child: Opacity(
-        opacity: chapter == ShowcaseTimeline.outro ? ShowcaseTimeline.ease(time, chapter.start, chapter.start + 0.5) : opacity,
-        child: Padding(
+      child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Row(
             children: <Widget>[
@@ -126,12 +124,16 @@ class _Caption extends StatelessWidget {
               Container(width: 2, height: 52, color: Palette.brass.withValues(alpha: 0.5)),
               const SizedBox(width: 28),
               Expanded(
-                child: Text(chapter.meaning, style: const TextStyle(fontFamily: 'Georgia', fontSize: 26, height: 1.25, color: Palette.foam)),
+                child: Text(
+                  ShowcaseTimeline.lineAt(time),
+                  key: const ValueKey<String>('caption line'),
+                  maxLines: 3,
+                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 24, height: 1.2, color: Palette.foam),
+                ),
               ),
             ],
           ),
         ),
-      ),
     );
   }
 }

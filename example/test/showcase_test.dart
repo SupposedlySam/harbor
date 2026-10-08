@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_example/field_guide/stage.dart';
+import 'package:harbor_example/showcase/narration.dart';
 import 'package:harbor_example/showcase/showcase.dart';
 import 'package:harbor_example/showcase/timeline.dart';
 
@@ -97,5 +98,18 @@ void main() {
     expect(tabBar(tester), dry, reason: 'on pilings: it does not move');
     expect(keyboard.overlaps(tabBar(tester)), isTrue, reason: 'and the keyboard covers it');
     expect(composer(tester).bottom, moreOrLessEquals(keyboard.top, epsilon: 0.5), reason: 'afloat: it sits on the keyboard');
+  });
+
+  // The caption is the narration, word for word, so the video reads the same with the sound off.
+  // Breaks if: a caption drifts from what is said. (Whether a line FITS is checked by the recorder,
+  // test/render_showcase_test.dart, which draws in the real fonts; this suite's test font is wider.)
+  testWidgets('the caption shows each line as it is spoken', (final tester) async {
+    await start(tester);
+    expect(Narration.lines, isNotEmpty, reason: 'positive control: there is narration to check');
+    for (final NarrationLine line in Narration.lines) {
+      await seek(tester, line.start + 0.1);
+      final Finder caption = find.byKey(const ValueKey<String>('caption line'));
+      expect(tester.widget<Text>(caption).data, line.text);
+    }
   });
 }
