@@ -209,6 +209,7 @@ class _HarborState extends State<Harbor> {
     final EdgeInsetsDirectional coastOnly = widget.coast != null || outer == null
         ? padding
         : HarborEdges.min(outer.coast, padding);
+    final EdgeInsetsDirectional coastOnlySteady = widget.coast != null || outer == null ? steadyPadding : outer.coastSteady;
     final EdgeInsetsDirectional inheritedDocks = widget.newPort || outer == null || widget.coast != null
         ? EdgeInsetsDirectional.zero
         : HarborEdges.min(outer.docks, padding);
@@ -333,6 +334,7 @@ class _HarborState extends State<Harbor> {
         coast: coast,
         coastSteady: coastSteady,
         coastOnly: coastOnly,
+        coastOnlySteady: coastOnlySteady,
         inheritedDocks: inheritedDocks,
         inheritedWakes: widget.newPort || outer == null ? const <HarborEdge, HarborWakeBand>{} : outer.wakes,
         tide: tide,

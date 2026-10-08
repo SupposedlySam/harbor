@@ -184,7 +184,8 @@ class HarborController {
   final HarborFleet fleet;
 
   /// Whether this harbor is a port (the sea, a route or a sheet) rather than a
-  /// component inside one.
+  /// component inside one. Reserved and not yet read: signals find their port
+  /// with [isRouteLevel] instead.
   final bool isPort;
 
   String? debugLabel;

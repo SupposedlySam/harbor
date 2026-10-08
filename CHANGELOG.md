@@ -1,3 +1,10 @@
+## Unreleased
+
+* `HarborWaters.steadyCoastOf(context, edge)` and `HarborWatersData.coastSteady`: the coast as it is with the keyboard down, so a footer keeps the home indicator's height while the keyboard is up.
+* `HarborFairway(minimum:)`, `HarborFairwaySliver(minimum:)` and `HarborFairway.paddingOf(minimum:)`: a floor on each end's clearance, as on `SafeArea`.
+* `HarborFairway.box` takes its child's size across the scroll when that axis is unbounded, so a horizontal row in a `Column` is as tall as its content instead of throwing.
+* Docs: mooring the bottom edge alone clears the coast and the keyboard but not a header; `HarborCoastFeature.hinge` and `HarborController.isPort` are reserved and not yet read.
+
 ## 0.1.0
 
 The first harbor.

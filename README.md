@@ -157,9 +157,10 @@ as it would in a `Row`.
 | Stance | Widget | Use it for |
 |---|---|---|
 | Moored | `HarborMoored(edges:, clear:, follow:, tide:, mooringLine:, minimum:, extra:)` | Forms, fixed buttons, static blocks |
+| Moored to one edge | `HarborMoored(edges: {HarborEdge.bottom})` | A form footer under a page header: it clears the coast and the keyboard at the bottom, and leaves the header to the rest of the page |
 | Mooring line | `HarborMooringLine(child:)` | A row that lines up with the page margin |
-| Fairway | `HarborFairway(slivers:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
-| One sliver | `HarborFairwaySliver(sliver:)` | A sliver in your own `CustomScrollView` |
+| Fairway | `HarborFairway(slivers:, minimum:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
+| One sliver | `HarborFairwaySliver(sliver:, minimum:)` | A sliver in your own `CustomScrollView` |
 | Pinned header | `HarborSliverDock(child:)` | A header or tab strip inside the scroll that pins at the docks' face and stacks |
 | Sticky | `HarborSticky(child:)` | A pill that rides with its item, then sticks below the docks and pinned headers |
 | Centered | `HarborCenter(overlapBudget:)` | Controls centered in the frame that may overlap the docks by at most a budget |
@@ -174,6 +175,16 @@ title under a translucent header that must not touch the status bar.
 `follow: HarborFollow.resting` holds still while a dock grows over it.
 `HarborFairway(startsInOpenWater: true)` starts its first sliver at the frame's
 edge, under the docks, for a hero that runs under a translucent header.
+`minimum:` on a fairway or a fairway sliver is a floor on each end, as on
+`SafeArea`: the end rests clear of whatever is in the way or the minimum,
+whichever is larger, so a phone with a home button still keeps 16 under the last row.
+`HarborFairway.box` given no bound across the scroll, as a horizontal one is in
+a `Column`, is as thick as its child: a row of chips as tall as the chips, its
+ends still clear.
+
+`clear: HarborClear.coast` keeps clear of the coast alone, without the keyboard.
+To keep clear of the coast and the keyboard but not a header, moor the bottom
+edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a
@@ -198,6 +209,13 @@ bottom. `HarborTide.of(context).height` is still readable after a harbor
 has moved out of the keyboard's way: for information, never for layout.
 `highWater` is the last settled keyboard height in this orientation, and it
 falls as well as rises.
+
+`HarborWaters.steadyCoastOf(context, HarborEdge.bottom)` is the home
+indicator's height, held while the keyboard is up, as `viewPadding` is in
+Flutter: for a footer that keeps its size while the keyboard animates. A body
+that clears the tide has no `viewPadding` left at the bottom while the keyboard
+is up, so read it here. It is zero below a quay that absorbed the coast, and
+below anything that cast the edge off.
 
 ## Harbor and Scaffold
 
@@ -308,6 +326,10 @@ the labels' font, so they read in widget tests and goldens rather than as
 `flutter_test`'s boxes. `HarborChart.snapshot(context)` returns the same as data.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
+
+Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (no coast
+reports a fold or hinge, and no layout splits around one) and
+`HarborController.isPort` (signals find their port by route instead).
 
 ## Sea trials
 

@@ -1085,4 +1085,163 @@ void main() {
     await tester.pumpAndSettle();
     expect(MediaQuery.paddingOf(pageContext).bottom, closeTo(300, 1));
   });
+
+  testWidgets('a horizontal box fairway in a column is as tall as its row and keeps its ends clear', (final tester) async {
+    final ValueNotifier<double> chipHeight = ValueNotifier<double>(40);
+    addTearDown(chipHeight.dispose);
+    await tester.pumpSeaTrial(
+      _app(
+        HarborMoored(
+          child: Column(
+            children: <Widget>[
+              HarborFairway.box(
+                key: const ValueKey<String>('chips'),
+                scrollDirection: Axis.horizontal,
+                child: ValueListenableBuilder<double>(
+                  valueListenable: chipHeight,
+                  builder: (final BuildContext context, final double height, final Widget? _) => Row(
+                    children: <Widget>[
+                      for (int i = 0; i < 8; i++) SizedBox(key: ValueKey<String>('chip$i'), width: 90, height: height),
+                    ],
+                  ),
+                ),
+              ),
+              _bar('after', 20),
+            ],
+          ),
+        ),
+        margin: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+      ),
+    );
+    expect(_rect(tester, 'chips').height, 40);
+    expect(_rect(tester, 'after').top, _rect(tester, 'chips').bottom);
+    expect(_rect(tester, 'chip0').left, 16);
+    await tester.drag(find.byType(Scrollable), const Offset(-2000, 0));
+    await tester.pumpAndSettle();
+    expect(_rect(tester, 'chip7').right, 402 - 16);
+    chipHeight.value = 56;
+    await tester.pump();
+    expect(_rect(tester, 'chips').height, 56, reason: 'it follows its row as the row grows');
+    expect(_rect(tester, 'after').top, _rect(tester, 'chips').bottom);
+  });
+
+  testWidgets('the steady coast holds the home indicator while the keyboard is up', (final tester) async {
+    late BuildContext footer;
+    late BuildContext underQuay;
+    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+          body: Column(
+            children: <Widget>[
+              Expanded(
+                child: Harbor(
+                  bottom: <HarborDock>[HarborDock.quay(child: _bar('tabs', 40))],
+                  body: Builder(
+                    builder: (final BuildContext context) {
+                      underQuay = context;
+                      return const SizedBox.expand();
+                    },
+                  ),
+                ),
+              ),
+              Builder(
+                builder: (final BuildContext context) {
+                  footer = context;
+                  return const SizedBox(height: 40);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(HarborWaters.steadyCoastOf(footer, HarborEdge.bottom), 34);
+    expect(HarborWaters.steadyCoastOf(footer, HarborEdge.top), 62, reason: 'the coast alone, not the header');
+    expect(HarborWaters.steadyCoastOf(underQuay, HarborEdge.bottom), 0, reason: 'the quay absorbed it');
+    await trial.raiseTide();
+    expect(HarborWaters.of(footer).coast.bottom, 0, reason: 'the live coast goes as the keyboard comes in');
+    expect(HarborWaters.steadyCoastOf(footer, HarborEdge.bottom), 34);
+  });
+
+  testWidgets('the steady coast is cast off with its edge', (final tester) async {
+    late BuildContext castOff;
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          body: HarborCastOff(
+            edges: const <HarborEdge>{HarborEdge.bottom},
+            child: Builder(
+              builder: (final BuildContext context) {
+                castOff = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(HarborWaters.steadyCoastOf(castOff, HarborEdge.top), 62, reason: 'positive control');
+    expect(HarborWaters.steadyCoastOf(castOff, HarborEdge.bottom), 0);
+  });
+
+  testWidgets('a fairway keeps its minimum at an end nothing covers', (final tester) async {
+    Future<double> lastRowBottom(final HarborTrialDevice device) async {
+      await tester.pumpSeaTrial(
+        _app(
+          HarborFairway(
+            minimum: const EdgeInsetsDirectional.only(bottom: 16),
+            slivers: <Widget>[
+              SliverList.builder(itemCount: 30, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50)),
+            ],
+          ),
+        ),
+        device: device,
+      );
+      await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      return _rect(tester, 'row29').bottom;
+    }
+
+    expect(await lastRowBottom(HarborTrialDevice.iPhoneSE), 667 - 16);
+    expect(await lastRowBottom(HarborTrialDevice.iPhone17), 874 - 34, reason: 'the larger of the two, not both');
+  });
+
+  testWidgets('a fairway sliver keeps its minimum at an end nothing covers', (final tester) async {
+    await tester.pumpSeaTrial(
+      _app(
+        CustomScrollView(
+          slivers: <Widget>[
+            HarborFairwaySliver(
+              minimum: const EdgeInsetsDirectional.only(bottom: 16),
+              sliver: SliverList.builder(itemCount: 30, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50)),
+            ),
+          ],
+        ),
+      ),
+      device: HarborTrialDevice.iPhoneSE,
+    );
+    await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+    await tester.pumpAndSettle();
+    expect(_rect(tester, 'row29').bottom, 667 - 16);
+  });
+
+  testWidgets('a footer moored on the bottom alone clears the coast and the keyboard, not the header', (final tester) async {
+    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+          bodyClearsTide: false,
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: HarborMoored(edges: const <HarborEdge>{HarborEdge.bottom}, child: _bar('footer', 40)),
+          ),
+        ),
+      ),
+    );
+    expect(_rect(tester, 'footer').bottom, 874 - 34);
+    await trial.raiseTide();
+    expect(_rect(tester, 'footer').bottom, trial.waterline);
+    expect(_rect(tester, 'footer').height, 40);
+  });
 }
