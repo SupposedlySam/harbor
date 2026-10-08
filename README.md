@@ -258,11 +258,17 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
 by keyboard focus and by screen readers, not only by taps. Signals are live
-regions, so screen readers announce them. Sheets and signals keep the themes of
+regions, so screen readers announce them, with a dismiss action that lowers
+them, as a `SnackBar` is. A signal whose widget is already its own live region
+(a `SnackBar`-like widget from your design library) is raised with
+`liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
 leave without moving. On iOS a tap on the
-status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
+status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
+as there only the page whose status bar band is on top at the screen's top left:
+a page under a route in an outer navigator, under an overlay, or in the
+right-hand pane of a split stays where it is.
 
 ## Talking to the harbor
 
@@ -289,11 +295,21 @@ Harbor(
 )
 
 HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('Saved'));
+HarborSignals.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+HarborSignals.raise(
+  context,
+  transitionBuilder: (context, animation, child) => SlideTransition(
+    position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(animation),
+    child: child,
+  ),
+  builder: (_) => Toast('Saved'),
+);
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
-reading order, so `before` is on the right under right-to-left.
+reading order, so `before` is on the right under right-to-left. While its
+anchor is not in the tree, an anchored buoy is not shown and takes no taps.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -301,6 +317,14 @@ keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
 before it are hidden while it is up. Unlike a route, it does not trap keyboard
 focus.
+A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
+`alignment`, placed as a buoy at that alignment would be. An
+`AlignmentDirectional` follows the reading direction of the page that raised it.
+It fades and scales in over `animationStyle` (220 ms each way by default).
+A `transitionBuilder` brings your own entrance and exit, run on harbor's
+animation, and `AnimationStyle.noAnimation` shows a widget that animates
+itself as it is, as `showSnackBar(snackBarAnimationStyle:)` does. A lowered
+signal stays at least 300 ms, so its own exit can run.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
@@ -363,25 +387,40 @@ A flat fold, which has no width, may still be spanned.
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
-page is on top, and it leaves when its page is replaced or removed. A
+page is on top (from the first frame of that page's push until its pop has
+finished, since the sheet is drawn above every page rather than inside its
+own), and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
-screen reader announces for the barrier ('Close sheet' when none is given). It
-spans the screen unless you give it a `maxWidth`.
+screen reader announces for the barrier ('Close sheet' when none is given), with
+`barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
+sheet is a semantics scope of its own, and screen readers announce its
+`semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
+
+A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
+into it, an observer of page routes does not count it as a screen, a draggable sheet
+inside it closes it, and its content is a route of its own for screen readers, named by `semanticLabel:`. It
+takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Close
+dialog' when none is given), `anchorPoint:` (which screen of a dual-screen
+device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
+`animationStyle:` (its fade, 180 ms by default).
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
-passes Material's pieces in, three lines that `showModalBottomSheet` would have
+passes Material's pieces in, the lines that `showModalBottomSheet` would have
 filled in for it:
 
 ```dart
+final MaterialLocalizations localizations = MaterialLocalizations.of(context);
 showHarborSheet(
   context,
   routeSettings: const RouteSettings(name: 'reply'),
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+  barrierLabel: localizations.modalBarrierDismissLabel,
+  barrierOnTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+  semanticLabel: localizations.dialogLabel,          // on iOS Material leaves it unnamed: pass null there
   maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
   builder: (_) => HarborSheet(
     contentBuilder: (context, content) => Material( // text fields and ink work in it
@@ -410,10 +449,16 @@ rest and its ceiling). A draggable sheet opened some other way, by
 
 ```dart
 HarborBeacon(onObscured: (covered) => titleOpacity.value = covered, child: heroTitle);
-HarborBeacon(keepInSight: true, child: field);            // re-reveals as the keyboard rises
+HarborBeacon(keepInSight: true, child: field);            // re-reveals as the keyboard rises or focus moves in
 HarborLighthouseRegion(child: canvas)                     // + HarborBeacon(lift: true, clearance: 80)
 HarborLighthouse.reveal(context, clearance: 24);
 ```
+
+A focused field reveals its own caret, as `EditableText` does. A beacon kept in
+sight reveals all of itself: when the keyboard rises, and when focus moves into
+it from outside, by a tap or the keyboard's next action. So a field and the
+button under it come up together, `clearance` clear of the keyboard.
+`onlyWhileFocused: true` keeps the rest of a form's beacons still.
 
 ## TV
 
@@ -463,6 +508,10 @@ testWidgets('the composer rides the keyboard', (tester) async {
   expect(tester.getRect(find.byType(Composer)).bottom, trial.waterline);
 });
 ```
+
+`raiseTide()` pumps 600 ms, long enough for the harbor to follow;
+`raiseTide(pumpFor: Duration.zero)` stops at the first frame after the keyboard
+arrives, and `settle: true` pumps until nothing is animating.
 
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
