@@ -292,6 +292,8 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left. While its
 anchor is not in the tree, an anchored buoy is not shown and takes no taps.
+It is placed again in every frame that is drawn, so it moves with its anchor in
+the same frame, a row scrolling under an open menu included.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
