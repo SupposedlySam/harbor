@@ -447,9 +447,50 @@ class _ScenePainter extends CustomPainter {
 
     tag('PIER', const Offset((_World.pierStart + _World.pierEnd) / 2, _World.pierDeck - 70), ShowcaseTimeline.pier);
     tag('QUAY', const Offset(_World.quayStart + 70, _World.quayTop - 80), ShowcaseTimeline.quay);
+    _pronunciation(canvas, const Offset(_World.quayStart + 70, _World.quayTop - 80), grow);
     tag('ON PILINGS', const Offset((_World.pilingsStart + _World.pilingsEnd) / 2, 250), ShowcaseTimeline.tide, size: 24);
     tag('AFLOAT', Offset(_World.floatStart + 330, waterline - 120), ShowcaseTimeline.tide, size: 24);
     tag('TIDE', Offset(_World.floatEnd + 70, waterline + 50), ShowcaseTimeline.tide, size: 24);
+  }
+
+  /// How "quay" is pronounced, on a small sign above its label, put up the moment the narrator
+  /// says "quay" and left up for the rest of the chapter. The narrator does not spell it out:
+  /// hearing the word is the lesson, and the sign is the written half. It appears at once, as the
+  /// captions do: no animation to pull the eye from what the harbor is doing.
+  void _pronunciation(final Canvas canvas, final Offset quayLabel, final double grow) {
+    final ShowcaseChapter quay = ShowcaseTimeline.quay;
+    final double said = ShowcaseTimeline.cue('quay', 'quay', quay.start + 0.6);
+    if (t < said || !quay.contains(t)) {
+      return;
+    }
+    TextPainter line(final String text, final double size, {final FontStyle style = FontStyle.normal, final FontWeight weight = FontWeight.w400}) =>
+        TextPainter(
+          text: TextSpan(
+            text: text,
+            style: TextStyle(fontFamily: 'Georgia', fontSize: size * grow, fontStyle: style, fontWeight: weight, color: Palette.night),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+    final TextPainter small = line('pronounced', 15, style: FontStyle.italic);
+    final TextPainter big = line('“key”', 30, weight: FontWeight.w700);
+    final double width = math.max(small.width, big.width) + 28 * grow;
+    final double height = small.height + big.height + 12 * grow;
+    final Rect sign = Rect.fromCenter(center: quayLabel - Offset(0, 62 * grow + height / 2), width: width, height: height);
+    // A post from the sign down to the label, so it reads as belonging to it.
+    canvas
+      ..drawLine(Offset(sign.center.dx, sign.bottom), Offset(sign.center.dx, quayLabel.dy - 24 * grow), Paint()
+        ..color = Palette.plankDark
+        ..strokeWidth = 3 * grow)
+      ..drawRRect(RRect.fromRectAndRadius(sign, Radius.circular(10 * grow)), Paint()..color = Palette.sail)
+      ..drawRRect(
+        RRect.fromRectAndRadius(sign, Radius.circular(10 * grow)),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2 * grow
+          ..color = Palette.brass,
+      );
+    small.paint(canvas, Offset(sign.center.dx - small.width / 2, sign.top + 6 * grow));
+    big.paint(canvas, Offset(sign.center.dx - big.width / 2, sign.top + 6 * grow + small.height));
   }
 
   @override
