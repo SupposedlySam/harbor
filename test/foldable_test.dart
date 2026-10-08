@@ -63,6 +63,17 @@ void main() {
     expect(_rect(tester, 'dialog').overlaps(_hinge), isFalse);
   });
 
+  testWidgets("a dialog opens on the screen nearest its anchorPoint, as showDialog's does", (final tester) async {
+    final BuildContext page = await _pump(tester);
+    unawaited(showHarborDialog<void>(
+      page,
+      anchorPoint: Offset(_hinge.right + 1, 0),
+      builder: (final BuildContext _) => const Center(child: SizedBox(key: ValueKey<String>('dialog'), width: 280, height: 160)),
+    ));
+    await tester.pumpAndSettle();
+    expect(_rect(tester, 'dialog').left, greaterThanOrEqualTo(_hinge.right));
+  });
+
   testWidgets('a signal keeps off the hinge', (final tester) async {
     final BuildContext page = await _pump(tester);
     HarborSignals.raise(page, slot: HarborSignalSlot.low, duration: null, builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40));

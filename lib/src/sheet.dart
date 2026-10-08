@@ -474,8 +474,17 @@ class HarborSheetController extends ChangeNotifier {
 /// reach navigator observers and route-name analytics, and the barrier is
 /// announced with [barrierLabel] ('Close sheet' when none is given; a Material app
 /// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
-/// localized one). A sheet with [HarborSheetBarrier.none] is not a route, so it
-/// has neither.
+/// localized one). [barrierOnTapHint] says what tapping the barrier does, read
+/// as 'Double tap to …' ('Double tap to activate' when none is given), as
+/// `ModalBottomSheetRoute.barrierOnTapHint` does.
+///
+/// Like a modal bottom sheet, a sheet that is a route is a semantics scope of its
+/// own: it scopes and names its route, and screen readers announce
+/// [semanticLabel] as it opens and closes. See
+/// [SemanticsConfiguration.namesRoute].
+///
+/// A sheet with [HarborSheetBarrier.none] is not a route, so it has none of
+/// these.
 ///
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
@@ -498,6 +507,8 @@ Future<T?> showHarborSheet<T>(
   final String? barrierLabel,
   final HarborSheetController? controller,
   final AnimationController? transitionAnimationController,
+  final String? barrierOnTapHint,
+  final String? semanticLabel,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -512,6 +523,8 @@ Future<T?> showHarborSheet<T>(
     keepsTopCoast: keepsTopCoast,
     presenter: breakwater ? presenter : null,
     controller: controller,
+    scopesRoute: barrier != HarborSheetBarrier.none,
+    semanticLabel: semanticLabel,
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
@@ -533,6 +546,7 @@ Future<T?> showHarborSheet<T>(
       host: host,
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
       barrierLabel: barrierLabel ?? 'Close sheet',
+      barrierOnTapHint: barrierOnTapHint,
       settings: routeSettings,
       transitionAnimationController: transitionAnimationController,
     ),
@@ -546,12 +560,18 @@ class _SheetHost {
     required this.keepsTopCoast,
     required this.presenter,
     required this.controller,
+    required this.scopesRoute,
+    required this.semanticLabel,
   });
 
   final WidgetBuilder builder;
   final double? maxWidth;
   final bool keepsTopCoast;
   final HarborController? presenter;
+
+  /// Whether the sheet is a route of its own; one with no barrier is not.
+  final bool scopesRoute;
+  final String? semanticLabel;
 
   final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
   HarborBreakwater? _breakwater;
@@ -691,6 +711,11 @@ class _SheetHost {
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity, maxHeight: math.max(0.0, mediaQuery.size.height - top)),
       child: sheet,
     );
+    if (scopesRoute) {
+      // As a modal bottom sheet's: the route is the sheet, so the scope is the sheet's box, not the
+      // screen the barrier covers.
+      sheet = Semantics(scopesRoute: true, namesRoute: true, explicitChildNodes: true, label: semanticLabel, child: sheet);
+    }
     final double tide = mediaQuery.viewInsets.bottom;
     return _SheetHostScope(
       host: this,
@@ -794,6 +819,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
     required this.barrierColor,
     required this.barrierLabel,
     required this.transitionAnimationController,
+    required this.barrierOnTapHint,
     super.settings,
   });
 
@@ -808,6 +834,8 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 
   @override
   final String barrierLabel;
+
+  final String? barrierOnTapHint;
 
   @override
   Duration get transitionDuration => const Duration(milliseconds: 280);
@@ -860,6 +888,29 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
       host.build(context, animation);
+
+  // ModalRoute's barrier, with the tap hint ModalBottomSheetRoute gives its own: ModalRoute has no
+  // field for one.
+  @override
+  Widget buildModalBarrier() {
+    if (barrierColor.a != 0 && !offstage) {
+      return AnimatedModalBarrier(
+        color: animation!.drive(
+          ColorTween(begin: barrierColor.withValues(alpha: 0.0), end: barrierColor).chain(CurveTween(curve: barrierCurve)),
+        ),
+        dismissible: barrierDismissible,
+        semanticsLabel: barrierLabel,
+        barrierSemanticsDismissible: semanticsDismissible,
+        semanticsOnTapHint: barrierOnTapHint,
+      );
+    }
+    return ModalBarrier(
+      dismissible: barrierDismissible,
+      semanticsLabel: barrierLabel,
+      barrierSemanticsDismissible: semanticsDismissible,
+      semanticsOnTapHint: barrierOnTapHint,
+    );
+  }
 }
 
 class _NonModalSheet<T> {
@@ -901,14 +952,18 @@ class _NonModalSheet<T> {
         if (route == null) {
           return sheet;
         }
-        // Hidden, and out of reach, while another page is on top of the one that opened it.
+        // Hidden, and out of reach, while another page is on top of the one that opened it. The
+        // navigator keeps this entry above every page, so it cannot sit under a leaving page as a
+        // persistent bottom sheet does; it waits for that page to finish leaving instead, where
+        // isCurrent alone shows it as soon as the pop starts.
         return ListenableBuilder(
           listenable: Listenable.merge(<Listenable?>[route.animation, route.secondaryAnimation]),
           builder: (final BuildContext context, final Widget? child) {
             if (!route.isActive) {
               WidgetsBinding.instance.addPostFrameCallback((final Duration _) => closeNow());
             }
-            return Visibility(visible: route.isCurrent, maintainState: true, child: child!);
+            final bool uncovered = route.isCurrent && (route.secondaryAnimation?.isDismissed ?? true);
+            return Visibility(visible: uncovered, maintainState: true, child: child!);
           },
           child: sheet,
         );
