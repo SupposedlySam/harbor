@@ -1,3 +1,7 @@
+## Unreleased
+
+* Fixed: under a body that clears the tide, on a phone with a home indicator, `HarborMoored(clear: HarborClear.coast)` and every reader of `HarborWaters.of(context, aspect: HarborWatersAspect.coast)` rebuilt on every frame of the keyboard, and so did a reader of `HarborWaters.steadyCoastOf`. A coast reader now rebuilds only when the coast changes, and `steadyCoastOf` when the view padding does, as `MediaQuery.viewPaddingOf` would. `HarborWaters.of(aspect: HarborWatersAspect.coast).coastSteady` is filled in without subscribing, as the docks aspect already did; read it with `steadyCoastOf` to follow it. Values are unchanged.
+
 ## 0.2.0
 
 ### Breaking changes
