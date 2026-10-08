@@ -819,6 +819,12 @@ abstract final class HarborSignals {
   /// after [duration] (or when the returned entry is lowered). If its harbor
   /// leaves (the page is popped), the signal moves to the port now on top.
   ///
+  /// [alignment] places the signal at an exact point instead of a slot, as
+  /// [HarborBuoy.alignment] places a buoy; give one or the other, or neither
+  /// for [HarborSignalSlot.high]. An [AlignmentDirectional] is resolved in the
+  /// reading direction of [context], the page that raised it, whose themes the
+  /// signal also keeps.
+  ///
   /// With no harbor above [context] (a bare `MaterialApp` in a widget test, a
   /// screen not yet built from a harbor), the signal goes to the nearest
   /// [Overlay], kept clear of `MediaQuery.padding` and `viewInsets`. With no
@@ -827,10 +833,12 @@ abstract final class HarborSignals {
   static HarborSignalEntry raise(
     final BuildContext context, {
     required final WidgetBuilder builder,
-    final HarborSignalSlot slot = HarborSignalSlot.high,
+    final HarborSignalSlot? slot,
+    final AlignmentGeometry? alignment,
     final Duration? duration = const Duration(seconds: 3),
     final HarborSignalTarget target = HarborSignalTarget.topmost,
   }) {
+    assert(slot == null || alignment == null, 'Give a signal a slot or an alignment, not both.');
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
     // A signal is built in its harbor's buoy layer, not where it was raised, so it takes the
     // themes and text style of the place that raised it, as a sheet does. Without this a page
@@ -839,7 +847,7 @@ abstract final class HarborSignals {
     final HarborSignalEntry entry = HarborSignalEntry(
       // A Builder, so the builder's own context sees the captured themes, not only what it returns.
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
-      alignment: slot.alignment,
+      alignment: alignment?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr) ?? (slot ?? HarborSignalSlot.high).alignment,
       duration: duration,
       // Sent to the sea, a signal clears only the coast.
       avoidInGlobal: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context)?.clearWaterInGlobal() : null,

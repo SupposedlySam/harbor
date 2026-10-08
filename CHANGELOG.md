@@ -1,3 +1,7 @@
+## Unreleased
+
+* `HarborSignals.raise(alignment:)`: raises a signal at an exact point in the clear water instead of a slot, placed as a buoy at that alignment would be, and in the nearest overlay's padded water when there is no harbor. An `AlignmentDirectional` is resolved in the reading direction of the page that raised it. `slot` is now nullable and still defaults to `high`; give one or the other.
+
 ## 0.2.0
 
 ### Breaking changes

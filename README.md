@@ -286,6 +286,7 @@ Harbor(
 )
 
 HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('Saved'));
+HarborSignals.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
@@ -298,6 +299,9 @@ keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
 before it are hidden while it is up. Unlike a route, it does not trap keyboard
 focus.
+A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
+`alignment`, placed as a buoy at that alignment would be. An
+`AlignmentDirectional` follows the reading direction of the page that raised it.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
