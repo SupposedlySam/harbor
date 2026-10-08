@@ -369,19 +369,24 @@ the page instead.
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
-screen reader announces for the barrier ('Close sheet' when none is given). It
-spans the screen unless you give it a `maxWidth`.
+screen reader announces for the barrier ('Close sheet' when none is given), with
+`barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
+sheet is a semantics scope of its own, and screen readers announce its
+`semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
-passes Material's pieces in, three lines that `showModalBottomSheet` would have
+passes Material's pieces in, the lines that `showModalBottomSheet` would have
 filled in for it:
 
 ```dart
+final MaterialLocalizations localizations = MaterialLocalizations.of(context);
 showHarborSheet(
   context,
   routeSettings: const RouteSettings(name: 'reply'),
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+  barrierLabel: localizations.modalBarrierDismissLabel,
+  barrierOnTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+  semanticLabel: localizations.dialogLabel,          // on iOS Material leaves it unnamed: pass null there
   maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
   builder: (_) => HarborSheet(
     contentBuilder: (context, content) => Material( // text fields and ink work in it
