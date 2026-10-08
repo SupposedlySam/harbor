@@ -1,3 +1,8 @@
+## Unreleased
+
+* **Breaking:** sea trials moved to their own package, `harbor_test`, so harbor no longer depends on `flutter_test` and an app that depends on harbor no longer gets the test framework in its own dependencies. Add `harbor_test` as a `dev_dependency` and import `package:harbor_test/harbor_test.dart` in place of `package:harbor/testing.dart`. `pumpSeaTrial`, `HarborTrialDevice` and `isInClearWater` are unchanged.
+* `package:harbor/testing.dart` is now empty and deprecated: the analyzer reports where it is imported, with a pointer to `harbor_test`. It is removed in the next release.
+
 ## 0.1.0
 
 The first harbor.

@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:harbor/harbor.dart';
 
-import '../controller.dart';
 import 'trial_device.dart';
 
 /// Pumps a harbor on a [HarborTrialDevice] and moves its tide.

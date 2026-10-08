@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-import 'package:harbor/testing.dart';
+import 'package:harbor_test/harbor_test.dart';
 import 'package:harbor_example/art/palette.dart';
 import 'package:harbor_example/game/settings.dart';
 import 'package:harbor_example/scenes/tv.dart';

@@ -8,7 +8,7 @@ whole before changing anything; the names in code are the names in that glossary
 The Flutter version is pinned in `.fvmrc`, so use `fvm flutter`, not a bare `flutter`.
 
 ```sh
-./tool/check.sh        # analyze (infos are fatal) and test, the package then the example
+./tool/check.sh        # analyze (infos are fatal) and test: the package, harbor_test, then the example
 ```
 
 That script is the one gate. CI (`.github/workflows/check.yaml`) runs it on every push and pull
@@ -33,6 +33,11 @@ unreleased commit takes a git dependency on this repo with a `ref:`.
 3. `fvm flutter pub publish --dry-run` must report 0 warnings. A pub.dev release can be retracted
    but never deleted, so look at the file list it prints, not just the verdict.
 4. `fvm flutter pub publish`.
+
+`harbor_test/` (the sea trials) is a second package, released after harbor from its own
+directory. Its `pubspec.yaml` asks for harbor from pub.dev and its committed `pubspec_overrides.yaml`
+points that at `../` for development, so before releasing it raise its `harbor:` constraint to the
+harbor just published, bump its own `version:` and `CHANGELOG.md`, and run steps 3 and 4 there.
 
 **What ships is decided by `.pubignore`, which replaces `.gitignore` for pub** in the root
 directory. A new gitignore rule must be copied there too, or pub will publish what git ignores.

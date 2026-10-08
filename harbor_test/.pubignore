@@ -1,0 +1,6 @@
+# What `dart pub publish` leaves out of harbor_test, and out of harbor's archive, which carries
+# this directory. It replaces any .gitignore here; the rules in ../.pubignore apply as well.
+build/
+pubspec.lock
+# Develops against the harbor beside it; a consumer resolves harbor from pub.dev.
+pubspec_overrides.yaml
