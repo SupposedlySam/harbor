@@ -103,39 +103,16 @@ class HarborSeaTrial {
   /// The clear water of the harbor nearest [finder]'s widget, in global
   /// coordinates: the rectangle no coast, dock or tide covers.
   Rect clearWaterAround(final Finder finder) {
-    final Element element = finder.evaluate().single;
-    final HarborController? controller = HarborController.maybeOf(element);
-    final Rect? rect = controller?.clearWaterInGlobal();
-    if (rect == null) {
+    final HarborChartEntry? harbor = HarborChart.nearest(finder.evaluate().single);
+    if (harbor == null) {
       throw StateError('No harbor has been laid out around ${finder.describeMatch(Plurality.one)}.');
     }
-    return rect;
+    return harbor.clearWater;
   }
 
   /// Every dock of the harbor nearest [finder], in global coordinates.
-  List<HarborDockRecord> docksAround(final Finder finder) {
-    final Element element = finder.evaluate().single;
-    final HarborController? controller = HarborController.maybeOf(element);
-    final RenderBox? box = controller?.renderBox;
-    final HarborLayoutRecord? layout = controller?.lastLayout;
-    if (box == null || layout == null) {
-      return const <HarborDockRecord>[];
-    }
-    final Matrix4 toGlobal = box.getTransformTo(null);
-    return <HarborDockRecord>[
-      for (final HarborDockRecord d in layout.docks)
-        HarborDockRecord(
-          edge: d.edge,
-          kind: d.kind,
-          rect: MatrixUtils.transformRect(toGlobal, d.rect),
-          extent: d.extent,
-          restingExtent: d.restingExtent,
-          state: d.state,
-          tide: d.tide,
-          label: d.label,
-        ),
-    ];
-  }
+  List<HarborDockRecord> docksAround(final Finder finder) =>
+      HarborChart.nearest(finder.evaluate().single)?.docks ?? const <HarborDockRecord>[];
 }
 
 /// Matches a [Finder] whose widget lies wholly in clear water: inside

@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -9,7 +10,13 @@ import 'wake.dart';
 
 /// Builds one dock in its harbor: its coast padding, backdrop, frosting,
 /// hairline, and its dark and withdraw animations.
+@Deprecated(
+  'HarborDockSlot is how a harbor builds a dock, and stops being exported in a later release. Read where docks '
+  'are with HarborChart.nearest(context).docks (or docksAround in harbor_test), or find the dock\'s child.',
+)
 class HarborDockSlot extends StatefulWidget {
+  /// Made by the harbor for each of its docks.
+  @internal
   const HarborDockSlot({
     super.key,
     required this.dock,

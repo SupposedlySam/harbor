@@ -397,7 +397,7 @@ Rect? _local(final BuildContext context, final Rect? global) {
   if (global == null) {
     return null;
   }
-  final RenderObject? box = HarborController.maybeOf(context)?.renderBox;
+  final RenderObject? box = HarborController.maybeOf(context)?.layoutBox;
   if (box is! RenderBox || !box.attached || !box.hasSize) {
     return null;
   }
@@ -763,8 +763,8 @@ class _RenderPortalBuoy extends RenderShiftedBox {
   /// when there is no harbor around the buoy.
   Rect _water() {
     final HarborController? harbor = _config.harbor;
-    final RenderBox? box = harbor?.renderBox;
-    final HarborLayoutRecord? layout = harbor?.lastLayout;
+    final RenderBox? box = harbor?.layoutBox;
+    final HarborLayoutRecord? layout = harbor?.layoutRecord;
     final Rect clear = box == null || layout == null || !box.attached || !box.hasSize
         ? Offset.zero & size
         : MatrixUtils.transformRect(box.getTransformTo(this), layout.clearWater);
@@ -781,7 +781,7 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     if (child != null) {
       // Only the water's size is known while laying out: the harbor's last
       // one. A change to it lays the buoy out again.
-      final Rect? clear = _config.harbor?.lastLayout?.clearWater;
+      final Rect? clear = _config.harbor?.layoutRecord?.clearWater;
       final Rect water = _config.margin.resolve(_config.textDirection).deflateRect(clear ?? Offset.zero & size);
       child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
     }

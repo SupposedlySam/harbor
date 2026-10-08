@@ -305,7 +305,7 @@ class _Placed {
 class RenderHarbor extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, HarborParentData>, RenderBoxContainerDefaultsMixin<RenderBox, HarborParentData> {
   RenderHarbor({required this._geometry, required this._controller}) {
-    _controller.renderBox = this;
+    _controller.layoutBox = this;
   }
 
   HarborGeometry _geometry;
@@ -326,7 +326,7 @@ class RenderHarbor extends RenderBox
       value.breakwaterChanges.addListener(_breakwaterMoved);
     }
     _controller = value;
-    value.renderBox = this;
+    value.layoutBox = this;
     markNeedsLayout();
   }
 

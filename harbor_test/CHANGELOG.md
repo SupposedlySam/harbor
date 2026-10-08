@@ -1,5 +1,6 @@
 ## Unreleased
 
+* `clearWaterAround` and `docksAround` read `HarborChart.nearest`, harbor's public chart, instead of the harbor's internals, which harbor now keeps to itself. What they return is unchanged.
 * `raiseTide`, `lowerTide` and `setTide` take `pumpFor:`, how long to pump after the keyboard moves (600 ms when not given, as before). `pumpFor: Duration.zero` pumps one frame, so a test can check the first frame after the keyboard arrives, or run its own timers from there.
 
 ## 0.1.0

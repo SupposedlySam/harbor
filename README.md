@@ -269,11 +269,16 @@ status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
 ```dart
 HarborMakeWay(edge: HarborEdge.bottom, mode: HarborYield.withdraw, child: panel)
 HarborPontoon(edge: HarborEdge.bottom, dock: HarborDock.pier(child: unsavedBar), child: form)
-HarborController.of(context).makeWay(HarborEdge.top, mode: HarborYield.dark) // returns a claim; release() it
+Harbor.of(context).makeWay(HarborEdge.top, mode: HarborYield.dark) // returns a claim; release() it
 ```
 
-Claims are counted and go to the nearest harbor that has a dock on that edge.
-A pontoon joins the harbor's docks on the next frame.
+`Harbor.of(context)` is the nearest harbor's handle, as `Scaffold.of` is the
+nearest `ScaffoldState`; `Harbor.maybeOf` returns null where there is none.
+The harbor makes its handle and runs its lifecycle, so the handle carries
+only what content asks of it: claims, pontoons, breakwaters and the clear
+water. Claims are counted and go to the nearest harbor that has a dock on that
+edge. A pontoon joins the harbor's docks on the next frame; one added by hand
+with `addPontoon` returns a `HarborPontoonHandle` to update or remove it by.
 
 ## Buoys and signals
 
@@ -478,7 +483,10 @@ with it) or `.resting` (let it open over them).
 anywhere below it) draws every dock's ground, each harbor's clear
 water and the tide. Each dock is labelled with its extent; `labelStyle:` sets
 the labels' font, so they read in widget tests and goldens rather than as
-`flutter_test`'s boxes. `HarborChart.snapshot(context)` returns the same as data.
+`flutter_test`'s boxes. `HarborChart.snapshot(context)` returns the same as data,
+and `HarborChart.nearest(context)` the nearest harbor alone: its frame, body,
+clear water and docks in global coordinates, the way a test or a tool reads a
+harbor without reaching into it.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
 
@@ -512,6 +520,8 @@ Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
 `device.displayFeatures` puts a device's folds and hinges on the view. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
+`trial.docksAround(finder)` lists the docks of the harbor around a widget. Both
+read `HarborChart.nearest`, so a test of your own can too.
 
 `package:harbor/testing.dart`, where sea trials used to be, is now empty and
 deprecated: importing it points to `harbor_test`. It will be removed in a later release.
