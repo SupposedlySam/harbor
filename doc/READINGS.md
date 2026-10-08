@@ -19,3 +19,10 @@ One line per reading, newest last:
 - example/README.md — read whole at 62e10f0 on 2026-10-06 — it was still the `flutter create`
   stub ("A new Flutter project."). Replaced with a pointer to the game, the field guide and
   SCENARIOS.md.
+- README.md — read whole on fix/audit-pass-4 (on integration/0.2.0) on 2026-10-08 — six fixes: a
+  sheet with a barrier is a route (the paragraph said every sheet is, right after saying one with
+  no barrier is not); the reserved-hinge note said no layout splits around a hinge, false since
+  sheets, dialogs, signals and buoys keep off one; `dualScreenOpen` missing from the devices;
+  "it goes in the next release" for testing.dart was ambiguous; foldables and dialogs added where
+  they belong; the FAB example used the physical `Alignment.bottomRight` the accessibility section
+  steers away from. Claims checked against the code only where a fix touched them.

@@ -251,8 +251,9 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
 by keyboard focus and by screen readers, not only by taps. Signals are live
 regions, so screen readers announce them. Sheets and signals keep the themes of
-the page they came from. With reduced motion (`MediaQuery.disableAnimations`)
-docks, signals and sheets appear and leave without moving. On iOS a tap on the
+the page they came from, and so do dialogs. With reduced motion
+(`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
+leave without moving. On iOS a tap on the
 status bar scrolls a harbor page to the top, as it does under a `Scaffold`.
 
 ## Talking to the harbor
@@ -271,7 +272,7 @@ A pontoon joins the harbor's docks on the next frame.
 ```dart
 Harbor(
   buoys: [
-    HarborBuoy(alignment: Alignment.bottomRight, child: fab),
+    HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: fab),
     HarborBuoy.anchored(anchor: launchAnchor, side: HarborBuoySide.above, overlap: 6, child: bubble),
     HarborBuoy(modal: true, child: quickActions), // hides the buoys before it
   ],
@@ -345,6 +346,10 @@ keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
 content keeps clear of it while it's up.
 
+On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
+and signals and buoys keep to the screen that holds them, never across the hinge.
+A flat fold, which has no width, may still be spanned.
+
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
@@ -352,7 +357,7 @@ page is on top, and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
-A sheet is a route, as a modal bottom sheet is. `routeSettings:` reach your
+A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and the barrier reads Material's
 dismiss label when the app has Material localizations (`barrierLabel:` to say
 something else). It spans the screen unless you give it a `maxWidth`;
@@ -420,9 +425,10 @@ the labels' font, so they read in widget tests and goldens rather than as
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
 
-Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (no coast
-reports a fold or hinge, and no layout splits around one) and
-`HarborController.isPort` (signals find their port by route instead).
+Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (sheets,
+dialogs, signals and buoys keep off a hinge through `MediaQuery.displayFeatures`,
+not through the coast) and `HarborController.isPort` (signals find their port by
+route instead).
 
 ## Sea trials
 
@@ -441,12 +447,13 @@ testWidgets('the composer rides the keyboard', (tester) async {
 ```
 
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
-`iPhone17Landscape`, `foldableOpen`, `dualScreenCover`, `television`, plus the
-`phones` and `all` lists. `trial.clearWaterAround(finder)` and `isInClearWater`
+`iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
+`dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
+`device.displayFeatures` puts a device's folds and hinges on the view. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
 
 `package:harbor/testing.dart`, where sea trials used to be, is now empty and
-deprecated: importing it points to `harbor_test`. It goes in the next release.
+deprecated: importing it points to `harbor_test`. It will be removed in a later release.
 
 ## Example
 
