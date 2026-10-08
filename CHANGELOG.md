@@ -1,3 +1,8 @@
+## Unreleased
+
+* A sheet with a barrier is a semantics scope of its own, as a modal bottom sheet is: it scopes and names its route (`scopesRoute`, `namesRoute`, `explicitChildNodes`), so screen readers keep to the sheet and announce it as it opens. `showHarborSheet(semanticLabel:)` is the name they announce. A semantics-tree snapshot of an open sheet gains this node. A sheet with no barrier is not a route and is unchanged.
+* `showHarborSheet(barrierOnTapHint:)`: what tapping the barrier does, read as 'Double tap to …', as on `ModalBottomSheetRoute`. A Material app passes `localizations.scrimOnTapHint(localizations.bottomSheetLabel)`.
+
 ## 0.2.0
 
 ### Breaking changes
