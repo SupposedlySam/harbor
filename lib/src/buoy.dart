@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show DisplayFeature, DisplayFeatureState;
 
-import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -17,6 +17,9 @@ class HarborAnchor extends ChangeNotifier {
   HarborAnchor({this.debugLabel});
 
   final String? debugLabel;
+
+  @override
+  String toString() => debugLabel == null ? describeIdentity(this) : '${describeIdentity(this)}($debugLabel)';
 
   RenderBox? _box;
   bool _disposed = false;
@@ -123,6 +126,12 @@ class HarborAnchorPoint extends SingleChildRenderObjectWidget {
   void updateRenderObject(final BuildContext context, final RenderObject renderObject) {
     (renderObject as _RenderAnchorPoint).anchor = anchor;
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
+  }
 }
 
 class _RenderAnchorPoint extends RenderProxyBox {
@@ -170,16 +179,28 @@ class _RenderAnchorPoint extends RenderProxyBox {
   }
 }
 
-/// Which side of its anchor an anchored buoy sits on. [before] and [after]
-/// are in reading order: [before] is on the right under right-to-left.
-enum HarborBuoySide { above, below, before, after }
+/// Which side of its anchor an anchored buoy sits on. [start] and [end] are in
+/// reading order, as in `AlignmentDirectional.centerStart`: [start] is on the
+/// right under right-to-left.
+enum HarborBuoySide {
+  above,
+  below,
+  start,
+  end;
+
+  @Deprecated('Use HarborBuoySide.start, the reading-order name Flutter uses.')
+  static const HarborBuoySide before = start;
+
+  @Deprecated('Use HarborBuoySide.end, the reading-order name Flutter uses.')
+  static const HarborBuoySide after = end;
+}
 
 /// Where a buoy of [size] sits by the anchor at [at], inside [water]: on
 /// [side], [gap] away, overlapping it by [overlap], and centered on it across
 /// that side. It is kept inside [water] across the side, and above or below
 /// its anchor, never past the far edge. With [flips], it goes to the opposite
 /// side when [side] has no room and that one has, and is never past the far
-/// edge before or after its anchor either.
+/// edge at the start or end of its anchor either.
 Offset _anchoredOffset({
   required final Rect water,
   required final Rect at,
@@ -194,8 +215,8 @@ Offset _anchoredOffset({
   final AxisDirection preferred = switch (side) {
     HarborBuoySide.above => AxisDirection.up,
     HarborBuoySide.below => AxisDirection.down,
-    HarborBuoySide.before => rtl ? AxisDirection.right : AxisDirection.left,
-    HarborBuoySide.after => rtl ? AxisDirection.left : AxisDirection.right,
+    HarborBuoySide.start => rtl ? AxisDirection.right : AxisDirection.left,
+    HarborBuoySide.end => rtl ? AxisDirection.left : AxisDirection.right,
   };
   double along(final AxisDirection d) => switch (d) {
     AxisDirection.up => at.top - gap - size.height + overlap,
@@ -237,7 +258,7 @@ Offset _anchoredOffset({
 /// Give buoys to [Harbor.buoys]. A modal buoy hides the buoys listed before it
 /// while it is up (a menu over a tooltip).
 @immutable
-class HarborBuoy {
+class HarborBuoy with Diagnosticable {
   /// A buoy at [alignment] within the clear water, [margin] in from its edges.
   const HarborBuoy({
     this.key,
@@ -303,6 +324,36 @@ class HarborBuoy {
   /// Keeps the buoy inside this rectangle (in the harbor's own coordinates)
   /// as well as inside the clear water.
   final Rect? within;
+
+  @override
+  String toStringShort() =>
+      anchor == null ? objectRuntimeType(this, 'HarborBuoy') : '${objectRuntimeType(this, 'HarborBuoy')}.anchored';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
+    if (anchor == null) {
+      properties.add(
+        DiagnosticsProperty<AlignmentGeometry>('alignment', alignment, defaultValue: Alignment.bottomCenter),
+      );
+      properties.add(
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(16.0)),
+      );
+      properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
+    } else {
+      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
+      properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
+      properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+      properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+      properties.add(
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)),
+      );
+    }
+    properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
+    properties.add(ObjectFlagProperty<VoidCallback>.has('onDismiss', onDismiss));
+    properties.add(ColorProperty('barrierColor', barrierColor, defaultValue: const Color(0x00000000)));
+  }
 }
 
 /// The layer a harbor floats its buoys in.
@@ -724,6 +775,18 @@ class HarborPortalBuoy extends StatefulWidget {
 
   @override
   State<HarborPortalBuoy> createState() => _HarborPortalBuoyState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<OverlayPortalController>('controller', controller));
+    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor, defaultValue: null));
+    properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
+    properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+    properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)));
+    properties.add(FlagProperty('flips', value: flips, ifFalse: 'no flip'));
+  }
 }
 
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {

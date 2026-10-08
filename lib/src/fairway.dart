@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -23,6 +25,9 @@ import 'waters.dart';
 ///
 /// The tree is the same whatever the insets are, so the keyboard coming and
 /// going changes numbers, never structure, and scroll position survives.
+///
+/// It takes the rest of a `CustomScrollView`'s parameters, with the same
+/// defaults, and hands them to its scroll view.
 class HarborFairway extends StatelessWidget {
   const HarborFairway({
     super.key,
@@ -31,19 +36,28 @@ class HarborFairway extends StatelessWidget {
     this.controller,
     this.primary,
     this.physics,
+    this.scrollBehavior,
     this.shrinkWrap = false,
+    this.center,
+    this.anchor = 0.0,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
     this.mooringLine = true,
     this.revealMargin = 0.0,
     this.wake = true,
     this.startsInOpenWater = false,
-    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
-    this.clipBehavior = Clip.hardEdge,
     this.scrollCacheExtent,
+    this.paintOrder = SliverPaintOrder.firstIsTop,
     this.semanticChildCount,
+    this.dragStartBehavior = DragStartBehavior.start,
+    this.keyboardDismissBehavior,
+    this.restorationId,
+    this.clipBehavior = Clip.hardEdge,
+    this.hitTestBehavior = HitTestBehavior.opaque,
     required this.slivers,
-  }) : _hugsChild = false;
+  }) : assert(!shrinkWrap || center == null),
+       assert(anchor >= 0.0 && anchor <= 1.0),
+       _hugsChild = false;
 
   /// A fairway with a single box [child].
   ///
@@ -60,6 +74,7 @@ class HarborFairway extends StatelessWidget {
     this.controller,
     this.primary,
     this.physics,
+    this.scrollBehavior,
     this.shrinkWrap = false,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
@@ -67,11 +82,17 @@ class HarborFairway extends StatelessWidget {
     this.revealMargin = 0.0,
     this.wake = true,
     this.startsInOpenWater = false,
-    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
-    this.clipBehavior = Clip.hardEdge,
     this.scrollCacheExtent,
+    this.dragStartBehavior = DragStartBehavior.start,
+    this.keyboardDismissBehavior,
+    this.restorationId,
+    this.clipBehavior = Clip.hardEdge,
+    this.hitTestBehavior = HitTestBehavior.opaque,
     required final Widget child,
-  }) : semanticChildCount = null,
+  }) : center = null,
+       anchor = 0.0,
+       paintOrder = SliverPaintOrder.firstIsTop,
+       semanticChildCount = null,
        _hugsChild = true,
        slivers = <Widget>[SliverToBoxAdapter(child: _HarborHugTarget(child: child))];
 
@@ -80,15 +101,32 @@ class HarborFairway extends StatelessWidget {
   final ScrollController? controller;
   final bool? primary;
   final ScrollPhysics? physics;
+  final ScrollBehavior? scrollBehavior;
   final bool shrinkWrap;
 
+  /// The key of the sliver at the zero scroll offset, as on a
+  /// `CustomScrollView`: the slivers before it grow away from it, toward the
+  /// leading end. Each end of the scroll still rests clear of the docks there,
+  /// and at rest the center sliver starts clear of the leading docks.
+  ///
+  /// Sliver docks after the center pin at the docks' face. Those before it
+  /// grow the other way, so they pin at the trailing end of the viewport, as
+  /// they would in a `CustomScrollView`, without keeping clear of the docks.
+  final Key? center;
+
+  /// Where the zero scroll offset sits, as a fraction of the water between the
+  /// docks rather than of the whole viewport, which runs under them: 0 rests
+  /// it clear of the leading docks, 1 at the face of the trailing docks (and
+  /// the keyboard). Otherwise it is a `CustomScrollView`'s anchor.
+  final double anchor;
+
   /// Your own spacing at each end and side, added to the clearance.
-  final EdgeInsetsDirectional padding;
+  final EdgeInsetsGeometry padding;
 
   /// A floor on each end's clearance, as `SafeArea.minimum` is: whatever is in
   /// the way there or this, whichever is larger, before [padding] is added.
   /// The bottom of a phone with a home button, where nothing covers the end.
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
 
   /// For a horizontal fairway: whether the ends add the harbor's margin, so
   /// the first item at rest lines up with the rest of the page.
@@ -106,14 +144,55 @@ class HarborFairway extends StatelessWidget {
   /// docks still pin at the docks' face, and reveals still keep clear of them.
   final bool startsInOpenWater;
 
-  final ScrollViewKeyboardDismissBehavior keyboardDismissBehavior;
-  final Clip clipBehavior;
   final ScrollCacheExtent? scrollCacheExtent;
+  final SliverPaintOrder paintOrder;
   final int? semanticChildCount;
+  final DragStartBehavior dragStartBehavior;
+
+  /// How a drag dismisses the keyboard. Left null, it is the [scrollBehavior]'s,
+  /// or else the inherited `ScrollConfiguration`'s, as on a `ScrollView`.
+  final ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior;
+  final String? restorationId;
+  final Clip clipBehavior;
+  final HitTestBehavior hitTestBehavior;
   final List<Widget> slivers;
 
   /// Whether this is the box form, which can take its cross axis from its child.
   final bool _hugsChild;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    // The fields a scroll view has read as `ScrollView` shows them, scrollDirection even at its default.
+    properties.add(EnumProperty<Axis>('scrollDirection', scrollDirection));
+    properties.add(FlagProperty('reverse', value: reverse, ifTrue: 'reversed', showName: true));
+    properties.add(
+      DiagnosticsProperty<ScrollController>('controller', controller, showName: false, defaultValue: null),
+    );
+    properties.add(FlagProperty('primary', value: primary, ifTrue: 'using primary controller', showName: true));
+    properties.add(DiagnosticsProperty<ScrollPhysics>('physics', physics, showName: false, defaultValue: null));
+    properties.add(FlagProperty('shrinkWrap', value: shrinkWrap, ifTrue: 'shrink-wrapping', showName: true));
+    properties.add(DiagnosticsProperty<ScrollCacheExtent>('scrollCacheExtent', scrollCacheExtent, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(FlagProperty('mooringLine', value: mooringLine, ifFalse: 'no mooring line'));
+    properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
+    properties.add(FlagProperty('wake', value: wake, ifFalse: 'no wake'));
+    properties.add(FlagProperty('startsInOpenWater', value: startsInOpenWater, ifTrue: 'starts in open water'));
+    properties.add(
+      EnumProperty<ScrollViewKeyboardDismissBehavior>(
+        'keyboardDismissBehavior',
+        keyboardDismissBehavior,
+        defaultValue: null,
+      ),
+    );
+    properties.add(EnumProperty<Clip>('clipBehavior', clipBehavior, defaultValue: Clip.hardEdge));
+    properties.add(IntProperty('semanticChildCount', semanticChildCount, defaultValue: null));
+  }
 
   /// The scroll padding a third-party list should use to sail this fairway's
   /// way: clearance at both ends along [axis], at least [minimum], plus
@@ -121,28 +200,36 @@ class HarborFairway extends StatelessWidget {
   static EdgeInsets paddingOf(
     final BuildContext context, {
     final Axis axis = Axis.vertical,
-    final EdgeInsetsDirectional extra = EdgeInsetsDirectional.zero,
-    final EdgeInsetsDirectional minimum = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final bool mooringLine = true,
   }) {
     final TextDirection direction = Directionality.of(context);
+    final EdgeInsetsDirectional extraHere = HarborEdges.resolve(extra, direction);
+    final EdgeInsetsDirectional minimumHere = HarborEdges.resolve(minimum, direction);
     double end(final HarborEdge edge) {
       double value = HarborWaters.clearanceOf(context, edge);
       if (!edge.isVertical && mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
-      return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(extra, edge);
+      return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(extraHere, edge);
     }
 
     final EdgeInsetsDirectional padding = axis == Axis.vertical
-        ? EdgeInsetsDirectional.only(top: end(HarborEdge.top), bottom: end(HarborEdge.bottom), start: extra.start, end: extra.end)
-        : EdgeInsetsDirectional.only(start: end(HarborEdge.start), end: end(HarborEdge.end), top: extra.top, bottom: extra.bottom);
+        ? EdgeInsetsDirectional.only(top: end(HarborEdge.top), bottom: end(HarborEdge.bottom), start: extraHere.start, end: extraHere.end)
+        : EdgeInsetsDirectional.only(start: end(HarborEdge.start), end: end(HarborEdge.end), top: extraHere.top, bottom: extraHere.bottom);
     return padding.resolve(direction);
   }
 
   @override
   Widget build(final BuildContext context) {
+    assert(
+      center == null || slivers.where((final Widget s) => s.key == center).length == 1,
+      'A fairway center must be the key of exactly one of its slivers.',
+    );
     final TextDirection direction = Directionality.of(context);
+    final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
+    final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     // The docks carry the wakes; the coast and the margin are read only where
     // they are used, so a carousel does not rebuild as the keyboard moves.
     final HarborWatersData waters = HarborWaters.of(context, aspect: HarborWatersAspect.docks);
@@ -159,7 +246,8 @@ class HarborFairway extends StatelessWidget {
       return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(padding, edge);
     }
 
-    double leading = clearance(leadingEdge);
+    final double clearLeading = clearance(leadingEdge);
+    double leading = clearLeading;
     final double trailing = clearance(leadingEdge.opposite);
 
     // A sliver dock first in the fairway takes the coast on the leading edge
@@ -201,6 +289,7 @@ class HarborFairway extends StatelessWidget {
         castOff,
         vertical,
         startsInOpenWater ? 0.0 : leading,
+        clearLeading,
         cover,
         trailing,
         absorbed,
@@ -224,6 +313,7 @@ class HarborFairway extends StatelessWidget {
     final Set<HarborEdge> castOff,
     final bool vertical,
     final double leading,
+    final double clearLeading,
     final double cover,
     final double trailing,
     final double absorbed,
@@ -239,9 +329,8 @@ class HarborFairway extends StatelessWidget {
     // Every reveal (a focused field, focus traversal, ensureVisible) is widened
     // by what covers the trailing edge, and by the wake past the leading
     // docks' face, so the row comes to rest in clear water.
-    final double leadExtra = revealMargin + math.max(0.0, leading - cover);
     final double trailExtra = revealMargin + trailing;
-    final EdgeInsets reveal = switch (axis) {
+    EdgeInsets reveal(final double leadExtra) => switch (axis) {
       AxisDirection.down => EdgeInsets.only(top: leadExtra, bottom: trailExtra),
       AxisDirection.up => EdgeInsets.only(top: trailExtra, bottom: leadExtra),
       AxisDirection.right => EdgeInsets.only(left: leadExtra, right: trailExtra),
@@ -260,32 +349,56 @@ class HarborFairway extends StatelessWidget {
       return result;
     }
 
+    // With a center, the cover leads the slivers that grow forward from it,
+    // and anchor 0 rests the center where the first sliver would rest.
+    final Widget coverSliver = _HarborCoverSliver(
+      key: _coverKey,
+      extent: cover,
+      fromViewportEdge: !shrinkWrap && (center != null || anchor != 0.0),
+    );
+    final bool centersFirst = center != null && slivers.first.key == center;
     return HarborCastOff(
       edges: castOff,
       tide: vertical,
       margin: !vertical && mooringLine,
       child: _HarborScrollView(
-        reveal: reveal,
+        reveal: reveal(revealMargin + math.max(0.0, leading - cover)),
+        reverseReveal: reveal(revealMargin + clearLeading),
+        anchorLeading: center == null ? 0.0 : (centersFirst ? leading : clearLeading),
+        anchorTrailing: center == null ? leading + trailing : trailing,
         scrollDirection: scrollDirection,
         reverse: reverse,
         controller: controller,
         primary: primary,
         physics: physics,
+        scrollBehavior: scrollBehavior,
         shrinkWrap: shrinkWrap,
-        keyboardDismissBehavior: keyboardDismissBehavior,
-        clipBehavior: clipBehavior,
+        center: center == null ? null : _coverKey,
+        anchor: anchor,
         scrollCacheExtent: scrollCacheExtent,
+        paintOrder: paintOrder,
         semanticChildCount: semanticChildCount,
+        dragStartBehavior: dragStartBehavior,
+        keyboardDismissBehavior: keyboardDismissBehavior,
+        restorationId: restorationId,
+        clipBehavior: clipBehavior,
+        hitTestBehavior: hitTestBehavior,
         slivers: <Widget>[
-          _HarborCoverSliver(extent: cover),
+          if (center == null) coverSliver,
           SliverToBoxAdapter(
             child: SizedBox(width: vertical ? null : leading, height: vertical ? leading : null),
           ),
-          for (int i = 0; i < slivers.length; i++)
+          for (int i = 0; i < slivers.length; i++) ...<Widget>[
+            if (center != null && slivers[i].key == center) coverSliver,
             SliverPadding(
+              key: switch (slivers[i].key) {
+                final Key key => _HarborSliverKey(key),
+                null => null,
+              },
               padding: crossPadding.resolve(direction),
               sliver: i == 0 ? first(slivers[i]) : slivers[i],
             ),
+          ],
           SliverToBoxAdapter(
             child: SizedBox(width: vertical ? null : trailing, height: vertical ? trailing : null),
           ),
@@ -295,24 +408,62 @@ class HarborFairway extends StatelessWidget {
   }
 }
 
+const Key _coverKey = _HarborCoverKey();
+
+class _HarborCoverKey extends LocalKey {
+  const _HarborCoverKey();
+}
+
+/// The key of the sliver a fairway wraps around one of yours that has a key,
+/// so a center names it and keyed slivers keep their state as they move.
+class _HarborSliverKey extends LocalKey {
+  const _HarborSliverKey(this.key);
+
+  final Key key;
+
+  @override
+  bool operator ==(final Object other) => other is _HarborSliverKey && other.key == key;
+
+  @override
+  int get hashCode => Object.hash(_HarborSliverKey, key);
+}
+
 /// A `CustomScrollView` whose viewport widens every reveal by [reveal].
 class _HarborScrollView extends CustomScrollView {
   const _HarborScrollView({
     required this.reveal,
+    required this.reverseReveal,
+    required this.anchorLeading,
+    required this.anchorTrailing,
     super.scrollDirection,
     super.reverse,
     super.controller,
     super.primary,
     super.physics,
+    super.scrollBehavior,
     super.shrinkWrap,
-    super.keyboardDismissBehavior,
-    super.clipBehavior,
+    super.center,
+    super.anchor,
     super.scrollCacheExtent,
-    super.semanticChildCount,
+    super.paintOrder,
     super.slivers,
+    super.semanticChildCount,
+    super.dragStartBehavior,
+    super.keyboardDismissBehavior,
+    super.restorationId,
+    super.clipBehavior,
+    super.hitTestBehavior,
   });
 
   final EdgeInsets reveal;
+
+  /// [reveal] for the slivers before the center, which the cover does not reach.
+  final EdgeInsets reverseReveal;
+
+  /// How far from the leading and trailing edges an anchor of 0 and of 1 put
+  /// the zero scroll offset.
+  final double anchorLeading;
+  final double anchorTrailing;
 
   @override
   Widget buildViewport(
@@ -327,15 +478,20 @@ class _HarborScrollView extends CustomScrollView {
         axisDirection: axisDirection,
         offset: offset,
         slivers: slivers,
+        paintOrder: paintOrder,
         clipBehavior: clipBehavior,
         scrollCacheExtent: scrollCacheExtent,
       );
     }
     return _HarborViewport(
       reveal: reveal,
+      reverseReveal: reverseReveal,
+      anchorLeading: anchorLeading,
+      anchorTrailing: anchorTrailing,
       axisDirection: axisDirection,
       offset: offset,
       slivers: slivers,
+      paintOrder: paintOrder,
       clipBehavior: clipBehavior,
       scrollCacheExtent: scrollCacheExtent,
       center: center,
@@ -347,9 +503,13 @@ class _HarborScrollView extends CustomScrollView {
 class _HarborViewport extends Viewport {
   _HarborViewport({
     required this.reveal,
+    required this.reverseReveal,
+    required this.anchorLeading,
+    required this.anchorTrailing,
     required super.axisDirection,
     required super.offset,
     super.slivers,
+    super.paintOrder,
     super.clipBehavior,
     super.scrollCacheExtent,
     super.center,
@@ -357,41 +517,105 @@ class _HarborViewport extends Viewport {
   });
 
   final EdgeInsets reveal;
+  final EdgeInsets reverseReveal;
+  final double anchorLeading;
+  final double anchorTrailing;
 
   @override
   RenderViewport createRenderObject(final BuildContext context) => _RenderHarborViewport(
     reveal: reveal,
+    reverseReveal: reverseReveal,
+    anchorLeading: anchorLeading,
+    anchorTrailing: anchorTrailing,
     axisDirection: axisDirection,
     crossAxisDirection: crossAxisDirection ?? Viewport.getDefaultCrossAxisDirection(context, axisDirection),
     anchor: anchor,
     offset: offset,
     scrollCacheExtent: scrollCacheExtent,
+    paintOrder: paintOrder,
     clipBehavior: clipBehavior,
   );
 
   @override
   void updateRenderObject(final BuildContext context, final RenderViewport renderObject) {
     super.updateRenderObject(context, renderObject);
-    (renderObject as _RenderHarborViewport).reveal = reveal;
+    (renderObject as _RenderHarborViewport)
+      ..reveal = reveal
+      ..reverseReveal = reverseReveal
+      ..anchorLeading = anchorLeading
+      ..anchorTrailing = anchorTrailing;
   }
 }
 
 class _RenderHarborViewport extends RenderViewport {
   _RenderHarborViewport({
     required this.reveal,
+    required this.reverseReveal,
+    required this._anchorLeading,
+    required this._anchorTrailing,
     super.axisDirection,
     required super.crossAxisDirection,
     required super.offset,
     super.anchor,
     super.scrollCacheExtent,
+    super.paintOrder,
     super.clipBehavior,
   });
 
   EdgeInsets reveal;
+  EdgeInsets reverseReveal;
+
+  double _anchorLeading;
+  set anchorLeading(final double value) {
+    if (_anchorLeading != value) {
+      _anchorLeading = value;
+      markNeedsLayout();
+    }
+  }
+
+  double _anchorTrailing;
+  set anchorTrailing(final double value) {
+    if (_anchorTrailing != value) {
+      _anchorTrailing = value;
+      markNeedsLayout();
+    }
+  }
+
+  // The viewport runs under the docks, so the anchor it lays out by is the
+  // fairway's anchor taken across the water between them.
+  @override
+  double get anchor {
+    final double extent = hasSize ? (axis == Axis.vertical ? size.height : size.width) : 0.0;
+    if (extent <= 0.0) {
+      return super.anchor;
+    }
+    final double water = math.max(0.0, extent - _anchorLeading - _anchorTrailing);
+    return ((_anchorLeading + super.anchor * water) / extent).clamp(0.0, 1.0);
+  }
 
   @override
-  RevealedOffset getOffsetToReveal(final RenderObject target, final double alignment, {final Rect? rect, final Axis? axis}) =>
-      super.getOffsetToReveal(target, alignment, rect: _widen(rect ?? target.paintBounds, reveal), axis: axis);
+  RevealedOffset getOffsetToReveal(final RenderObject target, final double alignment, {final Rect? rect, final Axis? axis}) {
+    RenderObject? sliver = target;
+    while (sliver != null && sliver.parent != this) {
+      sliver = sliver.parent;
+    }
+    final bool beforeCenter = sliver is RenderSliver && sliver.constraints.growthDirection == GrowthDirection.reverse;
+    final Rect widened = _widen(rect ?? target.paintBounds, beforeCenter ? reverseReveal : reveal);
+    final RevealedOffset revealed = super.getOffsetToReveal(target, alignment, rect: widened, axis: axis);
+    // RenderViewport reveals as if the zero scroll offset were at its leading
+    // edge, wherever the anchor puts it.
+    final double zero = anchor * (this.axis == Axis.vertical ? size.height : size.width);
+    if (zero == 0.0 || !revealed.offset.isFinite) {
+      return revealed;
+    }
+    final Offset shift = switch (axisDirection) {
+      AxisDirection.down => Offset(0.0, -zero),
+      AxisDirection.up => Offset(0.0, zero),
+      AxisDirection.right => Offset(-zero, 0.0),
+      AxisDirection.left => Offset(zero, 0.0),
+    };
+    return RevealedOffset(offset: revealed.offset + zero, rect: revealed.rect.shift(shift));
+  }
 }
 
 class _HarborShrinkWrappingViewport extends ShrinkWrappingViewport {
@@ -400,6 +624,7 @@ class _HarborShrinkWrappingViewport extends ShrinkWrappingViewport {
     required super.axisDirection,
     required super.offset,
     super.slivers,
+    super.paintOrder,
     super.clipBehavior,
     super.scrollCacheExtent,
   });
@@ -412,6 +637,7 @@ class _HarborShrinkWrappingViewport extends ShrinkWrappingViewport {
     axisDirection: axisDirection,
     crossAxisDirection: crossAxisDirection ?? Viewport.getDefaultCrossAxisDirection(context, axisDirection),
     offset: offset,
+    paintOrder: paintOrder,
     clipBehavior: clipBehavior,
     scrollCacheExtent: scrollCacheExtent,
   );
@@ -429,6 +655,7 @@ class _RenderHarborShrinkWrappingViewport extends RenderShrinkWrappingViewport {
     super.axisDirection,
     required super.crossAxisDirection,
     required super.offset,
+    super.paintOrder,
     super.clipBehavior,
     super.scrollCacheExtent,
   });
@@ -611,11 +838,24 @@ class HarborFairwaySliver extends StatelessWidget {
 
   final bool clearLeading;
   final bool clearTrailing;
-  final EdgeInsetsDirectional padding;
+  final EdgeInsetsGeometry padding;
 
   /// A floor on the clearance at each end it clears, as on [HarborFairway.minimum].
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
   final Widget sliver;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
+    properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {
@@ -627,6 +867,8 @@ class HarborFairwaySliver extends StatelessWidget {
       AxisDirection.right => direction == TextDirection.ltr ? (HarborEdge.start, HarborEdge.end) : (HarborEdge.end, HarborEdge.start),
       AxisDirection.left => direction == TextDirection.ltr ? (HarborEdge.end, HarborEdge.start) : (HarborEdge.start, HarborEdge.end),
     };
+    final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
+    final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     double clearance(final HarborEdge edge) => math.max(HarborWaters.clearanceOf(context, edge), HarborEdges.of(minimum, edge));
     final double leading = clearLeading ? clearance(leadingEdge) : 0.0;
     final double trailing = clearTrailing ? clearance(trailingEdge) : 0.0;
@@ -659,6 +901,15 @@ class HarborSliverDock extends StatelessWidget {
   final Widget child;
   final Widget? backdrop;
   final HitTestBehavior hitTestBehavior;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
+    properties.add(
+      EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {
@@ -753,21 +1004,27 @@ class _RenderHarborRevealSliver extends RenderProxySliver {
 /// tells the slivers after it how far the docks reach, so pinned headers pin
 /// at the docks' face and reveals keep clear of them.
 class _HarborCoverSliver extends LeafRenderObjectWidget {
-  const _HarborCoverSliver({required this.extent});
+  const _HarborCoverSliver({super.key, required this.extent, required this.fromViewportEdge});
 
   final double extent;
 
+  /// Whether the cover may start inside the viewport, as it does at a center
+  /// or an anchor, and must reach only as far as the docks do from its edge.
+  final bool fromViewportEdge;
+
   @override
-  RenderObject createRenderObject(final BuildContext context) => _RenderHarborCoverSliver(extent);
+  RenderObject createRenderObject(final BuildContext context) => _RenderHarborCoverSliver(extent, fromViewportEdge);
 
   @override
   void updateRenderObject(final BuildContext context, final _RenderHarborCoverSliver renderObject) {
-    renderObject.extent = extent;
+    renderObject
+      ..extent = extent
+      ..fromViewportEdge = fromViewportEdge;
   }
 }
 
 class _RenderHarborCoverSliver extends RenderSliver {
-  _RenderHarborCoverSliver(this._extent);
+  _RenderHarborCoverSliver(this._extent, this._fromViewportEdge);
 
   double _extent;
   set extent(final double value) {
@@ -777,9 +1034,20 @@ class _RenderHarborCoverSliver extends RenderSliver {
     }
   }
 
+  bool _fromViewportEdge;
+  set fromViewportEdge(final bool value) {
+    if (_fromViewportEdge != value) {
+      _fromViewportEdge = value;
+      markNeedsLayout();
+    }
+  }
+
   @override
   void performLayout() {
-    final double paint = math.min(_extent, constraints.remainingPaintExtent);
+    // First in its run of slivers, it starts where the viewport has that much
+    // paint extent left, as the viewport measures overlap.
+    final double start = _fromViewportEdge ? constraints.viewportMainAxisExtent - constraints.remainingPaintExtent : 0.0;
+    final double paint = (_extent - start).clamp(0.0, constraints.remainingPaintExtent);
     geometry = SliverGeometry(
       paintExtent: paint,
       layoutExtent: 0.0,

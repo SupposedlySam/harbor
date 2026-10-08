@@ -897,4 +897,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
   });
+
+  // Breaks if: a builder stops taking the named builder type a caller holds it in.
+  testWidgets('open water and a draggable sheet take named builder types', (final tester) async {
+    final HarborWatersWidgetBuilder background = (final BuildContext context, final HarborWatersData waters) =>
+        SizedBox(key: const ValueKey<String>('water'), height: waters.frameSize.height);
+    final ScrollableWidgetBuilder list = (final BuildContext context, final ScrollController controller) =>
+        HarborFairway(controller: controller, slivers: const <Widget>[]);
+    await tester.pumpSeaTrial(_app(Harbor(body: HarborOpenWater(builder: background))));
+    expect(_rect(tester, 'water').height, tester.view.physicalSize.height / tester.view.devicePixelRatio);
+    expect(HarborSheet.draggable(builder: list).builder, same(list));
+  });
 }
