@@ -117,8 +117,66 @@ class _RenderAnchorPoint extends RenderProxyBox {
   }
 }
 
-/// Which side of its anchor an anchored buoy sits on.
+/// Which side of its anchor an anchored buoy sits on. [before] and [after]
+/// are in reading order: [before] is on the right under right-to-left.
 enum HarborBuoySide { above, below, before, after }
+
+/// Where a buoy of [size] sits by the anchor at [at], inside [water]: on
+/// [side], [gap] away, overlapping it by [overlap], and centered on it across
+/// that side. It is kept inside [water] across the side, and above or below
+/// its anchor, never past the far edge. With [flips], it goes to the opposite
+/// side when [side] has no room and that one has, and is never past the far
+/// edge before or after its anchor either.
+Offset _anchoredOffset({
+  required final Rect water,
+  required final Rect at,
+  required final Size size,
+  required final HarborBuoySide side,
+  required final double gap,
+  required final double overlap,
+  required final TextDirection textDirection,
+  final bool flips = false,
+}) {
+  final bool rtl = textDirection == TextDirection.rtl;
+  final AxisDirection preferred = switch (side) {
+    HarborBuoySide.above => AxisDirection.up,
+    HarborBuoySide.below => AxisDirection.down,
+    HarborBuoySide.before => rtl ? AxisDirection.right : AxisDirection.left,
+    HarborBuoySide.after => rtl ? AxisDirection.left : AxisDirection.right,
+  };
+  double along(final AxisDirection d) => switch (d) {
+    AxisDirection.up => at.top - gap - size.height + overlap,
+    AxisDirection.down => at.bottom + gap - overlap,
+    AxisDirection.left => at.left - gap - size.width + overlap,
+    AxisDirection.right => at.right + gap - overlap,
+  };
+  bool fits(final AxisDirection d) => switch (d) {
+    AxisDirection.up => along(d) >= water.top,
+    AxisDirection.down => along(d) + size.height <= water.bottom,
+    AxisDirection.left => along(d) >= water.left,
+    AxisDirection.right => along(d) + size.width <= water.right,
+  };
+  final AxisDirection opposite = flipAxisDirection(preferred);
+  final AxisDirection direction = flips && !fits(preferred) && fits(opposite) ? opposite : preferred;
+  double left = at.center.dx - size.width / 2;
+  double top = at.center.dy - size.height / 2;
+  switch (direction) {
+    case AxisDirection.up:
+      top = math.max(along(direction), water.top);
+    case AxisDirection.down:
+      top = math.min(along(direction), water.bottom - size.height);
+    case AxisDirection.left:
+      left = flips ? math.max(along(direction), water.left) : along(direction);
+    case AxisDirection.right:
+      left = flips ? math.min(along(direction), water.right - size.width) : along(direction);
+  }
+  if (axisDirectionToAxis(direction) == Axis.vertical) {
+    left = left.clamp(water.left, math.max(water.left, water.right - size.width));
+  } else {
+    top = top.clamp(water.top, math.max(water.top, water.bottom - size.height));
+  }
+  return Offset(left, top);
+}
 
 /// Something afloat in a harbor: placed in the water nothing covers, so it
 /// clears the coast, every dock and the keyboard without knowing about them.
@@ -224,11 +282,14 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
   final List<HarborBuoy> buoys;
 
   @override
-  RenderObject createRenderObject(final BuildContext context) => _RenderBuoyLayer(buoys);
+  RenderObject createRenderObject(final BuildContext context) =>
+      _RenderBuoyLayer(buoys, Directionality.maybeOf(context) ?? TextDirection.ltr);
 
   @override
   void updateRenderObject(final BuildContext context, final _RenderBuoyLayer renderObject) {
-    renderObject.buoys = buoys;
+    renderObject
+      ..buoys = buoys
+      ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
   }
 }
 
@@ -236,9 +297,17 @@ class _BuoyParentData extends ContainerBoxParentData<RenderBox> {}
 
 class _RenderBuoyLayer extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, _BuoyParentData>, RenderBoxContainerDefaultsMixin<RenderBox, _BuoyParentData> {
-  _RenderBuoyLayer(this._buoys);
+  _RenderBuoyLayer(this._buoys, this._textDirection);
 
   List<HarborBuoy> _buoys;
+  TextDirection _textDirection;
+  set textDirection(final TextDirection value) {
+    if (value != _textDirection) {
+      _textDirection = value;
+      markNeedsPaint();
+    }
+  }
+
   final Set<HarborAnchor> _listening = <HarborAnchor>{};
 
   set buoys(final List<HarborBuoy> value) {
@@ -312,29 +381,6 @@ class _RenderBuoyLayer extends RenderBox
     }
   }
 
-  Offset _anchoredOffset(final HarborBuoy buoy, final RenderBox anchorBox, final Size s) {
-    final Rect water = buoy.margin.deflateRect(_clear);
-    final Rect at = MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size);
-    double left = at.center.dx - s.width / 2;
-    double top = at.center.dy - s.height / 2;
-    switch (buoy.side) {
-      case HarborBuoySide.above:
-        top = math.max(at.top - buoy.gap - s.height + buoy.overlap, water.top);
-      case HarborBuoySide.below:
-        top = math.min(at.bottom + buoy.gap - buoy.overlap, water.bottom - s.height);
-      case HarborBuoySide.before:
-        left = at.left - buoy.gap - s.width + buoy.overlap;
-      case HarborBuoySide.after:
-        left = at.right + buoy.gap - buoy.overlap;
-    }
-    if (buoy.side == HarborBuoySide.above || buoy.side == HarborBuoySide.below) {
-      left = left.clamp(water.left, math.max(water.left, water.right - s.width));
-    } else {
-      top = top.clamp(water.top, math.max(water.top, water.bottom - s.height));
-    }
-    return Offset(left, top);
-  }
-
   @override
   void paint(final PaintingContext context, final Offset offset) {
     RenderBox? child = firstChild;
@@ -349,7 +395,15 @@ class _RenderBuoyLayer extends RenderBox
           i++;
           continue;
         }
-        data.offset = _anchoredOffset(buoy, anchorBox, child.size);
+        data.offset = _anchoredOffset(
+          water: buoy.margin.deflateRect(_clear),
+          at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
+          size: child.size,
+          side: buoy.side,
+          gap: buoy.gap,
+          overlap: buoy.overlap,
+          textDirection: _textDirection,
+        );
       }
       context.paintChild(child, data.offset + offset);
       child = data.nextSibling;
@@ -360,6 +414,211 @@ class _RenderBuoyLayer extends RenderBox
   @override
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) =>
       defaultHitTestChildren(result, position: position);
+}
+
+/// An anchored buoy opened from anywhere: a menu from a list row, a popover
+/// from a button, declared where it is opened rather than in [Harbor.buoys].
+///
+/// It is an [OverlayPortal]: while [controller] shows it, [buoyBuilder]'s
+/// buoy floats in the nearest [Overlay] and is placed as a
+/// [HarborBuoy.anchored] is, in the clear water of the harbor around this
+/// widget: by [anchor] (or by [child] when there is none), on its [side],
+/// [gap] away, [margin] in from the water's edges. When [side] has no room
+/// and the opposite side has, it [flips] there; otherwise it is kept inside
+/// the clear water.
+class HarborPortalBuoy extends StatefulWidget {
+  const HarborPortalBuoy({
+    super.key,
+    required this.controller,
+    required this.buoyBuilder,
+    required this.child,
+    this.anchor,
+    this.side = HarborBuoySide.above,
+    this.gap = 8.0,
+    this.overlap = 0.0,
+    this.margin = const EdgeInsets.all(8.0),
+    this.flips = true,
+  });
+
+  /// Shows and hides the buoy.
+  final OverlayPortalController controller;
+
+  /// Builds the buoy. Its context is this widget's, so it reads the same
+  /// themes and harbor.
+  final WidgetBuilder buoyBuilder;
+
+  /// Where this widget lives in the tree, and its anchor when [anchor] is null.
+  final Widget child;
+
+  /// What the buoy sits by. Null anchors it to [child].
+  final HarborAnchor? anchor;
+
+  final HarborBuoySide side;
+  final double gap;
+  final double overlap;
+  final EdgeInsets margin;
+
+  /// Whether the buoy goes to the opposite side of its anchor when [side] has
+  /// no room and that side has.
+  final bool flips;
+
+  @override
+  State<HarborPortalBuoy> createState() => _HarborPortalBuoyState();
+}
+
+class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
+  HarborAnchor? _own;
+
+  HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
+
+  @override
+  void dispose() {
+    _own?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(final BuildContext context) => OverlayPortal(
+    controller: widget.controller,
+    overlayChildBuilder: (final BuildContext context) => _PortalBuoyLayout(
+      harbor: HarborController.maybeOf(context),
+      anchor: _anchor,
+      side: widget.side,
+      gap: widget.gap,
+      overlap: widget.overlap,
+      margin: widget.margin,
+      flips: widget.flips,
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      child: widget.buoyBuilder(context),
+    ),
+    child: widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child,
+  );
+}
+
+class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
+  const _PortalBuoyLayout({
+    required this.harbor,
+    required this.anchor,
+    required this.side,
+    required this.gap,
+    required this.overlap,
+    required this.margin,
+    required this.flips,
+    required this.textDirection,
+    super.child,
+  });
+
+  final HarborController? harbor;
+  final HarborAnchor anchor;
+  final HarborBuoySide side;
+  final double gap;
+  final double overlap;
+  final EdgeInsets margin;
+  final bool flips;
+  final TextDirection textDirection;
+
+  @override
+  RenderObject createRenderObject(final BuildContext context) => _RenderPortalBuoy(this);
+
+  @override
+  void updateRenderObject(final BuildContext context, final _RenderPortalBuoy renderObject) {
+    renderObject.config = this;
+  }
+}
+
+/// Fills the overlay and places its buoy when it paints, once the harbor's
+/// clear water and the anchor are laid out for this frame.
+class _RenderPortalBuoy extends RenderShiftedBox {
+  _RenderPortalBuoy(this._config) : super(null);
+
+  _PortalBuoyLayout _config;
+  set config(final _PortalBuoyLayout value) {
+    final _PortalBuoyLayout old = _config;
+    _config = value;
+    if (attached) {
+      _unlisten(old);
+      _listen(value);
+    }
+    markNeedsLayout();
+  }
+
+  bool _placed = false;
+
+  void _listen(final _PortalBuoyLayout c) {
+    c.anchor.addListener(markNeedsPaint);
+    c.harbor?.clearWater.addListener(markNeedsLayout);
+  }
+
+  void _unlisten(final _PortalBuoyLayout c) {
+    c.anchor.removeListener(markNeedsPaint);
+    c.harbor?.clearWater.removeListener(markNeedsLayout);
+  }
+
+  @override
+  void attach(final PipelineOwner owner) {
+    super.attach(owner);
+    _listen(_config);
+  }
+
+  @override
+  void detach() {
+    _unlisten(_config);
+    super.detach();
+  }
+
+  /// The harbor's clear water in this box's coordinates, or the whole box
+  /// when there is no harbor around the buoy.
+  Rect _water() {
+    final HarborController? harbor = _config.harbor;
+    final RenderBox? box = harbor?.renderBox;
+    final HarborLayoutRecord? layout = harbor?.lastLayout;
+    final Rect clear = box == null || layout == null || !box.attached || !box.hasSize
+        ? Offset.zero & size
+        : MatrixUtils.transformRect(box.getTransformTo(this), layout.clearWater);
+    return _config.margin.deflateRect(clear);
+  }
+
+  @override
+  Size computeDryLayout(final BoxConstraints constraints) => constraints.biggest;
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
+    final RenderBox? child = this.child;
+    if (child != null) {
+      // Only the water's size is known while laying out: the harbor's last
+      // one. A change to it lays the buoy out again.
+      final Rect? clear = _config.harbor?.lastLayout?.clearWater;
+      final Rect water = _config.margin.deflateRect(clear ?? Offset.zero & size);
+      child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
+    }
+  }
+
+  @override
+  void paint(final PaintingContext context, final Offset offset) {
+    final RenderBox? child = this.child;
+    final RenderBox? anchorBox = _config.anchor.box;
+    _placed = child != null && anchorBox != null;
+    if (!_placed) {
+      return;
+    }
+    final BoxParentData data = child!.parentData! as BoxParentData;
+    data.offset = _anchoredOffset(
+      water: _water(),
+      at: MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size),
+      size: child.size,
+      side: _config.side,
+      gap: _config.gap,
+      overlap: _config.overlap,
+      textDirection: _config.textDirection,
+      flips: _config.flips,
+    );
+    context.paintChild(child, data.offset + offset);
+  }
+
+  @override
+  bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) =>
+      _placed && super.hitTestChildren(result, position: position);
 }
 
 /// Where a signal is raised within the clear water of its harbor.

@@ -303,6 +303,86 @@ class _MooringPainter extends CustomPainter {
   bool shouldRepaint(final _MooringPainter oldDelegate) => false;
 }
 
+/// A dan buoy just thrown over the side of a boat: a float with a weighted
+/// pole and a flag on top, landing wherever the boat happens to be.
+class DanBuoyArt extends StatelessWidget {
+  const DanBuoyArt({super.key});
+
+  @override
+  Widget build(final BuildContext context) => const CustomPaint(painter: _DanBuoyPainter(), child: SizedBox.expand());
+}
+
+class _DanBuoyPainter extends CustomPainter {
+  const _DanBuoyPainter();
+
+  @override
+  void paint(final Canvas canvas, final Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final double horizon = h * 0.42;
+    Scenery.sky(canvas, size, horizon);
+    _Afloat.farShore(canvas, size, horizon);
+    Scenery.water(canvas, size, horizon);
+    _Afloat.gull(canvas, Offset(w * 0.72, h * 0.14), 16);
+
+    // The boat it came from, off to the right.
+    final double waterline = h * 0.74;
+    Scenery.rowboat(canvas, Offset(w * 0.74, waterline - h * 0.02), w * 0.3, Palette.hulls[1]);
+
+    // The throw: a dotted arc from the boat to where the buoy landed.
+    final double cx = w * 0.32;
+    final Paint arc = Paint()
+      ..color = Colors.white.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+    final Path throwPath = Path()
+      ..moveTo(w * 0.68, waterline - h * 0.08)
+      ..quadraticBezierTo(w * 0.52, horizon - h * 0.12, cx + w * 0.04, waterline - h * 0.36);
+    for (final PathMetric metric in throwPath.computeMetrics()) {
+      for (double d = 0; d < metric.length; d += 9) {
+        final Tangent? t = metric.getTangentForOffset(d);
+        if (t != null) {
+          canvas.drawCircle(t.position, 1.2, arc);
+        }
+      }
+    }
+
+    // The pole, leaning a little, with its flag.
+    final double poleTop = waterline - h * 0.46;
+    final Paint pole = Paint()
+      ..color = const Color(0xFF263238)
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(cx, waterline), Offset(cx + w * 0.012, poleTop), pole);
+    final Path flag = Path()
+      ..moveTo(cx + w * 0.012, poleTop)
+      ..lineTo(cx + w * 0.012 + h * 0.16, poleTop + h * 0.05)
+      ..lineTo(cx + w * 0.012, poleTop + h * 0.1)
+      ..close();
+    canvas.drawPath(flag, Paint()..color = const Color(0xFFFF8F00));
+
+    // The float: an orange collar round the pole, riding the water.
+    final Rect float = Rect.fromCenter(center: Offset(cx, waterline - h * 0.04), width: h * 0.14, height: h * 0.1);
+    _Afloat.reflection(canvas, cx, waterline, float.width * 1.3, const Color(0xFFFF8F00));
+    canvas
+      ..drawRRect(RRect.fromRectAndRadius(float, Radius.circular(h * 0.03)), Paint()..color = const Color(0xFFFF8F00))
+      ..drawRect(
+        Rect.fromLTRB(float.left, float.center.dy - h * 0.01, float.right, float.center.dy + h * 0.01),
+        Paint()..color = const Color(0xFFF4F4F4),
+      );
+    final Paint foam = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+    canvas.drawArc(Rect.fromCenter(center: Offset(cx, waterline), width: float.width * 1.6, height: 8), 0.1, math.pi - 0.2, false, foam);
+    Scenery.ripples(canvas, size, waterline + 10);
+  }
+
+  @override
+  bool shouldRepaint(final _DanBuoyPainter oldDelegate) => false;
+}
+
 /// The harbor master's launch coming through, its blue light flashing, the
 /// other boats moving aside out of its way.
 class HarborLaunchArt extends StatelessWidget {

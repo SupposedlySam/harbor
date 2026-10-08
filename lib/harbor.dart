@@ -6,7 +6,15 @@
 library;
 
 export 'src/buoy.dart'
-    show HarborAnchor, HarborAnchorPoint, HarborBuoy, HarborBuoySide, HarborSignalSlot, HarborSignalTarget, HarborSignals;
+    show
+        HarborAnchor,
+        HarborAnchorPoint,
+        HarborBuoy,
+        HarborBuoySide,
+        HarborPortalBuoy,
+        HarborSignalSlot,
+        HarborSignalTarget,
+        HarborSignals;
 export 'src/chart.dart';
 export 'src/coast.dart';
 export 'src/controller.dart'

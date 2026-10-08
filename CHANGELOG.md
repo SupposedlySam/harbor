@@ -1,3 +1,8 @@
+## Unreleased
+
+* `HarborPortalBuoy`: an anchored buoy opened from anywhere in the tree (a menu from a list row, a popover from a button), built on `OverlayPortal`. It is placed in the nearest harbor's clear water by its child or a `HarborAnchor`, flips to the other side of its anchor when its side has no room, and is held inside the clear water otherwise.
+* `HarborBuoySide.before` and `.after` are in reading order: under right-to-left, an anchored buoy `before` its anchor sits on its right. They were placed as if left-to-right.
+
 ## 0.1.0
 
 The first harbor.
