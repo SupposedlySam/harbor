@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show DefaultCupertinoLocalizations;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -94,7 +95,7 @@ void main() {
   });
 
   // harbor's core imports no design library, so a Material app passes Material's localized
-  // label itself; the default is plain English.
+  // label itself; the default is the English that Material and Cupertino fall back to.
   testWidgets('a sheet barrier is announced with the label given, Material\'s by the documented recipe', (final tester) async {
     final BuildContext page = await _page(tester);
     late BuildContext sheet;
@@ -106,7 +107,7 @@ void main() {
       },
     ));
     await tester.pumpAndSettle();
-    expect(ModalRoute.of(sheet)!.barrierLabel, 'Close sheet');
+    expect(ModalRoute.of(sheet)!.barrierLabel, 'Dismiss');
     HarborSheet.close(sheet);
     await tester.pumpAndSettle();
 
@@ -149,7 +150,33 @@ void main() {
       },
     ));
     await tester.pumpAndSettle();
-    expect(ModalRoute.of(sheet)!.barrierLabel, 'Close sheet');
+    expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultMaterialLocalizations().modalBarrierDismissLabel);
+    expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultCupertinoLocalizations().modalBarrierDismissLabel);
+  });
+
+  testWidgets("a sheet barrier is showGeneralDialog's black by default", (final tester) async {
+    final BuildContext page = await _page(tester);
+    late BuildContext sheet;
+    unawaited(showHarborSheet<void>(
+      page,
+      builder: (final BuildContext context) {
+        sheet = context;
+        return const HarborSheet(body: SizedBox(height: 200));
+      },
+    ));
+    await tester.pumpAndSettle();
+    expect(ModalRoute.of(sheet)!.barrierColor, const Color(0x80000000));
+  });
+
+  testWidgets('a sheet footer draws a translucent black hairline by default', (final tester) async {
+    final BuildContext page = await _page(tester);
+    unawaited(showHarborSheet<void>(
+      page,
+      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200), footer: _bar('actions', 48)),
+    ));
+    await tester.pumpAndSettle();
+    final Finder footer = find.ancestor(of: find.byKey(const ValueKey<String>('actions')), matching: find.byType(HarborDockSlot)).first;
+    expect(tester.renderObject(footer), paints..rect(color: const Color(0x1F000000)));
   });
 
   for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.clear]) {
@@ -851,8 +878,8 @@ void main() {
         builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
       ));
       await tester.pumpAndSettle();
-      final SemanticsNode barrierNode = find.semantics.byLabel('Close sheet').evaluate().single;
-      expect(barrierNode, isSemantics(label: 'Close sheet', hasTapAction: true, onTapHint: 'Close the reply'));
+      final SemanticsNode barrierNode = find.semantics.byLabel('Dismiss').evaluate().single;
+      expect(barrierNode, isSemantics(label: 'Dismiss', hasTapAction: true, onTapHint: 'Close the reply'));
       semantics.dispose();
     });
   }
@@ -868,11 +895,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     // Mid-slide, the barrier already stops where the sheet has risen to.
-    Rect barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    Rect barrier = _globalRect(find.semantics.byLabel('Dismiss').evaluate().single);
     expect(barrier.top, 0.0);
     expect(barrier.bottom, closeTo(tester.getTopLeft(find.byKey(const ValueKey<String>('content'))).dy, 1));
     await tester.pumpAndSettle();
-    barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    barrier = _globalRect(find.semantics.byLabel('Dismiss').evaluate().single);
     final Rect sheet = _globalRect(find.semantics.byLabel('Reply').evaluate().single);
     expect(sheet.bottom, 874.0);
     expect(barrier.bottom, closeTo(sheet.top, 1));
@@ -884,7 +911,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     final double draggedTop = tester.getTopLeft(find.byKey(const ValueKey<String>('content'))).dy;
-    barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    barrier = _globalRect(find.semantics.byLabel('Dismiss').evaluate().single);
     expect(draggedTop, greaterThan(sheet.top + 50));
     expect(barrier.bottom, closeTo(draggedTop, 1));
     await drag.up();
@@ -906,7 +933,7 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    final Rect barrier = _globalRect(find.semantics.byLabel('Close sheet').evaluate().single);
+    final Rect barrier = _globalRect(find.semantics.byLabel('Dismiss').evaluate().single);
     expect(barrier.top, 0.0);
     expect(barrier.bottom, closeTo(_rect(tester, 'handle').top, 2));
     semantics.dispose();

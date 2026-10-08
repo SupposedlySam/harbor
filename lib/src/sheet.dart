@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'barrier_label.dart';
 import 'controller.dart';
 import 'dock.dart';
 import 'harbor.dart';
@@ -564,9 +565,10 @@ class HarborSheetController extends ChangeNotifier {
 ///
 /// A sheet with a barrier is a route, as a modal bottom sheet is: [routeSettings]
 /// reach navigator observers and route-name analytics, and the barrier is
-/// announced with [barrierLabel] ('Close sheet' when none is given; a Material app
-/// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
-/// localized one). [barrierOnTapHint] says what tapping the barrier does, read
+/// announced with [barrierLabel] ('Dismiss' when none is given, the English
+/// Material and Cupertino fall back to; a Material app passes
+/// `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
+/// localized one). [barrierColor] is `showGeneralDialog`'s, as a dialog's is. [barrierOnTapHint] says what tapping the barrier does, read
 /// as 'Double tap to …' ('Double tap to activate' when none is given), as
 /// `ModalBottomSheetRoute.barrierOnTapHint` does.
 ///
@@ -625,7 +627,7 @@ Future<T?> showHarborSheet<T>(
   final bool breakwater = false,
   final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
   final bool isDismissible = true,
-  final Color barrierColor = const Color(0x66000000),
+  final Color barrierColor = const Color(0x80000000),
   final double? maxWidth,
   final bool useRootNavigator = false,
   final Offset? anchorPoint,
@@ -679,7 +681,7 @@ Future<T?> showHarborSheet<T>(
       host: host,
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
       barrierDismissible: isDismissible,
-      barrierLabel: barrierLabel ?? 'Close sheet',
+      barrierLabel: barrierLabel ?? harborBarrierDismissLabel,
       barrierOnTapHint: barrierOnTapHint,
       settings: routeSettings,
       animationStyle: sheetAnimationStyle,

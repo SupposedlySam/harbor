@@ -116,7 +116,7 @@ void main() {
       ),
     );
     expect(find.bySemanticsLabel('Fermer'), findsOneWidget);
-    expect(find.bySemanticsLabel('Close'), findsNothing);
+    expect(find.bySemanticsLabel('Dismiss'), findsNothing);
     semantics.dispose();
   });
 

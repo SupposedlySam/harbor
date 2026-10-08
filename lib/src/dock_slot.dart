@@ -406,7 +406,7 @@ class RenderHarborDockFrame extends RenderProxyBox {
     }
     final HarborWake? hairline = _hairline;
     if (hairline != null && _visualFactor > 0) {
-      final Paint paint = Paint()..color = hairline.color ?? const Color(0x33FFFFFF);
+      final Paint paint = Paint()..color = hairline.color ?? const HarborWake.hairline().color!;
       final bool ltr = _textDirection == TextDirection.ltr;
       final Rect box = offset & size;
       final double t = hairline.length;
