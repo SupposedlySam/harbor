@@ -269,7 +269,7 @@ them, as a `SnackBar` is. A signal whose widget is already its own live region
 `liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
-leave without moving. On iOS a tap on the
+leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
 status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
 as there only the page whose status bar band is on top at the screen's top left:
 a page under a route in an outer navigator, under an overlay, or in the

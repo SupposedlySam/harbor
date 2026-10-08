@@ -12,7 +12,8 @@ import 'waters.dart';
 abstract final class HarborLighthouse {
   /// Brings the widget at [context] into sight, [clearance] clear of whatever
   /// covers the edges of the scroll views it is in (docks and keyboard
-  /// included, when those scroll views are fairways).
+  /// included, when those scroll views are fairways). With reduced motion
+  /// ([MediaQueryData.disableAnimations]) it jumps there, whatever [duration] says.
   static void reveal(
     final BuildContext context, {
     final double clearance = 0.0,
@@ -24,7 +25,8 @@ abstract final class HarborLighthouse {
       return;
     }
     final Rect bounds = target.paintBounds.inflate(clearance);
-    target.showOnScreen(rect: bounds, duration: duration, curve: curve);
+    final bool still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    target.showOnScreen(rect: bounds, duration: still ? Duration.zero : duration, curve: curve);
   }
 
   /// How much of [box] (0 to 1) the docks and coast on [edge] of its nearest
@@ -220,6 +222,7 @@ class _HarborBeaconState extends State<HarborBeacon> {
 /// `lift` set would be covered by what covers the bottom (a sheet, a
 /// breakwater, the keyboard), the region moves its content up just far enough,
 /// and back down when the cover goes. Content already clear stays where it is.
+/// With reduced motion ([MediaQueryData.disableAnimations]) it moves at once.
 class HarborLighthouseRegion extends StatefulWidget {
   const HarborLighthouseRegion({
     super.key,
@@ -311,6 +314,7 @@ class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTi
     _from = _offset;
     _to = target;
     _lift
+      ..duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : widget.duration
       ..value = 0.0
       ..forward();
   }
