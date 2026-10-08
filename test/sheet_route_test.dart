@@ -372,4 +372,150 @@ void main() {
       expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
     });
   });
+
+  group('a sheet controller', () {
+    Finder body() => find.byKey(const ValueKey<String>('sheet body'));
+
+    testWidgets('closes a sheet with no barrier from the page', (final tester) async {
+      final HarborSheetController controller = HarborSheetController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: HarborSheetBarrier.none,
+        controller: controller,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+      ));
+      await tester.pumpAndSettle();
+      expect(controller.isAttached, isTrue);
+      expect(controller.animation.value, 1.0);
+      bool closed = false;
+      unawaited(controller.closed.then((final void _) => closed = true));
+      controller.close();
+      await tester.pump();
+      expect(body(), findsOneWidget, reason: 'it slides out');
+      await tester.pumpAndSettle();
+      expect(body(), findsNothing);
+      expect(closed, isTrue);
+      expect(controller.isAttached, isFalse);
+      expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
+    });
+
+    testWidgets('removes a sheet at once', (final tester) async {
+      final HarborSheetController controller = HarborSheetController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: HarborSheetBarrier.none,
+        controller: controller,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+      ));
+      await tester.pumpAndSettle();
+      bool closed = false;
+      unawaited(controller.closed.then((final void _) => closed = true));
+      controller.remove();
+      await tester.pump();
+      expect(body(), findsNothing);
+      expect(closed, isTrue);
+    });
+
+    testWidgets('closes and removes a sheet with a barrier', (final tester) async {
+      final HarborSheetController controller = HarborSheetController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      bool popped = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        controller: controller,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+      ).then((final void _) => popped = true));
+      await tester.pumpAndSettle();
+      controller.close();
+      await tester.pumpAndSettle();
+      expect(body(), findsNothing);
+      expect(popped, isTrue);
+      expect(controller.isAttached, isFalse);
+
+      unawaited(showHarborSheet<void>(
+        page,
+        controller: controller,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+      ));
+      await tester.pumpAndSettle();
+      controller.remove();
+      await tester.pump();
+      expect(body(), findsNothing);
+      expect(controller.isAttached, isFalse);
+    });
+
+    testWidgets('tells its listeners when a sheet comes and goes', (final tester) async {
+      final HarborSheetController controller = HarborSheetController();
+      addTearDown(controller.dispose);
+      final List<bool> heard = <bool>[];
+      controller.addListener(() => heard.add(controller.isAttached));
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: HarborSheetBarrier.none,
+        controller: controller,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+      ));
+      await tester.pumpAndSettle();
+      controller.close();
+      await tester.pumpAndSettle();
+      expect(heard, <bool>[true, false]);
+    });
+
+    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.none, HarborSheetBarrier.dismissible]) {
+      testWidgets('rebuilds a sheet (${barrier.name}) with state the page holds', (final tester) async {
+        final HarborSheetController controller = HarborSheetController();
+        addTearDown(controller.dispose);
+        expect(controller.close, throwsAssertionError, reason: 'no sheet is attached yet');
+        String track = 'first';
+        final BuildContext page = await _page(tester);
+        unawaited(showHarborSheet<void>(
+          page,
+          barrier: barrier,
+          controller: controller,
+          builder: (final BuildContext context) => HarborSheet(body: Text(track)),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('first'), findsOneWidget);
+        controller.setState(() => track = 'second');
+        await tester.pump();
+        expect(find.text('second'), findsOneWidget);
+      });
+
+      testWidgets('a sheet (${barrier.name}) slides by the transition it is given', (final tester) async {
+        final AnimationController transition = AnimationController(vsync: const TestVSync(), duration: const Duration(milliseconds: 300));
+        addTearDown(transition.dispose);
+        final HarborSheetController controller = HarborSheetController();
+        addTearDown(controller.dispose);
+        final BuildContext page = await _page(tester);
+        unawaited(showHarborSheet<void>(
+          page,
+          barrier: barrier,
+          controller: controller,
+          transitionAnimationController: transition,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+        ));
+        await tester.pumpAndSettle();
+        expect(transition.value, 1.0);
+        final double height = 874 - tester.getRect(body()).top;
+        transition.value = 0.5;
+        await tester.pump();
+        expect(tester.getRect(body()).top, closeTo(874 - height * Curves.easeOutCubic.transform(0.5), 1));
+        expect(controller.animation.value, 0.5);
+        transition.value = 1.0;
+        controller.close();
+        await tester.pumpAndSettle();
+        expect(body(), findsNothing);
+        expect(transition.value, 0.0);
+        // Still the caller's to drive and dispose.
+        transition.value = 0.25;
+        expect(transition.value, 0.25);
+      });
+    }
+  });
 }

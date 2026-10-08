@@ -387,6 +387,82 @@ enum HarborSheetBarrier {
   none,
 }
 
+/// Closes and rebuilds a sheet [showHarborSheet] opened, from outside it: a
+/// now-playing drawer that a button on the page opens and closes, an editor's
+/// tool panel the page puts away when a tool is picked.
+///
+/// Give it to [showHarborSheet]; it is attached while that sheet is up, and
+/// tells its listeners when a sheet attaches and when it has left. It holds one
+/// sheet at a time and can be given to the next once the last has left. As
+/// with a [DraggableScrollableController], nothing but [isAttached] may be used
+/// while no sheet is attached.
+class HarborSheetController extends ChangeNotifier {
+  _SheetHost? _host;
+
+  /// Whether a sheet is attached: from when it opens until it has left, its
+  /// closing slide included.
+  bool get isAttached => _host != null;
+
+  /// The sheet's slide, from 0 (out of sight) to 1 (open).
+  Animation<double> get animation {
+    _assertAttached();
+    return _host!.slide!;
+  }
+
+  /// Completes when the sheet has left, however it closed.
+  Future<void> get closed {
+    _assertAttached();
+    return _host!.gone;
+  }
+
+  /// Slides the sheet out, as back or a tap on its barrier would.
+  void close() {
+    _assertAttached();
+    _host!.close?.call();
+  }
+
+  /// Takes the sheet away at once, with no slide.
+  void remove() {
+    _assertAttached();
+    _host!.remove?.call();
+  }
+
+  /// Calls [fn] and rebuilds the sheet, for a builder that reads state the page holds.
+  void setState(final VoidCallback fn) {
+    _assertAttached();
+    fn();
+    _host!.rebuild?.call();
+  }
+
+  void _assertAttached() {
+    assert(
+      isAttached,
+      'HarborSheetController is not attached to a sheet. Give it to showHarborSheet, and use it '
+      'only while that sheet is up.',
+    );
+  }
+
+  void _attach(final _SheetHost host) {
+    assert(_host == null, 'HarborSheetController is already attached to a sheet.');
+    _host = host;
+    notifyListeners();
+  }
+
+  void _detach(final _SheetHost host) {
+    if (_host == host) {
+      _host = null;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _host?.controller = null;
+    _host = null;
+    super.dispose();
+  }
+}
+
 /// Opens [builder]'s sheet (usually a [HarborSheet]) over [context]'s harbor.
 ///
 /// With [breakwater] set, the sheet reports how far it covers the bottom of
@@ -404,6 +480,11 @@ enum HarborSheetBarrier {
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
 /// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
+///
+/// A [controller] closes and rebuilds the sheet from outside it. A
+/// [transitionAnimationController] slides the sheet in place of its own 280 ms
+/// slide, as it does a modal bottom sheet: the sheet runs it forward to open
+/// and back to close, and the caller disposes it.
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
@@ -415,6 +496,8 @@ Future<T?> showHarborSheet<T>(
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
+  final HarborSheetController? controller,
+  final AnimationController? transitionAnimationController,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -428,13 +511,19 @@ Future<T?> showHarborSheet<T>(
     maxWidth: maxWidth,
     keepsTopCoast: keepsTopCoast,
     presenter: breakwater ? presenter : null,
+    controller: controller,
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
     // A non-modal sheet lives in the navigator's overlay, not in a route of its own, so it is tied
     // to the page's route by hand: back closes it first, it hides while another page is on top,
     // and it leaves when its page does. It also leaves with the harbor that opened it.
-    final _NonModalSheet<T> sheet = _NonModalSheet<T>(host: host, overlay: overlay, route: ModalRoute.of(context));
+    final _NonModalSheet<T> sheet = _NonModalSheet<T>(
+      host: host,
+      overlay: overlay,
+      route: ModalRoute.of(context),
+      transition: transitionAnimationController,
+    );
     void presenterLeft() => sheet.closeNow();
     presenter?.addLeaveListener(presenterLeft);
     return sheet.open().whenComplete(() => presenter?.removeLeaveListener(presenterLeft));
@@ -445,12 +534,19 @@ Future<T?> showHarborSheet<T>(
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
       barrierLabel: barrierLabel ?? 'Close sheet',
       settings: routeSettings,
+      transitionAnimationController: transitionAnimationController,
     ),
   );
 }
 
 class _SheetHost {
-  _SheetHost({required this.builder, required this.maxWidth, required this.keepsTopCoast, required this.presenter});
+  _SheetHost({
+    required this.builder,
+    required this.maxWidth,
+    required this.keepsTopCoast,
+    required this.presenter,
+    required this.controller,
+  });
 
   final WidgetBuilder builder;
   final double? maxWidth;
@@ -465,6 +561,12 @@ class _SheetHost {
   double _available = 0.0;
   double _tide = 0.0;
   VoidCallback? close;
+  VoidCallback? remove;
+  VoidCallback? rebuild;
+  HarborSheetController? controller;
+  final Completer<void> _gone = Completer<void>();
+
+  Future<void> get gone => _gone.future;
 
   /// What slides the sheet in and out, for dragging it down by hand.
   AnimationController? slide;
@@ -514,6 +616,17 @@ class _SheetHost {
 
   void attach() {
     _breakwater ??= presenter?.addBreakwaterEdge(topInGlobal);
+    controller?._attach(this);
+  }
+
+  /// The sheet is gone, by whichever way it closed.
+  void left() {
+    if (!_gone.isCompleted) {
+      _gone.complete();
+    }
+    final HarborSheetController? controller = this.controller;
+    this.controller = null;
+    controller?._detach(this);
   }
 
   void reportTop(final double top, {required final bool fromSheet}) {
@@ -676,9 +789,16 @@ class _RenderMeasureHeight extends RenderProxyBox {
 }
 
 class _HarborSheetRoute<T> extends PopupRoute<T> {
-  _HarborSheetRoute({required this.host, required this.barrierColor, required this.barrierLabel, super.settings});
+  _HarborSheetRoute({
+    required this.host,
+    required this.barrierColor,
+    required this.barrierLabel,
+    required this.transitionAnimationController,
+    super.settings,
+  });
 
   final _SheetHost host;
+  final AnimationController? transitionAnimationController;
 
   @override
   final Color barrierColor;
@@ -695,6 +815,17 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   Duration get reverseTransitionDuration => const Duration(milliseconds: 220);
 
+  // The caller's controller, as ModalBottomSheetRoute takes it: driven here, disposed by the caller.
+  @override
+  AnimationController createAnimationController() {
+    final AnimationController? transition = transitionAnimationController;
+    if (transition == null) {
+      return super.createAnimationController();
+    }
+    willDisposeAnimationController = false;
+    return transition;
+  }
+
   @override
   void install() {
     super.install();
@@ -704,6 +835,12 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
           navigator?.pop();
         }
       }
+      ..remove = () {
+        if (isActive) {
+          navigator?.removeRoute(this);
+        }
+      }
+      ..rebuild = changedExternalState
       ..slide = controller
       ..attach();
     animation!.addListener(_tick);
@@ -714,7 +851,9 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   void dispose() {
     animation?.removeListener(_tick);
-    host.detach();
+    host
+      ..detach()
+      ..left();
     super.dispose();
   }
 
@@ -724,7 +863,9 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
 }
 
 class _NonModalSheet<T> {
-  _NonModalSheet({required this.host, required this.overlay, required this.route});
+  _NonModalSheet({required this.host, required this.overlay, required this.route, final AnimationController? transition})
+    : _animation = transition ?? AnimationController(vsync: overlay, duration: const Duration(milliseconds: 280)),
+      _ownsAnimation = transition == null;
 
   final _SheetHost host;
   final OverlayState overlay;
@@ -736,19 +877,23 @@ class _NonModalSheet<T> {
   /// a sheet with no barrier deliberately is not one; wrap the PAGE in the PopScope instead.
   final ModalRoute<Object?>? route;
   LocalHistoryEntry? _history;
-  late final AnimationController _animation = AnimationController(
-    vsync: overlay,
-    duration: const Duration(milliseconds: 280),
-  );
+  final AnimationController _animation;
+
+  /// False for a caller's controller, which outlives the sheet.
+  final bool _ownsAnimation;
   OverlayEntry? _entry;
   final Completer<T?> _done = Completer<T?>();
 
   Future<T?> open() {
     host
       ..close = _close
+      ..remove = closeNow
+      ..rebuild = () {
+        _entry?.markNeedsBuild();
+      }
       ..slide = _animation
       ..attach();
-    _animation.addListener(() => host.progress = _animation.value);
+    _animation.addListener(_tick);
     final ModalRoute<Object?>? route = this.route;
     _entry = OverlayEntry(
       builder: (final BuildContext context) {
@@ -797,6 +942,19 @@ class _NonModalSheet<T> {
 
   bool _closing = false;
 
+  void _tick() => host.progress = _animation.value;
+
+  void _leave() {
+    _animation.removeListener(_tick);
+    if (_ownsAnimation) {
+      _animation.dispose();
+    }
+    if (!_done.isCompleted) {
+      _done.complete(null);
+    }
+    host.left();
+  }
+
   /// Removes the sheet at once, with no animation: its page is leaving.
   void closeNow() {
     final OverlayEntry? entry = _entry;
@@ -813,10 +971,7 @@ class _NonModalSheet<T> {
     } on Object {
       // The overlay is already going.
     }
-    _animation.dispose();
-    if (!_done.isCompleted) {
-      _done.complete(null);
-    }
+    _leave();
   }
 
   Future<void> _close() async {
@@ -831,10 +986,7 @@ class _NonModalSheet<T> {
     }
     _entry?.remove();
     _entry = null;
-    _animation.dispose();
-    if (!_done.isCompleted) {
-      _done.complete(null);
-    }
+    _leave();
   }
 }
 

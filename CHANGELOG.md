@@ -1,5 +1,7 @@
 ## Unreleased
 
+* `HarborSheetController`, given to `showHarborSheet(controller:)`: closes a sheet from outside it (`close()`, `remove()` with no slide), completes `closed` when it has left, rebuilds it (`setState`) and reads its slide (`animation`). It is a `ChangeNotifier` that tells its listeners when a sheet attaches and leaves. For a sheet with no barrier, which `closeHarborSheet` could only close from inside, and for one with a barrier.
+* `showHarborSheet(transitionAnimationController:)`, as on `showModalBottomSheet`: the sheet slides by the caller's controller in place of its own, and the caller disposes it.
 * `HarborSheet.draggable(controller:)` takes a `DraggableScrollableController`, so a draggable sheet can be read and moved from outside it: fitted to content measured after layout, or raised to its ceiling when a field takes focus.
 * `HarborSheet.draggable(expand:)`, as on `DraggableScrollableSheet`: `false` in a route that sizes the sheet to its content (`showModalBottomSheet`), so a tap above the visible sheet reaches the barrier and closes it. Before, the sheet filled the modal bottom sheet's surface and swallowed those taps.
 * `HarborSheetExtent(shouldCloseOnMinExtent:)`, as on `DraggableScrollableSheet`: off, a draggable sheet rests at its floor instead of closing.

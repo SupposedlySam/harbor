@@ -364,6 +364,24 @@ page is on top, and it leaves when its page is replaced or removed. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
+```dart
+final HarborSheetController nowPlaying = HarborSheetController();
+
+showHarborSheet(context, barrier: HarborSheetBarrier.none, controller: nowPlaying, builder: ...);
+nowPlaying.close();   // from a button on the page: it slides out
+nowPlaying.remove();  // it goes at once
+```
+
+A `HarborSheetController` closes a sheet from outside it, as a
+`PersistentBottomSheetController` closes `Scaffold.showBottomSheet`'s: `close()`,
+a `closed` future, `setState` to rebuild it, and its slide as `animation`.
+`remove()` takes it away with no slide, as `removeCurrentSnackBar` does a snack
+bar. It is attached while its sheet is up (`isAttached`) and tells its listeners
+when that changes, so a button can show whether it opens or closes. It works
+for a sheet with a barrier too. `transitionAnimationController:` slides the
+sheet by a controller of your own in place of its 280 ms slide, as on
+`showModalBottomSheet`; you dispose it.
+
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given). It
