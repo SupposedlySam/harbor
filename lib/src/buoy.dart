@@ -227,6 +227,7 @@ class HarborBuoy {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
+    this.barrierLabel = 'Close',
     this.within,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        anchor = null,
@@ -253,6 +254,7 @@ class HarborBuoy {
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
+    this.barrierLabel = 'Close',
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        alignment = Alignment.center,
        within = null;
@@ -280,6 +282,10 @@ class HarborBuoy {
 
   /// The colour of a modal buoy's barrier; clear by default, so the page shows as it is.
   final Color barrierColor;
+
+  /// What a screen reader announces for a modal buoy's barrier, as [ModalBarrier.semanticsLabel].
+  /// A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+  final String barrierLabel;
   final HarborAnchor? anchor;
   final HarborBuoySide side;
   final double gap;
@@ -402,7 +408,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     return Stack(
       fit: StackFit.passthrough,
       children: <Widget>[
-        Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: 'Close')),
+        Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: modal.barrierLabel)),
         layer,
       ],
     );
@@ -643,6 +649,9 @@ class _RenderBuoyLayer extends RenderBox
 /// edges. When [side] has no room and the opposite side has, it [flips] there;
 /// otherwise it is kept inside the clear water. [sideOf] tells the buoy which
 /// side it landed on.
+///
+/// With [onDismiss], it closes as a `MenuAnchor` does: a tap outside both the
+/// buoy and [child], Escape while focus is in either, and back all call it.
 class HarborPortalBuoy extends StatefulWidget {
   const HarborPortalBuoy({
     super.key,
@@ -657,6 +666,8 @@ class HarborPortalBuoy extends StatefulWidget {
     this.crossOffset = 0.0,
     this.margin = const EdgeInsets.all(8.0),
     this.flips = true,
+    this.onDismiss,
+    this.consumeOutsideTaps = false,
   });
 
   /// Shows and hides the buoy.
@@ -688,6 +699,17 @@ class HarborPortalBuoy extends StatefulWidget {
   /// no room and that side has.
   final bool flips;
 
+  /// Called while the buoy is shown when a tap lands outside both the buoy and [child] (a
+  /// [TapRegion] group, as a `MenuAnchor`'s), when Escape is pressed with focus in either, and on
+  /// back, before back reaches the page. Hide the buoy in it. Null leaves the buoy up until
+  /// [controller] hides it.
+  final VoidCallback? onDismiss;
+
+  /// Whether a tap outside that calls [onDismiss] stops there, as
+  /// [RawMenuAnchor.consumeOutsideTaps]: true for a menu whose closing tap must not also press
+  /// what is under it. By default the tap goes on, as it does for a `MenuAnchor`.
+  final bool consumeOutsideTaps;
+
   /// The side of its anchor the portal buoy around [context] landed on: its [side], or the
   /// opposite one after it flipped. A popover reads it to point its arrow at the anchor. It is
   /// placed when it paints, so after a flip this changes on the next frame.
@@ -708,8 +730,11 @@ class HarborPortalBuoy extends StatefulWidget {
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor? _own;
   late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.side);
+  late final _DismissPortalBuoyAction _dismissAction = _DismissPortalBuoyAction(this);
 
   HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
+
+  void _dismiss() => widget.onDismiss?.call();
 
   @override
   void dispose() {
@@ -719,29 +744,60 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   }
 
   @override
-  Widget build(final BuildContext context) => OverlayPortal(
-    controller: widget.controller,
-    overlayChildBuilder: (final BuildContext context) => _PortalBuoyLayout(
-      harbor: HarborController.maybeOf(context),
-      anchor: _anchor,
-      side: widget.side,
-      gap: widget.gap,
-      overlap: widget.overlap,
-      crossAlignment: widget.crossAlignment,
-      crossOffset: widget.crossOffset,
-      margin: widget.margin,
-      flips: widget.flips,
-      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
-      landed: _landed,
-      child: ValueListenableBuilder<HarborBuoySide>(
-        valueListenable: _landed,
-        builder: (final BuildContext context, final HarborBuoySide side, final Widget? child) => _PortalBuoySide(side: side, child: child!),
-        // A Builder, so the builder's own context is below the side it reads.
-        child: Builder(builder: widget.buoyBuilder),
-      ),
-    ),
-    child: widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child,
-  );
+  Widget build(final BuildContext context) {
+    final bool dismissible = widget.onDismiss != null;
+    final Widget anchored = widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child;
+    final Widget portal = OverlayPortal(
+      controller: widget.controller,
+      overlayChildBuilder: (final BuildContext context) {
+        Widget buoy = ValueListenableBuilder<HarborBuoySide>(
+          valueListenable: _landed,
+          builder: (final BuildContext context, final HarborBuoySide side, final Widget? child) => _PortalBuoySide(side: side, child: child!),
+          // A Builder, so the builder's own context is below the side it reads.
+          child: Builder(builder: widget.buoyBuilder),
+        );
+        if (dismissible) {
+          buoy = _PortalBuoyDismissal(groupId: this, consumeOutsideTaps: widget.consumeOutsideTaps, onDismiss: _dismiss, child: buoy);
+        }
+        return _PortalBuoyLayout(
+          harbor: HarborController.maybeOf(context),
+          anchor: _anchor,
+          side: widget.side,
+          gap: widget.gap,
+          overlap: widget.overlap,
+          crossAlignment: widget.crossAlignment,
+          crossOffset: widget.crossOffset,
+          margin: widget.margin,
+          flips: widget.flips,
+          textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+          landed: _landed,
+          child: buoy,
+        );
+      },
+      // The anchor is in the buoy's tap region group, as a MenuAnchor's button is in its menu's, so
+      // a tap on it is its own (a toggle) and never also an outside tap.
+      child: dismissible ? TapRegion(groupId: this, child: anchored) : anchored,
+    );
+    if (!dismissible) {
+      return portal;
+    }
+    // Above the portal, so Escape from focus in the buoy or in the child reaches it.
+    return Actions(actions: <Type, Action<Intent>>{DismissIntent: _dismissAction}, child: portal);
+  }
+}
+
+/// Escape (a [DismissIntent]) dismisses the portal buoy while it is shown, and is left to the
+/// widgets above otherwise, as `RawMenuAnchor`'s `DismissMenuAction` is.
+class _DismissPortalBuoyAction extends DismissAction {
+  _DismissPortalBuoyAction(this._buoy);
+
+  final _HarborPortalBuoyState _buoy;
+
+  @override
+  bool isEnabled(final DismissIntent intent) => _buoy.widget.onDismiss != null && _buoy.widget.controller.isShowing;
+
+  @override
+  void invoke(final DismissIntent intent) => _buoy._dismiss();
 }
 
 class _PortalBuoySide extends InheritedWidget {
@@ -751,6 +807,68 @@ class _PortalBuoySide extends InheritedWidget {
 
   @override
   bool updateShouldNotify(final _PortalBuoySide oldWidget) => side != oldWidget.side;
+}
+
+/// While a dismissible portal buoy is shown: its tap region, which calls [onDismiss] on a tap
+/// outside the group, and the page's history entry, so back dismisses the buoy first, as it does
+/// a modal [HarborBuoy].
+class _PortalBuoyDismissal extends StatefulWidget {
+  const _PortalBuoyDismissal({required this.groupId, required this.consumeOutsideTaps, required this.onDismiss, required this.child});
+
+  final Object groupId;
+  final bool consumeOutsideTaps;
+  final VoidCallback onDismiss;
+  final Widget child;
+
+  @override
+  State<_PortalBuoyDismissal> createState() => _PortalBuoyDismissalState();
+}
+
+class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
+  LocalHistoryEntry? _history;
+  bool _removingQuietly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // After the frame: a route's history cannot change while it builds.
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+      final ModalRoute<Object?>? route = mounted ? ModalRoute.of(context) : null;
+      if (route == null) {
+        return;
+      }
+      _history = LocalHistoryEntry(
+        onRemove: () {
+          _history = null;
+          if (!_removingQuietly) {
+            widget.onDismiss();
+          }
+        },
+      );
+      route.addLocalHistoryEntry(_history!);
+    });
+  }
+
+  @override
+  void deactivate() {
+    final LocalHistoryEntry? history = _history;
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    _history = null;
+    if (history != null && route != null && route.isActive) {
+      _removingQuietly = true;
+      route.removeLocalHistoryEntry(history);
+      _removingQuietly = false;
+    }
+    super.deactivate();
+  }
+
+  @override
+  Widget build(final BuildContext context) => TapRegion(
+    groupId: widget.groupId,
+    consumeOutsideTaps: widget.consumeOutsideTaps,
+    onTapOutside: (final PointerDownEvent _) => widget.onDismiss(),
+    child: widget.child,
+  );
 }
 
 class _PortalBuoyLayout extends SingleChildRenderObjectWidget {

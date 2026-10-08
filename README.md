@@ -300,8 +300,10 @@ puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Unlike a route, it does not trap keyboard
-focus.
+before it are hidden while it is up. Its `barrierLabel` ('Close' when none is
+given) is what a screen reader announces for the barrier; a Material app passes
+`MaterialLocalizations.of(context).modalBarrierDismissLabel`. Unlike a route, it
+does not trap keyboard focus.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
@@ -322,6 +324,8 @@ HarborPortalBuoy(                       // in a list row, anywhere below a harbo
   controller: menu,
   side: HarborBuoySide.below,
   crossAlignment: HarborBuoyCrossAlignment.start, // under the row's leading edge
+  onDismiss: menu.hide,                   // a tap outside, Escape or back
+  consumeOutsideTaps: true,               // and that tap presses nothing else
   buoyBuilder: (context) => const RowMenu(),
   child: GestureDetector(onTap: menu.toggle, child: row),
 )
@@ -338,6 +342,13 @@ room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
 the buoy is the side it landed on, so a popover can point its arrow at the
 anchor after a flip. The buoy is placed as it paints, so it hears of a flip on
 the next frame.
+
+With an `onDismiss`, a portal buoy closes as a `MenuAnchor` does: its buoy and
+its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss`
+while a tap on the row that opened it is left to the row, and so do Escape with
+focus in either and back (before it reaches the page). The tap goes on to what
+is under it, as a `MenuAnchor`'s does, unless `consumeOutsideTaps` is set. It
+puts up no barrier and leaves the page to screen readers, as a menu does.
 
 ## Sheets and dialogs
 

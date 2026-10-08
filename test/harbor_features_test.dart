@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
@@ -556,6 +557,125 @@ void main() {
         await tester.pump();
         expect(_rect(tester, 'menu').top, _rect(tester, 'button').top);
         expect(_rect(tester, 'menu').left, _rect(tester, 'button').right + 8);
+      });
+    });
+
+    group('dismissed', () {
+      Widget dismissible({
+        required final OverlayPortalController menu,
+        required final List<String> events,
+        final bool consumeOutsideTaps = false,
+      }) => Harbor(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const SizedBox(height: 100),
+              HarborPortalBuoy(
+                controller: menu,
+                side: HarborBuoySide.after,
+                consumeOutsideTaps: consumeOutsideTaps,
+                onDismiss: () {
+                  events.add('dismissed');
+                  menu.hide();
+                },
+                buoyBuilder: (final BuildContext context) => SizedBox(
+                  width: 200,
+                  height: 120,
+                  child: TextButton(autofocus: true, onPressed: () => events.add('item'), child: const Text('Item')),
+                ),
+                child: TextButton(onPressed: menu.toggle, child: const Text('Open')),
+              ),
+              const SizedBox(height: 200),
+              TextButton(onPressed: () => events.add('below'), child: const Text('Below')),
+            ],
+          ),
+        );
+
+      testWidgets('by a tap outside it that, with consumeOutsideTaps, does not reach what is under it', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
+        await tester.tap(find.text('Open'));
+        await tester.pump();
+        expect(find.text('Item'), findsOneWidget, reason: 'positive control: the menu is up');
+
+        await tester.tap(find.text('Below'));
+        await tester.pump();
+        expect(events, <String>['dismissed']);
+        expect(find.text('Item'), findsNothing);
+
+        await tester.tap(find.text('Below'));
+        expect(events, <String>['dismissed', 'below'], reason: 'positive control: with the menu gone the tap lands');
+      });
+
+      testWidgets('by a tap outside it that, by default, also reaches what is under it, as a MenuAnchor\'s does', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events)));
+        menu.show();
+        await tester.pump();
+        await tester.tap(find.text('Below'));
+        await tester.pump();
+        expect(events, <String>['dismissed', 'below']);
+      });
+
+      testWidgets('not by a tap on its anchor or inside it', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
+        menu.show();
+        await tester.pump();
+        await tester.tap(find.text('Item'));
+        await tester.pump();
+        expect(events, <String>['item']);
+
+        await tester.tap(find.text('Open'));
+        await tester.pump();
+        expect(events, <String>['item'], reason: 'the anchor toggles the menu itself, with no dismissal on top');
+        expect(find.text('Item'), findsNothing);
+      });
+
+      testWidgets('by Escape while focus is in it', (final tester) async {
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events)));
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(events, <String>['dismissed']);
+        expect(find.text('Item'), findsNothing);
+      });
+
+      testWidgets('by back, before back reaches its page', (final tester) async {
+        final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+        final OverlayPortalController menu = OverlayPortalController();
+        final List<String> events = <String>[];
+        await tester.pumpSeaTrial(
+          MaterialApp(
+            navigatorKey: navigator,
+            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+            home: const Harbor(body: Center(child: Text('home'))),
+          ),
+        );
+        unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
+          builder: (final BuildContext _) => Material(child: dismissible(menu: menu, events: events)),
+        )));
+        await tester.pumpAndSettle();
+        menu.show();
+        await tester.pump();
+        await tester.pump();
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(events, <String>['dismissed']);
+        expect(find.text('Open'), findsOneWidget, reason: 'the page is still there');
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('Open'), findsNothing, reason: 'positive control: back pops the page once the menu is gone');
+        expect(events, <String>['dismissed']);
       });
     });
 

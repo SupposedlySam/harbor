@@ -1,5 +1,7 @@
 ## Unreleased
 
+* `HarborPortalBuoy(onDismiss:, consumeOutsideTaps:)`: a portal buoy closes as a `MenuAnchor` does. Its buoy and its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss` and a tap on the child is left to the child; Escape with focus in either and back call it too, back before it reaches the page. `consumeOutsideTaps: true` keeps that tap from also pressing what is under it. Without `onDismiss` nothing changes.
+* `HarborBuoy(barrierLabel:)`: what a screen reader announces for a modal buoy's barrier, `'Close'` when none is given, as before. A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
 * `crossAlignment:` and `crossOffset:` on `HarborBuoy.anchored` and `HarborPortalBuoy`: an anchored buoy lines up with its anchor's `start` or `end` across its side (in reading order above and below it, top and bottom beside it) instead of centring on it, and is moved on by `crossOffset`, still held inside the clear water. `HarborBuoyCrossAlignment.center` is the default.
 * `HarborPortalBuoy.sideOf(context)` and `maybeSideOf`: the side a portal buoy landed on, its `side` or the opposite after a flip, so a popover can point its arrow at its anchor. It changes on the frame after the flip.
 
