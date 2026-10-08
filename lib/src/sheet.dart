@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart' show Material, MaterialLocalizations, MaterialType, Theme, ThemeData;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -14,7 +15,7 @@ import 'wake.dart';
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
 class HarborSheetExtent {
-  const HarborSheetExtent({this.rest = 0.5, this.max = 0.88, this.min = 0.25, this.snap = true});
+  const HarborSheetExtent({this.rest = 0.5, this.max = 0.88, this.min = 0.25, this.snap = true, this.snapSizes});
 
   /// Where the sheet opens and rests.
   final double rest;
@@ -26,6 +27,12 @@ class HarborSheetExtent {
   final double min;
 
   final bool snap;
+
+  /// The heights a released sheet snaps to, in increasing order, between [min]
+  /// and [max]; [max] is always one. Defaults to [rest] and [max].
+  final List<double>? snapSizes;
+
+  List<double> get _snaps => <double>{...(snapSizes ?? <double>[rest]), max}.toList()..sort();
 }
 
 /// A sheet's surface: a new port with its own docks. Its header is a pier the
@@ -50,6 +57,9 @@ class HarborSheet extends StatelessWidget {
     this.footerTide = HarborTideStance.float,
     this.maxExtentFraction = 0.9,
     this.debugLabel,
+    this.material = false,
+    this.clip,
+    this.dragToClose = false,
   }) : builder = null,
        extent = null;
 
@@ -69,8 +79,11 @@ class HarborSheet extends StatelessWidget {
     this.footerMinimum = 16.0,
     this.footerTide = HarborTideStance.float,
     this.debugLabel,
+    this.material = false,
+    this.clip,
   }) : body = null,
-       maxExtentFraction = null;
+       maxExtentFraction = null,
+       dragToClose = false;
 
   final Widget? header;
   final Widget? footer;
@@ -86,6 +99,19 @@ class HarborSheet extends StatelessWidget {
   final HarborTideStance footerTide;
   final double? maxExtentFraction;
   final String? debugLabel;
+
+  /// Puts a transparent [Material] over the [surface], so text fields and ink
+  /// work in the sheet. It keeps the text style the sheet was opened with.
+  final bool material;
+
+  /// Clips the sheet to this shape, so a body that runs edge to edge (a photo)
+  /// follows the surface's rounded top.
+  final ShapeBorder? clip;
+
+  /// Lets a content-sized sheet be dragged down to close, by any part of it
+  /// that doesn't scroll, when [showHarborSheet] opened it. A draggable sheet
+  /// always closes when dragged below its floor.
+  final bool dragToClose;
 
   Harbor _harbor(final Widget body, {required final bool hug, final Widget? header}) => Harbor(
     newPort: true,
@@ -117,17 +143,40 @@ class HarborSheet extends StatelessWidget {
       // sheet is dragged, not as tall as the space the sheet can be dragged in.
       return _DraggableSheetBody(sheet: this, extent: extent);
     }
-    return _surfaced(_harbor(body!, hug: true));
+    final Widget sheet = _surfaced(context, _harbor(body!, hug: true));
+    if (!dragToClose) {
+      return sheet;
+    }
+    final _SheetHostScope? host = _SheetHostScope.maybeOf(context);
+    assert(host != null, 'HarborSheet(dragToClose: true) closes only a sheet that showHarborSheet opened.');
+    return GestureDetector(
+      onVerticalDragUpdate: (final DragUpdateDetails details) => host?.host.dragBy(details.primaryDelta ?? 0.0),
+      onVerticalDragEnd: (final DragEndDetails details) => host?.host.dragEnd(details.primaryVelocity ?? 0.0),
+      child: sheet,
+    );
   }
 
-  Widget _surfaced(final Widget content) {
-    return Stack(
+  Widget _surfaced(final BuildContext context, final Widget content) {
+    Widget sheet = Stack(
       fit: StackFit.passthrough,
       children: <Widget>[
         Positioned.fill(child: surface ?? const SizedBox.shrink()),
-        content,
+        // Over the surface, not around it: ink paints under the Material's child.
+        if (material)
+          Material(type: MaterialType.transparency, textStyle: DefaultTextStyle.of(context).style, child: content)
+        else
+          content,
       ],
     );
+    final ShapeBorder? clip = this.clip;
+    if (clip != null) {
+      sheet = ClipPath(
+        clipper: ShapeBorderClipper(shape: clip, textDirection: Directionality.maybeOf(context)),
+        clipBehavior: Clip.antiAlias,
+        child: sheet,
+      );
+    }
+    return sheet;
   }
 }
 
@@ -169,20 +218,38 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     final double velocity = details.primaryVelocity ?? 0.0;
     final double size = _controller.size;
     if (size <= _extent.min + 0.001 || velocity > 1200) {
-      _SheetHostScope.maybeOf(context)?.close();
+      _close();
       return;
     }
     double target = size;
     if (_extent.snap) {
+      // As a dragged list snaps: a fling goes to the next size its way, a
+      // slow release to the nearest.
+      final List<double> snaps = _extent._snaps;
       if (velocity < -400) {
-        target = _extent.max;
+        target = snaps.firstWhere((final double snap) => snap > size + 0.001, orElse: () => snaps.last);
       } else if (velocity > 400) {
-        target = _extent.rest;
+        target = snaps.lastWhere((final double snap) => snap < size - 0.001, orElse: () => snaps.first);
       } else {
-        target = (size - _extent.rest).abs() < (size - _extent.max).abs() ? _extent.rest : _extent.max;
+        target = snaps.reduce((final double a, final double b) => (size - a).abs() <= (size - b).abs() ? a : b);
       }
     }
     unawaited(_controller.animateTo(target, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic));
+  }
+
+  void _close() {
+    final _SheetHostScope? host = _SheetHostScope.maybeOf(context);
+    if (host != null) {
+      host.close();
+      return;
+    }
+    // Opened some other way (showModalBottomSheet, showGeneralDialog): the
+    // sheet is the popup route's content, so closing it closes the route. In
+    // a page, a sheet rests at its floor.
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    if (route is PopupRoute<Object?> && route.isCurrent) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -229,7 +296,7 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
       onNotification: (final DraggableScrollableNotification n) {
         host?.reportExtent(n.extent);
         if (n.extent <= n.minExtent + 0.001) {
-          host?.close();
+          _close();
         }
         return false;
       },
@@ -240,10 +307,11 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
         minChildSize: _extent.min,
         maxChildSize: _extent.max,
         snap: _extent.snap,
-        snapSizes: _extent.snap ? <double>[_extent.rest, _extent.max] : null,
+        snapSizes: _extent.snap ? _extent._snaps : null,
         builder: (final BuildContext context, final ScrollController controller) => _MeasureHeight(
           onTop: (final double top) => host?.host.reportTop(top, fromSheet: true),
           child: sheet._surfaced(
+            context,
             sheet._harbor(
               Builder(builder: (final BuildContext context) => sheet.builder!(context, controller)),
               hug: false,
@@ -275,6 +343,16 @@ enum HarborSheetBarrier {
 /// the harbor that opened it, animated as it slides in and out and as it is
 /// dragged, and that harbor's content keeps clear of it: a fairway's last row
 /// stays reachable, a lifted canvas element stays in sight.
+///
+/// The sheet is a route, as a modal bottom sheet is: [routeSettings] reach
+/// navigator observers and route-name analytics, and the barrier is announced
+/// with [barrierLabel], or Material's dismiss label when the app has Material
+/// localizations. A sheet with [HarborSheetBarrier.none] is not a route, so it
+/// has neither.
+///
+/// [maxWidth] caps a sheet on a wide screen. With [maxWidthFromTheme] and no
+/// [maxWidth], the cap is [BottomSheetThemeData.constraints]' width, or
+/// Material 3's 640 when that theme sets none, as `showModalBottomSheet` has it.
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
@@ -284,6 +362,9 @@ Future<T?> showHarborSheet<T>(
   final double? maxWidth,
   final bool useRootNavigator = false,
   final bool keepsTopCoast = false,
+  final RouteSettings? routeSettings,
+  final String? barrierLabel,
+  final bool maxWidthFromTheme = false,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -292,7 +373,7 @@ Future<T?> showHarborSheet<T>(
   final CapturedThemes themes = InheritedTheme.capture(from: context, to: navigator.context);
   final _SheetHost host = _SheetHost(
     builder: (final BuildContext context) => themes.wrap(builder(context)),
-    maxWidth: maxWidth,
+    maxWidth: maxWidth ?? (maxWidthFromTheme ? _themedMaxWidth(context) : null),
     keepsTopCoast: keepsTopCoast,
     presenter: breakwater ? presenter : null,
   );
@@ -309,8 +390,21 @@ Future<T?> showHarborSheet<T>(
     _HarborSheetRoute<T>(
       host: host,
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
+      barrierLabel:
+          barrierLabel ??
+          Localizations.of<MaterialLocalizations>(context, MaterialLocalizations)?.modalBarrierDismissLabel ??
+          'Close sheet',
+      settings: routeSettings,
     ),
   );
+}
+
+// Material 3's bottom sheet width; its defaults are private to Material.
+const double _material3SheetMaxWidth = 640.0;
+
+double? _themedMaxWidth(final BuildContext context) {
+  final ThemeData theme = Theme.of(context);
+  return theme.bottomSheetTheme.constraints?.maxWidth ?? (theme.useMaterial3 ? _material3SheetMaxWidth : null);
 }
 
 class _SheetHost {
@@ -329,6 +423,49 @@ class _SheetHost {
   double _available = 0.0;
   double _tide = 0.0;
   VoidCallback? close;
+
+  /// What slides the sheet in and out, for dragging it down by hand.
+  AnimationController? slide;
+
+  // The reveal is curved, so the drag goes through the curve's inverse to
+  // keep the sheet under the finger.
+  static const Curve _reveal = Curves.easeOutCubic;
+
+  static double _unreveal(final double shown) {
+    double low = 0.0;
+    double high = 1.0;
+    for (int i = 0; i < 24; i++) {
+      final double mid = (low + high) / 2;
+      if (_reveal.transform(mid) < shown) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    return (low + high) / 2;
+  }
+
+  void dragBy(final double delta) {
+    final AnimationController? slide = this.slide;
+    if (slide == null || _height <= 0) {
+      return;
+    }
+    final double shown = (_reveal.transform(slide.value) - delta / _height).clamp(0.0, 1.0);
+    slide.value = _unreveal(shown);
+  }
+
+  void dragEnd(final double velocity) {
+    final AnimationController? slide = this.slide;
+    if (slide == null) {
+      return;
+    }
+    // As a modal bottom sheet has it: a fling down, or let go under half shown.
+    if (velocity > 700 || _reveal.transform(slide.value) < 0.5) {
+      close?.call();
+    } else {
+      unawaited(slide.forward());
+    }
+  }
 
   /// Where the sheet's visible top is, in global coordinates.
   final ValueNotifier<double> topInGlobal = ValueNotifier<double>(double.infinity);
@@ -408,7 +545,7 @@ class _SheetHost {
             builder: (final BuildContext context, final Widget? child) => ClipRect(
               child: Align(
                 alignment: Alignment.topCenter,
-                heightFactor: Curves.easeOutCubic.transform(animation.value),
+                heightFactor: _reveal.transform(animation.value),
                 child: child,
               ),
             ),
@@ -491,7 +628,7 @@ class _RenderMeasureHeight extends RenderProxyBox {
 }
 
 class _HarborSheetRoute<T> extends PopupRoute<T> {
-  _HarborSheetRoute({required this.host, required this.barrierColor});
+  _HarborSheetRoute({required this.host, required this.barrierColor, required this.barrierLabel, super.settings});
 
   final _SheetHost host;
 
@@ -502,7 +639,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   bool get barrierDismissible => true;
 
   @override
-  String? get barrierLabel => 'Close sheet';
+  final String barrierLabel;
 
   @override
   Duration get transitionDuration => const Duration(milliseconds: 280);
@@ -519,6 +656,7 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
           navigator?.pop();
         }
       }
+      ..slide = controller
       ..attach();
     animation!.addListener(_tick);
   }
@@ -552,6 +690,7 @@ class _NonModalSheet<T> {
   Future<T?> open() {
     host
       ..close = _close
+      ..slide = _animation
       ..attach();
     _animation.addListener(() => host.progress = _animation.value);
     _entry = OverlayEntry(builder: (final BuildContext context) => host.build(context, _animation));
