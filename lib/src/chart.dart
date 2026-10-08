@@ -146,9 +146,17 @@ abstract final class HarborChart {
 /// Draws the chart over [child]: every dock's ground (piers in teal, quays in
 /// sand), each harbor's clear water outlined, and the tide in blue.
 class HarborChartOverlay extends StatefulWidget {
-  const HarborChartOverlay({super.key, this.enabled = true, required this.child});
+  const HarborChartOverlay({super.key, this.enabled = true, this.labelStyle, required this.child});
 
   final bool enabled;
+
+  /// Merged over the dock labels' own style (9 pt, white on a dark band).
+  ///
+  /// Set a `fontFamily` the test has loaded to make the labels readable in
+  /// widget tests and goldens: with none, `flutter_test` draws them in its box
+  /// test font, and the labels carry each dock's extent.
+  final TextStyle? labelStyle;
+
   final Widget child;
 
   @override
@@ -199,7 +207,7 @@ class _HarborChartOverlayState extends State<HarborChartOverlay> with SingleTick
       fleet = _ownFleet;
     }
     final Widget painted = CustomPaint(
-      foregroundPainter: widget.enabled ? _ChartPainter(context, fleet!, _repaint) : null,
+      foregroundPainter: widget.enabled ? _ChartPainter(context, fleet!, _repaint, labelStyle: widget.labelStyle) : null,
       child: widget.child,
     );
     return _ownFleet == null ? painted : HarborFleetScope(fleet: _ownFleet!, child: painted);
@@ -207,10 +215,15 @@ class _HarborChartOverlayState extends State<HarborChartOverlay> with SingleTick
 }
 
 class _ChartPainter extends CustomPainter {
-  _ChartPainter(this.context, this.fleet, final Listenable repaint) : super(repaint: repaint);
+  _ChartPainter(this.context, this.fleet, final Listenable repaint, {final TextStyle? labelStyle})
+    : labelStyle = _labelStyle.merge(labelStyle),
+      super(repaint: repaint);
+
+  static const TextStyle _labelStyle = TextStyle(fontSize: 9, color: Color(0xFFFFFFFF), backgroundColor: Color(0x99000000));
 
   final BuildContext context;
   final HarborFleet fleet;
+  final TextStyle labelStyle;
 
   @override
   void paint(final Canvas canvas, final Size size) {
@@ -243,7 +256,7 @@ class _ChartPainter extends CustomPainter {
         final TextPainter label = TextPainter(
           text: TextSpan(
             text: '${dock.label ?? dock.kind.name} ${dock.extent.toStringAsFixed(0)}',
-            style: const TextStyle(fontSize: 9, color: Color(0xFFFFFFFF), backgroundColor: Color(0x99000000)),
+            style: labelStyle,
           ),
           textDirection: TextDirection.ltr,
         )..layout();

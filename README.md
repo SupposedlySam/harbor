@@ -303,7 +303,9 @@ with it) or `.resting` (let it open over them).
 
 `HarborChartOverlay(child:)` (around `HarborSea` in `MaterialApp.builder`, or
 anywhere below it) draws every dock's ground, each harbor's clear
-water and the tide. `HarborChart.snapshot(context)` returns the same as data.
+water and the tide. Each dock is labelled with its extent; `labelStyle:` sets
+the labels' font, so they read in widget tests and goldens rather than as
+`flutter_test`'s boxes. `HarborChart.snapshot(context)` returns the same as data.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
 

@@ -6,6 +6,7 @@
 // the test still goes red. A test that passes with the code broken is decoration.
 
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -455,6 +456,44 @@ void main() {
       expect(_rect(tester, 'top').height, 0);
       expect(_rect(tester, 'body').width, 1024, reason: 'the page keeps the frame');
     });
+  });
+
+  // Asked for by rubric-owner, for layout goldens: the chart's dock labels carry each dock's
+  // extent, and with no way to set their font, flutter_test drew them as boxes. Breaks if:
+  // labelStyle is not merged into what the chart paints.
+  testWidgets('a chart overlay paints its labels in the style it is given', (final tester) async {
+    Future<List<double>> labelHeights({final TextStyle? style}) async {
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          builder: (final BuildContext context, final Widget? child) =>
+              HarborChartOverlay(labelStyle: style, child: HarborSea(child: child!)),
+          // No text on the page, so every paragraph painted is a chart label.
+          home: const Harbor(
+            top: <HarborDock>[HarborDock.pier(child: SizedBox(height: 50, width: double.infinity))],
+            body: SizedBox.expand(),
+          ),
+        ),
+      );
+      await tester.pump();
+      final List<double> heights = <double>[];
+      final RenderObject chart = tester.renderObject(
+        find.descendant(of: find.byType(HarborChartOverlay), matching: find.byType(CustomPaint)).first,
+      );
+      expect(
+        chart,
+        paints..everything((final Symbol method, final List<dynamic> arguments) {
+          if (method == #drawParagraph) {
+            heights.add((arguments[0] as ui.Paragraph).height);
+          }
+          return true;
+        }),
+      );
+      return heights;
+    }
+
+    expect(await labelHeights(), isNotEmpty, reason: 'positive control: the chart paints labels');
+    expect(await labelHeights(), everyElement(9), reason: 'the default label size');
+    expect(await labelHeights(style: const TextStyle(fontSize: 20)), everyElement(20));
   });
 
   // Breaks if: a harbor's minimum is not applied to a bare edge.
