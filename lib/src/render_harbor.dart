@@ -440,14 +440,58 @@ class RenderHarbor extends RenderBox
     }
   }
 
+  bool _debugCheckHasBoundedConstraints({required final bool hug}) {
+    assert(() {
+      if (constraints.hasBoundedWidth && (hug || constraints.hasBoundedHeight)) {
+        return true;
+      }
+      final String axis = constraints.hasBoundedWidth ? 'height' : 'width';
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('${_debugName()} was given unbounded $axis.'),
+        ErrorDescription(
+          'A Harbor fills the space it is given, as a Scaffold does, so it needs bounded constraints. '
+          'This usually happens when a Harbor is placed in a scroll view, a Column or a Row.',
+        ),
+        DiagnosticsProperty<BoxConstraints>('The constraints were', constraints, style: DiagnosticsTreeStyle.errorProperty),
+        ErrorHint(
+          constraints.hasBoundedWidth
+              ? 'Give the Harbor a height (a SizedBox, or Expanded in a Column), or use '
+                  'Harbor(sizing: HarborSizing.hugBody) to make it as tall as its body.'
+              : 'Give the Harbor a width, for example with a SizedBox, or Expanded in a Row. '
+                  'HarborSizing.hugBody hugs the height only; a Harbor always fills its width.',
+        ),
+      ]);
+    }());
+    return true;
+  }
+
+  bool _debugCheckQuayOutsidePiers(final HarborEdge edge, {required final bool seenPier}) {
+    assert(() {
+      if (!seenPier) {
+        return true;
+      }
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('${_debugName()} lists a quay inside a pier on its ${edge.name} edge.'),
+        ErrorDescription(
+          'Quays are built on the shore and piers out over the water, so the docks on an edge are '
+          'its quays first, nearest the edge, then its piers.',
+        ),
+        ErrorHint(
+          'List every quay nearer the ${edge.name} edge than the piers: '
+          '${edge == HarborEdge.bottom || edge == HarborEdge.end ? 'after' : 'before'} them in Harbor.${edge.name}.',
+        ),
+      ]);
+    }());
+    return true;
+  }
+
+  String _debugName() => _controller.debugLabel == null ? 'A Harbor' : 'The Harbor "${_controller.debugLabel}"';
+
   @override
   void performLayout() {
     final HarborGeometry g = _geometry;
     final bool hug = g.sizing == HarborSizing.hugBody;
-    assert(
-      constraints.hasBoundedWidth && (hug || constraints.hasBoundedHeight),
-      'A Harbor needs bounded constraints to fill, as a Scaffold does. Give it a size, or use HarborSizing.hugBody.',
-    );
+    assert(_debugCheckHasBoundedConstraints(hug: hug));
     final double width = constraints.maxWidth;
     final double maxHeight = constraints.hasBoundedHeight ? constraints.maxHeight : double.infinity;
     final double dockMaxHeight = maxHeight.isFinite ? maxHeight : 100000.0;
@@ -518,7 +562,7 @@ class RenderHarbor extends RenderBox
         restingOffset += dock.resting;
         steadyOffset += dock.extent;
         if (config.kind == HarborDockKind.quay) {
-          assert(!seenPier, 'A quay on the ${edge.name} edge is listed inside a pier. Quays are built on the shore: list them nearer the edge than piers.');
+          assert(_debugCheckQuayOutsidePiers(edge, seenPier: seenPier));
           quays = offset;
           quaysSteady = steadyOffset;
         } else {

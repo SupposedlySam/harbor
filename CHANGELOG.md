@@ -1,5 +1,7 @@
 ## Unreleased
 
+* Misuse is reported as a `FlutterError` that says what to do, as Flutter's own errors are. `HarborController.of` with no harbor above throws one in release builds too (before, a bare null-check error), and points to `HarborController.maybeOf`. A harbor given unbounded constraints, a quay listed inside a pier and `HarborSheet(dragToClose: true)` outside `showHarborSheet` name the harbor's `debugLabel` and the fix in debug builds, instead of failing a plain assert.
+* In debug builds, two `HarborAnchorPoint`s that stay attached to one `HarborAnchor` past the end of a frame are reported. Before, the buoy silently moved to whichever laid out last.
 * **Breaking:** a sheet with no barrier comes back after a page pushed over its own has finished popping, not as the pop starts. Before, it was painted and tappable over the leaving page for the whole transition.
 
 ## 0.2.0
