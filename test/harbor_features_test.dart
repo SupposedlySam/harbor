@@ -852,7 +852,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsOneWidget);
-    closeHarborSheet(sheetContext);
+    HarborSheet.close(sheetContext);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsNothing);
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
@@ -1462,7 +1462,7 @@ void main() {
     await tester.pumpSeaTrial(
       _app(
         Harbor(
-          wakePainter: harborAlphaWake,
+          wakePainter: HarborWakeMask.alphaWake,
           top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(), child: _bar('header', 50))],
           body: const HarborFairway(slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))]),
         ),

@@ -56,11 +56,37 @@ void main() {
     });
   }
 
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.none]) {
+    testWidgets('a sheet opens on the screen its anchorPoint is on (barrier: ${barrier.name})', (final tester) async {
+      final BuildContext page = await _pump(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        barrier: barrier,
+        anchorPoint: Offset(_device.size.width, 0),
+        builder: (final BuildContext _) => const HarborSheet(body: SizedBox(key: ValueKey<String>('sheet'), height: 200)),
+      ));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'sheet').left, _hinge.right);
+      expect(_rect(tester, 'sheet').right, _device.size.width);
+    });
+  }
+
   testWidgets('a dialog keeps off the hinge', (final tester) async {
     final BuildContext page = await _pump(tester);
     unawaited(showHarborDialog<void>(page, builder: (final BuildContext _) => const Center(child: SizedBox(key: ValueKey<String>('dialog'), width: 280, height: 160))));
     await tester.pumpAndSettle();
     expect(_rect(tester, 'dialog').overlaps(_hinge), isFalse);
+  });
+
+  testWidgets("a dialog opens on the screen nearest its anchorPoint, as showDialog's does", (final tester) async {
+    final BuildContext page = await _pump(tester);
+    unawaited(showHarborDialog<void>(
+      page,
+      anchorPoint: Offset(_hinge.right + 1, 0),
+      builder: (final BuildContext _) => const Center(child: SizedBox(key: ValueKey<String>('dialog'), width: 280, height: 160)),
+    ));
+    await tester.pumpAndSettle();
+    expect(_rect(tester, 'dialog').left, greaterThanOrEqualTo(_hinge.right));
   });
 
   testWidgets('a signal keeps off the hinge', (final tester) async {

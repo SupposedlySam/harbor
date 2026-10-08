@@ -79,13 +79,21 @@ typedef HarborWakePainter = Widget Function(BuildContext context, Map<HarborEdge
 /// The default [HarborWakePainter]: an alpha mask over the body, transparent
 /// at the body's edge, a quarter opaque at the dock's inner face, and fully
 /// opaque where the wake ends.
+@Deprecated('Use HarborWakeMask.alphaWake instead. Deprecated after 0.2.0.')
 Widget harborAlphaWake(final BuildContext context, final Map<HarborEdge, HarborWakeBand> wakes, final Widget body) =>
-    HarborWakeMask(wakes: wakes, child: body);
+    HarborWakeMask.alphaWake(context, wakes, body);
 
 /// An alpha mask that fades [child] out along the [wakes] bands. Paints
 /// nothing extra when there are none, so it can always be in the tree.
 class HarborWakeMask extends SingleChildRenderObjectWidget {
   const HarborWakeMask({super.key, required this.wakes, this.dockOpacity = 0.25, super.child});
+
+  /// The default [HarborWakePainter]: an alpha mask over the body, transparent
+  /// at the body's edge, a quarter opaque at the dock's inner face, and fully
+  /// opaque where the wake ends. Give it to `Harbor(wakePainter:)` to fade the
+  /// whole body.
+  static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborWakeBand> wakes, final Widget body) =>
+      HarborWakeMask(wakes: wakes, child: body);
 
   final Map<HarborEdge, HarborWakeBand> wakes;
 
