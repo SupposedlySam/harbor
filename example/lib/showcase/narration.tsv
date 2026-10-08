@@ -1,13 +1,43 @@
 intro	Every screen has things pushing in from its edges.
 intro	The status bar, the home indicator, the keyboard, and your own headers and tab bars.
-intro	Harbor gives each one a place.
+intro	Harbor gives each one a place, so your content stops doing inset arithmetic.
+sea	It starts with the sea. Mount it once, above your navigator, and every harbor floats on it.
+coast	The coast is what the platform takes: the status bar, the home indicator, a notch.
+coast	On a television, the coast is the title-safe band around the edge of the screen.
 pier	The pier, built out over the water.
 pier	A header your content scrolls under.
 pier	Boats pass beneath the pier, the way your rows slide under the header.
 quay	The quay, a stone wall on the shore.
 quay	A tab bar your content stops at.
 quay	The tug pulls up to the quay wall, and the list comes to rest right above the tab bar.
+wake	Where a boat passes under the pier, the water ripples: that is the wake.
+wake	Rows fade as they slide under the header, then rest past the fade.
+moored	A moored boat is tied clear of everything in its way.
+moored	A form or a fixed button keeps clear of the docks, the coast and the keyboard.
+mooring	The mooring line is the page margin, kept by the rows that ask for it.
+mooring	The list runs to the edge of the screen, so a carousel inside it can too.
+fairway	The fairway is the channel boats sail through.
+fairway	It is a scroll view that runs under the docks and comes to rest clear of them.
+sliverdock	A header inside the list pins at the face of the docks, and the next one stacks below it.
+sticky	A sticky pill rides with its row, then holds below the docks until the row scrolls away.
+openwater	Open water ignores the docks: a background, a map, a hero image.
+openwater	It runs under the header, edge to edge, as the sea runs under a pier.
 tide	The tide is the keyboard.
 tide	When it comes in, a dock on pilings stays where it is, and the water covers it. That's your tab bar.
 tide	A floating dock rides up with the tide. That's your composer, sitting right on top of the keyboard.
+drydock	A dry dock keeps the keyboard's ground, tide in or out, so nothing moves when it comes and goes.
+makeway	Content can ask a dock to make way: to go dark, or to withdraw and give back its ground.
+pontoon	A pontoon is a dock moored from deep inside the page, like an unsaved changes bar.
+buoy	A buoy floats in the clear water: a floating button, a speech bubble by its anchor.
+buoy	A modal buoy puts a barrier over the page. Tap beside it, or go back, and it closes.
+portal	A portal buoy opens from anywhere: a menu from a list row flips above it when there is no room.
+signal	A signal is a toast. It goes to the page on top, clear of the docks, and screen readers announce it.
+sheet	A sheet is a new port of its own, with its own pier and its own floating quay.
+sheet	It stops short of the status bar, and its footer clears the home indicator once.
+breakwater	A breakwater sheet tells the page how much of it is covered, so the page keeps clear of it.
+dialog	A dialog can keep to the clear water of the page that opened it.
+lighthouse	The lighthouse keeps things in sight: a focused field is brought back above the keyboard.
+tv	On a television, a scale model lays the harbor out on a reference screen and scales it to fit.
+chart	The chart shows every dock's ground, each harbor's clear water, and the tide, as you work.
+trials	Sea trials test it all on real devices: phones, foldables and televisions, with the keyboard up.
 outro	Docks claim the edges. Everything else moors clear of them.

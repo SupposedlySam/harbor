@@ -92,7 +92,7 @@ class HarborBuoyConstraints extends BoxConstraints {
   int get hashCode => Object.hash(super.hashCode, clearWater);
 }
 
-enum HarborSlotKind { body, dock, buoys }
+enum HarborSlotKind { body, dock, statusBar, buoys }
 
 class HarborParentData extends ContainerBoxParentData<RenderBox> {
   HarborSlotKind kind = HarborSlotKind.body;
@@ -111,6 +111,15 @@ class HarborParentData extends ContainerBoxParentData<RenderBox> {
 class HarborSlot extends ParentDataWidget<HarborParentData> {
   const HarborSlot.body({super.key, required super.child})
     : kind = HarborSlotKind.body,
+      edge = HarborEdge.top,
+      fromEdge = 0,
+      dock = null,
+      state = HarborDockState.open;
+
+  /// The status bar's band at the top of the frame, over the docks and under the buoys, as
+  /// `Scaffold` has it: what a status bar tap is hit-tested against.
+  const HarborSlot.statusBar({super.key, required super.child})
+    : kind = HarborSlotKind.statusBar,
       edge = HarborEdge.top,
       fromEdge = 0,
       dock = null,
@@ -453,6 +462,7 @@ class RenderHarbor extends RenderBox
     final double dockMaxHeight = maxHeight.isFinite ? maxHeight : 100000.0;
 
     RenderBox? body;
+    RenderBox? statusBar;
     RenderBox? buoys;
     final Map<HarborEdge, List<_Placed>> byEdge = <HarborEdge, List<_Placed>>{
       for (final HarborEdge e in HarborEdge.values) e: <_Placed>[],
@@ -465,6 +475,8 @@ class RenderHarbor extends RenderBox
       switch (data.kind) {
         case HarborSlotKind.body:
           body = child;
+        case HarborSlotKind.statusBar:
+          statusBar = child;
         case HarborSlotKind.buoys:
           buoys = child;
         case HarborSlotKind.dock:
@@ -712,6 +724,10 @@ class RenderHarbor extends RenderBox
       math.max(physicalObstruction.left, width - physicalObstruction.right),
       math.max(physicalObstruction.top, height - physicalObstruction.bottom),
     );
+    if (statusBar != null) {
+      statusBar.layout(BoxConstraints(minWidth: width, maxWidth: width, maxHeight: height));
+      (statusBar.parentData! as HarborParentData).offset = Offset.zero;
+    }
     if (buoys != null) {
       buoys.layout(HarborBuoyConstraints(frame: size, clearWater: clearWater));
       (buoys.parentData! as HarborParentData).offset = Offset.zero;

@@ -1103,7 +1103,7 @@ class _Composer extends StatelessWidget {
   );
 }
 
-// ─── HarborWakePainter / harborAlphaWake ──────────────────────────────────────
+// ─── HarborWakePainter / HarborWakeMask.alphaWake ─────────────────────────────
 
 enum _WakeChoice { fairway, alpha, tinted }
 
@@ -1180,7 +1180,7 @@ Widget tintedWake(final BuildContext context, final Map<HarborEdge, HarborWakeBa
   );
 }
 
-/// `HarborWakePainter` and `harborAlphaWake`: how the wake is painted.
+/// `HarborWakePainter` and `HarborWakeMask.alphaWake`: how the wake is painted.
 class WakePainterEntry extends StatefulWidget {
   const WakePainterEntry({super.key});
 
@@ -1194,13 +1194,13 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
 
   String _label(final _WakeChoice c) => switch (c) {
     _WakeChoice.fairway => 'null (fairway wake)',
-    _WakeChoice.alpha => 'harborAlphaWake',
+    _WakeChoice.alpha => 'HarborWakeMask.alphaWake',
     _WakeChoice.tinted => 'tintedWake (your own)',
   };
 
   HarborWakePainter? get _painter => switch (_choice) {
     _WakeChoice.fairway => null,
-    _WakeChoice.alpha => harborAlphaWake,
+    _WakeChoice.alpha => HarborWakeMask.alphaWake,
     _WakeChoice.tinted => tintedWake,
   };
 
@@ -1223,7 +1223,7 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
       _WakeChoice.alpha =>
         'Harbor(\n'
             '$header'
-            '  wakePainter: harborAlphaWake, // the whole body fades\n'
+            '  wakePainter: HarborWakeMask.alphaWake, // the whole body fades\n'
             '  body: Stack(children: [\n'
             '    NightSky(),\n'
             '    HarborFairway(wake: false, slivers: [boats]),\n'
@@ -1264,10 +1264,10 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
         'fading as it goes, with churned water right astern.',
     inYourApp:
         'How a harbor paints the wake where content passes under a dock with a fade wake. With no wakePainter (the '
-        'default) each fairway fades its own rows and open water stays put. harborAlphaWake is the default painter '
-        'as a function: give it to Harbor(wakePainter:) to fade the whole body, background and all. Or write your own '
-        '(context, wakes, body) → Widget: each band says where the dock’s face (dockEdge) and the wake’s end (wakeEnd) '
-        'are, from the body’s edge. Here, a brass haze.',
+        'default) each fairway fades its own rows and open water stays put. HarborWakeMask.alphaWake is the default '
+        'painter as a function: give it to Harbor(wakePainter:) to fade the whole body, background and all. Or write '
+        'your own (context, wakes, body) → Widget: each band says where the dock’s face (dockEdge) and the wake’s end '
+        '(wakeEnd) are, from the body’s edge. Here, a brass haze.',
     art: const WakeArt(),
     controls: <Widget>[
       ChoiceControl<_WakeChoice>(
