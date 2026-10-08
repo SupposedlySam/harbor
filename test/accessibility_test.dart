@@ -138,6 +138,150 @@ void main() {
       final FadeTransition fade = tester.widget(find.ancestor(of: find.text('Saved'), matching: find.byType(FadeTransition)).first);
       expect(fade.opacity.value, 1.0);
     });
+
+    // The live region and the message are the same node, not two that each exist.
+    testWidgets('is one live region, labelled by its message', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await pumpPage(tester);
+      HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      await tester.pumpAndSettle();
+      expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
+      semantics.dispose();
+    });
+
+    // Failed before: no dismiss action, so a screen reader could not take a signal away, as it can a SnackBar.
+    testWidgets('is lowered by the screen reader’s dismiss action', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      await tester.pumpAndSettle();
+      tester.semantics.performAction(find.semantics.byFlag(SemanticsFlag.isLiveRegion), SemanticsAction.dismiss);
+      expect(entry.showing.value, isFalse);
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+      semantics.dispose();
+    });
+
+    // Failed before: harbor wrapped it in a second live region with no label, around the widget's own.
+    testWidgets('with liveRegion: false, leaves the semantics to a widget that is its own live region', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await pumpPage(tester);
+      HarborSignals.raise(
+        page,
+        liveRegion: false,
+        builder: (final BuildContext _) => Semantics(
+          container: true,
+          liveRegion: true,
+          label: 'Saved',
+          child: const SizedBox(width: 200, height: 40),
+        ),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
+      semantics.dispose();
+    });
+  });
+
+  group("A signal's entrance", () {
+    Future<BuildContext> pumpPage(final WidgetTester tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Builder(
+              builder: (final BuildContext context) {
+                page = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      return page;
+    }
+
+    // The transitions harbor puts between [entry]'s buoy and its text; the page's own route
+    // transition sits above the buoy and is not counted.
+    Finder harborTransitions(final HarborSignalEntry entry, final Type type) => find.ancestor(
+      of: find.text('Saved'),
+      matching: find.descendant(of: find.byKey(ObjectKey(entry)), matching: find.byType(type)),
+    );
+
+    // Failed before: every signal faded and scaled in, so a widget with its own entrance played two.
+    testWidgets('with AnimationStyle.noAnimation, shows the child as it is and keeps it for its own exit', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: AnimationStyle.noAnimation,
+        builder: (final BuildContext _) => const Text('Saved'),
+        duration: null,
+      );
+      await tester.pump();
+      expect(find.text('Saved'), findsOneWidget);
+      expect(harborTransitions(entry, FadeTransition), findsNothing);
+      expect(harborTransitions(entry, ScaleTransition), findsNothing);
+
+      entry.lower();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Saved'), findsOneWidget, reason: 'it lingers for its own exit');
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+    });
+
+    // Failed before: a caller could not bring its own entrance; harbor's fade and scale always ran.
+    testWidgets("a transitionBuilder replaces the fade and scale and runs on harbor's animation", (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final List<double> seen = <double>[];
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: const AnimationStyle(duration: Duration(milliseconds: 200)),
+        transitionBuilder: (final BuildContext context, final Animation<double> animation, final Widget child) {
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (final BuildContext context, final Widget? child) {
+              seen.add(animation.value);
+              return child!;
+            },
+            child: child,
+          );
+        },
+        builder: (final BuildContext _) => const Text('Saved'),
+        duration: null,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(seen.last, closeTo(0.5, 0.01));
+      expect(harborTransitions(entry, FadeTransition), findsNothing);
+      expect(harborTransitions(entry, ScaleTransition), findsNothing);
+      await tester.pumpAndSettle();
+      expect(seen.last, 1.0);
+
+      entry.lower();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(seen.last, closeTo(0.5, 0.01), reason: 'it runs back out when lowered');
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+    });
+
+    // Failed before: a lowered signal was removed after 300 ms whatever its exit took.
+    testWidgets('stays up for the whole of a longer exit', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: const AnimationStyle(reverseDuration: Duration(milliseconds: 600)),
+        builder: (final BuildContext _) => const Text('Saved'),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      entry.lower();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.text('Saved'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+    });
   });
 
   // Failed before, though sheets already captured the page's themes: the builder was called
