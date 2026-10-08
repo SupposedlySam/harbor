@@ -1,5 +1,6 @@
 ## Unreleased
 
+* An anchored buoy or a portal buoy that is not shown, because its anchor is not in the tree, is not read out by screen readers. It was left in the semantics tree where it last sat (at first, the top-left corner), so a screen reader could reach an invisible menu or bubble. A portal buoy's semantics also follow it when its anchor moves; they stayed where it was first placed.
 * `HarborBuoySide.start` and `.end` name an anchored buoy's reading-order sides, as `AlignmentDirectional.centerStart` and `CrossAxisAlignment.start` do. `HarborBuoySide.before` and `.after` are deprecated aliases of them and place the buoy exactly as before; a side's `name` is now `'start'` or `'end'`.
 * **Breaking:** because `before` and `after` are now aliases, `HarborBuoySide.before.name` is `'start'`, and `HarborBuoySide.values.byName('before')` throws. Code that stores a side by name should store `'start'` or `'end'`.
 * harbor's builders have named types, as Flutter's do: `HarborOpenWater.builder` is a `HarborWatersWidgetBuilder`, and `HarborSheet.draggable(builder:)` is a `ScrollableWidgetBuilder`, as `DraggableScrollableSheet.builder` is. The function types are unchanged, so existing builders still fit.

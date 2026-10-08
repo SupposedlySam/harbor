@@ -277,7 +277,8 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 ## Accessibility
 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
-by keyboard focus and by screen readers, not only by taps. Signals are live
+by keyboard focus and by screen readers, not only by taps, and a buoy whose
+anchor is not in the tree is not read out. Signals are live
 regions, so screen readers announce them, with a dismiss action that lowers
 them, as a `SnackBar` is. A signal whose widget is already its own live region
 (a `SnackBar`-like widget from your design library) is raised with
@@ -333,10 +334,11 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
 right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
-deprecated.) While its anchor is not in the tree, an anchored buoy is not shown
-and takes no taps. A `HarborAnchor` refers to one `HarborAnchorPoint`, so give
-each row of a list its own; in debug builds two points left on one anchor are
-reported after the frame, as two leaders on one `LayerLink` are.
+deprecated.) While its anchor is not in the tree, an anchored buoy is not shown,
+takes no taps and is not read out by screen readers. A `HarborAnchor` refers to
+one `HarborAnchorPoint`, so give each row of a list its own; in debug builds two
+points left on one anchor are reported after the frame, as two leaders on one
+`LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -380,7 +382,8 @@ A **portal buoy** is an anchored buoy opened from where it is used rather than
 listed in `Harbor.buoys`: a menu from a list row, a popover from a button in
 another package. It is an `OverlayPortal`, so its buoy builds with the row's
 themes and floats in the nearest `Overlay`, placed in the clear water of the
-harbor around the row by its `child` (or by an `anchor`). When its `side` has
+harbor around the row by its `child` (or by an `anchor`). Until that anchor is
+in the tree, it is not shown, takes no taps and is not read out. When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
 room, it is held inside the clear water.
