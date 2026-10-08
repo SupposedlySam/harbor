@@ -1241,7 +1241,7 @@ void main() {
     await tester.pumpSeaTrial(
       _app(
         Harbor(
-          wakePainter: harborAlphaWake,
+          wakePainter: HarborWakeMask.alphaWake,
           top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(), child: _bar('header', 50))],
           body: const HarborFairway(slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))]),
         ),

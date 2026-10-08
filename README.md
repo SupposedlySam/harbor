@@ -196,8 +196,9 @@ edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a
-`Harbor` a `wakePainter` to wake its whole body instead, or to paint the wake
-your own way (a progressive blur shader).
+`Harbor` a `wakePainter` to wake its whole body instead
+(`wakePainter: HarborWakeMask.alphaWake`), or to paint the wake your own way (a
+progressive blur shader).
 
 Fairways widen every reveal by what covers their trailing edge. A focused
 field, `Scrollable.ensureVisible` and focus traversal all bring a row clear of
