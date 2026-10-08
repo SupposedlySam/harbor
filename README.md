@@ -285,6 +285,9 @@ HarborController.of(context).makeWay(HarborEdge.top, mode: HarborYield.dark) // 
 
 Claims are counted and go to the nearest harbor that has a dock on that edge.
 A pontoon joins the harbor's docks on the next frame.
+`HarborController.of` throws a `FlutterError` when there is no harbor above the
+context, in release builds too, as `Scaffold.of` does; `HarborController.maybeOf`
+returns null instead.
 
 ## Buoys and signals
 
@@ -315,6 +318,9 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left. While its
 anchor is not in the tree, an anchored buoy is not shown and takes no taps.
+A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each row of a list
+its own; in debug builds two points left on one anchor are reported after the
+frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -399,6 +405,24 @@ own), and it leaves when its page is replaced or removed. A
 the page instead.
 
 ```dart
+final HarborSheetController nowPlaying = HarborSheetController();
+
+showHarborSheet(context, barrier: HarborSheetBarrier.none, controller: nowPlaying, builder: ...);
+nowPlaying.close();   // from a button on the page: it slides out
+nowPlaying.remove();  // it goes at once
+```
+
+A `HarborSheetController` closes a sheet from outside it, as a
+`PersistentBottomSheetController` closes `Scaffold.showBottomSheet`'s: `close()`,
+a `closed` future, `setState` to rebuild it, and its slide as `animation`.
+`remove()` takes it away with no slide, as `removeCurrentSnackBar` does a snack
+bar. It is attached while its sheet is up (`isAttached`) and tells its listeners
+when that changes, so a button can show whether it opens or closes. It works
+for a sheet with a barrier too. `transitionAnimationController:` slides the
+sheet by a controller of your own in place of its 280 ms slide, as on
+`showModalBottomSheet`; you dispose it.
+
+```dart
 final Folder? folder = await showHarborSheet<Folder>(
   context,
   builder: (context) => HarborSheet(
@@ -468,10 +492,34 @@ showHarborSheet(
 on, so a Material app that wants its sheets to follow a downward drag turns it on,
 as above. With it on, a content-sized sheet follows the
 finger down by any part that doesn't scroll, and closes on a fling or when let
-go under half shown. A draggable sheet always closes below its floor, and its
+go under half shown. A draggable sheet closes at its floor, and its
 `HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
-rest and its ceiling). A draggable sheet opened some other way, by
-`showModalBottomSheet` or `showGeneralDialog`, closes that route instead.
+rest and its ceiling). A fling down on its header from its lowest height goes
+to the floor and closes it, as a fling on its list does. `HarborSheetExtent(shouldCloseOnMinExtent: false)` rests at the floor
+instead. A draggable sheet opened some other way, by `showModalBottomSheet` or
+`showGeneralDialog`, closes that route instead; in a modal bottom sheet give it
+`expand: false`, as you would a `DraggableScrollableSheet`, so a tap above it
+reaches the barrier.
+
+A draggable sheet takes a `DraggableScrollableController`, so the page or the
+sheet's own content can read and move it:
+
+```dart
+final DraggableScrollableController comments = DraggableScrollableController();
+
+HarborSheet.draggable(controller: comments, header: title, builder: ...);
+comments.animateTo(0.88, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic); // its field took focus
+```
+
+Rebuilt with a new `rest` before it is dragged, a sheet moves there, as a
+`DraggableScrollableSheet` does with a new `initialChildSize`; after a drag,
+move it with the controller.
+
+`sheetAnimationStyle:` takes an `AnimationStyle`, as `showModalBottomSheet`
+does: its `duration` and `curve` set how the sheet opens, `reverseDuration` and
+`reverseCurve` how it closes, and `AnimationStyle.noAnimation` opens and closes
+it at once. A dragged sheet stays under the finger whatever the curve, and
+reduced motion still wins.
 
 ## The lighthouse
 
