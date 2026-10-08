@@ -999,7 +999,7 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
         child: BrassAction(
           key: const ValueKey<String>('sheet footer'),
           label: 'Make sail',
-          onPressed: () => closeHarborSheet(context),
+          onPressed: () => HarborSheet.close(context),
         ),
       ),
     );

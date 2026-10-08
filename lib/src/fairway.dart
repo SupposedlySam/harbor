@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -83,12 +84,12 @@ class HarborFairway extends StatelessWidget {
   final bool shrinkWrap;
 
   /// Your own spacing at each end and side, added to the clearance.
-  final EdgeInsetsDirectional padding;
+  final EdgeInsetsGeometry padding;
 
   /// A floor on each end's clearance, as `SafeArea.minimum` is: whatever is in
   /// the way there or this, whichever is larger, before [padding] is added.
   /// The bottom of a phone with a home button, where nothing covers the end.
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
 
   /// For a horizontal fairway: whether the ends add the harbor's margin, so
   /// the first item at rest lines up with the rest of the page.
@@ -115,34 +116,72 @@ class HarborFairway extends StatelessWidget {
   /// Whether this is the box form, which can take its cross axis from its child.
   final bool _hugsChild;
 
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    // The fields a scroll view has read as `ScrollView` shows them, scrollDirection even at its default.
+    properties.add(EnumProperty<Axis>('scrollDirection', scrollDirection));
+    properties.add(FlagProperty('reverse', value: reverse, ifTrue: 'reversed', showName: true));
+    properties.add(
+      DiagnosticsProperty<ScrollController>('controller', controller, showName: false, defaultValue: null),
+    );
+    properties.add(FlagProperty('primary', value: primary, ifTrue: 'using primary controller', showName: true));
+    properties.add(DiagnosticsProperty<ScrollPhysics>('physics', physics, showName: false, defaultValue: null));
+    properties.add(FlagProperty('shrinkWrap', value: shrinkWrap, ifTrue: 'shrink-wrapping', showName: true));
+    properties.add(DiagnosticsProperty<ScrollCacheExtent>('scrollCacheExtent', scrollCacheExtent, defaultValue: null));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(FlagProperty('mooringLine', value: mooringLine, ifFalse: 'no mooring line'));
+    properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
+    properties.add(FlagProperty('wake', value: wake, ifFalse: 'no wake'));
+    properties.add(FlagProperty('startsInOpenWater', value: startsInOpenWater, ifTrue: 'starts in open water'));
+    properties.add(
+      EnumProperty<ScrollViewKeyboardDismissBehavior>(
+        'keyboardDismissBehavior',
+        keyboardDismissBehavior,
+        defaultValue: ScrollViewKeyboardDismissBehavior.manual,
+      ),
+    );
+    properties.add(EnumProperty<Clip>('clipBehavior', clipBehavior, defaultValue: Clip.hardEdge));
+    properties.add(IntProperty('semanticChildCount', semanticChildCount, defaultValue: null));
+  }
+
   /// The scroll padding a third-party list should use to sail this fairway's
   /// way: clearance at both ends along [axis], at least [minimum], plus
   /// [extra]. Cast off the same edges beneath it with [HarborCastOff].
   static EdgeInsets paddingOf(
     final BuildContext context, {
     final Axis axis = Axis.vertical,
-    final EdgeInsetsDirectional extra = EdgeInsetsDirectional.zero,
-    final EdgeInsetsDirectional minimum = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final bool mooringLine = true,
   }) {
     final TextDirection direction = Directionality.of(context);
+    final EdgeInsetsDirectional extraHere = HarborEdges.resolve(extra, direction);
+    final EdgeInsetsDirectional minimumHere = HarborEdges.resolve(minimum, direction);
     double end(final HarborEdge edge) {
       double value = HarborWaters.clearanceOf(context, edge);
       if (!edge.isVertical && mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
-      return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(extra, edge);
+      return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(extraHere, edge);
     }
 
     final EdgeInsetsDirectional padding = axis == Axis.vertical
-        ? EdgeInsetsDirectional.only(top: end(HarborEdge.top), bottom: end(HarborEdge.bottom), start: extra.start, end: extra.end)
-        : EdgeInsetsDirectional.only(start: end(HarborEdge.start), end: end(HarborEdge.end), top: extra.top, bottom: extra.bottom);
+        ? EdgeInsetsDirectional.only(top: end(HarborEdge.top), bottom: end(HarborEdge.bottom), start: extraHere.start, end: extraHere.end)
+        : EdgeInsetsDirectional.only(start: end(HarborEdge.start), end: end(HarborEdge.end), top: extraHere.top, bottom: extraHere.bottom);
     return padding.resolve(direction);
   }
 
   @override
   Widget build(final BuildContext context) {
     final TextDirection direction = Directionality.of(context);
+    final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
+    final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     // The docks carry the wakes; the coast and the margin are read only where
     // they are used, so a carousel does not rebuild as the keyboard moves.
     final HarborWatersData waters = HarborWaters.of(context, aspect: HarborWatersAspect.docks);
@@ -611,11 +650,24 @@ class HarborFairwaySliver extends StatelessWidget {
 
   final bool clearLeading;
   final bool clearTrailing;
-  final EdgeInsetsDirectional padding;
+  final EdgeInsetsGeometry padding;
 
   /// A floor on the clearance at each end it clears, as on [HarborFairway.minimum].
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
   final Widget sliver;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
+    properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {
@@ -627,6 +679,8 @@ class HarborFairwaySliver extends StatelessWidget {
       AxisDirection.right => direction == TextDirection.ltr ? (HarborEdge.start, HarborEdge.end) : (HarborEdge.end, HarborEdge.start),
       AxisDirection.left => direction == TextDirection.ltr ? (HarborEdge.end, HarborEdge.start) : (HarborEdge.start, HarborEdge.end),
     };
+    final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
+    final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     double clearance(final HarborEdge edge) => math.max(HarborWaters.clearanceOf(context, edge), HarborEdges.of(minimum, edge));
     final double leading = clearLeading ? clearance(leadingEdge) : 0.0;
     final double trailing = clearTrailing ? clearance(trailingEdge) : 0.0;
@@ -659,6 +713,15 @@ class HarborSliverDock extends StatelessWidget {
   final Widget child;
   final Widget? backdrop;
   final HitTestBehavior hitTestBehavior;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
+    properties.add(
+      EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {

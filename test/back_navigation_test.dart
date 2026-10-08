@@ -109,6 +109,27 @@ void main() {
     expect(find.text('sheet').hitTestable(), findsOneWidget, reason: 'back with its page');
   });
 
+  // Failed before: the sheet came back as the page on top started to leave, painted and tappable
+  // over it for the whole pop transition (its entry sits above every page in the overlay).
+  testWidgets('a sheet with no barrier waits for the page on top to finish leaving', (final tester) async {
+    await tester.pumpSeaTrial(_app(), device: HarborTrialDevice.androidGesture);
+    _openSheet(await _pushPage(tester));
+    await tester.pumpAndSettle();
+    unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => const Harbor(body: Center(child: Text('third'))))));
+    await tester.pumpAndSettle();
+
+    _navigator.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('third'), findsOneWidget, reason: 'positive control: the page on top is still leaving');
+    expect(find.text('sheet'), findsNothing, reason: 'not painted over the leaving page');
+    expect(find.text('sheet').hitTestable(), findsNothing, reason: 'not tappable over the leaving page');
+
+    await tester.pumpAndSettle();
+    expect(find.text('third'), findsNothing);
+    expect(find.text('sheet').hitTestable(), findsOneWidget, reason: 'back once its page is on top again');
+  });
+
   // Failed before: the edge swipe dragged the page away from under the sheet.
   testWidgets("the iOS back swipe leaves a page alone while its sheet with no barrier is up", (final tester) async {
     await tester.pumpSeaTrial(_app());
