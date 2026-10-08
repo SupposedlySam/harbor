@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'coast.dart';
@@ -33,6 +34,15 @@ class HarborScaleModel extends StatelessWidget {
   final HarborCoast coast;
   final Color letterbox;
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Size>('referenceSize', referenceSize));
+    properties.add(DoubleProperty('devicePixelRatio', devicePixelRatio, defaultValue: null));
+    properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
+    properties.add(ColorProperty('letterbox', letterbox, defaultValue: const Color(0xFF000000)));
+  }
 
   @override
   Widget build(final BuildContext context) {

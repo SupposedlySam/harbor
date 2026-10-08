@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
@@ -21,18 +22,19 @@ enum HarborCoastFeature {
 /// A TV's title-safe area: the band at each edge a television may crop or
 /// overscan, which content must stay out of.
 @immutable
-class HarborTitleSafe {
+class HarborTitleSafe with Diagnosticable {
   /// The same fraction of the screen's width on the sides and of its height
   /// at the top and bottom, as broadcast title-safe guides are given.
   const HarborTitleSafe.fraction(final double fraction) : _fraction = fraction, _fixed = null;
 
   /// A fixed band on each edge, in logical pixels.
-  const HarborTitleSafe.fixed(final EdgeInsetsDirectional insets) : _fraction = null, _fixed = insets;
+  const HarborTitleSafe.fixed(final EdgeInsetsGeometry insets) : _fraction = null, _fixed = insets;
 
   final double? _fraction;
-  final EdgeInsetsDirectional? _fixed;
+  final EdgeInsetsGeometry? _fixed;
 
-  EdgeInsetsDirectional resolve(final Size size) {
+  /// The band on a screen of [size]; resolve it against the reading direction to place it.
+  EdgeInsetsGeometry resolve(final Size size) {
     final double? fraction = _fraction;
     if (fraction == null) {
       return _fixed!;
@@ -46,12 +48,24 @@ class HarborTitleSafe {
 
   @override
   int get hashCode => Object.hash(_fraction, _fixed);
+
+  @override
+  String toStringShort() => '${objectRuntimeType(this, 'HarborTitleSafe')}.${_fraction == null ? 'fixed' : 'fraction'}';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      PercentProperty('fraction', _fraction, level: _fraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info),
+    );
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('insets', _fixed, defaultValue: null));
+  }
 }
 
 /// Where a harbor's coast comes from. Set it once, on [HarborSea] or on the
 /// first [Harbor]; everything beneath inherits it.
 @immutable
-class HarborCoast {
+class HarborCoast with Diagnosticable {
   const HarborCoast._({this.titleSafe, this.fixedInsets, this.calmTide = false});
 
   /// The platform's insets, as `MediaQuery` reports them. The default.
@@ -63,7 +77,7 @@ class HarborCoast {
 
   /// A coast of exactly [insets], whatever the platform reports. The tide still
   /// comes in unless [calmTide] is set.
-  const HarborCoast.fixed(final EdgeInsetsDirectional insets, {final bool calmTide = false})
+  const HarborCoast.fixed(final EdgeInsetsGeometry insets, {final bool calmTide = false})
     : this._(fixedInsets: insets, calmTide: calmTide);
 
   /// A TV's title-safe band on top of what the platform reports, edge by edge
@@ -71,7 +85,7 @@ class HarborCoast {
   const HarborCoast.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
 
   final HarborTitleSafe? titleSafe;
-  final EdgeInsetsDirectional? fixedInsets;
+  final EdgeInsetsGeometry? fixedInsets;
 
   /// Whether the keyboard is kept out entirely.
   final bool calmTide;
@@ -83,7 +97,7 @@ class HarborCoast {
     }
     final EdgeInsets padding;
     final EdgeInsets viewPadding;
-    final EdgeInsetsDirectional? fixed = fixedInsets;
+    final EdgeInsetsGeometry? fixed = fixedInsets;
     if (fixed != null) {
       padding = fixed.resolve(direction);
       viewPadding = padding;
@@ -102,10 +116,13 @@ class HarborCoast {
   /// The features each edge of [mediaQuery] is made of under this coast, for a chart.
   Map<HarborEdge, HarborCoastFeature?> features(final MediaQueryData mediaQuery, final TextDirection direction) {
     final EdgeInsetsDirectional platform = HarborEdges.directional(mediaQuery.padding, direction);
-    final EdgeInsetsDirectional? band = titleSafe?.resolve(mediaQuery.size);
+    final EdgeInsetsGeometry? bandGeometry = titleSafe?.resolve(mediaQuery.size);
+    final EdgeInsetsDirectional? band = bandGeometry == null ? null : HarborEdges.resolve(bandGeometry, direction);
+    final EdgeInsetsGeometry? fixedGeometry = fixedInsets;
+    final EdgeInsetsDirectional? fixed = fixedGeometry == null ? null : HarborEdges.resolve(fixedGeometry, direction);
     HarborCoastFeature? featureOf(final HarborEdge edge) {
-      if (fixedInsets != null) {
-        return HarborEdges.of(fixedInsets!, edge) > 0 ? HarborCoastFeature.fixed : null;
+      if (fixed != null) {
+        return HarborEdges.of(fixed, edge) > 0 ? HarborCoastFeature.fixed : null;
       }
       final double fromPlatform = HarborEdges.of(platform, edge);
       if (band != null && HarborEdges.of(band, edge) >= fromPlatform && HarborEdges.of(band, edge) > 0) {
@@ -140,4 +157,27 @@ class HarborCoast {
 
   @override
   int get hashCode => Object.hash(titleSafe, fixedInsets, calmTide);
+
+  @override
+  String toStringShort() {
+    final String name = this == ambient
+        ? 'ambient'
+        : this == none
+        ? 'none'
+        : fixedInsets != null
+        ? 'fixed'
+        : 'titleSafe';
+    return '${objectRuntimeType(this, 'HarborCoast')}.$name';
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    if (this == none) {
+      return;
+    }
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('fixedInsets', fixedInsets, defaultValue: null));
+    properties.add(DiagnosticsProperty<HarborTitleSafe>('titleSafe', titleSafe, defaultValue: null));
+    properties.add(FlagProperty('calmTide', value: calmTide, ifTrue: 'calm tide'));
+  }
 }

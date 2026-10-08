@@ -84,12 +84,16 @@ Mount the sea once, above your `Navigator`:
 ```dart
 MaterialApp(
   builder: (context, child) => HarborSea(
-    margin: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+    margin: const EdgeInsets.symmetric(horizontal: 16),
     child: child!,
   ),
   home: const InboxPage(),
 );
 ```
+
+Every inset harbor takes (a margin, a minimum, a fairway's padding, a fixed
+coast) is an `EdgeInsetsGeometry`, as `Padding`'s is: `EdgeInsets` keeps to the
+side it names, and `EdgeInsetsDirectional` follows the reading direction.
 
 Build a page from a harbor:
 
@@ -159,6 +163,7 @@ as it would in a `Row`.
 | `state: HarborDockState.dark` | Not drawn and not tappable, but it keeps its ground |
 | `state: HarborDockState.withdrawn` | Slides out and gives its ground back |
 | `extentPolicy:` | How a withdrawing dock gives its ground back: `hold` (once it's gone, the default), `follow`, `release` |
+| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, coast or not |
@@ -193,6 +198,16 @@ whichever is larger, so a phone with a home button still keeps 16 under the last
 `HarborFairway.box` given no bound across the scroll, as a horizontal one is in
 a `Column`, is as thick as its child: a row of chips as tall as the chips, its
 ends still clear.
+
+A fairway takes the rest of a `CustomScrollView`'s parameters, with the same
+names and defaults (the box form those of a `SingleChildScrollView`):
+`restorationId:` brings its scroll position back after the app is restarted, and
+`keyboardDismissBehavior:` left unset follows the app's `ScrollBehavior`. With a
+`center:`, both ends of the scroll still rest clear of the docks, and the center
+sliver starts clear of the leading ones. `anchor:` is the one that reads
+differently: it is a fraction of the water between the docks, not of the
+viewport that runs under them, so `anchor: 1` puts the center on a composer's
+face and lifts it with the keyboard.
 
 `clear: HarborClear.coast` keeps clear of the coast alone, without the keyboard.
 To keep clear of the coast and the keyboard but not a header, moor the bottom
@@ -262,11 +277,14 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 ## Accessibility
 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
-by keyboard focus and by screen readers, not only by taps. Signals are live
+by keyboard focus and by screen readers, not only by taps, and a buoy whose
+anchor is not in the tree is not read out. Signals are live
 regions, so screen readers announce them, with a dismiss action that lowers
 them, as a `SnackBar` is. A signal whose widget is already its own live region
 (a `SnackBar`-like widget from your design library) is raised with
-`liveRegion: false`, so harbor adds no second, unlabelled one around it. Sheets and signals keep the themes of
+`liveRegion: false`, so harbor adds no second, unlabelled one around it. A
+signal with a button is raised with `persist: true`, as a `SnackBar` with an
+action persists, so it is still there when a screen reader reaches it. Sheets and signals keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
 leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
@@ -304,6 +322,8 @@ Harbor(
 
 HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('Saved'));
 HarborSignals.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+final undo = HarborSignals.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
+final HarborSignalClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
 HarborSignals.raise(
   context,
   transitionBuilder: (context, animation, child) => SlideTransition(
@@ -315,14 +335,16 @@ HarborSignals.raise(
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
-An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
-reading order, so `before` is on the right under right-to-left. While its
-anchor is not in the tree, an anchored buoy is not shown and takes no taps.
-It is placed again in every frame that is drawn, so it moves with its anchor in
-the same frame, a row scrolling under an open menu included.
-A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each row of a list
-its own; in debug builds two points left on one anchor are reported after the
-frame, as two leaders on one `LayerLink` are.
+An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
+reading order, as in `AlignmentDirectional`, so `start` is on the right under
+right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
+deprecated.) While its anchor is not in the tree, an anchored buoy is not shown,
+takes no taps and is not read out by screen readers. It is placed again in every
+frame that is drawn, so it moves with its anchor in the same frame, a row
+scrolling under an open menu included. A `HarborAnchor` refers to one
+`HarborAnchorPoint`, so give each row of a list its own; in debug builds two
+points left on one anchor are reported after the frame, as two leaders on one
+`LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
@@ -342,6 +364,20 @@ A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 signal moves to the one now on top.
+
+Signals raised at the same slot or alignment of one port take turns, as a
+`ScaffoldMessenger` shows its snack bars: the next comes in once the one before
+it has run its exit, so "Copied" tapped twice is never drawn over itself. To
+replace the signal that is up, `lower()` it; one lowered while it waits leaves
+without being shown. Signals at different slots show together. `closed`
+completes once a signal has left, with why.
+
+A signal stays 4 s, as a `SnackBar` does, and its `duration` counts only while it
+is in sight: from the end of its entrance, and not while another route covers
+its page (the time starts over when that route leaves). `persist: true` keeps it
+up until it is lowered, as `SnackBar(persist:)` does. Give it to a signal with a
+button, an Undo: a screen-reader user moving through the page needs longer than
+4 s to reach it.
 
 A signal raised with no harbor above it (a widget test that pumps a bare
 `MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
@@ -366,7 +402,8 @@ A **portal buoy** is an anchored buoy opened from where it is used rather than
 listed in `Harbor.buoys`: a menu from a list row, a popover from a button in
 another package. It is an `OverlayPortal`, so its buoy builds with the row's
 themes and floats in the nearest `Overlay`, placed in the clear water of the
-harbor around the row by its `child` (or by an `anchor`). When its `side` has
+harbor around the row by its `child` (or by an `anchor`). Until that anchor is
+in the tree, it is not shown, takes no taps and is not read out. When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
 room, it is held inside the clear water.
@@ -391,7 +428,8 @@ indicator in its coast, so its footer clears it exactly once. A draggable
 sheet's heights are fractions of the space between the status bar and the
 keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
-content keeps clear of it while it's up.
+content keeps clear of it while it's up: in the same frame as the sheet is
+drawn, as it slides in and out and as it is dragged.
 
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and signals and buoys keep to the screen that holds them, never across the hinge.
@@ -445,7 +483,10 @@ navigator observers and route-name analytics, and `barrierLabel:` is what a
 screen reader announces for the barrier ('Close sheet' when none is given), with
 `barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
 sheet is a semantics scope of its own, and screen readers announce its
-`semanticLabel:` as it opens. It spans the screen unless you give it a `maxWidth`.
+`semanticLabel:` as it opens. The barrier's semantics end at the sheet's top, as
+a modal bottom sheet's do, and follow it as it slides or is dragged, so touch
+exploration over the sheet finds its content rather than the barrier. It spans
+the screen unless you give it a `maxWidth`.
 
 A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
 into it, an observer of page routes does not count it as a screen, a draggable sheet
@@ -538,6 +579,11 @@ it from outside, by a tap or the keyboard's next action. So a field and the
 button under it come up together, `clearance` clear of the keyboard.
 `onlyWhileFocused: true` keeps the rest of a form's beacons still.
 
+A region lifts over 280 ms and settles back the same way. Give it an
+`animationStyle:` to change that: its `duration` and `curve` are for the lift,
+its `reverseDuration` and `reverseCurve` for settling back, and
+`AnimationStyle.noAnimation` moves the content at once.
+
 ## TV
 
 ```dart
@@ -565,6 +611,13 @@ the labels' font, so they read in widget tests and goldens rather than as
 `flutter_test`'s boxes. `HarborChart.snapshot(context)` returns the same as data.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
+
+The widget inspector and `debugDumpApp` show each harbor widget's settings, as
+they do a `SafeArea`'s or a `ListView`'s, leaving out the ones at their
+defaults: a `Harbor` lists its docks and buoys, and a dock reads as
+`HarborDock.pier(tide: float, debugLabel: "composer")`. The values (`HarborDock`,
+`HarborBuoy`, `HarborWake`, `HarborCoast`, `HarborTitleSafe`, `HarborSheetExtent`)
+are `Diagnosticable`, so they print the same way in a test failure or a log.
 
 Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (sheets,
 dialogs, signals and buoys keep off a hinge through `MediaQuery.displayFeatures`,
