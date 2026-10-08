@@ -1,3 +1,10 @@
+## Unreleased
+
+* `HarborSheet.draggable(controller:)` takes a `DraggableScrollableController`, so a draggable sheet can be read and moved from outside it: fitted to content measured after layout, or raised to its ceiling when a field takes focus.
+* `HarborSheet.draggable(expand:)`, as on `DraggableScrollableSheet`: `false` in a route that sizes the sheet to its content (`showModalBottomSheet`), so a tap above the visible sheet reaches the barrier and closes it. Before, the sheet filled the modal bottom sheet's surface and swallowed those taps.
+* `HarborSheetExtent(shouldCloseOnMinExtent:)`, as on `DraggableScrollableSheet`: off, a draggable sheet rests at its floor instead of closing.
+* A fling down on a draggable sheet's header from its lowest height goes to its floor and closes it, as a fling on its list does. Before, the header sprang back to its rest unless flung faster than 1200. A slow release still goes to the nearest of its heights.
+
 ## 0.2.0
 
 ### Breaking changes

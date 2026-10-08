@@ -295,4 +295,81 @@ void main() {
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
   });
+
+  group('a draggable sheet driven from outside', () {
+    const double available = 874.0 - 62.0;
+    Widget list(final BuildContext context, final ScrollController controller) => HarborFairway(
+      controller: controller,
+      slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    );
+
+    testWidgets('moves when its DraggableScrollableController animates it', (final tester) async {
+      final DraggableScrollableController controller = DraggableScrollableController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
+      ));
+      await tester.pumpAndSettle();
+      expect(controller.isAttached, isTrue);
+      expect(controller.size, closeTo(0.5, 0.001));
+      unawaited(controller.animateTo(0.88, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+      await tester.pumpAndSettle();
+      expect(controller.size, closeTo(0.88, 0.001));
+      expect(_rect(tester, 'handle').top, closeTo(874 - available * 0.88, 2));
+    });
+
+    testWidgets('a fling down from its lowest snap closes it, as a fling on its list does', (final tester) async {
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(header: _bar('handle', 40), builder: list),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      // A short fling at Material's dismiss speed, nowhere near the floor.
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 800);
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+    });
+
+    testWidgets('with shouldCloseOnMinExtent off, rests at its floor instead of closing', (final tester) async {
+      final DraggableScrollableController controller = DraggableScrollableController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          controller: controller,
+          extent: const HarborSheetExtent(shouldCloseOnMinExtent: false),
+          header: _bar('handle', 40),
+          builder: list,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
+      expect(controller.size, closeTo(0.25, 0.001));
+    });
+
+    testWidgets('with expand off in showModalBottomSheet, a tap above it closes the route', (final tester) async {
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showModalBottomSheet<void>(
+        context: page,
+        builder: (final BuildContext context) => HarborSheet.draggable(expand: false, header: _bar('handle', 40), builder: list),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      final Rect handle = _rect(tester, 'handle');
+      // Half of the modal bottom sheet's 9/16 of the screen.
+      expect(handle.top, closeTo(874 - 874 * 9 / 16 * 0.5, 2));
+      await tester.tapAt(Offset(handle.center.dx, handle.top - 40));
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+    });
+  });
 }

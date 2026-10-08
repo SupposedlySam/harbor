@@ -398,10 +398,28 @@ showHarborSheet(
 
 `dragToClose:` is off by default. With it on, a content-sized sheet follows the
 finger down by any part that doesn't scroll, and closes on a fling or when let
-go under half shown. A draggable sheet always closes below its floor, and its
+go under half shown. A draggable sheet closes at its floor, and its
 `HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
-rest and its ceiling). A draggable sheet opened some other way, by
-`showModalBottomSheet` or `showGeneralDialog`, closes that route instead.
+rest and its ceiling). A fling down on its header from its lowest height goes
+to the floor and closes it, as a fling on its list does. `HarborSheetExtent(shouldCloseOnMinExtent: false)` rests at the floor
+instead. A draggable sheet opened some other way, by `showModalBottomSheet` or
+`showGeneralDialog`, closes that route instead; in a modal bottom sheet give it
+`expand: false`, as you would a `DraggableScrollableSheet`, so a tap above it
+reaches the barrier.
+
+A draggable sheet takes a `DraggableScrollableController`, so the page or the
+sheet's own content can read and move it:
+
+```dart
+final DraggableScrollableController comments = DraggableScrollableController();
+
+HarborSheet.draggable(controller: comments, header: title, builder: ...);
+comments.animateTo(0.88, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic); // its field took focus
+```
+
+Rebuilt with a new `rest` before it is dragged, a sheet moves there, as a
+`DraggableScrollableSheet` does with a new `initialChildSize`; after a drag,
+move it with the controller.
 
 ## The lighthouse
 

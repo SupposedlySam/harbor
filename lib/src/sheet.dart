@@ -14,15 +14,24 @@ import 'wake.dart';
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
 class HarborSheetExtent {
-  const HarborSheetExtent({this.rest = 0.5, this.max = 0.88, this.min = 0.25, this.snap = true, this.snapSizes});
+  const HarborSheetExtent({
+    this.rest = 0.5,
+    this.max = 0.88,
+    this.min = 0.25,
+    this.snap = true,
+    this.snapSizes,
+    this.shouldCloseOnMinExtent = true,
+  });
 
-  /// Where the sheet opens and rests.
+  /// Where the sheet opens and rests. Rebuilt with a new rest before it is
+  /// dragged, the sheet moves there, as [DraggableScrollableSheet.initialChildSize]
+  /// does; to move it after, use the sheet's [DraggableScrollableController].
   final double rest;
 
   /// The taller snap and the ceiling.
   final double max;
 
-  /// The drag floor; released below it, the sheet closes.
+  /// The drag floor; dragged to it, or flung down past the lowest snap, the sheet closes.
   final double min;
 
   final bool snap;
@@ -30,6 +39,9 @@ class HarborSheetExtent {
   /// The heights a released sheet snaps to, in increasing order, between [min]
   /// and [max]; [max] is always one. Defaults to [rest] and [max].
   final List<double>? snapSizes;
+
+  /// Whether reaching [min] closes the sheet. Off, the sheet rests at its floor.
+  final bool shouldCloseOnMinExtent;
 
   List<double> get _snaps => <double>{...(snapSizes ?? <double>[rest]), max}.toList()..sort();
 }
@@ -60,18 +72,26 @@ class HarborSheet extends StatelessWidget {
     this.clip,
     this.dragToClose = false,
   }) : builder = null,
-       extent = null;
+       extent = null,
+       controller = null,
+       expand = true;
 
   /// A sheet whose content is a list: it rests at [extent]'s rest height, drags
   /// to its ceiling, and closes when dragged below its floor. [builder] must
   /// give its fairway the controller it is handed, so dragging the list drags
   /// the sheet.
+  ///
+  /// A [controller] reads and moves the sheet from outside it: a share sheet
+  /// that fits its height to content measured after layout, a comments sheet
+  /// that rises to its ceiling when its field takes focus.
   const HarborSheet.draggable({
     super.key,
     this.header,
     this.footer,
     required Widget Function(BuildContext context, ScrollController controller) this.builder,
     this.extent = const HarborSheetExtent(),
+    this.controller,
+    this.expand = true,
     this.surface,
     this.headerWake = const HarborWake.fade(length: 12.0),
     this.footerWake = const HarborWake.hairline(),
@@ -89,6 +109,15 @@ class HarborSheet extends StatelessWidget {
   final Widget? body;
   final Widget Function(BuildContext context, ScrollController controller)? builder;
   final HarborSheetExtent? extent;
+
+  /// Drives a draggable sheet from outside it, as it drives a [DraggableScrollableSheet].
+  final DraggableScrollableController? controller;
+
+  /// Whether a draggable sheet fills the space it is given, as
+  /// [DraggableScrollableSheet.expand] does. Turn it off where the route sizes
+  /// the sheet to its content, as `showModalBottomSheet` does, so taps above
+  /// the visible sheet reach the barrier.
+  final bool expand;
 
   /// Painted under the whole sheet: its color and corners.
   final Widget? surface;
@@ -199,14 +228,17 @@ class _DraggableSheetBody extends StatefulWidget {
 }
 
 class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
-  final DraggableScrollableController _controller = DraggableScrollableController();
+  DraggableScrollableController? _ownController;
   double _available = 0.0;
+
+  DraggableScrollableController get _controller =>
+      widget.sheet.controller ?? (_ownController ??= DraggableScrollableController());
 
   HarborSheetExtent get _extent => widget.extent;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ownController?.dispose();
     super.dispose();
   }
 
@@ -225,22 +257,27 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     }
     final double velocity = details.primaryVelocity ?? 0.0;
     final double size = _controller.size;
-    if (size <= _extent.min + 0.001 || velocity > 1200) {
+    final bool closes = _extent.shouldCloseOnMinExtent;
+    if (closes && (size <= _extent.min + 0.001 || velocity > 1200)) {
       _close();
       return;
     }
     double target = size;
     if (_extent.snap) {
-      // As a dragged list snaps: a fling goes to the next size its way, a
-      // slow release to the nearest.
+      // As a dragged list snaps: a fling goes to the next size its way, the
+      // floor past the lowest, and a slow release to the nearest.
       final List<double> snaps = _extent._snaps;
       if (velocity < -400) {
         target = snaps.firstWhere((final double snap) => snap > size + 0.001, orElse: () => snaps.last);
       } else if (velocity > 400) {
-        target = snaps.lastWhere((final double snap) => snap < size - 0.001, orElse: () => snaps.first);
+        target = snaps.lastWhere((final double snap) => snap < size - 0.001, orElse: () => _extent.min);
       } else {
         target = snaps.reduce((final double a, final double b) => (size - a).abs() <= (size - b).abs() ? a : b);
       }
+    }
+    if (closes && target <= _extent.min + 0.001) {
+      _close();
+      return;
     }
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.jumpTo(target);
@@ -307,19 +344,20 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     return NotificationListener<DraggableScrollableNotification>(
       onNotification: (final DraggableScrollableNotification n) {
         host?.reportExtent(n.extent);
-        if (n.extent <= n.minExtent + 0.001) {
+        if (n.shouldCloseOnMinExtent && n.extent <= n.minExtent + 0.001) {
           _close();
         }
         return false;
       },
       child: DraggableScrollableSheet(
         controller: _controller,
-        expand: true,
+        expand: sheet.expand,
         initialChildSize: _extent.rest,
         minChildSize: _extent.min,
         maxChildSize: _extent.max,
         snap: _extent.snap,
         snapSizes: _extent.snap ? _extent._snaps : null,
+        shouldCloseOnMinExtent: _extent.shouldCloseOnMinExtent,
         builder: (final BuildContext context, final ScrollController controller) => _MeasureHeight(
           onTop: (final double top) => host?.host.reportTop(top, fromSheet: true),
           child: sheet._surfaced(
