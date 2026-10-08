@@ -8,6 +8,7 @@
 // harbor run in step with the timeline and every recording is identical.
 
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -78,11 +79,14 @@ void main() {
     final int frames = (ShowcaseTimeline.duration * fps).floor();
     for (int i = 0; i < frames; i++) {
       final double t = i / fps;
+      // Two pumps: the first lays out half a frame early, the second at the frame's time, which
+      // lets the list follow the timeline after a layout, as it does one frame later in the
+      // running app. Never twice at one time: harbor's tide gauge takes a keyboard that holds
+      // still for a frame as settled, and would mark a keyboard caught mid-rise as high water.
+      time.value = math.max(0, t - 0.5 / fps);
+      await tester.pump(step ~/ 2);
       time.value = t;
-      // Two pumps: the first lays out at the new time, the second lets the list follow the
-      // timeline after that layout, as it does one frame later in the running app.
-      await tester.pump(step);
-      await tester.pump();
+      await tester.pump(step ~/ 2);
       // Drawn in the real fonts here, so this is where a caption too long for its area is caught:
       // the video would show it cut off.
       final Finder caption = find.byKey(const ValueKey<String>('caption line'));

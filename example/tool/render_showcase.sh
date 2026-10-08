@@ -10,7 +10,7 @@
 #
 #   SKIP_NARRATION=1 ./tool/render_showcase.sh   keep the committed timings; the MP4 is silent
 #
-#   ./tool/render_showcase.sh            30 fps MP4; 800 px, 12 fps GIF (about 4.6 MB)
+#   ./tool/render_showcase.sh            30 fps MP4; 800 px, 12 fps GIF of the first 55 s
 #   GIF_WIDTH=960 GIF_FPS=15 ./tool/render_showcase.sh
 set -euo pipefail
 
@@ -20,6 +20,9 @@ frames="$example/build/showcase/frames"
 fps=30
 gif_fps="${GIF_FPS:-12}"
 gif_width="${GIF_WIDTH:-800}"
+# The GIF is the opening (the intro, the pier and the quay); the MP4 is the whole tour, which as
+# a GIF would be far too heavy for a README.
+gif_seconds="${GIF_SECONDS:-55}"
 
 FLUTTER_ROOT="$(fvm flutter --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["flutterRoot"])')"
 export FLUTTER_ROOT
@@ -53,8 +56,8 @@ fi
 
 # Two passes so the GIF gets a palette made for these frames, not a generic one.
 filters="fps=$gif_fps,scale=$gif_width:-1:flags=lanczos"
-ffmpeg -loglevel error -y -i "$frames/frame_%05d.png" -vf "$filters,palettegen=stats_mode=diff" "$frames/palette.png"
-ffmpeg -loglevel error -y -framerate "$fps" -i "$frames/frame_%05d.png" -i "$frames/palette.png" \
+ffmpeg -loglevel error -y -framerate "$fps" -t "$gif_seconds" -i "$frames/frame_%05d.png" -vf "$filters,palettegen=stats_mode=diff" "$frames/palette.png"
+ffmpeg -loglevel error -y -framerate "$fps" -t "$gif_seconds" -i "$frames/frame_%05d.png" -i "$frames/palette.png" \
   -lavfi "$filters [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" "$media/showcase.gif"
 
 ls -lh "$media/showcase.mp4" "$media/showcase.gif"

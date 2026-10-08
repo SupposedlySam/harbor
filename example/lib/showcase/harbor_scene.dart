@@ -454,11 +454,12 @@ class _ScenePainter extends CustomPainter {
   }
 
   /// How "quay" is pronounced, on a small sign above its label, put up the moment the narrator
-  /// says "pronounced" and left up for the rest of the chapter. It appears at once, as the
+  /// says "quay" and left up for the rest of the chapter. The narrator does not spell it out:
+  /// hearing the word is the lesson, and the sign is the written half. It appears at once, as the
   /// captions do: no animation to pull the eye from what the harbor is doing.
   void _pronunciation(final Canvas canvas, final Offset quayLabel, final double grow) {
     final ShowcaseChapter quay = ShowcaseTimeline.quay;
-    final double said = ShowcaseTimeline.cue('quay', 'pronounced', quay.start + 1.0);
+    final double said = ShowcaseTimeline.cue('quay', 'quay', quay.start + 0.6);
     if (t < said || !quay.contains(t)) {
       return;
     }

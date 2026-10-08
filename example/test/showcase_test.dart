@@ -35,10 +35,14 @@ void main() {
   /// Plays forward to [t] a frame at a time, so harbor's own animations keep pace.
   Future<void> seek(final WidgetTester tester, final double t) async {
     while (now < t) {
+      final double from = now;
       now = (now + 1 / 30).clamp(0, t);
+      // Two pumps, never at one time: harbor's tide gauge takes a keyboard that holds still for a
+      // frame as settled (see render_showcase_test.dart).
+      time.value = (from + now) / 2;
+      await tester.pump(const Duration(microseconds: 16667));
       time.value = now;
-      await tester.pump(const Duration(microseconds: 33333));
-      await tester.pump();
+      await tester.pump(const Duration(microseconds: 16667));
     }
   }
 
