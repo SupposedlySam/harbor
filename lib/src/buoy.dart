@@ -194,8 +194,11 @@ class HarborBuoy {
     this.alignment = Alignment.bottomCenter,
     this.margin = const EdgeInsets.all(16.0),
     this.modal = false,
+    this.onDismiss,
+    this.barrierColor = const Color(0x00000000),
     this.within,
-  }) : anchor = null,
+  }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
+       anchor = null,
        side = HarborBuoySide.above,
        gap = 0.0,
        overlap = 0.0;
@@ -212,7 +215,10 @@ class HarborBuoy {
     this.overlap = 0.0,
     this.margin = const EdgeInsets.all(8.0),
     this.modal = false,
-  }) : alignment = Alignment.center,
+    this.onDismiss,
+    this.barrierColor = const Color(0x00000000),
+  }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
+       alignment = Alignment.center,
        within = null;
 
   final Key? key;
@@ -224,12 +230,20 @@ class HarborBuoy {
   /// How far in from the clear water's edges; an [EdgeInsetsDirectional] follows the reading direction.
   final EdgeInsetsGeometry margin;
 
-  /// Whether this buoy hides the buoys listed before it while it is up (a menu over a tooltip).
+  /// Whether this buoy is modal while it is up (quick actions, a menu): a barrier blocks taps to
+  /// the page and its docks and tells screen readers to leave the page alone, a tap outside the
+  /// buoy and back both call [onDismiss], and the buoys listed before it are hidden.
   ///
-  /// Only that: it is NOT a modal route. There is no barrier, taps beside it reach the page, and
-  /// back pops the page. For something that must block the page until it is dismissed, use
-  /// `showHarborSheet` or `showHarborDialog`, which are routes.
+  /// Until 0.2.0 a modal buoy only hid the buoys before it, with taps and back reaching the page.
+  /// NOT COVERED: keyboard focus is not trapped in the buoy, as a route's would be.
   final bool modal;
+
+  /// Called when a modal buoy is dismissed by a tap outside it or by back. Required when [modal]:
+  /// the buoy is yours, so you take it away.
+  final VoidCallback? onDismiss;
+
+  /// The colour of a modal buoy's barrier; clear by default, so the page shows as it is.
+  final Color barrierColor;
   final HarborAnchor? anchor;
   final HarborBuoySide side;
   final double gap;
@@ -241,11 +255,84 @@ class HarborBuoy {
 }
 
 /// The layer a harbor floats its buoys in.
-class HarborBuoyLayer extends StatelessWidget {
+class HarborBuoyLayer extends StatefulWidget {
   const HarborBuoyLayer({super.key, required this.buoys, required this.signals});
 
   final List<HarborBuoy> buoys;
   final List<HarborSignalEntry> signals;
+
+  @override
+  State<HarborBuoyLayer> createState() => _HarborBuoyLayerState();
+}
+
+class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
+  /// The page's history entry while a modal buoy is up, so back dismisses the buoy first (and the
+  /// iOS back swipe stands aside), as it does a sheet with no barrier.
+  LocalHistoryEntry? _history;
+  bool _removingQuietly = false;
+
+  HarborBuoy? get _modal {
+    for (final HarborBuoy buoy in widget.buoys.reversed) {
+      if (buoy.modal) {
+        return buoy;
+      }
+    }
+    return null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncHistory();
+  }
+
+  @override
+  void didUpdateWidget(final HarborBuoyLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncHistory();
+  }
+
+  // After the frame: a route's history cannot change while it builds.
+  void _syncHistory() {
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+      if (!mounted) {
+        return;
+      }
+      final ModalRoute<Object?>? route = ModalRoute.of(context);
+      if (_modal != null && _history == null && route != null) {
+        _history = LocalHistoryEntry(
+          onRemove: () {
+            _history = null;
+            if (!_removingQuietly) {
+              _modal?.onDismiss?.call();
+            }
+          },
+        );
+        route.addLocalHistoryEntry(_history!);
+      } else if (_modal == null && _history != null) {
+        _leaveHistory(route);
+      }
+    });
+  }
+
+  void _leaveHistory(final ModalRoute<Object?>? route) {
+    final LocalHistoryEntry? history = _history;
+    _history = null;
+    if (history != null && route != null && route.isActive) {
+      _removingQuietly = true;
+      route.removeLocalHistoryEntry(history);
+      _removingQuietly = false;
+    }
+  }
+
+  @override
+  void deactivate() {
+    _leaveHistory(ModalRoute.of(context));
+    super.deactivate();
+  }
+
+  List<HarborBuoy> get buoys => widget.buoys;
+  List<HarborSignalEntry> get signals => widget.signals;
 
   @override
   Widget build(final BuildContext context) {
@@ -256,10 +343,25 @@ class HarborBuoyLayer extends StatelessWidget {
       for (final HarborSignalEntry signal in signals)
         if (signal.raisedIn case final HarborController harbor) harbor.clearWater,
     ];
-    if (raisers.isEmpty) {
-      return _build(context);
+    final Widget layer = raisers.isEmpty
+        ? _build(context)
+        : ListenableBuilder(listenable: Listenable.merge(raisers), builder: (final BuildContext context, final Widget? _) => _build(context));
+    final HarborBuoy? modal = _modal;
+    if (modal == null) {
+      return layer;
     }
-    return ListenableBuilder(listenable: Listenable.merge(raisers), builder: (final BuildContext context, final Widget? _) => _build(context));
+    // Under every buoy and over the page and its docks: taps beside a modal buoy dismiss it
+    // instead of reaching the page, and the barrier blocks the page's semantics.
+    // PASSTHROUGH, so the layer still gets the harbor's own constraints, which carry the clear
+    // water. StackFit.expand handed it plain tight ones, and a modal buoy was centred in the whole
+    // frame instead of the clear water.
+    return Stack(
+      fit: StackFit.passthrough,
+      children: <Widget>[
+        Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: 'Close')),
+        layer,
+      ],
+    );
   }
 
   Widget _build(final BuildContext context) {

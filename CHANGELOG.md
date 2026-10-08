@@ -1,5 +1,7 @@
 ## Unreleased
 
+* **Breaking:** `HarborBuoy(modal: true)` is modal. It puts a barrier over the page and its docks (`barrierColor`, clear by default), a tap beside it or back calls the new `onDismiss`, and screen readers leave the page alone while it is up; it still hides the buoys listed before it. `onDismiss` is required with `modal: true`. Before, a modal buoy only hid the buoys before it, and taps and back reached the page.
+
 * Sheets, dialogs, signals and buoys keep off a foldable's hinge, as Material's dialogs and bottom sheets do: each is kept to one screen. A flat fold, which has no width, may still be spanned. `HarborTrialDevice` gains `displayFeatures`; `foldableOpen` declares its fold, and the new `dualScreenOpen` a hinge.
 * A dialog's builder sees the opener's themes, and a dialog appears without fading under reduced motion, as sheets and signals already do.
 

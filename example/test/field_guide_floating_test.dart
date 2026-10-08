@@ -523,7 +523,7 @@ void main() {
     expect(_rect(tester, 'modal buoy').center.dy, _near(water.center.dy));
     expect(_rect(tester, 'modal buoy').center.dx, _near(water.center.dx));
     expect(find.text('HarborBuoy(modal: true)'), findsWidgets);
-    expect(_code(tester), contains('HarborBuoy(modal: true, child: QuickActions()), // hides the tooltip'));
+    expect(_code(tester), contains('HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'));
   });
 
   testWidgets('HarborBuoy(modal: true): not modal, both buoys float, the first at the bottom center', (
@@ -537,7 +537,7 @@ void main() {
     expect(_rect(tester, 'listed first').bottom, _near(_rect(tester, 'modal tab bar').top - 16 * s));
     expect(_rect(tester, 'listed first').center.dx, _near((_frameLeft(tester) + _frameRight(tester)) / 2));
     expect(find.text('Not modal: the buoys before me stay up.'), findsOneWidget);
-    expect(_code(tester), contains('HarborBuoy(modal: false, child: QuickActions()), // floats beside it'));
+    expect(_code(tester), contains('HarborBuoy(child: QuickActions()), // floats beside it'));
 
     await _tap(tester, 'toggle modal');
     expect(_key('listed first'), findsNothing);

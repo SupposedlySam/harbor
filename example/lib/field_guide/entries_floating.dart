@@ -673,9 +673,9 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
         'When the harbor master’s launch comes through with its blue light on, every other boat moves out of its way. '
         'While it is there, it is the only one in the channel.',
     inYourApp:
-        'A menu or a panel that should be the only thing afloat while it is up. A modal buoy hides every buoy listed '
-        'before it (a tooltip, a floating button) until it goes, and they come back when it does. Buoys listed after it '
-        'stay up.',
+        'A menu or a panel that should be the only thing afloat while it is up. A modal buoy puts a barrier over the '
+        'page, so a tap beside it or back closes it (through onDismiss) instead of reaching the page, and it hides every '
+        'buoy listed before it (a tooltip, a floating button) until it goes. Buoys listed after it stay up.',
     art: const HarborLaunchArt(),
     controls: <Widget>[
       ToggleControl(label: 'launch up', value: _launchUp, onChanged: (final bool v) => setState(() => _launchUp = v)),
@@ -685,7 +685,7 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
         'Harbor(\n'
         '  buoys: [\n'
         '    HarborBuoy(alignment: Alignment.bottomCenter, child: Tooltip()),\n'
-        '${_launchUp ? '    HarborBuoy(modal: $_modal, child: QuickActions()), // ${_modal ? 'hides the tooltip' : 'floats beside it'}\n' : ''}'
+        '${_launchUp ? (_modal ? '    HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip\n' : '    HarborBuoy(child: QuickActions()), // floats beside it\n') : ''}'
         '  ],\n'
         '  ...\n'
         ')',
@@ -700,6 +700,7 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
         if (_launchUp)
           HarborBuoy(
             modal: _modal,
+            onDismiss: _modal ? () => setState(() => _launchUp = false) : null,
             alignment: Alignment.center,
             child: _LaunchPanel(
               key: const ValueKey<String>('modal buoy'),

@@ -274,7 +274,7 @@ Harbor(
   buoys: [
     HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: fab),
     HarborBuoy.anchored(anchor: launchAnchor, side: HarborBuoySide.above, overlap: 6, child: bubble),
-    HarborBuoy(modal: true, child: quickActions), // hides the buoys before it
+    HarborBuoy(modal: true, onDismiss: closeQuickActions, child: quickActions), // a barrier over the page
   ],
   bottom: [HarborDock.quay(child: TabBar(launch: HarborAnchorPoint(anchor: launchAnchor, child: launchButton)))],
   body: ...,
@@ -288,9 +288,11 @@ An anchored buoy sits on its `side` of its anchor; `before` and `after` are in
 reading order, so `before` is on the right under right-to-left.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
-A `modal` buoy only hides the buoys before it: it is not a modal route, so taps
-beside it reach the page and back pops the page. For something that blocks the
-page until it is dismissed, use a sheet or a dialog.
+A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
+keeps taps off the page and its docks and tells screen readers to leave them
+alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
+before it are hidden while it is up. Unlike a route, it does not trap keyboard
+focus.
 A signal goes to the port on top (a sheet over a page over the sea), so a `low`
 signal clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
