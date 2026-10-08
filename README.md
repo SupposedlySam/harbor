@@ -272,6 +272,37 @@ keyboard. A **breakwater**
 sheet reports how far it covers the page that opened it, and that page's
 content keeps clear of it while it's up.
 
+A sheet is a route, as a modal bottom sheet is. `routeSettings:` reach your
+navigator observers and route-name analytics, and the barrier reads Material's
+dismiss label when the app has Material localizations (`barrierLabel:` to say
+something else). It spans the screen unless you give it a `maxWidth`;
+`maxWidthFromTheme: true` takes the width from `BottomSheetThemeData.constraints`,
+or Material 3's 640 when the theme sets none, as `showModalBottomSheet` does.
+
+```dart
+showHarborSheet(
+  context,
+  routeSettings: const RouteSettings(name: 'reply'),
+  maxWidthFromTheme: true,
+  builder: (_) => HarborSheet(
+    material: true,                        // text fields and ink work in it
+    clip: const RoundedRectangleBorder(    // a photo at the top keeps the corners
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    dragToClose: true,                     // drag it down to close
+    surface: const ColoredBox(color: Colors.white),
+    body: composer,
+  ),
+);
+```
+
+`dragToClose:` is off by default. With it on, a content-sized sheet follows the
+finger down by any part that doesn't scroll, and closes on a fling or when let
+go under half shown. A draggable sheet always closes below its floor, and its
+`HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
+rest and its ceiling). A draggable sheet opened some other way, by
+`showModalBottomSheet` or `showGeneralDialog`, closes that route instead.
+
 ## The lighthouse
 
 ```dart

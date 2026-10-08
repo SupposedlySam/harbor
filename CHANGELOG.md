@@ -1,3 +1,14 @@
+## Unreleased
+
+* `showHarborSheet(routeSettings:)`: the sheet's route carries its settings, so navigator observers and route-name analytics see it.
+* `showHarborSheet(barrierLabel:)`: the barrier reads Material's dismiss label when the app has Material localizations, `'Close sheet'` otherwise, or the label given.
+* `showHarborSheet(maxWidthFromTheme: true)`: the sheet's width comes from `BottomSheetThemeData.constraints`, or Material 3's 640 when the theme sets none. Without it, a sheet still spans the screen.
+* `HarborSheet(material: true)`: a transparent `Material` over the surface, so text fields and ink work in a sheet. It keeps the opener's text style.
+* `HarborSheet(clip:)`: clips the sheet to a shape, so an edge-to-edge body follows the surface's rounded top.
+* `HarborSheet(dragToClose: true)`: a content-sized sheet can be dragged down to close. Off by default.
+* `HarborSheetExtent(snapSizes:)`: the heights a draggable sheet snaps to. A fling on its header goes to the next one its way, as a fling on its list does.
+* Fixed: a draggable sheet in a route `showHarborSheet` did not open (`showModalBottomSheet`, `showGeneralDialog`) did nothing when dragged below its floor; it now closes that route.
+
 ## 0.1.0
 
 The first harbor.
