@@ -46,7 +46,7 @@ MIN_MATCH = 0.85       # share of a line's words Whisper must have heard, or the
 
 # Spellings Whisper chooses for words the script spells otherwise. Matching only: the script's
 # spelling is what is written out.
-SOUND_ALIKES = {"docs": "docks", "mores": "moors", "key": "quay", "keys": "quays", "pier": "pier", "peer": "pier"}
+SOUND_ALIKES = {"docs": "docks", "mores": "moors", "key": "quay", "keys": "quays", "pier": "pier", "peer": "pier", "see": "sea"}
 
 
 def words(text):

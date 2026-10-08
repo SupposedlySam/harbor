@@ -21,6 +21,11 @@ testWidgets('the composer rides the keyboard', (tester) async {
 });
 ```
 
+`raiseTide()` and `lowerTide()` move the keyboard and pump 600 ms, long enough
+for the harbor to follow. `pumpFor: Duration.zero` stops at the first frame
+after the keyboard moves, for a test that checks that frame or pumps on its
+own; `settle: true` pumps until nothing is animating.
+
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen`, `dualScreenCover`, `television`, plus the
 `phones` and `all` lists. `trial.clearWaterAround(finder)` and `isInClearWater`

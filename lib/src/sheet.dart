@@ -124,6 +124,23 @@ class HarborSheet extends StatelessWidget {
   /// always closes when dragged below its floor.
   final bool dragToClose;
 
+  /// Closes the sheet [context] is in, whichever way it was opened, and
+  /// completes the future that opened it with [result], as [Navigator.pop]
+  /// does for a route.
+  ///
+  /// A sheet with [HarborSheetBarrier.none] is not a route, so this is the only
+  /// way it returns a value: closed by back or by [Navigator.pop], it completes
+  /// with null.
+  @optionalTypeArgs
+  static void close<T extends Object?>(final BuildContext context, [final T? result]) {
+    final _SheetHostScope? scope = _SheetHostScope.maybeOf(context);
+    if (scope != null && scope.host.close != null) {
+      scope.close(result);
+      return;
+    }
+    Navigator.maybePop<T>(context, result);
+  }
+
   Harbor _harbor(final Widget body, {required final bool hug, final Widget? header}) => Harbor(
     newPort: true,
     sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
@@ -351,10 +368,12 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
 
 /// How a sheet sits over the page that opened it.
 enum HarborSheetBarrier {
-  /// A dimmed barrier that closes the sheet when tapped.
+  /// A dimmed barrier that closes the sheet when tapped, unless the sheet is
+  /// opened with `isDismissible: false`.
   dismissible,
 
-  /// A clear barrier: the page stays visible, and taps on it close the sheet.
+  /// A clear barrier: the page stays visible, and taps on it close the sheet,
+  /// unless the sheet is opened with `isDismissible: false`.
   clear,
 
   /// No barrier at all: the page stays live underneath (a drawer that covers
@@ -373,8 +392,29 @@ enum HarborSheetBarrier {
 /// reach navigator observers and route-name analytics, and the barrier is
 /// announced with [barrierLabel] ('Close sheet' when none is given; a Material app
 /// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
-/// localized one). A sheet with [HarborSheetBarrier.none] is not a route, so it
-/// has neither.
+/// localized one). [barrierOnTapHint] says what tapping the barrier does, read
+/// as 'Double tap to …' ('Double tap to activate' when none is given), as
+/// `ModalBottomSheetRoute.barrierOnTapHint` does.
+///
+/// Like a modal bottom sheet, a sheet that is a route is a semantics scope of its
+/// own: it scopes and names its route, and screen readers announce
+/// [semanticLabel] as it opens and closes. See
+/// [SemanticsConfiguration.namesRoute].
+///
+/// A sheet with [HarborSheetBarrier.none] is not a route, so it has none of
+/// these.
+///
+/// The future completes with the result given to [HarborSheet.close], or with
+/// null when the sheet is closed some other way.
+///
+/// With [isDismissible] false, a tap on the barrier does nothing, so the sheet
+/// stays until it is answered; back still closes it, as it closes a modal
+/// bottom sheet. [requestFocus] is the route's: given false, focus stays where
+/// it was in the page, and left null, the navigator decides. A sheet with no
+/// barrier has no barrier to tap and is not a route, so neither applies to it.
+///
+/// [anchorPoint] picks the screen a sheet opens on, on a device with a hinge:
+/// the one nearest it, as for [DisplayFeatureSubScreen].
 ///
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
@@ -384,12 +424,17 @@ Future<T?> showHarborSheet<T>(
   required final WidgetBuilder builder,
   final bool breakwater = false,
   final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
+  final bool isDismissible = true,
   final Color barrierColor = const Color(0x66000000),
   final double? maxWidth,
   final bool useRootNavigator = false,
+  final Offset? anchorPoint,
+  final bool? requestFocus,
   final bool keepsTopCoast = false,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
+  final String? barrierOnTapHint,
+  final String? semanticLabel,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -402,7 +447,10 @@ Future<T?> showHarborSheet<T>(
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
     maxWidth: maxWidth,
     keepsTopCoast: keepsTopCoast,
+    anchorPoint: anchorPoint,
     presenter: breakwater ? presenter : null,
+    scopesRoute: barrier != HarborSheetBarrier.none,
+    semanticLabel: semanticLabel,
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
@@ -418,19 +466,35 @@ Future<T?> showHarborSheet<T>(
     _HarborSheetRoute<T>(
       host: host,
       barrierColor: barrier == HarborSheetBarrier.dismissible ? barrierColor : const Color(0x00000000),
+      barrierDismissible: isDismissible,
       barrierLabel: barrierLabel ?? 'Close sheet',
+      barrierOnTapHint: barrierOnTapHint,
       settings: routeSettings,
+      requestFocus: requestFocus,
     ),
   );
 }
 
 class _SheetHost {
-  _SheetHost({required this.builder, required this.maxWidth, required this.keepsTopCoast, required this.presenter});
+  _SheetHost({
+    required this.builder,
+    required this.maxWidth,
+    required this.keepsTopCoast,
+    required this.anchorPoint,
+    required this.presenter,
+    required this.scopesRoute,
+    required this.semanticLabel,
+  });
 
   final WidgetBuilder builder;
   final double? maxWidth;
   final bool keepsTopCoast;
+  final Offset? anchorPoint;
   final HarborController? presenter;
+
+  /// Whether the sheet is a route of its own; one with no barrier is not.
+  final bool scopesRoute;
+  final String? semanticLabel;
 
   final ValueNotifier<double> coverage = ValueNotifier<double>(0.0);
   HarborBreakwater? _breakwater;
@@ -439,7 +503,7 @@ class _SheetHost {
   double? _dragExtent;
   double _available = 0.0;
   double _tide = 0.0;
-  VoidCallback? close;
+  void Function([Object? result])? close;
 
   /// What slides the sheet in and out, for dragging it down by hand.
   AnimationController? slide;
@@ -539,7 +603,7 @@ class _SheetHost {
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
   Widget build(final BuildContext context, final Animation<double> transition) =>
-      DisplayFeatureSubScreen(child: Builder(builder: (final BuildContext context) => _build(context, transition)));
+      DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: (final BuildContext context) => _build(context, transition)));
 
   Widget _build(final BuildContext context, final Animation<double> transition) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -553,6 +617,11 @@ class _SheetHost {
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity, maxHeight: math.max(0.0, mediaQuery.size.height - top)),
       child: sheet,
     );
+    if (scopesRoute) {
+      // As a modal bottom sheet's: the route is the sheet, so the scope is the sheet's box, not the
+      // screen the barrier covers.
+      sheet = Semantics(scopesRoute: true, namesRoute: true, explicitChildNodes: true, label: semanticLabel, child: sheet);
+    }
     final double tide = mediaQuery.viewInsets.bottom;
     return _SheetHostScope(
       host: this,
@@ -596,7 +665,7 @@ class _SheetHostScope extends InheritedWidget {
 
   void reportExtent(final double extent) => host.reportExtent(extent, available, tide);
 
-  void close() => host.close?.call();
+  void close([final Object? result]) => host.close?.call(result);
 
   @override
   bool updateShouldNotify(final _SheetHostScope oldWidget) => false;
@@ -651,7 +720,15 @@ class _RenderMeasureHeight extends RenderProxyBox {
 }
 
 class _HarborSheetRoute<T> extends PopupRoute<T> {
-  _HarborSheetRoute({required this.host, required this.barrierColor, required this.barrierLabel, super.settings});
+  _HarborSheetRoute({
+    required this.host,
+    required this.barrierColor,
+    required this.barrierDismissible,
+    required this.barrierLabel,
+    required this.barrierOnTapHint,
+    super.settings,
+    super.requestFocus,
+  });
 
   final _SheetHost host;
 
@@ -659,10 +736,12 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   final Color barrierColor;
 
   @override
-  bool get barrierDismissible => true;
+  final bool barrierDismissible;
 
   @override
   final String barrierLabel;
+
+  final String? barrierOnTapHint;
 
   @override
   Duration get transitionDuration => const Duration(milliseconds: 280);
@@ -674,9 +753,9 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   void install() {
     super.install();
     host
-      ..close = () {
+      ..close = ([final Object? result]) {
         if (isActive && isCurrent) {
-          navigator?.pop();
+          navigator?.pop<T>(result as T?);
         }
       }
       ..slide = controller
@@ -696,6 +775,29 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   @override
   Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
       host.build(context, animation);
+
+  // ModalRoute's barrier, with the tap hint ModalBottomSheetRoute gives its own: ModalRoute has no
+  // field for one.
+  @override
+  Widget buildModalBarrier() {
+    if (barrierColor.a != 0 && !offstage) {
+      return AnimatedModalBarrier(
+        color: animation!.drive(
+          ColorTween(begin: barrierColor.withValues(alpha: 0.0), end: barrierColor).chain(CurveTween(curve: barrierCurve)),
+        ),
+        dismissible: barrierDismissible,
+        semanticsLabel: barrierLabel,
+        barrierSemanticsDismissible: semanticsDismissible,
+        semanticsOnTapHint: barrierOnTapHint,
+      );
+    }
+    return ModalBarrier(
+      dismissible: barrierDismissible,
+      semanticsLabel: barrierLabel,
+      barrierSemanticsDismissible: semanticsDismissible,
+      semanticsOnTapHint: barrierOnTapHint,
+    );
+  }
 }
 
 class _NonModalSheet<T> {
@@ -720,7 +822,9 @@ class _NonModalSheet<T> {
 
   Future<T?> open() {
     host
-      ..close = _close
+      ..close = ([final Object? result]) {
+        unawaited(_close(result as T?));
+      }
       ..slide = _animation
       ..attach();
     _animation.addListener(() => host.progress = _animation.value);
@@ -798,7 +902,7 @@ class _NonModalSheet<T> {
     }
   }
 
-  Future<void> _close() async {
+  Future<void> _close([final T? result]) async {
     if (_entry == null || _closing) {
       return;
     }
@@ -812,17 +916,11 @@ class _NonModalSheet<T> {
     _entry = null;
     _animation.dispose();
     if (!_done.isCompleted) {
-      _done.complete(null);
+      _done.complete(result);
     }
   }
 }
 
 /// Closes the sheet [context] is in, whichever way it was opened.
-void closeHarborSheet(final BuildContext context) {
-  final _SheetHostScope? scope = _SheetHostScope.maybeOf(context);
-  if (scope != null && scope.host.close != null) {
-    scope.close();
-    return;
-  }
-  Navigator.maybePop(context);
-}
+@Deprecated('Use HarborSheet.close instead, which also takes a result. Deprecated after 0.2.0.')
+void closeHarborSheet(final BuildContext context) => HarborSheet.close<Object?>(context);

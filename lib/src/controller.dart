@@ -60,14 +60,50 @@ class HarborBreakwater {
   }
 }
 
+/// Builds a signal's entrance and exit around [child] from [animation], which
+/// runs from 0 to 1 as the signal is raised and back as it is lowered.
+typedef HarborSignalTransitionBuilder = Widget Function(BuildContext context, Animation<double> animation, Widget child);
+
 /// A transient buoy raised by `HarborSignals.raise`.
 class HarborSignalEntry {
-  HarborSignalEntry({required this.builder, required this.alignment, required this.duration, final Rect? avoidInGlobal, this.raisedIn})
-    : _avoidAtRaise = avoidInGlobal;
+  HarborSignalEntry({
+    required this.builder,
+    required this.alignment,
+    required this.duration,
+    final Rect? avoidInGlobal,
+    this.raisedIn,
+    this.animationStyle,
+    this.transitionBuilder,
+    this.liveRegion = true,
+  }) : _avoidAtRaise = avoidInGlobal;
+
+  static const Duration _defaultTransition = Duration(milliseconds: 220);
+  static const Duration _minimumLinger = Duration(milliseconds: 300);
 
   final WidgetBuilder builder;
   final Alignment alignment;
   final Duration? duration;
+
+  /// The duration and curve of the entrance and exit, 220 ms each way by
+  /// default; [AnimationStyle.noAnimation] shows and removes the signal as it is.
+  final AnimationStyle? animationStyle;
+
+  /// Builds the entrance and exit; a fade and a slight scale when null.
+  final HarborSignalTransitionBuilder? transitionBuilder;
+
+  /// Whether harbor makes the signal a live region with a dismiss action, as
+  /// a `SnackBar` makes itself. False leaves the semantics to [builder]'s widget.
+  final bool liveRegion;
+
+  /// How long the entrance takes.
+  Duration get transitionDuration => animationStyle?.duration ?? _defaultTransition;
+
+  /// How long the exit takes.
+  Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? transitionDuration;
+
+  /// How long a lowered signal stays in the tree: its exit, and never less
+  /// than 300 ms, so a child that runs an exit of its own has time to.
+  Duration get lingers => reverseTransitionDuration > _minimumLinger ? reverseTransitionDuration : _minimumLinger;
 
   /// The harbor the signal was raised from, whose clear water it also keeps inside.
   final HarborController? raisedIn;
@@ -404,7 +440,7 @@ class HarborController {
     void lowered() {
       if (!signal.showing.value) {
         // Leave time for the signal's own exit animation.
-        _signalRemovals[signal] ??= Timer(const Duration(milliseconds: 300), () {
+        _signalRemovals[signal] ??= Timer(signal.lingers, () {
           _signalRemovals.remove(signal);
           _forgetSignal(signal);
           _changed();
