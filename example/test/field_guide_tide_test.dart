@@ -113,6 +113,11 @@ void main() {
     expect(_text(tester, 'tide highWater'), (874 * 0.4).toStringAsFixed(0));
     // The readout moors below the header.
     expect(_rect(tester, 'tide readout').top, greaterThanOrEqualTo(_rect(tester, 'stage header').bottom));
+    // The page shows the whole phone, so the readout and the keyboard it reads are both in view.
+    expect(find.byKey(const ValueKey<String>('focus toggle')), findsNothing);
+    final Rect stage = _rect(tester, 'stage');
+    expect(_rect(tester, 'tide readout').top, greaterThan(stage.top));
+    expect(_rect(tester, 'tide readout').bottom, lessThan(stage.bottom));
 
     await _toggleTide(tester);
     expect(_text(tester, 'tide phase'), 'high');
