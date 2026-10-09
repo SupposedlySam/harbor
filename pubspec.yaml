@@ -1,6 +1,6 @@
 name: harbor
 description: "Keeps widgets clear of whatever covers each screen edge: system bars, the keyboard, and your own headers, tab bars and sheets. No inset arithmetic."
-version: 0.3.2
+version: 0.3.2+1
 repository: https://github.com/SupposedlySam/harbor
 issue_tracker: https://github.com/SupposedlySam/harbor/issues
 topics:
