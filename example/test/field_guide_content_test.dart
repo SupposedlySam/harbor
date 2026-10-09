@@ -392,7 +392,9 @@ void main() {
     testWidgets('ensureVisible reveals row 13 clear of the quay', (final WidgetTester tester) async {
       await pump(tester);
       expect(find.text('ensureVisible(row 13)'), findsOneWidget);
-      await _tapStage(tester, 'reveal button');
+      // The reveal is a control, not a button in the pretend app.
+      expect(find.descendant(of: _key('stage'), matching: _key('reveal button')), findsNothing);
+      await _tap(tester, 'reveal button');
       expect(_rect(tester, 'stage row 12').bottom, _near(_rect(tester, 'quay bar').top));
     });
 
@@ -423,7 +425,7 @@ void main() {
       await pump(tester);
       await _slide(tester, 'revealMargin', 48);
       expect(_code(tester), contains('revealMargin: 48,'));
-      await _tapStage(tester, 'reveal button');
+      await _tap(tester, 'reveal button');
       expect(_rect(tester, 'stage row 12').bottom, _near(_rect(tester, 'quay bar').top - 48 * _scale(tester)));
     });
 
@@ -448,7 +450,7 @@ void main() {
     testWidgets('horizontal: ensureVisible reveals card 5 clear of the margin', (final WidgetTester tester) async {
       await pump(tester);
       await _tap(tester, 'scrollDirection: horizontal');
-      await _tapStage(tester, 'reveal button');
+      await _tap(tester, 'reveal button');
       expect(_rect(tester, 'stage card 4').right, _near(_frameRight(tester) - 16 * _scale(tester)));
     });
 
@@ -795,17 +797,44 @@ void main() {
   group('HarborPontoon', () {
     Future<void> pump(final WidgetTester tester) => _pumpEntry(tester, _page('talk-pontoon'));
 
+    /// Taps the form's own button on the stage: the form is what moors the pontoon.
     Future<void> press(final WidgetTester tester, final String key) async {
       await _tapStage(tester, key);
       await tester.pump(_step);
     }
 
-    testWidgets('Edit moors the unsaved bar above the tab bar', (final WidgetTester tester) async {
+    /// Flips the dirty switch in the controls.
+    Future<void> flip(final WidgetTester tester) async {
+      await _tap(tester, 'toggle dirty');
+      await tester.pump(_step);
+    }
+
+    bool dirtySwitch(final WidgetTester tester) => tester.widget<SwitchListTile>(_key('toggle dirty')).value;
+
+    testWidgets('the whole phone is in view: the form at the top, the tab bar at the bottom', (
+      final WidgetTester tester,
+    ) async {
+      await pump(tester);
+      expect(_key('focus toggle'), findsNothing, reason: 'the page shows the whole phone, uncropped');
+      expect(_rect(tester, 'pier header').top, greaterThanOrEqualTo(_frameTop(tester) - 0.6));
+      expect(_rect(tester, 'deep edit button').top, greaterThan(_frameTop(tester)));
+      expect(_rect(tester, 'quay bar').bottom, lessThanOrEqualTo(_frameBottom(tester) + 0.6));
+    });
+
+    testWidgets('dirty moors the unsaved bar above the tab bar', (final WidgetTester tester) async {
       await pump(tester);
       expect(_key('unsaved bar'), findsNothing);
-      await press(tester, 'deep edit button');
+      await flip(tester);
       expect(find.text('Cargo manifest (edited)'), findsOneWidget);
       expect(find.text('Undo'), findsOneWidget);
+      expect(_rect(tester, 'unsaved bar').bottom, _near(_rect(tester, 'quay bar').top));
+    });
+
+    testWidgets('Edit in the form moors it too, and the switch follows', (final WidgetTester tester) async {
+      await pump(tester);
+      await press(tester, 'deep edit button');
+      expect(dirtySwitch(tester), isTrue);
+      expect(find.text('Cargo manifest (edited)'), findsOneWidget);
       expect(_rect(tester, 'unsaved bar').bottom, _near(_rect(tester, 'quay bar').top));
     });
 
@@ -813,7 +842,7 @@ void main() {
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await press(tester, 'deep edit button');
+      await flip(tester);
       expect(_code(tester), contains('dock: HarborDock.pier(child: UnsavedBar(onSave: save)),'));
       expect(_rect(tester, 'pontoon fairway').bottom, _near(_rect(tester, 'quay bar').top));
       await _scrollStage(tester, 'pontoon fairway', double.infinity);
@@ -824,7 +853,7 @@ void main() {
       await pump(tester);
       await _tap(tester, 'dock: quay');
       expect(_code(tester), contains('dock: HarborDock.quay(child: UnsavedBar(onSave: save)),'));
-      await press(tester, 'deep edit button');
+      await flip(tester);
       expect(_rect(tester, 'unsaved bar').bottom, _near(_rect(tester, 'quay bar').top));
       expect(_rect(tester, 'pontoon fairway').bottom, _near(_rect(tester, 'unsaved bar').top));
     });
@@ -832,7 +861,7 @@ void main() {
     testWidgets('dock pier, picked again, lets the body run under the bar again', (final WidgetTester tester) async {
       await pump(tester);
       await _tap(tester, 'dock: quay');
-      await press(tester, 'deep edit button');
+      await flip(tester);
       await _tap(tester, 'dock: pier');
       await tester.pump(_step);
       expect(_rect(tester, 'pontoon fairway').bottom, _near(_rect(tester, 'quay bar').top));
@@ -841,9 +870,10 @@ void main() {
 
     testWidgets('Save takes the bar away again', (final WidgetTester tester) async {
       await pump(tester);
-      await press(tester, 'deep edit button');
+      await flip(tester);
       await press(tester, 'save button');
       expect(_key('unsaved bar'), findsNothing);
+      expect(dirtySwitch(tester), isFalse);
       expect(find.text('Cargo manifest'), findsOneWidget);
       expect(find.text('Edit'), findsOneWidget);
     });
@@ -853,6 +883,15 @@ void main() {
       await press(tester, 'deep edit button');
       await press(tester, 'deep edit button');
       expect(_key('unsaved bar'), findsNothing);
+      expect(dirtySwitch(tester), isFalse);
+    });
+
+    testWidgets('dirty off takes the bar away', (final WidgetTester tester) async {
+      await pump(tester);
+      await flip(tester);
+      await flip(tester);
+      expect(_key('unsaved bar'), findsNothing);
+      expect(find.text('Edit'), findsOneWidget);
     });
   });
 }
