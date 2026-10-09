@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
+import 'package:harbor_example/showcase/phone.dart' show BoatRow;
 import 'package:harbor_example/showcase_wide/timeline.dart';
 import 'package:harbor_example/showcase_wide/wide.dart';
 
@@ -38,8 +39,11 @@ void main() {
     expect(right.left, greaterThan(left.left + 100), reason: 'positive control: the rail moved');
   });
 
-  testWidgets("the header's title keeps clear of the rail it sits beside", (final tester) async {
+  testWidgets("the header runs beside the rail, and its title lines up with the rows below", (final tester) async {
     await showAt(tester, WideTimeline.of('rail').start + 1);
-    expect(tester.getRect(find.text('Harbor Master')).left, greaterThanOrEqualTo(rect(tester, 'rail').right));
+    final Rect rail = rect(tester, 'rail');
+    final Rect title = tester.getRect(find.text('Harbor Master'));
+    expect(title.left, greaterThan(rail.right), reason: 'clear of the rail, with no padding of its own');
+    expect(title.left, tester.getRect(find.byType(BoatRow).first).left, reason: 'on the same mooring line as the first row');
   });
 }

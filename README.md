@@ -198,6 +198,14 @@ it is in a `Row`, and an `AppBar` in a `top` dock is as tall as its toolbar.
 Something that fills whatever it is given, like a `ListView`, needs a size, just
 as it would in a `Row`.
 
+**The side docks own the corners.** A `start` or `end` dock runs the frame's
+full height, and a `top` or `bottom` dock runs between them, as a tablet's
+`NavigationRail` sits beside its `AppBar`. A header beside a rail starts where
+the rail ends: its title lines up with the rows below, and it is not handed the
+coast the rail took, only the coast on the side no rail holds. A rail that
+withdraws gives its corners back as it goes; one that widens over the page on
+focus (`restingExtent:`) holds the header at its resting width.
+
 | Option | Use it for |
 |---|---|
 | `wake: HarborWake.fade(length:, blurSigma:, restsAt:)` | Content fades as it passes under; it rests past the fade (`HarborRest.wakeEnd`) or at the dock (`.dockEdge`) |
