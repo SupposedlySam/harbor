@@ -416,6 +416,38 @@ void main() {
       expect(find.text('sheet'), findsNothing, reason: 'the second closed the sheet');
       expect(find.text('Open menu'), findsOneWidget, reason: 'and left the page');
     });
+
+    // A sheet opened over a modal buoy is drawn above it and takes focus. Closing it must hand focus
+    // back, so the next Escape reaches the buoy. Failed before: the sheet disposed its focus scope
+    // while that scope still held primary focus and was still mounted, so focus stayed on a disposed
+    // node and Escape went nowhere.
+    testWidgets('a sheet with no barrier opened over a modal buoy gives focus back as it closes', (final tester) async {
+      final _FocusPageState page = await _pumpFocusPage(tester);
+      page.open();
+      await tester.pumpAndSettle();
+      unawaited(showHarborSheet<void>(
+        tester.element(find.text('Open menu')),
+        barrier: HarborSheetBarrier.none,
+        requestFocus: true,
+        builder: (final BuildContext _) => HarborSheet(
+          body: SizedBox(height: 120, child: TextButton(autofocus: true, onPressed: () {}, child: const Text('in the sheet'))),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>()?.child, isA<Text>(),
+          reason: 'positive control: the sheet took focus');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.text('in the sheet'), findsNothing, reason: 'the first Escape closed the sheet, the topmost thing');
+      expect(page.dismissed, 0, reason: 'and left the menu');
+      final FocusNode? focused = FocusManager.instance.primaryFocus;
+      expect(focused?.context, isNotNull, reason: 'focus is on a node still in the tree, not the sheet\'s disposed scope');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(page.dismissed, 1, reason: 'the second Escape reached the menu');
+    });
   });
 
   group('a buoy\'s child keeps its state', () {
