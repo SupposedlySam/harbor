@@ -1,4 +1,15 @@
-## Unreleased
+## 0.3.0
+
+### Breaking changes
+
+* **Every inset is an `EdgeInsetsGeometry`**, as `Padding.padding` is: `EdgeInsetsDirectional` values still compile; code that reads an inset back as a directional type needs `HarborEdges.resolve`.
+* **Dialogs are popup routes** (`RawDialogRoute`, as `showGeneralDialog`'s): a `Hero` no longer flies into one and a `RouteObserver<PageRoute>` no longer sees one as a page.
+* **A modal `HarborBuoy` holds keyboard focus** as a dialog route does: it takes focus when it opens, keeps Tab inside it, closes on Escape, and gives focus back when it goes.
+* **Defaults with no theme of their own:** sheet and dialog barriers are `showGeneralDialog`'s `Color(0x80000000)`, a hairline wake is a translucent black, and every barrier harbor puts up is announced as `'Dismiss'` unless given a label.
+* **Internals are behind the public handle:** `Harbor.of(context)` replaces constructing a `HarborController`, its lifecycle methods are `@internal`, pontoons take a typed `HarborPontoonHandle`, and dock records are read through `HarborChart.nearest`.
+* **Behaviour that moves things:** `HarborBuoySide.before`/`after` are deprecated aliases of `start`/`end` (so `.name` is `'start'`); `HarborFairway.keyboardDismissBehavior` follows the scroll behaviour when unset; signals at one slot take turns and time only while in sight (4 s by default); a no-barrier sheet comes back after the page over it has finished popping; a fling down on a sheet's header from its lowest snap closes it.
+
+### Everything in this release
 
 * Fixed: a sheet with no barrier that took focus, opened over a modal buoy, left focus on its own disposed scope when it closed, so Escape no longer reached the buoy. It now hands focus back as it closes, as a route does.
 * **Breaking:** a modal `HarborBuoy` holds keyboard focus as a dialog route does: it is a `FocusScope` that takes focus when it opens, keeps Tab inside it and stops the arrow keys at its edges, and gives focus back to the page when it closes. Escape calls its `onDismiss`, from focus in the buoy or on the page behind it (not from a page of a `Navigator` nested in the harbor's body, whose route answers Escape first); with no modal buoy up, Escape is left to an `Actions` above the harbor. `HarborBuoy(requestFocus: false)` leaves focus where it was, as `Route.requestFocus` does. Opened over a focused text field, it now takes focus from the field, so the keyboard goes down as it does for a dialog; pass `requestFocus: false` to keep it. Before, focus stayed on the page behind the barrier, Tab and a TV remote's D-pad walked the page, and Escape did nothing.
