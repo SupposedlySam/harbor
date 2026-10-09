@@ -283,6 +283,13 @@ class _HarborBuoyEntryState extends State<HarborBuoyEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBuoy',
+    tryThis: const <TryStep>[
+      TryStep('Pick alignment: topCenter, then bottomLeft', 'The buoy sits just under the header, then just above the tab bar: it floats in the clear water between the docks.'),
+      TryStep('Drag margin to 48', 'The buoy moves 48 points in from the tab bar and the screen edge: margin is kept inside the clear water.'),
+      TryStep('Switch off tab bar (quay)', 'The buoy drops to just above the home indicator: with no quay, the clear water runs down to the coast.'),
+      TryStep('Switch tab bar (quay) back on and raise the tide', 'The buoy rides up and stays margin above the keyboard: the keyboard becomes the floor of the clear water.'),
+      TryStep('Pick alignment: topCenter, switch off header (pier)', 'The buoy rises to just under the status bar: without the pier, the clear water starts at the coast.'),
+    ],
     realWorld:
         'A buoy floats on its own in open water, away from the quays and piers, so every boat can see it. Nothing is '
         'built over it, and it never runs aground on the shore.',
@@ -368,6 +375,13 @@ class _AnchoredBuoyEntryState extends State<AnchoredBuoyEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBuoy.anchored',
+    tryThis: const <TryStep>[
+      TryStep('Drag the boat around the water', 'The bubble follows it, gap above, and anchor switches to draggable boat: the buoy is chained to its HarborAnchorPoint.'),
+      TryStep('Pick side: below, then start, then end', 'The bubble moves round to that side of the boat, its tail pointing back at it.'),
+      TryStep('Drag gap to 32, then overlap to 20', 'gap pushes the bubble away from the boat; overlap pulls it back toward it, over the gap.'),
+      TryStep('Pick side: above, drag the boat up into the header', 'The boat slides under the header but the bubble stops just below it: the buoy stays in the clear water.'),
+      TryStep('Tap HarborAnchorPoint in the dock', 'The bubble goes back above the dock button: the same buoy, given the other anchor.'),
+    ],
     realWorld:
         'A mooring buoy floats on the surface, but it is chained to an anchor dug into the seabed. It swings round its '
         'anchor with the wind and tide, and never drifts away from it.',
@@ -596,6 +610,13 @@ class _PortalBuoyEntryState extends State<PortalBuoyEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborPortalBuoy',
+    tryThis: const <TryStep>[
+      TryStep('Tap the first row', 'A menu opens just below it, in the clear water, though the row is deep in the list. Tap the row again to close it.'),
+      TryStep('Tap the third row, then pick side: above', 'The menu moves to the third row (one menu at a time), then to the space above it.'),
+      TryStep('With side: above, tap the first row', 'There is no room above it under the header, so the menu flips below the row instead.'),
+      TryStep('Pick side: below, scroll to the end, tap the last row', 'There is no room below it above the tab bar, so the menu flips above the row.'),
+      TryStep('Switch off flips', 'The menu goes back below the row but is held clear of the tab bar, so it sits over its own row.'),
+    ],
     realWorld:
         'A dan buoy is a float with a flag on a pole, kept on deck to be thrown over the side. It goes in wherever the '
         'boat is, and floats on the open water clear of the boat.',
@@ -669,6 +690,12 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBuoy(modal: true)',
+    tryThis: const <TryStep>[
+      TryStep('Tap the page beside the launch', 'The launch goes and HarborBuoy (listed first) comes back: the modal buoy\'s barrier took the tap and called onDismiss.'),
+      TryStep('Tap Call the launch', 'The launch returns and HarborBuoy (listed first) is hidden: a modal buoy hides every buoy listed before it.'),
+      TryStep('Press Escape', 'The launch is dismissed, as by a tap beside it or back.'),
+      TryStep('Tap Call the launch, then switch off modal', 'Both buoys float, and a tap beside the launch leaves it up: no barrier, nothing hidden.'),
+    ],
     realWorld:
         'When the harbor master’s launch comes through with its blue light on, every other boat moves out of its way. '
         'While it is there, it is the only one in the channel.',
@@ -874,6 +901,13 @@ class _FlaresEntryState extends State<FlaresEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborFlares.raise',
+    tryThis: const <TryStep>[
+      TryStep('Tap top, high, middle and low, one at a time', 'Each flare lands at its slot in the clear water between the header and the tab bar, and is lowered after four seconds.'),
+      TryStep('Raise the tide, then tap low', 'The flare lands just above the keyboard, not under it: the keyboard is the floor of the clear water.'),
+      TryStep('Lower the tide, pick target: sea, tap top', 'The flare lands just under the status bar, over the header: sea keeps clear of the coast only, not the docks.'),
+      TryStep('Pick target: topmost, tap Open a sheet, tap low in it', 'The flare lands in the sheet\'s clear water, above its footer: topmost raises it in the port on top.'),
+      TryStep('Pick target: sea, then tap low in the sheet', 'The flare lands over the sheet\'s footer, just above the home indicator: sea raises it in the outermost harbor.'),
+    ],
     realWorld:
         'A flare fired from a boat says one thing to everyone in sight, then burns out. By day ships say it with flags: '
         'each letter of the international code is its own flag, run up a halyard for others to read, and taken down '
@@ -1051,6 +1085,13 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSheet',
+    tryThis: const <TryStep>[
+      TryStep('Tap Hoist the HarborSheet', 'The sheet is as tall as its three rows, and Make sail sits clear of the home indicator.'),
+      TryStep('Drag rows to 16', 'The sheet stops growing at maxExtent % of the space below the status bar, and its body scrolls.'),
+      TryStep('Raise the tide', 'footerTide float: Make sail rides up on the keyboard, and the sheet stays within the space above it.'),
+      TryStep('Pick footerTide: pilings', 'Make sail stays put and the keyboard covers it, while the rows still end above the keyboard.'),
+      TryStep('Pick footerTide: dryDock, then lower the tide', 'A flag tray takes the keyboard\'s place, and Make sail doesn\'t move as they trade: the dry dock holds its ground.'),
+    ],
     // The whole phone: at a high maxExtent with many rows the sheet reaches up near the status bar,
     // and the button that hoists it is mid-page.
     realWorld:
@@ -1187,6 +1228,13 @@ class _DraggableSheetEntryState extends State<DraggableSheetEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSheet.draggable',
+    tryThis: const <TryStep>[
+      TryStep('Tap Hoist HarborSheet.draggable', 'It opens at rest % of the space below the status bar.'),
+      TryStep('Drag its header, or its list, all the way up', 'It stops at max %: the list hauls the sheet up as well as the header does.'),
+      TryStep('Raise the tide', 'The sheet rides up with the keyboard: its heights are shares of the space between the status bar and the keyboard.'),
+      TryStep('Lower the tide, drag it down past min % and let go', 'It closes. Let go above min % and it springs back to rest instead.'),
+      TryStep('Drag rest % to 30, then hoist it again', 'It opens lower. The heights are read when the sheet is hoisted, so change them first.'),
+    ],
     realWorld:
         'A sail is hauled up its mast on a halyard. In a blow you hoist it only partway and tie in a reef; in light '
         'air you hoist it to the top. Let the halyard go and the sail comes down.',
@@ -1277,6 +1325,12 @@ class _BreakwaterEntryState extends State<BreakwaterEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'showHarborSheet(breakwater: true)',
+    tryThis: const <TryStep>[
+      TryStep('Tap Open sheet in the header', 'The sheet slides up over the list, and the list is not dimmed: with barrier none the page stays live.'),
+      TryStep('Scroll the list to the end', 'Its last row comes to rest on the sheet\'s top edge instead of under it: the page keeps clear of the breakwater.'),
+      TryStep('Reopen this page, switch off breakwater, open the sheet', 'Scroll to the end: the last rows now stay under the sheet. Without breakwater the page is never told it is there.'),
+      TryStep('Reopen, pick barrier: dismissible, open the sheet', 'The page dims, and a tap on it closes the sheet instead of scrolling the list.'),
+    ],
     // The whole phone: the button that opens the sheet is in the header, the list it shelters at the
     // bottom.
     realWorld:
@@ -1358,6 +1412,12 @@ class _DialogEntryState extends State<DialogEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'showHarborDialog(inheritClearWater:)',
+    tryThis: const <TryStep>[
+      TryStep('Tap Call the harbor master', 'The card fills the water between the header and the composer: with inheritClearWater it keeps clear of the page\'s docks.'),
+      TryStep('Tap the header, outside the card', 'The dialog closes: its barrier takes the tap, so the header never gets it.'),
+      TryStep('Switch off inheritClearWater, call again', 'The card now covers the header and the composer, stopping only at the status bar and the home indicator.'),
+      TryStep('Switch inheritClearWater on, raise the tide, call again', 'The card ends just above the keyboard: the keyboard is the floor of its clear water too.'),
+    ],
     realWorld:
         'The harbor master works from an office on the quay. You call in on the radio, or speak through the window, '
         'and the answer comes from between the roof and the sill.',
@@ -1484,6 +1544,12 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBeacon(keepInSight:)',
+    tryThis: const <TryStep>[
+      TryStep('Raise the tide before touching the field', 'Nothing scrolls and the field goes under the keyboard: with onlyWhileFocused, the beacon waits for focus.'),
+      TryStep('Lower the tide, tap the field, raise it again', 'The list scrolls so the field sits clearance above the keyboard: the beacon keeps it in sight.'),
+      TryStep('Drag clearance to 40, lower and raise the tide', 'The field now stops 40 points above the keyboard: clearance is used the next time the keyboard rises.'),
+      TryStep('Switch off keepInSight, scroll up, lower and raise the tide', 'The field is left under the keyboard. Tap reveal in the header to bring it up by hand.'),
+    ],
     // The whole phone: the reveal button is in the header, the field and the keyboard at the bottom.
     realWorld:
         'A lighthouse sweeps its beam out over the water, and when it falls on a boat the boat stands out in the dark. '
@@ -1644,6 +1710,12 @@ class _ObscuredBeaconEntryState extends State<ObscuredBeaconEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBeacon(onObscured:)',
+    tryThis: const <TryStep>[
+      TryStep('Scroll the list up slowly', 'covered climbs from 0% as the hero title slides under the header.'),
+      TryStep('Keep scrolling until covered reads 100%', 'The header\'s own title has faded in: the page hands the title from the hero to the header.'),
+      TryStep('Scroll back to the top', 'covered drops to 0% and the header\'s title fades out again.'),
+      TryStep('Switch off startsInOpenWater', 'The hero now starts below the header instead of running up under it, and covered stays 0% until you scroll.'),
+    ],
     // The top of the phone: the hero slides under the header, whose title and readout answer it.
     focus: const StageFocus.top(500),
     realWorld:
@@ -1783,6 +1855,13 @@ class _LiftEntryState extends State<LiftEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborLighthouseRegion',
+    tryThis: const <TryStep>[
+      TryStep('Tap Open sheet in the header', 'The boat rises to stay clearance above the sheet: the region lifts it just as far as it needs to.'),
+      TryStep('Drag clearance to 120', 'The boat rises further, to stay 120 points above the sheet.'),
+      TryStep('Switch off lift', 'The boat drops back to where it was placed, under the sheet.'),
+      TryStep('Switch on holdPosition, then switch lift back on', 'The boat stays put under the sheet: holdPosition is for an element being dragged.'),
+      TryStep('Switch off holdPosition', 'Let go, the boat rises clear of the sheet.'),
+    ],
     // The whole phone: the button that opens the sheet is in the header, the boat it lifts at the
     // bottom.
     realWorld:
