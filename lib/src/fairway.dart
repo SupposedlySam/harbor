@@ -832,6 +832,10 @@ class _RenderHarborHugTarget extends RenderProxyBox {
 /// choose. Use it on the sliver at each end of a `CustomScrollView`; a whole
 /// scroll view is better as a [HarborFairway].
 ///
+/// It casts off the ends it cleared, as `SliverSafeArea` removes the padding it
+/// applied, so a `SafeArea` or a `MediaQuery.padding` reader in [sliver] does
+/// not clear them a second time. An end it does not clear is left as it is.
+///
 /// See also:
 ///
 ///  * [SliverSafeArea], the closest Flutter widget, which keeps clear of `MediaQuery.padding` alone.
@@ -891,11 +895,22 @@ class HarborFairwaySliver extends StatelessWidget {
       }
       return own;
     });
+    // As `SliverSafeArea` pads and then removes that padding, the ends it cleared are cast off, so a
+    // reader in the sliver does not clear them again. An end it leaves is left to its content.
+    final Set<HarborEdge> cleared = <HarborEdge>{if (clearLeading) leadingEdge, if (clearTrailing) trailingEdge};
     return _HarborRevealSliver(
       leading: leading,
       trailing: trailing,
       textDirection: direction,
-      sliver: SliverPadding(padding: insets.resolve(direction), sliver: sliver),
+      sliver: SliverPadding(
+        padding: insets.resolve(direction),
+        sliver: HarborCastOff(
+          edges: cleared,
+          tide: cleared.contains(HarborEdge.bottom),
+          margin: false,
+          child: sliver,
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,7 @@
+## Unreleased
+
+* **Fixed, and it can move content:** `HarborFairwaySliver` casts off the ends it cleared, as Flutter's `SliverSafeArea` removes the padding it applied and as the README promised ([#67](https://github.com/SupposedlySam/harbor/issues/67)). Before, it only padded, so a `SafeArea`, a `HarborMoored` or a `MediaQuery.padding` reader in its sliver cleared the header, the status bar, the home indicator or the keyboard a second time. Content there that read those values now reads zero on the ends the sliver cleared (and no keyboard, when it cleared the bottom); an end given `clearLeading: false` or `clearTrailing: false` is left as it was.
+
 ## 0.3.1+1
 
 * Docs: the README's videos play in the browser when clicked, instead of downloading. They are linked through jsDelivr, which serves them as video. No code changes.
