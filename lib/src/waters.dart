@@ -145,6 +145,37 @@ class HarborWatersData {
     margin: margin ? HarborEdges.without(this.margin, edges) : this.margin,
   );
 
+  // These waters with the coast on [edges] cast off and the docks kept, beneath a layer that kept
+  // clear of [cleared] there: the docks and their wakes are measured from that layer's edge, which
+  // is [cleared] in from this area's.
+  HarborWatersData _castOffCoast(
+    final Set<HarborEdge> edges, {
+    required final EdgeInsetsDirectional cleared,
+    required final bool margin,
+  }) {
+    EdgeInsetsDirectional past(final EdgeInsetsDirectional insets) => HarborEdges.build(
+      (final HarborEdge e) =>
+          edges.contains(e) ? math.max(0.0, HarborEdges.of(insets, e) - HarborEdges.of(cleared, e)) : HarborEdges.of(insets, e),
+    );
+    return copyWith(
+      coast: HarborEdges.without(coast, edges),
+      coastSteady: HarborEdges.without(coastSteady, edges),
+      docks: past(docks),
+      docksResting: past(docksResting),
+      wakes: <HarborEdge, HarborWakeBand>{
+        for (final MapEntry<HarborEdge, HarborWakeBand> entry in wakes.entries)
+          if (!edges.contains(entry.key))
+            entry.key: entry.value
+          else if (entry.value.wakeEnd > HarborEdges.of(cleared, entry.key))
+            entry.key: HarborWakeBand(
+              dockEdge: math.max(0.0, entry.value.dockEdge - HarborEdges.of(cleared, entry.key)),
+              wakeEnd: entry.value.wakeEnd - HarborEdges.of(cleared, entry.key),
+            ),
+      },
+      margin: margin ? HarborEdges.without(this.margin, edges) : this.margin,
+    );
+  }
+
   @override
   bool operator ==(final Object other) =>
       other is HarborWatersData &&
@@ -324,6 +355,12 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
 /// For your own layer that pads by hand (or a third-party list given
 /// `HarborFairway.paddingOf`). The harbor's own widgets cast off for you.
 ///
+/// A layer that kept clear of the coast alone (a page's safe-area margin, as
+/// `HarborWaters.of(context).coast` reads it) passes `docks: false`: the coast
+/// is cast off and the docks stay, so a fairway beneath still rests clear of a
+/// frosted header or tab bar. Beneath, the docks are measured from that
+/// layer's edge, and `MediaQuery.padding` and `viewPadding` say the same.
+///
 /// See also:
 ///
 ///  * [MediaQuery.removePadding], which lowers `viewPadding` only by the padding it removes; this
@@ -334,6 +371,7 @@ class HarborCastOff extends StatelessWidget {
     this.edges = HarborEdge.all,
     this.tide = false,
     this.margin = true,
+    this.docks = true,
     required this.child,
   });
 
@@ -345,6 +383,13 @@ class HarborCastOff extends StatelessWidget {
   /// Whether the mooring line on [edges] is cast off too.
   final bool margin;
 
+  /// Whether the docks on [edges] are cast off with the coast. False casts off
+  /// the coast alone, for a layer that kept clear of the coast and leaves the
+  /// docks (their wakes, the docks at rest, which edges have them) to what is
+  /// beneath it. Outside any harbor all of `MediaQuery.padding` is coast, so it
+  /// is all cast off either way.
+  final bool docks;
+
   final Widget child;
 
   @override
@@ -353,10 +398,14 @@ class HarborCastOff extends StatelessWidget {
     properties.add(IterableProperty<HarborEdge>('edges', edges, defaultValue: HarborEdge.all));
     properties.add(FlagProperty('tide', value: tide, ifTrue: 'casts off the tide'));
     properties.add(FlagProperty('margin', value: margin, ifFalse: 'keeps the mooring line'));
+    properties.add(FlagProperty('docks', value: docks, ifFalse: 'keeps the docks'));
   }
 
   @override
   Widget build(final BuildContext context) {
+    if (!docks) {
+      return _castOffCoast(context);
+    }
     final TextDirection direction = Directionality.of(context);
     final ({bool left, bool top, bool right, bool bottom}) sides = HarborEdges.physical(edges, direction);
     MediaQueryData data = MediaQuery.of(context).removePadding(
@@ -376,6 +425,45 @@ class HarborCastOff extends StatelessWidget {
     }
     final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? const HarborWatersData()).castOff(
       edges,
+      margin: margin,
+    );
+    return MediaQuery(
+      data: data,
+      child: HarborWaters(data: waters, child: child),
+    );
+  }
+
+  // The coast alone: what is still in the way beneath is the docks past the coast the layer kept
+  // clear of, in `MediaQuery` and in the waters alike.
+  Widget _castOffCoast(final BuildContext context) {
+    final TextDirection direction = Directionality.of(context);
+    final MediaQueryData ambient = MediaQuery.of(context);
+    // The coast as a reader here sees it, clamped to `MediaQuery`: outside a harbor, all of it.
+    final HarborWatersData here = HarborWaters.of(context);
+    final EdgeInsetsDirectional cleared = HarborEdges.keep(here.coast, edges);
+    final EdgeInsetsDirectional clearedSteady = HarborEdges.keep(here.coastSteady, edges);
+    final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
+    final EdgeInsetsDirectional viewPadding = HarborEdges.directional(ambient.viewPadding, direction);
+    final EdgeInsetsDirectional paddingBeneath = HarborEdges.build(
+      (final HarborEdge e) => math.max(0.0, HarborEdges.of(padding, e) - HarborEdges.of(cleared, e)),
+    );
+    // The view padding is the docks past the steady coast, never less than the padding, as
+    // Flutter keeps it.
+    final EdgeInsetsDirectional viewPaddingBeneath = HarborEdges.build(
+      (final HarborEdge e) => edges.contains(e)
+          ? math.max(HarborEdges.of(paddingBeneath, e), HarborEdges.of(viewPadding, e) - HarborEdges.of(clearedSteady, e))
+          : HarborEdges.of(viewPadding, e),
+    );
+    MediaQueryData data = ambient.copyWith(
+      padding: paddingBeneath.resolve(direction),
+      viewPadding: viewPaddingBeneath.resolve(direction),
+    );
+    if (tide) {
+      data = data.removeViewInsets(removeBottom: true);
+    }
+    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? const HarborWatersData())._castOffCoast(
+      edges,
+      cleared: cleared,
       margin: margin,
     );
     return MediaQuery(

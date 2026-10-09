@@ -44,6 +44,25 @@ class _Probe extends StatelessWidget {
   }
 }
 
+/// A layer that keeps its child clear of the coast at the top and bottom and casts off the coast
+/// alone ([docks] false), so what is beneath still keeps clear of the docks.
+class _CoastMargin extends StatelessWidget {
+  const _CoastMargin({required this.child, this.docks = false, this.tide = false});
+
+  final bool docks;
+  final bool tide;
+  final Widget child;
+
+  @override
+  Widget build(final BuildContext context) {
+    final EdgeInsetsDirectional coast = HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast;
+    return Padding(
+      padding: HarborEdges.keep(coast, HarborEdge.vertical),
+      child: HarborCastOff(edges: HarborEdge.vertical, docks: docks, tide: tide, child: child),
+    );
+  }
+}
+
 /// Reads only the coast, through the raw waters, so nothing but the coast aspect can rebuild it.
 class _CoastReader extends StatelessWidget {
   const _CoastReader(this.seen);
@@ -785,6 +804,126 @@ void main() {
       await trial.raiseTide();
       expect(MediaQuery.viewInsetsOf(under).bottom, greaterThan(0), reason: 'positive control');
       expect(MediaQuery.viewInsetsOf(castOff).bottom, 0);
+    });
+  });
+
+  group('Casting off the coast alone', () {
+    // A frosted header and a frosted tab bar, both piers, so the body runs under them and the
+    // fairway is the one that keeps clear.
+    Widget page({required final Widget body, final bool bodyClearsTide = true}) => _app(
+      Harbor(
+        bodyClearsTide: bodyClearsTide,
+        top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(length: 12), child: _bar('header', 50))],
+        bottom: <HarborDock>[HarborDock.pier(child: _bar('tabs', 60))],
+        body: body,
+      ),
+    );
+    Widget rows() => HarborFairway(
+      slivers: <Widget>[
+        SliverList.builder(
+          itemCount: 30,
+          itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50),
+        ),
+      ],
+    );
+
+    // Breaks if: HarborCastOff(docks: false) casts the docks off too, or keeps them as they are
+    // measured from the body's edge rather than from the edge of the layer that cleared the coast.
+    testWidgets('leaves the docks to a fairway beneath a layer that cleared the coast', (final tester) async {
+      await tester.pumpSeaTrial(page(body: _CoastMargin(child: rows())));
+      final double headerFace = _rect(tester, 'header').bottom;
+      final double tabsFace = _rect(tester, 'tabs').top;
+      expect(headerFace, _statusBar + 50, reason: 'positive control: the header absorbed the status bar');
+      expect(tabsFace, _screen - 34 - 60, reason: 'positive control: the tab bar absorbed the home indicator');
+      expect(_rect(tester, 'row0').top, headerFace + 12, reason: 'the first row rests past the header and its wake');
+      await tester.drag(find.byType(Scrollable), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'row29').bottom, tabsFace, reason: 'the last row rests on the tab bar');
+    });
+
+    // Breaks if: casting off the docks too is no longer the default.
+    testWidgets('by default casts the docks off with the coast', (final tester) async {
+      await tester.pumpSeaTrial(page(body: _CoastMargin(docks: true, child: rows())));
+      expect(_rect(tester, 'row0').top, _statusBar, reason: 'nothing beneath clears the header any more');
+    });
+
+    // Breaks if: MediaQuery beneath does not say what the waters beneath say.
+    testWidgets('tells MediaQuery and the waters beneath what is still in the way', (final tester) async {
+      late BuildContext under;
+      late BuildContext beneath;
+      await tester.pumpSeaTrial(
+        page(
+          body: _Probe(
+            (final BuildContext c) => under = c,
+            child: _CoastMargin(child: _Probe((final BuildContext c) => beneath = c)),
+          ),
+        ),
+      );
+      expect(MediaQuery.paddingOf(under).top, _statusBar + 50 + 12, reason: 'positive control');
+      expect(MediaQuery.paddingOf(beneath).top, 50 + 12);
+      expect(MediaQuery.paddingOf(beneath).bottom, 60);
+      expect(MediaQuery.viewPaddingOf(beneath).top, 50 + 12);
+      expect(MediaQuery.viewPaddingOf(beneath).bottom, 60);
+      final HarborWatersData waters = HarborWaters.of(beneath);
+      expect(waters.coast, EdgeInsetsDirectional.zero);
+      expect(waters.docks, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
+      expect(waters.docksResting, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
+      expect(waters.wakeOf(HarborEdge.top), const HarborWakeBand(dockEdge: 50, wakeEnd: 50 + 12));
+      expect(waters.hasDocks, containsAll(HarborEdge.vertical));
+      expect(HarborWaters.steadyCoastOf(beneath, HarborEdge.bottom), 0, reason: 'the steady coast went with the coast');
+    });
+
+    // Breaks if: tide: stops casting off the keyboard when the docks are kept.
+    testWidgets('casts off the tide when asked, and keeps the docks', (final tester) async {
+      late BuildContext beneath;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        page(
+          bodyClearsTide: false,
+          body: _CoastMargin(tide: true, child: _Probe((final BuildContext c) => beneath = c)),
+        ),
+      );
+      await trial.raiseTide();
+      expect(MediaQuery.viewInsetsOf(beneath).bottom, 0);
+      // The keyboard took the live coast, so the layer pads nothing and the tab bar reaches into it
+      // from its own edge.
+      final double layerBottom = tester.getRect(find.byType(HarborCastOff)).bottom;
+      expect(layerBottom, _screen, reason: 'positive control: the body runs under the keyboard');
+      expect(MediaQuery.paddingOf(beneath).bottom, layerBottom - _rect(tester, 'tabs').top);
+      expect(HarborWaters.of(beneath).docks.bottom, layerBottom - _rect(tester, 'tabs').top);
+    });
+
+    // Breaks if: outside any harbor, the docks kept are read from padding that was all coast.
+    testWidgets('outside any harbor casts off all of MediaQuery.padding, as it is all coast', (final tester) async {
+      late BuildContext beneath;
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          home: HarborCastOff(
+            edges: HarborEdge.vertical,
+            docks: false,
+            child: _Probe((final BuildContext c) => beneath = c),
+          ),
+        ),
+      );
+      expect(MediaQuery.paddingOf(beneath), EdgeInsets.zero);
+      expect(MediaQuery.viewPaddingOf(beneath), EdgeInsets.zero);
+      expect(HarborWaters.of(beneath).docks, EdgeInsetsDirectional.zero);
+    });
+
+    // Breaks if: a horizontal fairway starts casting off the edges across it. Its items are
+    // handed the docks there (a header above a carousel) as they stand, coast included.
+    testWidgets('a horizontal fairway hands the docks across it to its items', (final tester) async {
+      late BuildContext item;
+      await tester.pumpSeaTrial(
+        page(
+          body: HarborFairway.box(
+            scrollDirection: Axis.horizontal,
+            child: _Probe((final BuildContext c) => item = c, child: const SizedBox(width: 100)),
+          ),
+        ),
+      );
+      expect(MediaQuery.paddingOf(item).top, _statusBar + 50 + 12);
+      expect(HarborWaters.of(item).docks.top, _statusBar + 50 + 12);
+      expect(HarborWaters.of(item).coast.top, _statusBar);
     });
   });
 
