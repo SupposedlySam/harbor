@@ -13,6 +13,16 @@ import 'edge.dart';
 /// has a dock on [edge], and is counted: the dock comes back only once every
 /// claim on it is released. It is released when this widget leaves the tree.
 ///
+/// A claim taken while the tree is being built reaches the harbor on the next
+/// frame: the harbor sits above this widget and has already been built in this
+/// one, so for one frame the dock is still in place and everything reads the
+/// old padding. Then the dock goes, or slides out over its duration. To make
+/// way in the frame a mode starts, take the claim where the mode starts, in
+/// the tap that opens it, with `Harbor.of(context).makeWay(edge)`, and release
+/// it when the mode ends; a claim taken outside a build is applied in the next
+/// frame drawn. A page that opens with the dock already gone builds the dock
+/// with `state: HarborDockState.withdrawn` instead.
+///
 /// See also:
 ///
 ///  * [Visibility] with `maintainSize`, which a dark dock behaves like. Flutter has no way to ask a

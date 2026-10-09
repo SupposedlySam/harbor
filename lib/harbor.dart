@@ -30,6 +30,7 @@ export 'src/controller.dart'
         HarborPontoonHandle,
         HarborFlareClosedReason,
         HarborFlareEntry,
+        HarborFlareHold,
         HarborFlareTransitionBuilder,
         HarborYield;
 export 'src/deprecated.dart';

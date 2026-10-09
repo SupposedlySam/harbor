@@ -106,6 +106,7 @@ class HarborFlareEntry {
     this.side = HarborBuoySide.below,
     this.gap = 8.0,
     this.crossAlignment = HarborBuoyCrossAlignment.center,
+    this.margin,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
@@ -128,6 +129,11 @@ class HarborFlareEntry {
 
   /// How the flare lines up with its [anchor] across its [side].
   final HarborBuoyCrossAlignment crossAlignment;
+
+  /// How far the flare keeps in from the clear water's edges; null for 16 at a slot or an
+  /// alignment and 8 by an anchor, a buoy's defaults. [EdgeInsets.zero] lets a flare reach the
+  /// edges of the clear water, for a bar the width of the screen.
+  final EdgeInsets? margin;
 
   /// Where the flare takes its turn: flares at one place are shown one at a time.
   Object get _place => anchor == null ? alignment : (anchor, side);
@@ -192,6 +198,45 @@ class HarborFlareEntry {
   /// it was lowered; at once for a flare lowered before its turn came.
   Future<HarborFlareClosedReason> get closed => _closed.future;
 
+  /// Whether the flare's time is stopped by a [hold].
+  ValueListenable<bool> get held => _held;
+  final ValueNotifier<bool> _held = ValueNotifier<bool>(false);
+  int _holds = 0;
+
+  /// Stops the flare's time until the returned hold is released: for a toast under the user's
+  /// finger, or one a screen reader or the keyboard has focused. Holds are counted, as make-way
+  /// claims are: time runs again once every hold is released, counted from the start, as it is
+  /// when the flare comes back into sight. Lowering a held flare still lowers it.
+  ///
+  /// The flare's builder can reach its own entry through the variable [HarborFlares.raise]'s
+  /// result is stored in, since the builder runs after the raise returns:
+  ///
+  /// ```dart
+  /// late final HarborFlareEntry toast;
+  /// HarborFlareHold? hold;
+  /// toast = HarborFlares.raise(
+  ///   context,
+  ///   builder: (context) => Listener(
+  ///     onPointerDown: (_) => hold ??= toast.hold(),
+  ///     onPointerUp: (_) => hold = hold?.release(),
+  ///     onPointerCancel: (_) => hold = hold?.release(),
+  ///     child: const Text('Saved'),
+  ///   ),
+  /// );
+  /// ```
+  HarborFlareHold hold() {
+    _holds++;
+    _held.value = true;
+    return HarborFlareHold._(this);
+  }
+
+  void _release() {
+    _holds--;
+    if (_holds == 0) {
+      _held.value = false;
+    }
+  }
+
   /// Lowers the flare. The first [reason] given is the one [closed] reports.
   void lower({final HarborFlareClosedReason reason = HarborFlareClosedReason.lower}) {
     if (_showing.value) {
@@ -204,6 +249,21 @@ class HarborFlareEntry {
     if (!_closed.isCompleted) {
       _closed.complete(_reason ?? HarborFlareClosedReason.lower);
     }
+  }
+}
+
+/// A hold on a flare's time, returned by [HarborFlareEntry.hold].
+class HarborFlareHold {
+  HarborFlareHold._(this._flare);
+
+  HarborFlareEntry? _flare;
+
+  /// Lets the flare's time run again once no other hold is on it. Releasing twice does nothing.
+  /// Returns null, so `hold = hold?.release()` clears the variable it is kept in.
+  HarborFlareHold? release() {
+    _flare?._release();
+    _flare = null;
+    return null;
   }
 }
 
@@ -413,7 +473,7 @@ class HarborFleet {
 class HarborController {
   /// Made by the harbor it belongs to.
   @internal
-  HarborController({required this.parent, required this.fleet, required this.isPort, this._debugLabel});
+  HarborController({required this.parent, required this.fleet, required this.isPort, this.isSea = false, this._debugLabel});
 
   /// The harbor this one sits in, if any.
   final HarborController? parent;
@@ -424,6 +484,10 @@ class HarborController {
   /// component inside one. Reserved and not yet read: flares find their port
   /// with [isRouteLevel] instead.
   final bool isPort;
+
+  /// Whether this harbor is a `HarborSea`, whose children are each a port.
+  @internal
+  final bool isSea;
 
   /// This harbor's name on a chart.
   String? get debugLabel => _debugLabel;
@@ -449,9 +513,16 @@ class HarborController {
 
   /// Whether this is the first harbor of its route, or sits right on the sea:
   /// a port flares can go to.
+  ///
+  /// Only a `HarborSea` makes the harbors right inside it ports. With no sea, the outermost harbor
+  /// is the route's port and the ones inside it are not: counting them too sent a flare raised
+  /// from a header band's own harbor into that band, 100 high, instead of the page (#86).
   bool get isRouteLevel {
     final HarborController? parent = this.parent;
-    return parent == null || parent.parent == null || !identical(route, parent.route);
+    if (parent == null || !identical(route, parent.route)) {
+      return true;
+    }
+    return parent.parent == null && parent.isSea;
   }
 
   /// The last layout, in this harbor's coordinates.

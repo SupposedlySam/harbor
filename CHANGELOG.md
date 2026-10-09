@@ -1,3 +1,11 @@
+## 0.3.3
+
+* `HarborFlares.raise(margin:)` sets how far a flare keeps in from the clear water's edges: 16 at a slot or an alignment and 8 by an anchor when null, as before. `EdgeInsets.zero` gives a bar the width of the screen (a fixed `SnackBar`'s look), still above the docks and off the coast; an `EdgeInsetsDirectional` is resolved in the reading direction of the page that raised it. A bar that paints under the home indicator is a dock: moor it with a `HarborPontoon`. ([#83](https://github.com/SupposedlySam/harbor/issues/83))
+* `HarborFlareEntry.hold()` stops a flare's time until the returned `HarborFlareHold` is released, for a toast under a finger or with focus in it. Holds are counted, as make-way claims are; time starts over once the last is released, as it does when a flare comes back into sight. `HarborFlareEntry.held` says whether one is on. ([#84](https://github.com/SupposedlySam/harbor/issues/84))
+* Fixed: a flare raised into an `Overlay` (no harbor above it) and lowered before it was built stayed in the overlay and held its slot, so every later flare there waited behind it. It now leaves at once, unbuilt, and `closed` completes with the reason it was lowered. ([#85](https://github.com/SupposedlySam/harbor/issues/85))
+* Fixed: with no `HarborSea`, a harbor right inside the page's harbor (a header band's own) counted as a port, so a flare raised from it was shown inside that band. Without a sea, the page's outermost harbor is now its only port, as each route's first harbor is under a sea. ([#86](https://github.com/SupposedlySam/harbor/issues/86))
+* Docs: `HarborMakeWay` says that its claim reaches the harbor a frame after it is built, and how to make way in the frame a mode starts: claim with `Harbor.of(context).makeWay` in the tap that opens it, or build the dock `state: HarborDockState.withdrawn`. ([#82](https://github.com/SupposedlySam/harbor/issues/82))
+
 ## 0.3.2+1
 
 * Docs: the README links to the Harbor Field Guide in a browser (https://supposedlysam.github.io/harbor/), a pretend phone for every class with its options and a tide gauge. The example's field guide pages each say what to try, and keep their readings in view on a phone on its side. No code changes.

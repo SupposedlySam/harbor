@@ -539,6 +539,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             side: flare.side,
             gap: flare.gap,
             crossAlignment: flare.crossAlignment,
+            margin: flare.margin ?? const EdgeInsets.all(8.0),
             child: _Flare(entry: flare),
           )
         else
@@ -546,6 +547,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             key: ObjectKey(flare),
             alignment: flare.alignment,
             within: _local(context, flare.avoidInGlobal),
+            margin: flare.margin ?? const EdgeInsets.all(16.0),
             child: _Flare(entry: flare),
           ),
     ];
@@ -1567,6 +1569,14 @@ abstract final class HarborFlares {
   /// flare stays at least 300 ms, so the widget's own exit can run. With
   /// reduced motion it appears and leaves at once.
   ///
+  /// [margin] is how far the flare keeps in from the clear water's edges: 16
+  /// at a slot or an alignment and 8 by an anchor when null, as for a buoy. An
+  /// [EdgeInsetsDirectional] is resolved in the reading direction of [context].
+  /// [EdgeInsets.zero] lets it reach them, for a bar the width of the screen
+  /// (a fixed `SnackBar`'s look). It stays in the clear water either way, off
+  /// the coast and the docks. [HarborFlareEntry.hold] stops its time while it
+  /// is held.
+  ///
   /// The flare is a live region with a dismiss action, so a screen reader
   /// announces it and can lower it, as it does a `SnackBar`. Give
   /// [liveRegion] false when [builder]'s widget is its own live region: harbor
@@ -1593,6 +1603,7 @@ abstract final class HarborFlares {
     final HarborBuoySide side = HarborBuoySide.below,
     final double gap = 8.0,
     final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
+    final EdgeInsetsGeometry? margin,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
@@ -1617,6 +1628,7 @@ abstract final class HarborFlares {
       side: side,
       gap: gap,
       crossAlignment: crossAlignment,
+      margin: margin?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr),
     );
     final HarborController? controller = anchor != null
         ? _portOf(HarborController.maybeOf(context))
@@ -1662,15 +1674,34 @@ class _OverlayQueue {
 
   final OverlayState overlay;
   final List<HarborFlareEntry> _flares = <HarborFlareEntry>[];
-  final Set<HarborFlareEntry> _inserted = <HarborFlareEntry>{};
+  final Map<HarborFlareEntry, OverlayEntry> _hosts = <HarborFlareEntry, OverlayEntry>{};
+
+  /// The flares whose host has been built: those run their exit before they leave.
+  final Set<HarborFlareEntry> _built = <HarborFlareEntry>{};
 
   void raise(final HarborFlareEntry entry) {
     _flares.add(entry);
     void lowered() {
-      if (!entry.showing.value && !_inserted.contains(entry)) {
+      if (entry.showing.value) {
+        return;
+      }
+      final OverlayEntry? host = _hosts[entry];
+      if (host == null) {
+        // Lowered while it waited its turn: it has no exit to run.
         entry.showing.removeListener(lowered);
         _flares.remove(entry);
         flareLeft(entry);
+      } else if (!_built.contains(entry) && SchedulerBinding.instance.schedulerPhase != SchedulerPhase.persistentCallbacks) {
+        // Lowered before its host was ever built (raised and dismissed in one callback): there is
+        // nothing to run an exit for, so the host goes now. Left in, it was built with the flare
+        // already down, never heard it go, and held the slot so every later flare queued behind it.
+        entry.showing.removeListener(lowered);
+        host
+          ..remove()
+          ..dispose();
+        left(entry);
+      } else {
+        entry.showing.removeListener(lowered);
       }
     }
 
@@ -1680,9 +1711,10 @@ class _OverlayQueue {
 
   void _insertInSight() {
     for (final HarborFlareEntry entry in flaresInSight(_flares)) {
-      if (_inserted.add(entry)) {
+      if (!_hosts.containsKey(entry)) {
         late final OverlayEntry host;
         host = OverlayEntry(builder: (final BuildContext _) => _OverlayFlare(entry: entry, host: host, queue: this));
+        _hosts[entry] = host;
         overlay.insert(host);
       }
     }
@@ -1699,7 +1731,7 @@ class _OverlayQueue {
   void gone(final HarborFlareEntry entry) {
     _forget(entry);
     for (final HarborFlareEntry waiting in List<HarborFlareEntry>.of(_flares)) {
-      if (!_inserted.contains(waiting)) {
+      if (!_hosts.containsKey(waiting)) {
         waiting.lower(reason: HarborFlareClosedReason.remove);
       }
     }
@@ -1707,7 +1739,8 @@ class _OverlayQueue {
 
   void _forget(final HarborFlareEntry entry) {
     _flares.remove(entry);
-    _inserted.remove(entry);
+    _hosts.remove(entry);
+    _built.remove(entry);
     flareLeft(entry);
   }
 }
@@ -1738,7 +1771,10 @@ class _OverlayFlareState extends State<_OverlayFlare> {
   @override
   void initState() {
     super.initState();
+    widget.queue._built.add(widget.entry);
     widget.entry.showing.addListener(_changed);
+    // Lowered during the build that inserted it, so it never hears the change: it leaves now.
+    _changed();
   }
 
   void _changed() {
@@ -1789,7 +1825,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
         overlap: 0.0,
         crossAlignment: entry.crossAlignment,
         crossOffset: 0.0,
-        margin: covered + _anchoredMargin,
+        margin: covered + (entry.margin ?? _anchoredMargin),
         flips: false,
         textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
         landed: _landed,
@@ -1797,7 +1833,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
       );
     }
     return Padding(
-      padding: covered + _margin,
+      padding: covered + (entry.margin ?? _margin),
       child: Align(alignment: entry.alignment, child: _Flare(entry: entry)),
     );
   }
@@ -1855,6 +1891,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     widget.entry.showing.addListener(_changed);
+    widget.entry.held.addListener(_syncTimeout);
     _controller.addStatusListener(_statusChanged);
     if (widget.entry.anchor case final HarborAnchor anchor) {
       anchor.addListener(_anchorMoved);
@@ -1876,7 +1913,13 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     final HarborFlareEntry entry = widget.entry;
     final Duration? duration = entry.duration;
     final bool running =
-        duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight && _anchored;
+        duration != null &&
+        !entry.persist &&
+        !entry.held.value &&
+        entry.showing.value &&
+        _controller.isCompleted &&
+        _inSight &&
+        _anchored;
     if (running && _timeout == null) {
       _timeout = Timer(duration, () => entry.lower(reason: HarborFlareClosedReason.timeout));
     } else if (!running) {
@@ -1889,6 +1932,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   void dispose() {
     _timeout?.cancel();
     widget.entry.showing.removeListener(_changed);
+    widget.entry.held.removeListener(_syncTimeout);
     widget.entry.anchor?.removeListener(_anchorMoved);
     _controller.removeStatusListener(_statusChanged);
     _animation.dispose();

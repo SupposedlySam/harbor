@@ -441,7 +441,11 @@ above the context, in release builds too, as `Scaffold.of` does;
 `Harbor.maybeOf` returns null instead. The harbor makes its handle and runs
 its lifecycle, so the handle carries only what content asks of it: claims,
 pontoons, breakwaters and the clear water. Claims are counted and go to the
-nearest harbor that has a dock on that edge. A pontoon joins the harbor's
+nearest harbor that has a dock on that edge. A `HarborMakeWay` takes its claim
+while it is built, after its harbor, so the dock makes way a frame later; a
+claim taken with `makeWay` in the tap that opens a mode lands in the next frame
+drawn, and a page that opens without the dock builds it with `state:
+HarborDockState.withdrawn`. A pontoon joins the harbor's
 docks on the next frame; one added by hand with `addPontoon` returns a
 `HarborPontoonHandle` to update or remove it by.
 
@@ -536,12 +540,20 @@ is in sight: from the end of its entrance, and not while another route covers
 its page (the time starts over when that route leaves). `persist: true` keeps it
 up until it is lowered, as `SnackBar(persist:)` does. Give it to a flare with a
 button, an Undo: a screen-reader user moving through the page needs longer than
-4 s to reach it.
+4 s to reach it. `entry.hold()` stops the time while a finger is on the flare or
+focus is in it, and `release()` on the hold starts it over; holds are counted.
+
+A flare keeps 16 in from the clear water's edges (8 by an anchor). `margin:`
+sets that, and `EdgeInsets.zero` gives a bar the width of the screen, a fixed
+`SnackBar`'s look, still above the docks and off the coast. A bar that paints
+under the home indicator is a dock, not a flare: moor it with a `HarborPontoon`.
 
 A flare raised with no harbor above it (a widget test that pumps a bare
 `MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
 goes to the nearest `Overlay`, at its slot and clear of `MediaQuery.padding` and
-`viewInsets`. With no overlay either, it is reported through
+`viewInsets`. Without a `HarborSea`, the outermost harbor of the page is its
+port: a flare raised from a harbor inside a header goes to the page, not the
+header. With no overlay either, it is reported through
 `FlutterError.reportError`, in release builds too. A flare's timers stop when it
 is lowered or when nothing is left to show it, so a test that ends with one up
 has no timer pending.

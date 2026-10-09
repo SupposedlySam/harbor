@@ -268,6 +268,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         parent: parent,
         fleet: fleet,
         isPort: widget.newPort || parent == null,
+        isSea: widget._isSea,
         debugLabel: widget.debugLabel,
       )..onChanged = _rebuild;
       _controller!.join();
