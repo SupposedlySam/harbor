@@ -878,6 +878,9 @@ class _RenderBuoyLayer extends RenderBox
 /// With [onDismiss], it closes as a `MenuAnchor` does: a tap outside both the
 /// buoy and [child], Escape while focus is in either, and back all call it.
 ///
+/// It leaves focus where it was when it opens, as a `MenuAnchor` does, unless
+/// [requestFocus] is true.
+///
 /// See also:
 ///
 ///  * [RawMenuAnchor] and `MenuAnchor`, which also open from an [OverlayPortal] and add menu
@@ -898,7 +901,11 @@ class HarborPortalBuoy extends StatefulWidget {
     this.flips = true,
     this.onDismiss,
     this.consumeOutsideTaps = false,
-  });
+    this.requestFocus = false,
+  }) : assert(
+         !requestFocus || onDismiss != null,
+         'A HarborPortalBuoy that takes focus needs an onDismiss, so Escape can close it and a keyboard user is not left in it.',
+       );
 
   /// Shows and hides the buoy.
   final OverlayPortalController controller;
@@ -940,6 +947,19 @@ class HarborPortalBuoy extends StatefulWidget {
   /// what is under it. By default the tap goes on, as it does for a `MenuAnchor`.
   final bool consumeOutsideTaps;
 
+  /// Whether the buoy takes keyboard focus when it opens, as a sheet with no barrier does with
+  /// `requestFocus: true`. False by default, which leaves focus where it was, as a `MenuAnchor`
+  /// does.
+  ///
+  /// With true, the buoy is a [FocusScope] of its own that becomes the first focus of the scope
+  /// around [child] (the page's, or a modal buoy's or dialog's), so it has focus now if that scope
+  /// does, and a control in it with `autofocus: true` takes it from there. A portal buoy is not
+  /// modal, so Tab past its last control does what it does at a route's edge (the navigator's
+  /// `routeTraversalEdgeBehavior`) rather than going round inside it. When it closes, focus goes
+  /// back to what the scope around it had focused before, but only if focus is still in the buoy.
+  /// Escape from focus in it still calls [onDismiss], which it requires.
+  final bool requestFocus;
+
   /// The side of its anchor the portal buoy around [context] landed on: its [side], or the
   /// opposite one after it flipped. A popover reads it to point its arrow at the anchor. It is
   /// placed when it paints, so after a flip this changes on the next frame.
@@ -966,6 +986,7 @@ class HarborPortalBuoy extends StatefulWidget {
     properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)));
     properties.add(FlagProperty('flips', value: flips, ifFalse: 'no flip'));
+    properties.add(FlagProperty('requestFocus', value: requestFocus, ifTrue: 'requests focus'));
   }
 }
 
@@ -978,6 +999,40 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
 
   void _dismiss() => widget.onDismiss?.call();
+
+  // The buoy's focus scope while it is shown with requestFocus. Held here rather than in the
+  // overlay child, which the controller's hide() unmounts; a new one each time it opens, as a sheet
+  // has one per opening.
+  FocusScopeNode? _focus;
+
+  FocusScopeNode _focusWhileShown() {
+    final NavigatorState? navigator = Navigator.maybeOf(context);
+    return _focus ??= FocusScopeNode(debugLabel: 'HarborPortalBuoy')
+      ..traversalEdgeBehavior = navigator?.widget.routeTraversalEdgeBehavior ?? kDefaultRouteTraversalEdgeBehavior
+      ..directionalTraversalEdgeBehavior =
+          navigator?.widget.routeDirectionalTraversalEdgeBehavior ?? kDefaultRouteDirectionalTraversalEdgeBehavior;
+  }
+
+  // As the buoy goes: focus back to what the scope around it had before, only if focus is still in
+  // the buoy, and the node disposed after the frame, once its FocusScope has left the tree. Disposed
+  // at once, focus stayed on the disposed node and Escape reached nothing (#42, for sheets).
+  void _focusLeft(final FocusScopeNode scope) {
+    if (scope.hasFocus) {
+      scope.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+    }
+    if (identical(_focus, scope)) {
+      _focus = null;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+      // Unless the buoy came straight back with it, moved in the same frame.
+      if (!identical(_focus, scope)) {
+        scope.dispose();
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _focusCameBack(final FocusScopeNode scope) => _focus ??= scope;
 
   // The controller is the caller's and tells no one when it shows or hides, so the buoy reports
   // it as it comes and goes. After the frame: it comes and goes while the overlay builds.
@@ -1007,6 +1062,9 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
           // A Builder, so the builder's own context is below the side it reads.
           child: Builder(builder: widget.buoyBuilder),
         );
+        if (widget.requestFocus) {
+          buoy = _PortalBuoyFocus(scope: _focusWhileShown(), onLeft: _focusLeft, onCameBack: _focusCameBack, child: buoy);
+        }
         buoy = _PortalBuoyDismissal(
           controller: widget.controller,
           groupId: this,
@@ -1040,6 +1098,50 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
     // dialog or route. RawMenuAnchor maps its own the same way.
     return Actions(actions: <Type, Action<Intent>>{if (dismissible && _shown) DismissIntent: _dismissAction}, child: portal);
   }
+}
+
+/// Takes focus for a portal buoy with `requestFocus` as it opens, as a sheet with no barrier does:
+/// its scope becomes the first focus of the scope around the portal buoy. As the buoy goes, it tells
+/// the portal buoy before its descendants leave, so focus is handed back while the buoy's controls
+/// still hold it.
+class _PortalBuoyFocus extends StatefulWidget {
+  const _PortalBuoyFocus({required this.scope, required this.onLeft, required this.onCameBack, required this.child});
+
+  final FocusScopeNode scope;
+  final ValueChanged<FocusScopeNode> onLeft;
+  final ValueChanged<FocusScopeNode> onCameBack;
+  final Widget child;
+
+  @override
+  State<_PortalBuoyFocus> createState() => _PortalBuoyFocusState();
+}
+
+class _PortalBuoyFocusState extends State<_PortalBuoyFocus> {
+  bool _opened = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_opened) {
+      FocusScope.of(context).setFirstFocus(widget.scope);
+    }
+    _opened = true;
+  }
+
+  @override
+  void deactivate() {
+    widget.onLeft(widget.scope);
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    widget.onCameBack(widget.scope);
+  }
+
+  @override
+  Widget build(final BuildContext context) => FocusScope.withExternalFocusNode(focusScopeNode: widget.scope, child: widget.child);
 }
 
 /// Escape (a [DismissIntent]) dismisses the portal buoy while it is shown, as `RawMenuAnchor`'s

@@ -2,6 +2,7 @@
 
 * `showHarborDialog(transitionBuilder:)` brings your own entrance and exit in place of the 180 ms fade, as `showGeneralDialog`'s does. It is handed the route's animation curved by `animationStyle`; under reduced motion it is handed `kAlwaysCompleteAnimation` (and `kAlwaysDismissedAnimation` as the secondary), so reduced motion stays in charge. Null keeps the fade. ([#63](https://github.com/SupposedlySam/harbor/issues/63))
 * `HarborDialogRoute<T>`, a `RawDialogRoute` with `showHarborDialog`'s options, is public, as Material's `DialogRoute` is: `showHarborDialog` now pushes one, with no change in behaviour, and you can push one yourself to keep the route or choose the navigator. It reads the opening page's themes (unless given `themes:`) and, with `inheritClearWater`, its clear water when it is installed, as it is pushed. ([#63](https://github.com/SupposedlySam/harbor/issues/63))
+* `HarborPortalBuoy(requestFocus: true)` takes keyboard focus as it opens, as a sheet with no barrier does: the buoy is a focus scope of its own that becomes the first focus of the scope around its anchor, Tab past its last control follows the navigator's `routeTraversalEdgeBehavior` (a portal buoy is not modal, so it does not loop), and when it closes focus goes back to where it was if it is still in the buoy. It asserts an `onDismiss`, so Escape from inside it closes it, before a modal buoy it was opened from. `false` stays the default, which leaves focus where it was, as a `MenuAnchor` does. ([#66](https://github.com/SupposedlySam/harbor/issues/66))
 
 ## 0.3.1+1
 

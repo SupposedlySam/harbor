@@ -491,6 +491,16 @@ a modal buoy, a tap on the barrier while the portal buoy is open calls both
 `onDismiss`es, and in a dialog it calls the portal buoy's and closes the
 dialog, as it does with a `MenuAnchor` open in a dialog.
 
+A portal buoy leaves focus where it was when it opens, as a `MenuAnchor` does.
+`requestFocus: true` makes it take focus as a sheet with no barrier does: the buoy
+is a focus scope of its own that becomes the first focus of the scope around its
+`child` (the page's, or a modal buoy's or a dialog's), so a control in it with
+`autofocus: true` takes it from there. It is not modal, so Tab past its last control
+does what it does at a route's edge rather than going round inside it. When it
+closes, focus goes back to where it was, if focus is still in the buoy. It needs an
+`onDismiss`, so Escape from inside it can close it; that Escape closes the portal buoy
+before a modal buoy it was opened from.
+
 ## Sheets and dialogs
 
 ```dart
