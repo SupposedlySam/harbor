@@ -97,6 +97,42 @@ void main() {
     }
   });
 
+  testWidgets('#86 an anchored flare raised from a header band\'s own harbor, with no sea, hangs below the band', (final tester) async {
+    final HarborAnchor anchor = HarborAnchor(debugLabel: 'menu');
+    late BuildContext inner;
+    await tester.pumpSeaTrial(MaterialApp(
+      home: Harbor(
+        top: <HarborDock>[
+          HarborDock.pier(
+            child: SizedBox(
+              key: const ValueKey<String>('band'),
+              height: 100,
+              child: Harbor(body: Builder(builder: (final c) {
+                inner = c;
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(key: ValueKey<String>('menu'), width: 80, height: 30)),
+                );
+              })),
+            ),
+          ),
+        ],
+        body: const SizedBox.expand(),
+      ),
+    ));
+    HarborFlares.raise(
+      inner,
+      anchor: anchor,
+      builder: (final c) => const SizedBox(key: ValueKey<String>('flare'), height: 40, width: 120),
+      duration: null,
+    );
+    await _step(tester);
+    // Shown by the page, it hangs 8 below the button, out over the page. Shown by the band's own
+    // harbor, it was kept inside the band's 100 and could not.
+    expect(_rect(tester, 'flare').top, _rect(tester, 'menu').bottom + 8);
+    expect(_rect(tester, 'flare').bottom, greaterThan(_rect(tester, 'band').bottom));
+  });
+
   group('#83 a flare\'s margin', () {
     Future<BuildContext> pumpPage(final WidgetTester tester) async {
       late BuildContext page;
