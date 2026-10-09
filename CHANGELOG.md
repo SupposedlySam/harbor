@@ -2,7 +2,7 @@
 
 * **Breaking:** a harbor's handle (`HarborController`) carries only what content asks of a harbor, as `ScaffoldState` does; the harbor itself makes it and runs its lifecycle. These members are now `@internal`, so using them from another package is an analyzer warning (`invalid_use_of_internal_member`), and they may change in any release:
   * the `HarborController(...)` constructor: get a harbor's handle with `Harbor.of(context)`;
-  * `onChanged`, `join()`, `leave()`, `recordLayout()` and `raiseSignal()`: raise a signal with `HarborSignals.raise`;
+  * `onChanged`, `join()`, `leave()`, `recordLayout()` and `raiseSignal()`: raise a signal with `HarborSignals.raise` (which aims at the port on top or at the sea; a nested harbor that is not a port is no longer a target of its own);
   * the setters of `debugLabel`, `dockedEdges` and `route`, which stay readable (`dockedEdges` now returns an unmodifiable set);
   * the `HarborSignalEntry(...)` constructor: `HarborSignals.raise` returns the entry.
 * **Breaking:** `HarborController.lastLayout` and `renderBox` are deprecated, read-only getters; setting either no longer compiles. Read `HarborChart.nearest(context)`, which has the harbor's frame, body, clear water and docks in global coordinates, or `clearWater` / `clearWaterInGlobal()`.
