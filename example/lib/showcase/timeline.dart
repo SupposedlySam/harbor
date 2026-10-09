@@ -64,7 +64,7 @@ abstract final class ShowcaseTimeline {
     'pontoon': 'Pontoon',
     'buoy': 'Buoy',
     'portal': 'Portal buoy',
-    'signal': 'Signal',
+    'signal': 'Flare',
     'sheet': 'Sheet',
     'breakwater': 'Breakwater',
     'dialog': 'Dialog',

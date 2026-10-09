@@ -184,7 +184,7 @@ class _LogbookNoteState extends State<LogbookNote> {
   );
 }
 
-/// A signal flag: what a raised signal shows.
+/// A signal flag: what a raised flare shows.
 class SignalFlag extends StatelessWidget {
   const SignalFlag({super.key, required this.message, this.icon = Icons.flag_rounded});
 

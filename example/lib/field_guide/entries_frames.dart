@@ -247,7 +247,7 @@ class _HarborSeaEntryState extends State<HarborSeaEntry> {
         'own; it is just the water, and the coast around it.',
     inYourApp:
         'The root. Mount it once, above the Navigator (MaterialApp.builder), so every route, dialog and sheet shares its '
-        'coast, its tide gauge and its signals. It moves nothing out of the keyboard\'s way itself. A sea mounted inside '
+        'coast, its tide gauge and its flares. It moves nothing out of the keyboard\'s way itself. A sea mounted inside '
         'another harbor is a world of its own: it reads whatever MediaQuery says there (an outer pier included) as coast.',
     art: const HarborSeaArt(),
     controls: <Widget>[

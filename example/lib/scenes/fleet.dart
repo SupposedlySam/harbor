@@ -59,9 +59,9 @@ class _FleetTabState extends State<FleetTab> {
     if (!context.mounted) {
       return;
     }
-    HarborSignals.raise(
+    HarborFlares.raise(
       context,
-      slot: HarborSignalSlot.low,
+      slot: HarborFlareSlot.low,
       builder: (final BuildContext context) => SignalFlag(
         message: 'Registry updated: ${Fleet.boats.length} boats accounted for',
         icon: Icons.fact_check_rounded,
@@ -275,7 +275,7 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
               trailing: BrassButton(
                 icon: Icons.bookmark_add_rounded,
                 tooltip: 'Moor in favorites',
-                onPressed: () => HarborSignals.raise(
+                onPressed: () => HarborFlares.raise(
                   context,
                   builder: (final BuildContext context) =>
                       SignalFlag(message: '${boat.name} moored in your favorites'),
@@ -578,9 +578,9 @@ class _CharterPill extends StatelessWidget {
         elevation: 6,
         child: InkWell(
           customBorder: const StadiumBorder(),
-          onTap: () => HarborSignals.raise(
+          onTap: () => HarborFlares.raise(
             context,
-            slot: HarborSignalSlot.low,
+            slot: HarborFlareSlot.low,
             builder: (final BuildContext context) => SignalFlag(
               message: '${boat.captain} will meet you at the ${boat.homePort} quay',
               icon: Icons.sailing_rounded,
@@ -858,7 +858,7 @@ class _VoyageTile extends StatelessWidget {
     borderRadius: BorderRadius.circular(12),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
-      onTap: () => HarborSignals.raise(
+      onTap: () => HarborFlares.raise(
         context,
         builder: (final BuildContext context) =>
             SignalFlag(message: 'Voyage ${voyage.number}: ${voyage.crates} crates of ${voyage.cargo.toLowerCase()}'),

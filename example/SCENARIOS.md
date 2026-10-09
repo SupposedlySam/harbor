@@ -37,7 +37,7 @@ Harbor Office to see every dock's ground, each harbor's clear water and the tide
 | 25 | Cargo manifest | Content-sized sheet: header pier, footer floats and clears the home indicator once | `scenes/office.dart` |
 | 26 | Charter board | Draggable sheet, heights above the keyboard | `scenes/office.dart` |
 | 27 | Harbor rules | Column-style quay header; moored text; a minimum off a bare edge | `scenes/office.dart` |
-| 28 | Signal flags | Signals by slot; a signal moves to the page on top when its page leaves | `scenes/office.dart` |
+| 28 | Signal flags | Flares by slot; a flare moves to the page on top when its page leaves | `scenes/office.dart` |
 | 29 | Postcard | A fixed frame with no coast or tide | `scenes/office.dart` |
 | 30 | Chandlery | A component harbor nested in a sheet | `scenes/office.dart` |
 | 31 | Switches | Chart overlay, right-to-left, TV mode | `scenes/office.dart` |

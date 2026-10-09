@@ -7,7 +7,7 @@ enum GuideGroup {
   tide('The tide', 'The keyboard, and how docks meet it'),
   content('Content', 'How content keeps clear, sails under or ignores the docks'),
   talk('Talking to the harbor', 'Content asking the docks for room'),
-  floating('Afloat', 'Buoys and signals in the clear water'),
+  floating('Afloat', 'Buoys and flares in the clear water'),
   sheets('Sheets and dialogs', 'New ports that open over a page'),
   lighthouse('The lighthouse', 'Keeping things in sight'),
   platform('Coast and charts', 'Where insets come from, TV, and seeing it all');

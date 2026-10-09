@@ -127,7 +127,7 @@ void main() {
   });
 
   group('Signal flags (#28)', () {
-    testWidgets('a signal raised on a page that leaves moves to the page on top', (final WidgetTester tester) async {
+    testWidgets('a flare raised on a page that leaves moves to the page on top', (final WidgetTester tester) async {
       await _pumpOffice(tester);
       await _bringIntoView(tester, find.byKey(const ValueKey<String>('raise and leave')));
       await tester.tap(find.byKey(const ValueKey<String>('raise and leave')));
@@ -143,7 +143,7 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('signals go to each slot', (final WidgetTester tester) async {
+    testWidgets('flares go to each slot', (final WidgetTester tester) async {
       await _pumpOffice(tester);
       await _bringIntoView(tester, find.text('Middle'));
       await tester.tap(find.text('Middle'));

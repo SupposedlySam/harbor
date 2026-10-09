@@ -226,10 +226,10 @@ class _QuickActions extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.flag_rounded),
-            title: const Text('Raise a signal'),
+            title: const Text('Raise a flare'),
             onTap: () {
               onClose();
-              HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (final BuildContext c) => const SignalFlag(message: 'All hands on deck!'));
+              HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (final BuildContext c) => const SignalFlag(message: 'All hands on deck!'));
             },
           ),
           ListTile(leading: const Icon(Icons.close_rounded), title: const Text('Close'), onTap: onClose),
