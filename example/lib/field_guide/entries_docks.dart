@@ -93,6 +93,13 @@ class _PierEntryState extends State<PierEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborDock.pier',
+    tryThis: const <TryStep>[
+      TryStep('Scroll the rows up under the pier', 'They slide under the planks and fade out at the pier\'s face: content sails under a pier, and its wake fades it.'),
+      TryStep('Slide length to 40', 'The fade runs further and the first row rests lower: the wake and the resting line move together.'),
+      TryStep('Pick restsAt: dockEdge', 'The first row moves up to the pier\'s face and starts inside the fade: rows can rest under the wake, not past it.'),
+      TryStep('Switch off backdrop, then slide blurSigma to 15', 'With the planks gone you see the rows under the pier frosted: the wake can blur the water as well as fade it.'),
+      TryStep('Pick wake: hairline', 'The fade goes and a brass line marks the pier\'s face, with the first row resting right at it.'),
+    ],
     focus: const StageFocus.top(440),
     realWorld:
         'A pier is built out over the water on piles. Boats sail underneath it and tie up beside it; the water runs right '
@@ -204,6 +211,12 @@ class _QuayEntryState extends State<QuayEntry> {
   Widget build(final BuildContext context) => GuidePage(
     // No focus, the whole phone: its switches take away the top quay as well as the bottom one.
     className: 'HarborDock.quay',
+    tryThis: const <TryStep>[
+      TryStep('Scroll the rows', 'They stop at the quays\' edges and never pass under: a quay takes its ground, and Readings show padding T 0 · B 0.'),
+      TryStep('Switch off top quay', 'The body\'s outline jumps to the top of the screen and Readings show padding T 62: the body now meets the status bar.'),
+      TryStep('Open The stage and pick Device: iPhone SE', 'No home indicator here, yet the bar stays 16 off the bottom edge: that is the quay\'s minimum.'),
+      TryStep('Slide minimum to 0', 'The bar drops onto the bottom edge: with no home indicator and no minimum, nothing holds it off the glass.'),
+    ],
     realWorld:
         'A quay is a stone wall built on the shore, with bollards along its edge. Boats lie alongside it; the water '
         'starts where the stone ends, and nothing sails underneath.',
@@ -266,6 +279,12 @@ class _StackingEntryState extends State<StackingEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'bottom: [composer, tabBar]',
+    tryThis: const <TryStep>[
+      TryStep('Pick composer: pier', 'The body\'s outline drops past the composer to the tab bar: rows sail under a pier but stop at a quay.'),
+      TryStep('Pick tabBar: pier', 'The body runs to the bottom of the screen under both docks, which still stack in the order they are listed.'),
+      TryStep('Pick composer: quay, with tabBar still pier', 'The stage shows the assert: a quay is built on the shore, so it must be listed nearer the edge than any pier.'),
+      TryStep('Switch off second dock (tabBar)', 'The composer quay alone takes the edge, above the home indicator: docks stack from the edge in, like a Column.'),
+    ],
     focus: const StageFocus.bottom(480),
     realWorld:
         'When the quay is full, boats raft up: the second boat ties alongside the first instead of the wall, and anyone '
@@ -421,6 +440,13 @@ class _DockStateEntryState extends State<DockStateEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborDockState',
+    tryThis: const <TryStep>[
+      TryStep('Tap taps: 0 in the header', 'The count goes up: an open dock is drawn, takes taps, and the body starts below it.'),
+      TryStep('Pick state: dark', 'The header vanishes but the rows stay put under a dashed box: a dark dock keeps its ground, and its button takes no taps.'),
+      TryStep('Pick state: open, tap Withdraw and return (hold)', 'The header slides away and only then does the body rise to the top: hold gives the ground back once the dock has gone.'),
+      TryStep('Pick extentPolicy: follow, tap Withdraw and return', 'The body rises right behind the header as it slides, a frame at a time, and drops back with it on the way in.'),
+      TryStep('Pick extentPolicy: release, tap Withdraw and return', 'The body takes the top at once and the header slides out over the rows: release hands the ground over immediately.'),
+    ],
     focus: const StageFocus.top(440),
     realWorld:
         'A harbor\'s lights tell you what is in service. A lit lamp is a working berth; a lamp that is out still stands '
@@ -682,6 +708,12 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborDock.restingExtent + HarborFollow',
+    tryThis: const <TryStep>[
+      TryStep('Slide restingExtent to 100', 'The closed rail and both panels move to 100: restingExtent is the ground the rail holds at rest.'),
+      TryStep('Tap the rail', 'It opens to 210 and the HarborFollow.live panel moves with it; the resting panel holds still and the rail opens over it.'),
+      TryStep('Pick follow: live', 'The second panel jumps out to the open rail too: live content follows the rail as it grows.'),
+      TryStep('Switch off rail open', 'The rail closes and both panels come back to its resting width.'),
+    ],
     realWorld:
         'A bascule bridge rests down across the channel and swings its leaf up to let a tall boat through. Its footing on '
         'the bank never changes, however high the leaf goes.',
@@ -775,6 +807,12 @@ class _HitTestEntryState extends State<HitTestEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborDock.hitTestBehavior',
+    tryThis: const <TryStep>[
+      TryStep('Tap a row below the header', 'The row taps counter in the bottom bar goes up: rows clear of the header take taps.'),
+      TryStep('Tap the header beside its title', 'Nothing counts: opaque, the default, stops taps on the dock\'s ground, even over a row scrolled under it.'),
+      TryStep('Pick hitTestBehavior: translucent, tap beside the title', 'The row under the header counts the tap: translucent lets taps on the dock\'s empty parts through.'),
+      TryStep('Tap the title itself', 'No count: the header\'s own text still takes its tap; only its empty parts pass taps on.'),
+    ],
     realWorld:
         'A gate at the head of the gangway down to the pontoon. Shut, nobody passes it; open, people walk straight '
         'through to the boats beyond.',
