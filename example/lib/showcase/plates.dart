@@ -12,16 +12,28 @@ import 'timeline.dart';
 /// The drawings are the field guide's own, so the video and the app's guide cannot disagree
 /// about what a dock or a buoy looks like.
 class ShowcasePlate extends StatelessWidget {
-  const ShowcasePlate({super.key, required this.chapter, required this.time});
+  const ShowcasePlate({
+    super.key,
+    required this.chapter,
+    required this.time,
+    this.script = Narration.script,
+    this.entries = ShowcasePlate.phone,
+  });
 
   final ShowcaseChapter chapter;
   final double time;
 
-  /// The field guide entries each chapter shows, one per line of its narration; the last
-  /// stays up for any further lines.
-  static const Map<String, List<String>> entries = <String, List<String>>{
+  /// The narration the chapter's lines come from: the phone tour's unless given.
+  final NarrationScript script;
+
+  /// The field guide entries each chapter shows, one per line of its narration; the last stays
+  /// up for any further lines.
+  final Map<String, List<String>> entries;
+
+  /// The phone tour's plates.
+  static const Map<String, List<String>> phone = <String, List<String>>{
     'sea': <String>['frame-sea'],
-    'coast': <String>['coast', 'coast-title-safe'],
+    'coast': <String>['coast'],
     'wake': <String>['wake-painter'],
     'moored': <String>['content-moored'],
     'mooring': <String>['content-mooring-line'],
@@ -39,13 +51,12 @@ class ShowcasePlate extends StatelessWidget {
     'breakwater': <String>['sheet-breakwater'],
     'dialog': <String>['dialog'],
     'lighthouse': <String>['lighthouse-reveal'],
-    'tv': <String>['scale-model'],
     'chart': <String>['chart'],
     'trials': <String>['sea-trial'],
   };
 
   /// Whether [chapter] is told with a plate rather than the panorama.
-  static bool shows(final ShowcaseChapter chapter) => entries.containsKey(chapter.key);
+  static bool shows(final ShowcaseChapter chapter) => phone.containsKey(chapter.key);
 
   static GuideEntry _entry(final String id) => fieldGuideEntries.firstWhere(
     (final GuideEntry e) => e.id == id,
@@ -53,8 +64,8 @@ class ShowcasePlate extends StatelessWidget {
   );
 
   /// Which of the chapter's entries is up at [t], and when it came up.
-  static (int, double) _at(final ShowcaseChapter chapter, final double t) {
-    final List<NarrationLine> lines = Narration.of(chapter.key);
+  (int, double) _at(final ShowcaseChapter chapter, final double t) {
+    final List<NarrationLine> lines = script.of(chapter.key);
     final int last = entries[chapter.key]!.length - 1;
     int index = 0;
     double since = chapter.start;

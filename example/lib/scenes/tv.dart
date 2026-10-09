@@ -331,9 +331,9 @@ class _BoatCardState extends State<_BoatCard> {
         child: InkWell(
           autofocus: widget.autofocus,
           onFocusChange: _onFocusChange,
-          onTap: () => HarborSignals.raise(
+          onTap: () => HarborFlares.raise(
             context,
-            slot: HarborSignalSlot.low,
+            slot: HarborFlareSlot.low,
             builder: (final BuildContext context) => SignalFlag(message: '${boat.name} hails the lighthouse'),
           ),
           child: SizedBox(

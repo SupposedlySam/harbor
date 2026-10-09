@@ -13,9 +13,9 @@ export 'src/buoy.dart'
         HarborBuoyCrossAlignment,
         HarborBuoySide,
         HarborPortalBuoy,
-        HarborSignalSlot,
-        HarborSignalTarget,
-        HarborSignals;
+        HarborFlareSlot,
+        HarborFlareTarget,
+        HarborFlares;
 export 'src/chart.dart';
 export 'src/coast.dart';
 export 'src/controller.dart'
@@ -27,10 +27,11 @@ export 'src/controller.dart'
         HarborFleet,
         HarborLayoutRecord,
         HarborPontoonHandle,
-        HarborSignalClosedReason,
-        HarborSignalEntry,
-        HarborSignalTransitionBuilder,
+        HarborFlareClosedReason,
+        HarborFlareEntry,
+        HarborFlareTransitionBuilder,
         HarborYield;
+export 'src/deprecated.dart';
 export 'src/dialog.dart';
 export 'src/dock.dart';
 export 'src/dock_slot.dart' show HarborDockSlot;

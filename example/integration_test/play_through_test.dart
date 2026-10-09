@@ -46,13 +46,13 @@ void main() {
     await deck.shot(tester, '02_quick_actions');
     deck.check('quick actions open', find.text('Open the shipyard').evaluate().isNotEmpty);
     deck.check('modal buoy hides the bubble', find.textContaining('to launch a boat').hitTestable().evaluate().isEmpty);
-    await tester.tap(find.text('Raise a signal'));
+    await tester.tap(find.text('Raise a flare'));
     await deck.sail(tester, 700);
-    await deck.shot(tester, '03_signal_low');
-    final Finder signal = find.text('All hands on deck!');
-    deck.check('low signal raised', signal.evaluate().isNotEmpty);
-    if (signal.evaluate().isNotEmpty) {
-      deck.check('low signal clears the tab bar', tester.getRect(signal).bottom <= deck.tabBarRect(tester).top);
+    await deck.shot(tester, '03_flare_low');
+    final Finder flare = find.text('All hands on deck!');
+    deck.check('low flare raised', flare.evaluate().isNotEmpty);
+    if (flare.evaluate().isNotEmpty) {
+      deck.check('low flare clears the tab bar', tester.getRect(flare).bottom <= deck.tabBarRect(tester).top);
     }
     deck.report();
   });
@@ -355,8 +355,8 @@ void main() {
       deck.check('unsaved bar stacks on the tool strip', deck.near(tester.getRect(unsaved).bottom, deck.rectOfKey(tester, 'tool strip').top, 1.5));
       await tester.tap(find.descendant(of: unsaved, matching: find.text('Save')));
       await deck.sail(tester, 800);
-      await deck.shot(tester, '39_saved_signal');
-      deck.check('saved signal raised', find.text('Shipyard saved!').evaluate().isNotEmpty);
+      await deck.shot(tester, '39_saved_flare');
+      deck.check('saved flare raised', find.text('Shipyard saved!').evaluate().isNotEmpty);
     }
     await tester.tap(find.byKey(const ValueKey<String>('ceremony toggle')));
     await deck.sail(tester, 800);
@@ -435,13 +435,13 @@ void main() {
       await tester.tap(find.text(slot).last);
       await deck.sail(tester, 300);
     }
-    await deck.shot(tester, '50_signals');
-    final Finder topSignal = find.text('Fog on the top deck');
-    deck.check('top signal clears the office header', topSignal.evaluate().isEmpty || tester.getRect(topSignal).top >= tester.getRect(find.text('Harbor Office')).bottom);
+    await deck.shot(tester, '50_flares');
+    final Finder topFlare = find.text('Fog on the top deck');
+    deck.check('top flare clears the office header', topFlare.evaluate().isEmpty || tester.getRect(topFlare).top >= tester.getRect(find.text('Harbor Office')).bottom);
     await tester.tap(find.byKey(const ValueKey<String>('raise and leave')));
     await deck.sail(tester, 2000);
     await deck.shot(tester, '51_raise_and_leave');
-    deck.check('raised signal survives its page leaving', find.byKey(const ValueKey<String>('tower signal')).evaluate().isNotEmpty || find.textContaining('tower').evaluate().isNotEmpty);
+    deck.check('raised flare survives its page leaving', find.byKey(const ValueKey<String>('tower signal')).evaluate().isNotEmpty || find.textContaining('tower').evaluate().isNotEmpty);
     await tester.scrollUntilVisible(find.byKey(const ValueKey<String>('postcard frame')), 200, scrollable: find.descendant(of: find.byKey(const ValueKey<String>('office fairway')), matching: find.byType(Scrollable)).first);
     await deck.sail(tester, 600);
     await deck.shot(tester, '52_postcard');

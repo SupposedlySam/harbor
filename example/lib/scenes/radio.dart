@@ -307,9 +307,9 @@ class _ChannelPageState extends State<ChannelPage> {
       case _CallAction.copy:
         await Clipboard.setData(ClipboardData(text: logged.call.text));
         if (callContext.mounted) {
-          HarborSignals.raise(
+          HarborFlares.raise(
             callContext,
-            slot: HarborSignalSlot.low,
+            slot: HarborFlareSlot.low,
             builder: (final BuildContext context) =>
                 const SignalFlag(message: 'Call copied to the log', icon: Icons.content_copy_rounded),
           );

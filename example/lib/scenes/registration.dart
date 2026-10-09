@@ -67,9 +67,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
   void _continue(final BuildContext context) {
     final String boat = _boatName.text.trim().isEmpty ? 'your boat' : _boatName.text.trim();
     FocusScope.of(context).unfocus();
-    HarborSignals.raise(
+    HarborFlares.raise(
       context,
-      slot: HarborSignalSlot.high,
+      slot: HarborFlareSlot.high,
       builder: (final BuildContext context) =>
           SignalFlag(message: 'Welcome to the harbor, $boat!', icon: Icons.anchor_rounded),
     );

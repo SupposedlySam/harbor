@@ -94,12 +94,12 @@ class _ShipyardPageState extends State<ShipyardPage> {
   );
 }
 
-/// Raises a signal sending every boat on the water down the slipway.
+/// Raises a flare sending every boat on the water down the slipway.
 void _launchFleet(final BuildContext context, final ShipyardYard yard) {
   final int count = yard.boats.length;
-  HarborSignals.raise(
+  HarborFlares.raise(
     context,
-    slot: HarborSignalSlot.low,
+    slot: HarborFlareSlot.low,
     builder: (final BuildContext context) => SignalFlag(
       message: count == 0 ? 'Nothing on the slipway yet' : '$count ${count == 1 ? 'boat' : 'boats'} down the slipway!',
       icon: Icons.sailing_rounded,
@@ -328,9 +328,9 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
 
   void _save() {
     _yard.save();
-    HarborSignals.raise(
+    HarborFlares.raise(
       context,
-      slot: HarborSignalSlot.low,
+      slot: HarborFlareSlot.low,
       builder: (final BuildContext context) => const SignalFlag(message: 'Shipyard saved!', icon: Icons.save_rounded),
     );
   }

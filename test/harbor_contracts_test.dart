@@ -282,7 +282,7 @@ void main() {
     });
   });
 
-  group('Signals', () {
+  group('Flares', () {
     // Breaks if: the port on top is any route that is still active, rather than the current one.
     testWidgets('go to the current route even when a background page re-mounts its harbor', (final tester) async {
       final ValueNotifier<int> generation = ValueNotifier<int>(0);
@@ -321,7 +321,7 @@ void main() {
       const Alignment notch = Alignment(0.0, -0.8);
       late BuildContext page;
       final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
-      HarborSignals.raise(
+      HarborFlares.raise(
         page,
         alignment: notch,
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
@@ -332,7 +332,7 @@ void main() {
       expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
     });
 
-    // Breaks if: a directional alignment is resolved where the signal is shown rather than in the
+    // Breaks if: a directional alignment is resolved where the flare is shown rather than in the
     // reading direction of the page that raised it.
     testWidgets('resolve a directional alignment in the direction of the page that raised it', (final tester) async {
       late BuildContext page;
@@ -343,7 +343,7 @@ void main() {
           ),
         ),
       );
-      HarborSignals.raise(
+      HarborFlares.raise(
         page,
         alignment: AlignmentDirectional.centerEnd,
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
@@ -354,12 +354,12 @@ void main() {
       expect(_rect(tester, 'toast'), Alignment.centerLeft.inscribe(const Size(200, 40), water));
     });
 
-    // Breaks if: the overlay a signal falls back to ignores its exact alignment.
+    // Breaks if: the overlay a flare falls back to ignores its exact alignment.
     testWidgets('without a harbor, take an exact alignment within the overlay’s padded water', (final tester) async {
       const Alignment notch = Alignment(0.0, -0.8);
       late BuildContext page;
       await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
-      HarborSignals.raise(
+      HarborFlares.raise(
         page,
         alignment: notch,
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
@@ -370,7 +370,7 @@ void main() {
       expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
     });
 
-    // Breaks if: a signal with no harbor above it is dropped (it used to assert, and show nothing
+    // Breaks if: a flare with no harbor above it is dropped (it used to assert, and show nothing
     // in release), or the overlay it falls back to ignores the coast or the keyboard.
     testWidgets('without a harbor, go to the nearest overlay, clear of the coast and the keyboard', (final tester) async {
       late BuildContext page;
@@ -378,15 +378,15 @@ void main() {
         MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))),
       );
       await trial.raiseTide();
-      final HarborSignalEntry low = HarborSignals.raise(
+      final HarborFlareEntry low = HarborFlares.raise(
         page,
-        slot: HarborSignalSlot.low,
+        slot: HarborFlareSlot.low,
         builder: (final BuildContext c) => _bar('low', 30),
         duration: null,
       );
-      final HarborSignalEntry top = HarborSignals.raise(
+      final HarborFlareEntry top = HarborFlares.raise(
         page,
-        slot: HarborSignalSlot.top,
+        slot: HarborFlareSlot.top,
         builder: (final BuildContext c) => _bar('top', 30),
         duration: null,
       );
@@ -402,28 +402,28 @@ void main() {
       expect(find.byKey(const ValueKey<String>('top')), findsNothing);
     });
 
-    // Breaks if: a signal with nowhere to go is dropped without a word, or asserts (which a
+    // Breaks if: a flare with nowhere to go is dropped without a word, or asserts (which a
     // release build never sees).
-    testWidgets('without a harbor or an overlay, report that the signal was not shown', (final tester) async {
+    testWidgets('without a harbor or an overlay, report that the flare was not shown', (final tester) async {
       late BuildContext bare;
       await tester.pumpWidget(Directionality(
         textDirection: TextDirection.ltr,
         child: _Probe((final BuildContext c) => bare = c),
       ));
-      final HarborSignalEntry entry = HarborSignals.raise(bare, builder: (final BuildContext c) => _bar('lost', 30));
+      final HarborFlareEntry entry = HarborFlares.raise(bare, builder: (final BuildContext c) => _bar('lost', 30));
       final Object? error = tester.takeException();
       expect(error, isA<FlutterError>());
-      expect('$error', contains('HarborSignals.raise'));
+      expect('$error', contains('HarborFlares.raise'));
       expect(entry.showing.value, isFalse);
     });
 
-    // Breaks if: a signal's timers outlive the tree. The test framework fails a test that ends
+    // Breaks if: a flare's timers outlive the tree. The test framework fails a test that ends
     // with a timer pending, so the check is the end of each test.
     testWidgets('leave no timer pending when the harbor goes away', (final tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
-      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
-      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
+      HarborFlares.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
+      HarborFlares.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
       await tester.pump();
       expect(find.byKey(const ValueKey<String>('afloat')), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
@@ -432,16 +432,16 @@ void main() {
     testWidgets('leave no timer pending when the overlay goes away', (final tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
-      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
+      HarborFlares.raise(page, builder: (final BuildContext c) => _bar('afloat', 30));
       await tester.pump();
-      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
+      HarborFlares.raise(page, builder: (final BuildContext c) => _bar('lowering', 30)).lower();
       await tester.pump();
       expect(find.byKey(const ValueKey<String>('afloat')), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
   });
 
-  group("A signal's time", () {
+  group("A flare's time", () {
     Future<BuildContext> pumpPage(final WidgetTester tester, {final GlobalKey<NavigatorState>? navigator}) async {
       late BuildContext page;
       await tester.pumpSeaTrial(
@@ -457,7 +457,7 @@ void main() {
     // Breaks if: the default is not a SnackBar's 4 s.
     testWidgets('is 4 s by default, as a SnackBar’s is', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('toast', 30));
+      final HarborFlareEntry entry = HarborFlares.raise(page, builder: (final BuildContext c) => _bar('toast', 30));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 3500));
       expect(entry.showing.value, isTrue);
@@ -465,10 +465,10 @@ void main() {
       expect(entry.showing.value, isFalse);
     });
 
-    // Breaks if: the time starts when the signal is raised rather than once its entrance has run.
+    // Breaks if: the time starts when the flare is raised rather than once its entrance has run.
     testWidgets('starts once its entrance has finished', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         animationStyle: const AnimationStyle(duration: Duration(seconds: 1)),
         duration: const Duration(seconds: 1),
@@ -485,11 +485,11 @@ void main() {
       expect(entry.showing.value, isFalse);
     });
 
-    // Breaks if: the time runs while another route covers the page the signal is on.
+    // Breaks if: the time runs while another route covers the page the flare is on.
     testWidgets('waits while another route covers its page', (final tester) async {
       final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
       final BuildContext page = await pumpPage(tester, navigator: navigator);
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('toast', 30),
@@ -507,18 +507,18 @@ void main() {
       expect(entry.showing.value, isFalse, reason: 'its time ran once the page was back on top');
     });
 
-    // Breaks if: persist is ignored, so a signal with a button times out before a screen reader
+    // Breaks if: persist is ignored, so a flare with a button times out before a screen reader
     // reaches it, as a SnackBar with an action does not.
     testWidgets('with persist, does not run out', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         persist: true,
         duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('undo', 30),
       );
-      HarborSignalClosedReason? reason;
-      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      HarborFlareClosedReason? reason;
+      unawaited(entry.closed.then((final HarborFlareClosedReason r) => reason = r));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 10));
       expect(entry.showing.value, isTrue);
@@ -526,19 +526,19 @@ void main() {
       entry.lower();
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('undo')), findsNothing);
-      expect(reason, HarborSignalClosedReason.lower);
+      expect(reason, HarborFlareClosedReason.lower);
     });
 
     // Breaks if: closed completes before the exit has run, or with the wrong reason.
     testWidgets('closes with timeout once its exit has run', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('toast', 30),
       );
-      HarborSignalClosedReason? reason;
-      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      HarborFlareClosedReason? reason;
+      unawaited(entry.closed.then((final HarborFlareClosedReason r) => reason = r));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 1));
       expect(entry.showing.value, isFalse);
@@ -546,24 +546,24 @@ void main() {
       expect(reason, isNull, reason: 'it is still on its way out');
       await tester.pumpAndSettle(const Duration(milliseconds: 100));
       expect(find.byKey(const ValueKey<String>('toast')), findsNothing);
-      expect(reason, HarborSignalClosedReason.timeout);
+      expect(reason, HarborFlareClosedReason.timeout);
     });
   });
 
-  group('Signals at the same place', () {
+  group('Flares at the same place', () {
     final Finder first = find.byKey(const ValueKey<String>('first'));
     final Finder second = find.byKey(const ValueKey<String>('second'));
 
-    // Breaks if: two signals at one slot are shown at once, drawn over each other, rather than one
+    // Breaks if: two flares at one slot are shown at once, drawn over each other, rather than one
     // after the other as a ScaffoldMessenger shows its snack bars; or the one waiting starts its
     // time before it is shown.
     testWidgets('are shown one at a time, each after the last has left', (final tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
-      final HarborSignalEntry one = HarborSignals.raise(page, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('first', 30), duration: null);
-      final HarborSignalEntry two = HarborSignals.raise(
+      final HarborFlareEntry one = HarborFlares.raise(page, slot: HarborFlareSlot.low, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      final HarborFlareEntry two = HarborFlares.raise(
         page,
-        slot: HarborSignalSlot.low,
+        slot: HarborFlareSlot.low,
         builder: (final BuildContext c) => _bar('second', 30),
         duration: const Duration(seconds: 1),
       );
@@ -586,21 +586,21 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    // Breaks if: a signal lowered while it waits is still shown when its turn comes, or its closed
+    // Breaks if: a flare lowered while it waits is still shown when its turn comes, or its closed
     // future waits for an exit it never had.
     testWidgets('leave the queue at once when lowered while waiting', (final tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
-      final HarborSignalEntry one = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
-      final HarborSignalEntry two = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
-      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('third', 30), duration: null);
-      HarborSignalClosedReason? reason;
-      unawaited(two.closed.then((final HarborSignalClosedReason r) => reason = r));
+      final HarborFlareEntry one = HarborFlares.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      final HarborFlareEntry two = HarborFlares.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      HarborFlares.raise(page, builder: (final BuildContext c) => _bar('third', 30), duration: null);
+      HarborFlareClosedReason? reason;
+      unawaited(two.closed.then((final HarborFlareClosedReason r) => reason = r));
       await tester.pumpAndSettle();
 
       two.lower();
       await tester.pump();
-      expect(reason, HarborSignalClosedReason.lower);
+      expect(reason, HarborFlareClosedReason.lower);
       one.lower();
       await tester.pumpAndSettle();
       expect(second, findsNothing);
@@ -610,8 +610,8 @@ void main() {
     testWidgets('without a harbor, are shown one at a time in the overlay', (final tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
-      final HarborSignalEntry one = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
-      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      final HarborFlareEntry one = HarborFlares.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      HarborFlares.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
       await tester.pumpAndSettle();
       expect(first, findsOneWidget);
       expect(second, findsNothing);
@@ -622,12 +622,12 @@ void main() {
       expect(second, findsOneWidget);
     });
 
-    // Positive control: the queue is per place, so signals at two slots still show together.
+    // Positive control: the queue is per place, so flares at two slots still show together.
     testWidgets('at two slots, are shown together', (final tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
-      HarborSignals.raise(page, slot: HarborSignalSlot.top, builder: (final BuildContext c) => _bar('first', 30), duration: null);
-      HarborSignals.raise(page, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      HarborFlares.raise(page, slot: HarborFlareSlot.top, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      HarborFlares.raise(page, slot: HarborFlareSlot.low, builder: (final BuildContext c) => _bar('second', 30), duration: null);
       await tester.pumpAndSettle();
       expect(first, findsOneWidget);
       expect(second, findsOneWidget);

@@ -423,10 +423,10 @@ class HarborBuoy with Diagnosticable {
 
 /// The layer a harbor floats its buoys in.
 class HarborBuoyLayer extends StatefulWidget {
-  const HarborBuoyLayer({super.key, required this.buoys, required this.signals});
+  const HarborBuoyLayer({super.key, required this.buoys, required this.flares});
 
   final List<HarborBuoy> buoys;
-  final List<HarborSignalEntry> signals;
+  final List<HarborFlareEntry> flares;
 
   @override
   State<HarborBuoyLayer> createState() => _HarborBuoyLayerState();
@@ -499,19 +499,19 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
   }
 
   List<HarborBuoy> get buoys => widget.buoys;
-  List<HarborSignalEntry> get signals => widget.signals;
+  List<HarborFlareEntry> get flares => widget.flares;
 
   @override
   Widget build(final BuildContext context) {
-    // A signal keeps inside the clear water of the harbor that raised it, so it is placed again
+    // A flare keeps inside the clear water of the harbor that raised it, so it is placed again
     // whenever that harbor's clear water moves (a turn, a foldable opening): read only at build,
-    // it stayed boxed into the shape the screen had when the signal went up.
+    // it stayed boxed into the shape the screen had when the flare went up.
     final List<Listenable> raisers = <Listenable>[
-      for (final HarborSignalEntry signal in signals)
-        if (signal.raisedIn case final HarborController harbor) harbor.clearWater,
+      for (final HarborFlareEntry flare in flares)
+        if (flare.raisedIn case final HarborController harbor) harbor.clearWater,
     ];
     final HarborBuoy? modal = _modal;
-    // One shape whether or not a signal or a modal buoy is up, so neither coming or going
+    // One shape whether or not a flare or a modal buoy is up, so neither coming or going
     // remounts the buoys. PASSTHROUGH, so the layer still gets the harbor's own constraints, which
     // carry the clear water. StackFit.expand handed it plain tight ones, and a modal buoy was
     // centred in the whole frame instead of the clear water.
@@ -531,12 +531,12 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     final int lastModal = buoys.lastIndexWhere((final HarborBuoy b) => b.modal);
     final List<HarborBuoy> all = <HarborBuoy>[
       ...buoys,
-      for (final HarborSignalEntry signal in signalsInSight(signals))
+      for (final HarborFlareEntry flare in flaresInSight(flares))
         HarborBuoy(
-          key: ObjectKey(signal),
-          alignment: signal.alignment,
-          within: _local(context, signal.avoidInGlobal),
-          child: _Signal(entry: signal),
+          key: ObjectKey(flare),
+          alignment: flare.alignment,
+          within: _local(context, flare.avoidInGlobal),
+          child: _Flare(entry: flare),
         ),
     ];
     return _BuoyLayout(
@@ -1385,25 +1385,25 @@ class _FollowEveryFrame {
   }
 }
 
-/// Where a signal is raised within the clear water of its harbor.
-enum HarborSignalSlot {
+/// Where a flare is raised within the clear water of its harbor.
+enum HarborFlareSlot {
   top(Alignment.topCenter),
   high(Alignment(0.0, -0.55)),
   middle(Alignment.center),
   low(Alignment.bottomCenter);
 
-  const HarborSignalSlot(this.alignment);
+  const HarborFlareSlot(this.alignment);
 
   final Alignment alignment;
 }
 
-/// Which harbor a signal goes to.
-enum HarborSignalTarget {
+/// Which harbor a flare goes to.
+enum HarborFlareTarget {
   /// The port on top right now (a sheet over a page over the sea), so a low
-  /// signal clears that sheet's footer.
+  /// flare clears that sheet's footer.
   topmost,
 
-  /// The outermost harbor, so the signal clears only the coast.
+  /// The outermost harbor, so the flare clears only the coast.
   sea,
 }
 
@@ -1411,93 +1411,93 @@ enum HarborSignalTarget {
 ///
 /// See also:
 ///
-///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages; signals are not
-///    queued.
-abstract final class HarborSignals {
-  /// Raises [builder]'s signal in [target]'s clear water at [slot], lowered
+///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages one at a time;
+///    flares queue per slot, so flares at different slots show together.
+abstract final class HarborFlares {
+  /// Raises [builder]'s flare in [target]'s clear water at [slot], lowered
   /// after [duration] (or when the returned entry is lowered). If its harbor
-  /// leaves (the page is popped), the signal moves to the port now on top.
+  /// leaves (the page is popped), the flare moves to the port now on top.
   ///
-  /// Signals at the same slot or alignment take turns, as a
+  /// Flares at the same slot or alignment take turns, as a
   /// `ScaffoldMessenger` shows its snack bars one at a time: each comes in once
-  /// the one before it has left. To replace the signal that is up, lower it.
-  /// [HarborSignalEntry.closed] completes once a signal has left, with why.
+  /// the one before it has left. To replace the flare that is up, lower it.
+  /// [HarborFlareEntry.closed] completes once a flare has left, with why.
   ///
-  /// [duration] (4 s, a `SnackBar`'s) counts only while the signal is in
+  /// [duration] (4 s, a `SnackBar`'s) counts only while the flare is in
   /// sight: from the end of its entrance, and not while another route covers
-  /// its page. With [persist] the signal stays until it is lowered, as a
-  /// `SnackBar` with `persist` does; give it to a signal with a button, so a
+  /// its page. With [persist] the flare stays until it is lowered, as a
+  /// `SnackBar` with `persist` does; give it to a flare with a button, so a
   /// screen-reader user has time to reach it.
   ///
-  /// [alignment] places the signal at an exact point instead of a slot, as
+  /// [alignment] places the flare at an exact point instead of a slot, as
   /// [HarborBuoy.alignment] places a buoy; give one or the other, or neither
-  /// for [HarborSignalSlot.high]. An [AlignmentDirectional] is resolved in the
+  /// for [HarborFlareSlot.high]. An [AlignmentDirectional] is resolved in the
   /// reading direction of [context], the page that raised it, whose themes the
-  /// signal also keeps.
+  /// flare also keeps.
   ///
-  /// The signal fades and scales in and out over [animationStyle] (220 ms each
+  /// The flare fades and scales in and out over [animationStyle] (220 ms each
   /// way by default). [AnimationStyle.noAnimation] shows it as it is, for a
   /// widget that brings its own entrance; [transitionBuilder] builds your own
   /// entrance and exit from harbor's animation instead. Either way a lowered
-  /// signal stays at least 300 ms, so the widget's own exit can run. With
+  /// flare stays at least 300 ms, so the widget's own exit can run. With
   /// reduced motion it appears and leaves at once.
   ///
-  /// The signal is a live region with a dismiss action, so a screen reader
+  /// The flare is a live region with a dismiss action, so a screen reader
   /// announces it and can lower it, as it does a `SnackBar`. Give
   /// [liveRegion] false when [builder]'s widget is its own live region: harbor
   /// then adds no semantics, and the widget's node is the only one announced.
   ///
   /// With no harbor above [context] (a bare `MaterialApp` in a widget test, a
-  /// screen not yet built from a harbor), the signal goes to the nearest
+  /// screen not yet built from a harbor), the flare goes to the nearest
   /// [Overlay], kept clear of `MediaQuery.padding` and `viewInsets`. With no
   /// overlay either, it is reported through [FlutterError.reportError] and
   /// returned already lowered.
-  static HarborSignalEntry raise(
+  static HarborFlareEntry raise(
     final BuildContext context, {
     required final WidgetBuilder builder,
-    final HarborSignalSlot? slot,
+    final HarborFlareSlot? slot,
     final AlignmentGeometry? alignment,
     final Duration? duration = const Duration(seconds: 4),
     final bool persist = false,
-    final HarborSignalTarget target = HarborSignalTarget.topmost,
+    final HarborFlareTarget target = HarborFlareTarget.topmost,
     final AnimationStyle? animationStyle,
-    final HarborSignalTransitionBuilder? transitionBuilder,
+    final HarborFlareTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
   }) {
-    assert(slot == null || alignment == null, 'Give a signal a slot or an alignment, not both.');
+    assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
-    // A signal is built in its harbor's buoy layer, not where it was raised, so it takes the
+    // A flare is built in its harbor's buoy layer, not where it was raised, so it takes the
     // themes and text style of the place that raised it, as a sheet does. Without this a page
     // that wraps itself in its own Theme raised a toast in the app's theme.
     final CapturedThemes themes = InheritedTheme.capture(from: context, to: null);
-    final HarborSignalEntry entry = HarborSignalEntry(
+    final HarborFlareEntry entry = HarborFlareEntry(
       // A Builder, so the builder's own context sees the captured themes, not only what it returns.
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
-      alignment: alignment?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr) ?? (slot ?? HarborSignalSlot.high).alignment,
+      alignment: alignment?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr) ?? (slot ?? HarborFlareSlot.high).alignment,
       duration: duration,
       persist: persist,
-      // Sent to the sea, a signal clears only the coast.
-      avoidInGlobal: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context)?.clearWaterInGlobal() : null,
-      raisedIn: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context) : null,
+      // Sent to the sea, a flare clears only the coast.
+      avoidInGlobal: target == HarborFlareTarget.topmost ? HarborController.maybeOf(context)?.clearWaterInGlobal() : null,
+      raisedIn: target == HarborFlareTarget.topmost ? HarborController.maybeOf(context) : null,
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
       liveRegion: liveRegion,
     );
     final HarborController? controller = switch (target) {
-      HarborSignalTarget.topmost => fleet?.topmost,
-      HarborSignalTarget.sea => fleet?.sea,
+      HarborFlareTarget.topmost => fleet?.topmost,
+      HarborFlareTarget.sea => fleet?.sea,
     } ?? HarborController.maybeOf(context);
     if (controller != null) {
-      controller.raiseSignal(entry);
+      controller.raiseFlare(entry);
     } else if (Overlay.maybeOf(context) case final OverlayState overlay) {
       (_overlayQueues[overlay] ??= _OverlayQueue(overlay)).raise(entry);
     } else {
-      entry.lower(reason: HarborSignalClosedReason.remove);
-      signalLeft(entry);
+      entry.lower(reason: HarborFlareClosedReason.remove);
+      flareLeft(entry);
       FlutterError.reportError(FlutterErrorDetails(
         exception: FlutterError.fromParts(<DiagnosticsNode>[
-          ErrorSummary('HarborSignals.raise found no Harbor, HarborSea or Overlay above the context, so the signal was not shown.'),
-          ErrorHint('Mount a HarborSea in MaterialApp.builder, or raise the signal from a context inside a Navigator.'),
+          ErrorSummary('HarborFlares.raise found no Harbor, HarborSea or Overlay above the context, so the flare was not shown.'),
+          ErrorHint('Mount a HarborSea in MaterialApp.builder, or raise the flare from a context inside a Navigator.'),
         ]),
         library: 'harbor',
       ));
@@ -1509,22 +1509,22 @@ abstract final class HarborSignals {
   static final Expando<_OverlayQueue> _overlayQueues = Expando<_OverlayQueue>();
 }
 
-/// The signals raised into one overlay, which take turns at each alignment as
+/// The flares raised into one overlay, which take turns at each alignment as
 /// they do in a harbor.
 class _OverlayQueue {
   _OverlayQueue(this.overlay);
 
   final OverlayState overlay;
-  final List<HarborSignalEntry> _signals = <HarborSignalEntry>[];
-  final Set<HarborSignalEntry> _inserted = <HarborSignalEntry>{};
+  final List<HarborFlareEntry> _flares = <HarborFlareEntry>[];
+  final Set<HarborFlareEntry> _inserted = <HarborFlareEntry>{};
 
-  void raise(final HarborSignalEntry entry) {
-    _signals.add(entry);
+  void raise(final HarborFlareEntry entry) {
+    _flares.add(entry);
     void lowered() {
       if (!entry.showing.value && !_inserted.contains(entry)) {
         entry.showing.removeListener(lowered);
-        _signals.remove(entry);
-        signalLeft(entry);
+        _flares.remove(entry);
+        flareLeft(entry);
       }
     }
 
@@ -1533,53 +1533,53 @@ class _OverlayQueue {
   }
 
   void _insertInSight() {
-    for (final HarborSignalEntry entry in signalsInSight(_signals)) {
+    for (final HarborFlareEntry entry in flaresInSight(_flares)) {
       if (_inserted.add(entry)) {
         late final OverlayEntry host;
-        host = OverlayEntry(builder: (final BuildContext _) => _OverlaySignal(entry: entry, host: host, queue: this));
+        host = OverlayEntry(builder: (final BuildContext _) => _OverlayFlare(entry: entry, host: host, queue: this));
         overlay.insert(host);
       }
     }
   }
 
   /// [entry] has run its exit and left the overlay: the next at its place comes in.
-  void left(final HarborSignalEntry entry) {
+  void left(final HarborFlareEntry entry) {
     _forget(entry);
     _insertInSight();
   }
 
-  /// The overlay went away under [entry], so the signals waiting behind it have
+  /// The overlay went away under [entry], so the flares waiting behind it have
   /// nothing left to show them either.
-  void gone(final HarborSignalEntry entry) {
+  void gone(final HarborFlareEntry entry) {
     _forget(entry);
-    for (final HarborSignalEntry waiting in List<HarborSignalEntry>.of(_signals)) {
+    for (final HarborFlareEntry waiting in List<HarborFlareEntry>.of(_flares)) {
       if (!_inserted.contains(waiting)) {
-        waiting.lower(reason: HarborSignalClosedReason.remove);
+        waiting.lower(reason: HarborFlareClosedReason.remove);
       }
     }
   }
 
-  void _forget(final HarborSignalEntry entry) {
-    _signals.remove(entry);
+  void _forget(final HarborFlareEntry entry) {
+    _flares.remove(entry);
     _inserted.remove(entry);
-    signalLeft(entry);
+    flareLeft(entry);
   }
 }
 
-/// A signal raised where there is no harbor: in an overlay, at its slot in the
+/// A flare raised where there is no harbor: in an overlay, at its slot in the
 /// water the overlay's padding and keyboard leave.
-class _OverlaySignal extends StatefulWidget {
-  const _OverlaySignal({required this.entry, required this.host, required this.queue});
+class _OverlayFlare extends StatefulWidget {
+  const _OverlayFlare({required this.entry, required this.host, required this.queue});
 
-  final HarborSignalEntry entry;
+  final HarborFlareEntry entry;
   final OverlayEntry host;
   final _OverlayQueue queue;
 
   @override
-  State<_OverlaySignal> createState() => _OverlaySignalState();
+  State<_OverlayFlare> createState() => _OverlayFlareState();
 }
 
-class _OverlaySignalState extends State<_OverlaySignal> {
+class _OverlayFlareState extends State<_OverlayFlare> {
   static const EdgeInsets _margin = EdgeInsets.all(16.0);
 
   Timer? _removal;
@@ -1593,7 +1593,7 @@ class _OverlaySignalState extends State<_OverlaySignal> {
 
   void _changed() {
     if (!widget.entry.showing.value) {
-      // Leave time for the signal's own exit animation.
+      // Leave time for the flare's own exit animation.
       _removal ??= Timer(widget.entry.lingers, () {
         _removed = true;
         widget.host
@@ -1609,8 +1609,8 @@ class _OverlaySignalState extends State<_OverlaySignal> {
     widget.entry.showing.removeListener(_changed);
     _removal?.cancel();
     if (!_removed) {
-      // The overlay went away with the signal still up: nothing is left to show it.
-      widget.entry.lower(reason: HarborSignalClosedReason.remove);
+      // The overlay went away with the flare still up: nothing is left to show it.
+      widget.entry.lower(reason: HarborFlareClosedReason.remove);
       widget.queue.gone(widget.entry);
     }
     super.dispose();
@@ -1629,21 +1629,21 @@ class _OverlaySignalState extends State<_OverlaySignal> {
     );
     return Padding(
       padding: covered + _margin,
-      child: Align(alignment: widget.entry.alignment, child: _Signal(entry: widget.entry)),
+      child: Align(alignment: widget.entry.alignment, child: _Flare(entry: widget.entry)),
     );
   }
 }
 
-class _Signal extends StatefulWidget {
-  const _Signal({required this.entry});
+class _Flare extends StatefulWidget {
+  const _Flare({required this.entry});
 
-  final HarborSignalEntry entry;
+  final HarborFlareEntry entry;
 
   @override
-  State<_Signal> createState() => _SignalState();
+  State<_Flare> createState() => _FlareState();
 }
 
-class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
+class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(vsync: this);
   late final CurvedAnimation _animation = CurvedAnimation(
     parent: _controller,
@@ -1663,7 +1663,7 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
       ..duration = reducedMotion ? Duration.zero : widget.entry.transitionDuration
       ..reverseDuration = reducedMotion ? Duration.zero : widget.entry.reverseTransitionDuration;
     // As a ScaffoldMessenger starts a snack bar's timer only while its route is current: a page
-    // covered by another route, or kept offstage with its tickers stopped, shows nobody the signal.
+    // covered by another route, or kept offstage with its tickers stopped, shows nobody the flare.
     _inSight = (ModalRoute.isCurrentOf(context) ?? true) && TickerMode.valuesOf(context).enabled;
     if (_controller.isDismissed && widget.entry.showing.value) {
       _controller.forward();
@@ -1687,13 +1687,13 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
 
   void _statusChanged(final AnimationStatus _) => _syncTimeout();
 
-  /// Runs the signal's time while it is fully in and in sight, and starts it over when it comes back.
+  /// Runs the flare's time while it is fully in and in sight, and starts it over when it comes back.
   void _syncTimeout() {
-    final HarborSignalEntry entry = widget.entry;
+    final HarborFlareEntry entry = widget.entry;
     final Duration? duration = entry.duration;
     final bool running = duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight;
     if (running && _timeout == null) {
-      _timeout = Timer(duration, () => entry.lower(reason: HarborSignalClosedReason.timeout));
+      _timeout = Timer(duration, () => entry.lower(reason: HarborFlareClosedReason.timeout));
     } else if (!running) {
       _timeout?.cancel();
       _timeout = null;
@@ -1714,10 +1714,10 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(final BuildContext context) {
-    final HarborSignalEntry entry = widget.entry;
+    final HarborFlareEntry entry = widget.entry;
     final Widget child = entry.builder(context);
     final Widget shown = switch (entry.transitionBuilder) {
-      final HarborSignalTransitionBuilder transition => transition(context, _animation, child),
+      final HarborFlareTransitionBuilder transition => transition(context, _animation, child),
       // Shown as it is, so a widget with its own entrance doesn't play two.
       null when _still => child,
       null => FadeTransition(opacity: _animation, child: ScaleTransition(scale: _scale, child: child)),
@@ -1725,12 +1725,12 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
     if (!entry.liveRegion) {
       return shown;
     }
-    // A live region, so a screen reader announces the signal when it appears, and a dismiss
+    // A live region, so a screen reader announces the flare when it appears, and a dismiss
     // action to lower it, as a SnackBar has.
     return Semantics(
       container: true,
       liveRegion: true,
-      onDismiss: () => entry.lower(reason: HarborSignalClosedReason.dismiss),
+      onDismiss: () => entry.lower(reason: HarborFlareClosedReason.dismiss),
       child: shown,
     );
   }

@@ -4,7 +4,7 @@
 // on the page and Escape did nothing. Each test fails on that behaviour, except the one that
 // checks Escape is left to the widgets above with no modal buoy up, which fails if the harbor maps
 // Escape to a disabled action instead. A buoy's child also keeps its state when the layer around it
-// changes shape: it was built again when a buoy turned modal, or a signal came up.
+// changes shape: it was built again when a buoy turned modal, or a flare came up.
 
 import 'dart:async';
 
@@ -475,12 +475,12 @@ void main() {
       expect(find.text('n=1'), findsOneWidget, reason: 'and its leaving kept it');
     });
 
-    testWidgets('when a signal comes up in its harbor', (final tester) async {
+    testWidgets('when a flare comes up in its harbor', (final tester) async {
       await _pumpSpeedDial(tester);
-      HarborSignals.raise(tester.element(find.text('n=1')), persist: true, builder: (final BuildContext _) => const Text('Copied'));
+      HarborFlares.raise(tester.element(find.text('n=1')), persist: true, builder: (final BuildContext _) => const Text('Copied'));
       await tester.pumpAndSettle();
-      expect(find.text('Copied'), findsOneWidget, reason: 'positive control: the signal is up');
-      expect(find.text('n=1'), findsOneWidget, reason: 'a signal coming up kept the count');
+      expect(find.text('Copied'), findsOneWidget, reason: 'positive control: the flare is up');
+      expect(find.text('n=1'), findsOneWidget, reason: 'a flare coming up kept the count');
     });
   });
 }

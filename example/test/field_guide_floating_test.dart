@@ -214,7 +214,7 @@ void main() {
       'HarborBuoy.anchored',
       'HarborBuoy(modal: true)',
       'HarborPortalBuoy',
-      'HarborSignals.raise',
+      'HarborFlares.raise',
     ]);
     expect(names(GuideGroup.sheets), <String>[
       'HarborSheet',
@@ -574,102 +574,102 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // HarborSignals.raise
+  // HarborFlares.raise
 
-  testWidgets('HarborSignals.raise: each slot lands at its place in the page’s clear water', (
+  testWidgets('HarborFlares.raise: each slot lands at its place in the page’s clear water', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
-    for (final HarborSignalSlot slot in HarborSignalSlot.values) {
+    for (final HarborFlareSlot slot in HarborFlareSlot.values) {
       await _tapStage(tester, 'raise ${slot.name}');
       final Rect water = Rect.fromLTRB(
         _frameLeft(tester),
         _headerBottom(tester),
         _frameRight(tester),
-        _rect(tester, 'signals tab bar').top,
+        _rect(tester, 'flares tab bar').top,
       ).deflate(16 * s);
-      final Rect signal = _rect(tester, 'signal');
-      final Rect expected = slot.alignment.inscribe(signal.size, water);
-      expect(signal.top, _near(expected.top), reason: slot.name);
-      expect(signal.center.dx, _near(expected.center.dx), reason: slot.name);
+      final Rect flare = _rect(tester, 'flare');
+      final Rect expected = slot.alignment.inscribe(flare.size, water);
+      expect(flare.top, _near(expected.top), reason: slot.name);
+      expect(flare.center.dx, _near(expected.center.dx), reason: slot.name);
       expect(find.text('${slot.name} · topmost'), findsOneWidget);
-      expect(_code(tester), contains('slot: HarborSignalSlot.${slot.name},'));
-      expect(_code(tester), contains('target: HarborSignalTarget.topmost,'));
+      expect(_code(tester), contains('slot: HarborFlareSlot.${slot.name},'));
+      expect(_code(tester), contains('target: HarborFlareTarget.topmost,'));
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(_step);
     }
   });
 
-  testWidgets('HarborSignals.raise: a signal is lowered after four seconds', (final WidgetTester tester) async {
+  testWidgets('HarborFlares.raise: a flare is lowered after four seconds', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('signals'));
     await _tapStage(tester, 'raise middle');
     await tester.pump(const Duration(seconds: 3));
-    expect(_key('signal'), findsOneWidget);
+    expect(_key('flare'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(_step);
-    expect(_key('signal'), findsNothing);
+    expect(_key('flare'), findsNothing);
   });
 
-  testWidgets('HarborSignals.raise: sent to the sea, it clears only the coast, over the header and tab bar', (
+  testWidgets('HarborFlares.raise: sent to the sea, it clears only the coast, over the header and tab bar', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
     await _tap(tester, 'target: sea');
-    expect(_code(tester), contains('target: HarborSignalTarget.sea,'));
+    expect(_code(tester), contains('target: HarborFlareTarget.sea,'));
 
     await _tapStage(tester, 'raise top');
-    expect(_rect(tester, 'signal').top, _near(_frameTop(tester) + (62 + 16) * s));
-    expect(_rect(tester, 'signal').top, lessThan(_headerBottom(tester)));
+    expect(_rect(tester, 'flare').top, _near(_frameTop(tester) + (62 + 16) * s));
+    expect(_rect(tester, 'flare').top, lessThan(_headerBottom(tester)));
     expect(find.text('top · sea'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
 
     await _tapStage(tester, 'raise low');
-    expect(_rect(tester, 'signal').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
-    expect(_rect(tester, 'signal').bottom, greaterThan(_rect(tester, 'signals tab bar').top));
+    expect(_rect(tester, 'flare').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
+    expect(_rect(tester, 'flare').bottom, greaterThan(_rect(tester, 'flares tab bar').top));
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
   });
 
-  testWidgets('HarborSignals.raise: raised from a sheet, topmost lands in the sheet’s clear water', (
+  testWidgets('HarborFlares.raise: raised from a sheet, topmost lands in the sheet’s clear water', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
-    await _tapStage(tester, 'open signals sheet');
+    await _tapStage(tester, 'open flares sheet');
     await tester.pump(_step);
 
     // Below the sheet's header and its 12-point wake.
     await _tapStage(tester, 'sheet raise top');
-    expect(_rect(tester, 'signal').top, _near(_rect(tester, 'signals sheet header').bottom + (12 + 16) * s));
+    expect(_rect(tester, 'flare').top, _near(_rect(tester, 'flares sheet header').bottom + (12 + 16) * s));
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
 
     // Above the footer's dock, which starts 10 above its marker.
     await _tapStage(tester, 'sheet raise low');
-    expect(_rect(tester, 'signal').bottom, _near(_rect(tester, 'signals sheet footer').top - (10 + 16) * s));
+    expect(_rect(tester, 'flare').bottom, _near(_rect(tester, 'flares sheet footer').top - (10 + 16) * s));
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
-    await _popStage(tester, 'signals sheet header');
+    await _popStage(tester, 'flares sheet header');
   });
 
-  testWidgets('HarborSignals.raise: raised from a sheet to the sea, it lands over the sheet’s footer', (
+  testWidgets('HarborFlares.raise: raised from a sheet to the sea, it lands over the sheet’s footer', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
     await _tap(tester, 'target: sea');
-    await _tapStage(tester, 'open signals sheet');
+    await _tapStage(tester, 'open flares sheet');
     await tester.pump(_step);
     await _tapStage(tester, 'sheet raise low');
-    expect(_rect(tester, 'signal').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
-    expect(_rect(tester, 'signal').bottom, greaterThan(_rect(tester, 'signals sheet footer').top));
+    expect(_rect(tester, 'flare').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
+    expect(_rect(tester, 'flare').bottom, greaterThan(_rect(tester, 'flares sheet footer').top));
     expect(find.text('low · sea'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
-    await _popStage(tester, 'signals sheet header');
+    await _popStage(tester, 'flares sheet header');
   });
 
   // -------------------------------------------------------------------------

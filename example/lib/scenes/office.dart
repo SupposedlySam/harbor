@@ -35,7 +35,7 @@ class OfficeTab extends StatelessWidget {
       padding: const EdgeInsetsDirectional.only(top: 8, bottom: 24),
       slivers: <Widget>[
         SliverList.list(
-          children: const <Widget>[_SwitchesGroup(), _PaperworkGroup(), _SignalGroup(), _PostcardGroup()],
+          children: const <Widget>[_SwitchesGroup(), _PaperworkGroup(), _FlareGroup(), _PostcardGroup()],
         ),
       ],
     ),
@@ -201,11 +201,11 @@ class _PaperworkGroup extends StatelessWidget {
   );
 }
 
-/// #28: signals by slot, and a signal that outlives its page.
-class _SignalGroup extends StatelessWidget {
-  const _SignalGroup();
+/// #28: flares by slot, and a flare that outlives its page.
+class _FlareGroup extends StatelessWidget {
+  const _FlareGroup();
 
-  void _raise(final BuildContext context, final HarborSignalSlot slot, final String message) => HarborSignals.raise(
+  void _raise(final BuildContext context, final HarborFlareSlot slot, final String message) => HarborFlares.raise(
     context,
     slot: slot,
     builder: (final BuildContext context) => SignalFlag(message: message),
@@ -215,7 +215,7 @@ class _SignalGroup extends StatelessWidget {
   Widget build(final BuildContext context) => _LedgerGroup(
     title: 'Signal locker',
     note: const LogbookNote(
-      pattern: 'Signals by slot',
+      pattern: 'Flares by slot',
       tryThis:
           'Raise a flag at each slot: they float in the clear water, past the header and the '
           'tab bar. "Raise and leave" opens the signal tower, raises a low flag there and '
@@ -229,13 +229,13 @@ class _SignalGroup extends StatelessWidget {
           runSpacing: 8,
           alignment: WrapAlignment.center,
           children: <Widget>[
-            _FlagButton(label: 'Top', onPressed: () => _raise(context, HarborSignalSlot.top, 'Fog on the top deck')),
-            _FlagButton(label: 'High', onPressed: () => _raise(context, HarborSignalSlot.high, 'Gulls sighted aloft')),
+            _FlagButton(label: 'Top', onPressed: () => _raise(context, HarborFlareSlot.top, 'Fog on the top deck')),
+            _FlagButton(label: 'High', onPressed: () => _raise(context, HarborFlareSlot.high, 'Gulls sighted aloft')),
             _FlagButton(
               label: 'Middle',
-              onPressed: () => _raise(context, HarborSignalSlot.middle, 'Steady as she goes'),
+              onPressed: () => _raise(context, HarborFlareSlot.middle, 'Steady as she goes'),
             ),
-            _FlagButton(label: 'Low', onPressed: () => _raise(context, HarborSignalSlot.low, 'Cargo stowed below')),
+            _FlagButton(label: 'Low', onPressed: () => _raise(context, HarborFlareSlot.low, 'Cargo stowed below')),
             _FlagButton(
               key: const ValueKey<String>('raise and leave'),
               label: 'Raise and leave',
@@ -310,7 +310,7 @@ class HarborPostcard extends StatelessWidget {
       width: 300,
       height: 200,
       child: Harbor(
-        // A new port: no outer docks or wakes reach in. Signals still fly on the
+        // A new port: no outer docks or wakes reach in. Flares still fly on the
         // page, the topmost route-level port, not in this embedded frame.
         newPort: true,
         coast: HarborCoast.none,
@@ -434,9 +434,9 @@ void showCargoManifest(final BuildContext context) => unawaited(
                     icon: Icons.inventory_rounded,
                     onPressed: () {
                       HarborSheet.close(context);
-                      HarborSignals.raise(
+                      HarborFlares.raise(
                         context,
-                        slot: HarborSignalSlot.low,
+                        slot: HarborFlareSlot.low,
                         builder: (final BuildContext context) => const SignalFlag(message: 'Cargo loaded, cast off!'),
                       );
                     },
@@ -567,9 +567,9 @@ class _CharterBoardState extends State<_CharterBoard> {
               boat: boats[i],
               onTap: () {
                 HarborSheet.close(context);
-                HarborSignals.raise(
+                HarborFlares.raise(
                   context,
-                  slot: HarborSignalSlot.low,
+                  slot: HarborFlareSlot.low,
                   builder: (final BuildContext context) => SignalFlag(message: '${boats[i].name} is chartered!'),
                 );
               },
@@ -674,9 +674,9 @@ class HarborRulesPage extends StatelessWidget {
                   icon: Icons.handshake_rounded,
                   onPressed: () {
                     Navigator.of(context).maybePop();
-                    HarborSignals.raise(
+                    HarborFlares.raise(
                       context,
-                      slot: HarborSignalSlot.low,
+                      slot: HarborFlareSlot.low,
                       builder: (final BuildContext context) => const SignalFlag(message: 'Welcome aboard, sailor!'),
                     );
                   },
@@ -692,8 +692,8 @@ class HarborRulesPage extends StatelessWidget {
 
 // ─── #28 Raise and leave ──────────────────────────────────────────────────────
 
-/// The signal tower: raises a low signal as soon as it opens, then shuts at
-/// once. The signal moves to the page now on top and keeps flying.
+/// The signal tower: raises a low flare as soon as it opens, then shuts at
+/// once. The flare moves to the page now on top and keeps flying.
 class _SignalTowerPage extends StatefulWidget {
   const _SignalTowerPage();
 
@@ -709,9 +709,9 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
       if (!mounted) {
         return;
       }
-      HarborSignals.raise(
+      HarborFlares.raise(
         context,
-        slot: HarborSignalSlot.low,
+        slot: HarborFlareSlot.low,
         duration: const Duration(seconds: 4),
         builder: (final BuildContext context) =>
             const SignalFlag(key: ValueKey<String>('tower signal'), message: 'Raised in the tower, still flying'),

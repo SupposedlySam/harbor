@@ -61,9 +61,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // Failed before: the signal kept the clear water captured when it was raised, so after the
+  // Failed before: the flare kept the clear water captured when it was raised, so after the
   // foldable opened it stayed boxed into the old 382-wide cover screen.
-  testWidgets('a signal follows the clear water of the harbor that raised it when the screen grows', (final tester) async {
+  testWidgets('a flare follows the clear water of the harbor that raised it when the screen grows', (final tester) async {
     late BuildContext page;
     await tester.pumpSeaTrial(
       MaterialApp(
@@ -80,9 +80,9 @@ void main() {
       ),
       device: HarborTrialDevice.dualScreenCover,
     );
-    HarborSignals.raise(
+    HarborFlares.raise(
       page,
-      slot: HarborSignalSlot.low,
+      slot: HarborFlareSlot.low,
       duration: null,
       builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 100, height: 30),
     );

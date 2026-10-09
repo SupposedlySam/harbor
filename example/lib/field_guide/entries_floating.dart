@@ -51,11 +51,11 @@ final List<GuideEntry> floatingEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'signals',
-    className: 'HarborSignals.raise',
+    className: 'HarborFlares.raise',
     group: GuideGroup.floating,
     realWorld: 'International signal flags run up a halyard',
     art: (final BuildContext context) => const SignalFlagsArt(),
-    page: (final BuildContext context) => const SignalsEntry(),
+    page: (final BuildContext context) => const FlaresEntry(),
   ),
   GuideEntry(
     id: 'sheet',
@@ -790,34 +790,34 @@ class _LaunchPanel extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 4. HarborSignals.raise
+// 4. HarborFlares.raise
 
-const Map<HarborSignalSlot, String> _slotFlags = <HarborSignalSlot, String>{
-  HarborSignalSlot.top: 'K',
-  HarborSignalSlot.high: 'C',
-  HarborSignalSlot.middle: 'D',
-  HarborSignalSlot.low: 'U',
+const Map<HarborFlareSlot, String> _slotFlags = <HarborFlareSlot, String>{
+  HarborFlareSlot.top: 'K',
+  HarborFlareSlot.high: 'C',
+  HarborFlareSlot.middle: 'D',
+  HarborFlareSlot.low: 'U',
 };
 
-/// `HarborSignals.raise`: a transient buoy, raised in the port on top.
-class SignalsEntry extends StatefulWidget {
-  const SignalsEntry({super.key});
+/// `HarborFlares.raise`: a transient buoy, raised in the port on top.
+class FlaresEntry extends StatefulWidget {
+  const FlaresEntry({super.key});
 
   @override
-  State<SignalsEntry> createState() => _SignalsEntryState();
+  State<FlaresEntry> createState() => _FlaresEntryState();
 }
 
-class _SignalsEntryState extends State<SignalsEntry> {
-  HarborSignalTarget _target = HarborSignalTarget.topmost;
-  HarborSignalSlot _last = HarborSignalSlot.low;
+class _FlaresEntryState extends State<FlaresEntry> {
+  HarborFlareTarget _target = HarborFlareTarget.topmost;
+  HarborFlareSlot _last = HarborFlareSlot.low;
 
-  void _raise(final BuildContext context, final HarborSignalSlot slot) {
+  void _raise(final BuildContext context, final HarborFlareSlot slot) {
     setState(() => _last = slot);
-    HarborSignals.raise(
+    HarborFlares.raise(
       context,
       slot: slot,
       target: _target,
-      builder: (final BuildContext context) => _SignalPennant(slot: slot, target: _target),
+      builder: (final BuildContext context) => _FlarePennant(slot: slot, target: _target),
     );
   }
 
@@ -825,7 +825,7 @@ class _SignalsEntryState extends State<SignalsEntry> {
     spacing: 8,
     runSpacing: 8,
     children: <Widget>[
-      for (final HarborSignalSlot slot in HarborSignalSlot.values)
+      for (final HarborFlareSlot slot in HarborFlareSlot.values)
         _StageButton(
           key: ValueKey<String>('$prefix ${slot.name}'),
           label: slot.name,
@@ -839,13 +839,13 @@ class _SignalsEntryState extends State<SignalsEntry> {
     showHarborSheet<void>(
       context,
       builder: (final BuildContext context) => HarborSheet(
-        debugLabel: 'signals sheet',
+        debugLabel: 'flares sheet',
         surface: const Sailcloth(),
-        header: const SheetHeader(key: ValueKey<String>('signals sheet header'), title: 'A sheet on top'),
+        header: const SheetHeader(key: ValueKey<String>('flares sheet header'), title: 'A sheet on top'),
         footer: const HarborMooringLine(
           child: Padding(
             padding: EdgeInsets.only(top: 10),
-            child: StageMarker(key: ValueKey<String>('signals sheet footer'), label: 'sheet footer', color: Palette.sea),
+            child: StageMarker(key: ValueKey<String>('flares sheet footer'), label: 'sheet footer', color: Palette.sea),
           ),
         ),
         body: HarborFairway.box(
@@ -873,34 +873,35 @@ class _SignalsEntryState extends State<SignalsEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborSignals.raise',
+    className: 'HarborFlares.raise',
     realWorld:
-        'Ships talk with flags: each letter of the international code is its own flag, run up a halyard for others to '
-        'read, and taken down once the message is passed.',
+        'A flare fired from a boat says one thing to everyone in sight, then burns out. By day ships say it with flags: '
+        'each letter of the international code is its own flag, run up a halyard for others to read, and taken down '
+        'once the message is passed.',
     inYourApp:
-        'A toast. It is a buoy raised for a while in the clear water of the port on top: a page, or a sheet over the '
+        'A toast. A flare is a buoy raised for a while in the clear water of the port on top: a page, or a sheet over the '
         'page. Its slot places it high or low in that water; topmost sends it to the sheet over the page, sea to the '
         'outermost harbor, clear of the coast only.',
     art: const SignalFlagsArt(),
     controls: <Widget>[
-      ChoiceControl<HarborSignalTarget>(
+      ChoiceControl<HarborFlareTarget>(
         label: 'target',
-        values: HarborSignalTarget.values,
+        values: HarborFlareTarget.values,
         value: _target,
-        labelOf: (final HarborSignalTarget t) => t.name,
-        onChanged: (final HarborSignalTarget t) => setState(() => _target = t),
+        labelOf: (final HarborFlareTarget t) => t.name,
+        onChanged: (final HarborFlareTarget t) => setState(() => _target = t),
       ),
     ],
     code:
-        'HarborSignals.raise(\n'
+        'HarborFlares.raise(\n'
         '  context,\n'
-        '  slot: HarborSignalSlot.${_last.name},\n'
-        '  target: HarborSignalTarget.${_target.name},\n'
+        '  slot: HarborFlareSlot.${_last.name},\n'
+        '  target: HarborFlareTarget.${_target.name},\n'
         '  builder: (context) => const Toast(\'Flags up\'),\n'
         ');',
     stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_headerDock('HarborSignals.raise')],
-      bottom: <HarborDock>[_tabBarDock('HarborDock.quay', key: const ValueKey<String>('signals tab bar'))],
+      top: <HarborDock>[_headerDock('HarborFlares.raise')],
+      bottom: <HarborDock>[_tabBarDock('HarborDock.quay', key: const ValueKey<String>('flares tab bar'))],
       body: Builder(
         builder: (final BuildContext context) => _OpenWater(
           child: HarborMoored(
@@ -909,12 +910,12 @@ class _SignalsEntryState extends State<SignalsEntry> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('Raise a signal at each HarborSignalSlot:', style: TextStyle(color: Palette.foam.withValues(alpha: 0.8))),
+                Text('Raise a flare at each HarborFlareSlot:', style: TextStyle(color: Palette.foam.withValues(alpha: 0.8))),
                 const SizedBox(height: 8),
                 _raiseButtons(context, prefix: 'raise'),
                 const SizedBox(height: 16),
                 _StageButton(
-                  key: const ValueKey<String>('open signals sheet'),
+                  key: const ValueKey<String>('open flares sheet'),
                   label: 'Open a sheet',
                   icon: Icons.vertical_align_top_rounded,
                   onPressed: () => _openSheet(context),
@@ -928,16 +929,16 @@ class _SignalsEntryState extends State<SignalsEntry> {
   );
 }
 
-/// A raised signal: two code flags and what it was raised with.
-class _SignalPennant extends StatelessWidget {
-  const _SignalPennant({required this.slot, required this.target});
+/// A raised flare: two code flags and what it was raised with.
+class _FlarePennant extends StatelessWidget {
+  const _FlarePennant({required this.slot, required this.target});
 
-  final HarborSignalSlot slot;
-  final HarborSignalTarget target;
+  final HarborFlareSlot slot;
+  final HarborFlareTarget target;
 
   @override
   Widget build(final BuildContext context) => Material(
-    key: const ValueKey<String>('signal'),
+    key: const ValueKey<String>('flare'),
     color: Palette.night.withValues(alpha: 0.94),
     shape: const StadiumBorder(side: BorderSide(color: Palette.brass, width: 1.5)),
     child: Padding(
@@ -947,7 +948,7 @@ class _SignalPennant extends StatelessWidget {
         children: <Widget>[
           CodeFlag(letter: _slotFlags[slot]!),
           const SizedBox(width: 3),
-          CodeFlag(letter: target == HarborSignalTarget.sea ? 'N' : 'A'),
+          CodeFlag(letter: target == HarborFlareTarget.sea ? 'N' : 'A'),
           const SizedBox(width: 10),
           Flexible(
             child: Text(

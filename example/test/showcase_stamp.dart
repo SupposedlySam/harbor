@@ -21,9 +21,22 @@
 
 import 'dart:io';
 
-/// The showcase's own sources, relative to example/: a change without a re-render fails.
-List<File> showcaseSources(final String example) =>
-    Directory('$example/lib/showcase').listSync().whereType<File>().toList()..sort(_byPath);
+/// The README's videos. Each has its own sources, stamp and media under doc/media.
+enum ShowcaseCut {
+  phone('showcase', <String>[]);
+
+  const ShowcaseCut(this.directory, this.sharedFromPhone);
+
+  /// Its directory under example/lib, and the name of its media and stamp under doc/media.
+  final String directory;
+  final List<String> sharedFromPhone;
+}
+
+/// A video's own sources, relative to example/: a change without a re-render fails.
+List<File> showcaseSources(final String example, [final ShowcaseCut cut = ShowcaseCut.phone]) => <File>[
+  ...Directory('$example/lib/${cut.directory}').listSync().whereType<File>(),
+  for (final String name in cut.sharedFromPhone) File('$example/lib/showcase/$name'),
+]..sort(_byPath);
 
 /// What the showcase draws with but does not own: a change is reported, not failed.
 List<File> borrowedSources(final String example) => <File>[
@@ -56,8 +69,8 @@ String stampOf(final String example, final List<File> files) {
 }
 
 /// The stamp file's content for the sources as they are now.
-String showcaseStamp(final String example) =>
-    'own ${stampOf(example, showcaseSources(example))}\nborrowed ${stampOf(example, borrowedSources(example))}';
+String showcaseStamp(final String example, [final ShowcaseCut cut = ShowcaseCut.phone]) =>
+    'own ${stampOf(example, showcaseSources(example, cut))}\nborrowed ${stampOf(example, borrowedSources(example))}';
 
 /// One part of a stamp file's content, or null when it has no such line.
 String? stampPart(final String stamp, final String part) {
@@ -70,4 +83,4 @@ String? stampPart(final String stamp, final String part) {
 }
 
 /// Where the stamp of the committed video lives.
-File stampFile(final String example) => File('$example/../doc/media/showcase.stamp');
+File stampFile(final String example, [final ShowcaseCut cut = ShowcaseCut.phone]) => File('$example/../doc/media/${cut.directory}.stamp');

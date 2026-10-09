@@ -685,7 +685,7 @@ class _CanIconPainter extends CustomPainter {
   bool shouldRepaint(final _CanIconPainter oldDelegate) => false;
 }
 
-/// One international code flag, painted to fill its box: for the signals on the stage.
+/// One international code flag, painted to fill its box: for the flares on the stage.
 class CodeFlag extends StatelessWidget {
   const CodeFlag({super.key, required this.letter, this.width = 22, this.height = 16});
 

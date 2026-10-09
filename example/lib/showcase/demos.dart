@@ -34,7 +34,7 @@ Widget? showcaseDemo(final String chapter) => switch (chapter) {
   'pontoon' => const _Port(page: _PontoonDemo()),
   'buoy' => const _Port(page: _BuoyDemo()),
   'portal' => const _Port(page: _PortalDemo()),
-  'signal' => const _Port(page: _SignalDemo()),
+  'signal' => const _Port(page: _FlareDemo()),
   'sheet' => const _Port(page: _SheetDemo()),
   'breakwater' => const _Port(page: _BreakwaterDemo()),
   'dialog' => const _Port(page: _DialogDemo()),
@@ -66,7 +66,7 @@ class _Port extends StatelessWidget {
   );
 }
 
-/// Opens and closes something imperative (a sheet, a dialog, a signal, a menu) as the clock
+/// Opens and closes something imperative (a sheet, a dialog, a flare, a menu) as the clock
 /// passes [opens] and [closes], from a frame callback, as a tap would. Seeking backwards
 /// closes it again, so any frame can be drawn on its own.
 mixin _Cued<T extends StatefulWidget> on State<T> {
@@ -906,16 +906,16 @@ class _RowMenu extends StatelessWidget {
 }
 
 /// A toast raised clear of the tab bar, and what a screen reader hears.
-class _SignalDemo extends StatefulWidget {
-  const _SignalDemo();
+class _FlareDemo extends StatefulWidget {
+  const _FlareDemo();
 
   @override
-  State<_SignalDemo> createState() => _SignalDemoState();
+  State<_FlareDemo> createState() => _FlareDemoState();
 }
 
-class _SignalDemoState extends State<_SignalDemo> with _Cued<_SignalDemo> {
+class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   BuildContext? _page;
-  HarborSignalEntry? _signal;
+  HarborFlareEntry? _flare;
 
   @override
   double get opens => _cue('signal', 'toast') - 0.2;
@@ -924,9 +924,9 @@ class _SignalDemoState extends State<_SignalDemo> with _Cued<_SignalDemo> {
   double get closes => _end('signal') - 0.8;
 
   @override
-  void open() => _signal = HarborSignals.raise(
+  void open() => _flare = HarborFlares.raise(
     _page!,
-    slot: HarborSignalSlot.low,
+    slot: HarborFlareSlot.low,
     duration: null,
     builder: (final BuildContext _) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -943,7 +943,7 @@ class _SignalDemoState extends State<_SignalDemo> with _Cued<_SignalDemo> {
   );
 
   @override
-  void close() => _signal?.lower();
+  void close() => _flare?.lower();
 
   @override
   Widget build(final BuildContext context) {
@@ -1232,7 +1232,6 @@ class _TrialsDemo extends StatelessWidget {
     ('phones', 'iPhone 16 · the composer rides the keyboard'),
     ('phones', 'Pixel 9, three-button nav · the tab bar clears it'),
     ('foldables', 'Galaxy Z Fold, open · sheets keep off the hinge'),
-    ('televisions', 'Android TV · the header keeps title-safe'),
     ('keyboard', 'Every device, keyboard up · nothing covered'),
   ];
 

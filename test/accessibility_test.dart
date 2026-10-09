@@ -101,7 +101,7 @@ void main() {
     });
   });
 
-  group('A signal', () {
+  group('A flare', () {
     Future<BuildContext> pumpPage(final WidgetTester tester, {final bool disableAnimations = false, final Color? pagePrimary}) async {
       late BuildContext page;
       final Widget probe = Builder(
@@ -125,7 +125,7 @@ void main() {
     testWidgets('is announced by screen readers as it appears', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
-      HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborFlares.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
       await tester.pumpAndSettle();
       SemanticsNode? node = tester.getSemantics(find.text('Saved'));
       bool live = false;
@@ -142,7 +142,7 @@ void main() {
       const Color red = Color(0xFFFF0000);
       final BuildContext page = await pumpPage(tester, pagePrimary: red);
       Color? seen;
-      HarborSignals.raise(
+      HarborFlares.raise(
         page,
         builder: (final BuildContext context) {
           seen = Theme.of(context).colorScheme.primary;
@@ -157,7 +157,7 @@ void main() {
     // Failed before: it faded and scaled in over 220 ms whatever the platform asked.
     testWidgets('appears at once when the platform asks for reduced motion', (final tester) async {
       final BuildContext page = await pumpPage(tester, disableAnimations: true);
-      HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborFlares.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
       await tester.pump();
       await tester.pump();
       final FadeTransition fade = tester.widget(find.ancestor(of: find.text('Saved'), matching: find.byType(FadeTransition)).first);
@@ -168,25 +168,25 @@ void main() {
     testWidgets('is one live region, labelled by its message', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
-      HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborFlares.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
       await tester.pumpAndSettle();
       expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
       semantics.dispose();
     });
 
-    // Failed before: no dismiss action, so a screen reader could not take a signal away, as it can a SnackBar.
+    // Failed before: no dismiss action, so a screen reader could not take a flare away, as it can a SnackBar.
     testWidgets('is lowered by the screen reader’s dismiss action', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
-      HarborSignalClosedReason? reason;
-      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      final HarborFlareEntry entry = HarborFlares.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborFlareClosedReason? reason;
+      unawaited(entry.closed.then((final HarborFlareClosedReason r) => reason = r));
       await tester.pumpAndSettle();
       tester.semantics.performAction(find.semantics.byFlag(SemanticsFlag.isLiveRegion), SemanticsAction.dismiss);
       expect(entry.showing.value, isFalse);
       await tester.pumpAndSettle();
       expect(find.text('Saved'), findsNothing);
-      expect(reason, HarborSignalClosedReason.dismiss);
+      expect(reason, HarborFlareClosedReason.dismiss);
       semantics.dispose();
     });
 
@@ -194,7 +194,7 @@ void main() {
     testWidgets('with liveRegion: false, leaves the semantics to a widget that is its own live region', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
-      HarborSignals.raise(
+      HarborFlares.raise(
         page,
         liveRegion: false,
         builder: (final BuildContext _) => Semantics(
@@ -211,7 +211,7 @@ void main() {
     });
   });
 
-  group("A signal's entrance", () {
+  group("A flare's entrance", () {
     Future<BuildContext> pumpPage(final WidgetTester tester) async {
       late BuildContext page;
       await tester.pumpSeaTrial(
@@ -231,15 +231,15 @@ void main() {
 
     // The transitions harbor puts between [entry]'s buoy and its text; the page's own route
     // transition sits above the buoy and is not counted.
-    Finder harborTransitions(final HarborSignalEntry entry, final Type type) => find.ancestor(
+    Finder harborTransitions(final HarborFlareEntry entry, final Type type) => find.ancestor(
       of: find.text('Saved'),
       matching: find.descendant(of: find.byKey(ObjectKey(entry)), matching: find.byType(type)),
     );
 
-    // Failed before: every signal faded and scaled in, so a widget with its own entrance played two.
+    // Failed before: every flare faded and scaled in, so a widget with its own entrance played two.
     testWidgets('with AnimationStyle.noAnimation, shows the child as it is and keeps it for its own exit', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         animationStyle: AnimationStyle.noAnimation,
         builder: (final BuildContext _) => const Text('Saved'),
@@ -261,7 +261,7 @@ void main() {
     testWidgets("a transitionBuilder replaces the fade and scale and runs on harbor's animation", (final tester) async {
       final BuildContext page = await pumpPage(tester);
       final List<double> seen = <double>[];
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         animationStyle: const AnimationStyle(duration: Duration(milliseconds: 200)),
         transitionBuilder: (final BuildContext context, final Animation<double> animation, final Widget child) {
@@ -293,10 +293,10 @@ void main() {
       expect(find.text('Saved'), findsNothing);
     });
 
-    // Failed before: a lowered signal was removed after 300 ms whatever its exit took.
+    // Failed before: a lowered flare was removed after 300 ms whatever its exit took.
     testWidgets('stays up for the whole of a longer exit', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      final HarborSignalEntry entry = HarborSignals.raise(
+      final HarborFlareEntry entry = HarborFlares.raise(
         page,
         animationStyle: const AnimationStyle(reverseDuration: Duration(milliseconds: 600)),
         builder: (final BuildContext _) => const Text('Saved'),
@@ -362,7 +362,7 @@ void main() {
       return page;
     }
 
-    // Failed before: like sheets and signals, the builder ran outside the captured themes.
+    // Failed before: like sheets and flares, the builder ran outside the captured themes.
     testWidgets("'s builder sees the theme of the page that opened it", (final tester) async {
       const Color red = Color(0xFFFF0000);
       final BuildContext page = await pumpPage(tester, pagePrimary: red);

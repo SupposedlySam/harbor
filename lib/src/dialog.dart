@@ -76,7 +76,7 @@ Future<T?> showHarborDialog<T>(
       requestFocus: requestFocus,
       animationStyle: animationStyle,
       pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) {
-        // A Builder, so the builder's own context sees the captured themes (as for sheets and signals).
+        // A Builder, so the builder's own context sees the captured themes (as for sheets and flares).
         Widget dialog = themes.wrap(Builder(builder: builder));
         if (semanticLabel != null) {
           dialog = Semantics(container: true, explicitChildNodes: true, namesRoute: true, label: semanticLabel, child: dialog);
