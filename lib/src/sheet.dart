@@ -1256,8 +1256,23 @@ class _NonModalSheet<T> {
       // The overlay is already going.
     }
     host.dispose();
-    _focus.dispose();
+    _disposeFocus();
     _leave();
+  }
+
+  // The sheet's scope may hold primary focus as its entry is removed. Disposed at once, while its
+  // FocusScope is still mounted, focus stayed on the disposed node and keys reached nothing: with a
+  // modal buoy under the sheet, Escape could no longer close the buoy. So focus is handed back
+  // first, to the scope that had it before, as a route's leaving does, and the node is disposed
+  // after the frame, once its widget has left the tree. Either alone passes the test in
+  // modal_buoy_test.dart; both are kept, since a FocusNode must not be disposed while still
+  // attached, focused or not.
+  void _disposeFocus() {
+    if (_focus.hasFocus) {
+      _focus.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) => _focus.dispose());
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   Future<void> _close([final T? result]) async {
@@ -1275,7 +1290,7 @@ class _NonModalSheet<T> {
     _entry?.remove();
     _entry = null;
     host.dispose();
-    _focus.dispose();
+    _disposeFocus();
     // The result first: _leave completes with null when nothing has.
     if (!_done.isCompleted) {
       _done.complete(result);
