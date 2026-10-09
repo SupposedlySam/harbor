@@ -532,12 +532,22 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     final List<HarborBuoy> all = <HarborBuoy>[
       ...buoys,
       for (final HarborFlareEntry flare in flaresInSight(flares))
-        HarborBuoy(
-          key: ObjectKey(flare),
-          alignment: flare.alignment,
-          within: _local(context, flare.avoidInGlobal),
-          child: _Flare(entry: flare),
-        ),
+        if (flare.anchor case final HarborAnchor anchor)
+          HarborBuoy.anchored(
+            key: ObjectKey(flare),
+            anchor: anchor,
+            side: flare.side,
+            gap: flare.gap,
+            crossAlignment: flare.crossAlignment,
+            child: _Flare(entry: flare),
+          )
+        else
+          HarborBuoy(
+            key: ObjectKey(flare),
+            alignment: flare.alignment,
+            within: _local(context, flare.avoidInGlobal),
+            child: _Flare(entry: flare),
+          ),
     ];
     return _BuoyLayout(
       buoys: all,
@@ -878,6 +888,9 @@ class _RenderBuoyLayer extends RenderBox
 /// With [onDismiss], it closes as a `MenuAnchor` does: a tap outside both the
 /// buoy and [child], Escape while focus is in either, and back all call it.
 ///
+/// It leaves focus where it was when it opens, as a `MenuAnchor` does, unless
+/// [requestFocus] is true.
+///
 /// See also:
 ///
 ///  * [RawMenuAnchor] and `MenuAnchor`, which also open from an [OverlayPortal] and add menu
@@ -898,7 +911,11 @@ class HarborPortalBuoy extends StatefulWidget {
     this.flips = true,
     this.onDismiss,
     this.consumeOutsideTaps = false,
-  });
+    this.requestFocus = false,
+  }) : assert(
+         !requestFocus || onDismiss != null,
+         'A HarborPortalBuoy that takes focus needs an onDismiss, so Escape can close it and a keyboard user is not left in it.',
+       );
 
   /// Shows and hides the buoy.
   final OverlayPortalController controller;
@@ -940,6 +957,19 @@ class HarborPortalBuoy extends StatefulWidget {
   /// what is under it. By default the tap goes on, as it does for a `MenuAnchor`.
   final bool consumeOutsideTaps;
 
+  /// Whether the buoy takes keyboard focus when it opens, as a sheet with no barrier does with
+  /// `requestFocus: true`. False by default, which leaves focus where it was, as a `MenuAnchor`
+  /// does.
+  ///
+  /// With true, the buoy is a [FocusScope] of its own that becomes the first focus of the scope
+  /// around [child] (the page's, or a modal buoy's or dialog's), so it has focus now if that scope
+  /// does, and a control in it with `autofocus: true` takes it from there. A portal buoy is not
+  /// modal, so Tab past its last control does what it does at a route's edge (the navigator's
+  /// `routeTraversalEdgeBehavior`) rather than going round inside it. When it closes, focus goes
+  /// back to what the scope around it had focused before, but only if focus is still in the buoy.
+  /// Escape from focus in it still calls [onDismiss], which it requires.
+  final bool requestFocus;
+
   /// The side of its anchor the portal buoy around [context] landed on: its [side], or the
   /// opposite one after it flipped. A popover reads it to point its arrow at the anchor. It is
   /// placed when it paints, so after a flip this changes on the next frame.
@@ -966,6 +996,7 @@ class HarborPortalBuoy extends StatefulWidget {
     properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)));
     properties.add(FlagProperty('flips', value: flips, ifFalse: 'no flip'));
+    properties.add(FlagProperty('requestFocus', value: requestFocus, ifTrue: 'requests focus'));
   }
 }
 
@@ -978,6 +1009,40 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
 
   void _dismiss() => widget.onDismiss?.call();
+
+  // The buoy's focus scope while it is shown with requestFocus. Held here rather than in the
+  // overlay child, which the controller's hide() unmounts; a new one each time it opens, as a sheet
+  // has one per opening.
+  FocusScopeNode? _focus;
+
+  FocusScopeNode _focusWhileShown() {
+    final NavigatorState? navigator = Navigator.maybeOf(context);
+    return _focus ??= FocusScopeNode(debugLabel: 'HarborPortalBuoy')
+      ..traversalEdgeBehavior = navigator?.widget.routeTraversalEdgeBehavior ?? kDefaultRouteTraversalEdgeBehavior
+      ..directionalTraversalEdgeBehavior =
+          navigator?.widget.routeDirectionalTraversalEdgeBehavior ?? kDefaultRouteDirectionalTraversalEdgeBehavior;
+  }
+
+  // As the buoy goes: focus back to what the scope around it had before, only if focus is still in
+  // the buoy, and the node disposed after the frame, once its FocusScope has left the tree. Disposed
+  // at once, focus stayed on the disposed node and Escape reached nothing (#42, for sheets).
+  void _focusLeft(final FocusScopeNode scope) {
+    if (scope.hasFocus) {
+      scope.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+    }
+    if (identical(_focus, scope)) {
+      _focus = null;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+      // Unless the buoy came straight back with it, moved in the same frame.
+      if (!identical(_focus, scope)) {
+        scope.dispose();
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _focusCameBack(final FocusScopeNode scope) => _focus ??= scope;
 
   // The controller is the caller's and tells no one when it shows or hides, so the buoy reports
   // it as it comes and goes. After the frame: it comes and goes while the overlay builds.
@@ -1007,6 +1072,9 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
           // A Builder, so the builder's own context is below the side it reads.
           child: Builder(builder: widget.buoyBuilder),
         );
+        if (widget.requestFocus) {
+          buoy = _PortalBuoyFocus(scope: _focusWhileShown(), onLeft: _focusLeft, onCameBack: _focusCameBack, child: buoy);
+        }
         buoy = _PortalBuoyDismissal(
           controller: widget.controller,
           groupId: this,
@@ -1040,6 +1108,50 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
     // dialog or route. RawMenuAnchor maps its own the same way.
     return Actions(actions: <Type, Action<Intent>>{if (dismissible && _shown) DismissIntent: _dismissAction}, child: portal);
   }
+}
+
+/// Takes focus for a portal buoy with `requestFocus` as it opens, as a sheet with no barrier does:
+/// its scope becomes the first focus of the scope around the portal buoy. As the buoy goes, it tells
+/// the portal buoy before its descendants leave, so focus is handed back while the buoy's controls
+/// still hold it.
+class _PortalBuoyFocus extends StatefulWidget {
+  const _PortalBuoyFocus({required this.scope, required this.onLeft, required this.onCameBack, required this.child});
+
+  final FocusScopeNode scope;
+  final ValueChanged<FocusScopeNode> onLeft;
+  final ValueChanged<FocusScopeNode> onCameBack;
+  final Widget child;
+
+  @override
+  State<_PortalBuoyFocus> createState() => _PortalBuoyFocusState();
+}
+
+class _PortalBuoyFocusState extends State<_PortalBuoyFocus> {
+  bool _opened = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_opened) {
+      FocusScope.of(context).setFirstFocus(widget.scope);
+    }
+    _opened = true;
+  }
+
+  @override
+  void deactivate() {
+    widget.onLeft(widget.scope);
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    widget.onCameBack(widget.scope);
+  }
+
+  @override
+  Widget build(final BuildContext context) => FocusScope.withExternalFocusNode(focusScopeNode: widget.scope, child: widget.child);
 }
 
 /// Escape (a [DismissIntent]) dismisses the portal buoy while it is shown, as `RawMenuAnchor`'s
@@ -1435,6 +1547,19 @@ abstract final class HarborFlares {
   /// reading direction of [context], the page that raised it, whose themes the
   /// flare also keeps.
   ///
+  /// [anchor] places the flare by a [HarborAnchorPoint] instead, as a
+  /// [HarborBuoy.anchored] is placed: on its [side], [gap] away, lined up by
+  /// [crossAlignment], and kept inside the clear water. Give it alone, without
+  /// a [slot] or an [alignment], and raise it from the page that holds the
+  /// anchor: an anchored flare is shown by that page's port rather than the
+  /// one on top ([target] is not read), so it never sits over a sheet or
+  /// dialog by an anchor beneath it. Flares at one anchor and side take turns.
+  /// While the anchor is out of the tree the flare is not shown, takes no taps
+  /// and is not read out, and its time stops. If its page is popped, it is
+  /// lowered with [HarborFlareClosedReason.remove] rather than moving to the
+  /// port now on top. [side], [gap] and [crossAlignment] are not read without
+  /// an anchor.
+  ///
   /// The flare fades and scales in and out over [animationStyle] (220 ms each
   /// way by default). [AnimationStyle.noAnimation] shows it as it is, for a
   /// widget that brings its own entrance; [transitionBuilder] builds your own
@@ -1451,7 +1576,8 @@ abstract final class HarborFlares {
   /// screen not yet built from a harbor), the flare goes to the nearest
   /// [Overlay], kept clear of `MediaQuery.padding` and `viewInsets`. With no
   /// overlay either, it is reported through [FlutterError.reportError] and
-  /// returned already lowered.
+  /// returned already lowered. An anchored flare in an overlay is placed by its
+  /// anchor in the same water.
   static HarborFlareEntry raise(
     final BuildContext context, {
     required final WidgetBuilder builder,
@@ -1463,8 +1589,13 @@ abstract final class HarborFlares {
     final AnimationStyle? animationStyle,
     final HarborFlareTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
+    final HarborAnchor? anchor,
+    final HarborBuoySide side = HarborBuoySide.below,
+    final double gap = 8.0,
+    final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
+    assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
     // A flare is built in its harbor's buoy layer, not where it was raised, so it takes the
     // themes and text style of the place that raised it, as a sheet does. Without this a page
@@ -1482,11 +1613,17 @@ abstract final class HarborFlares {
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
       liveRegion: liveRegion,
+      anchor: anchor,
+      side: side,
+      gap: gap,
+      crossAlignment: crossAlignment,
     );
-    final HarborController? controller = switch (target) {
-      HarborFlareTarget.topmost => fleet?.topmost,
-      HarborFlareTarget.sea => fleet?.sea,
-    } ?? HarborController.maybeOf(context);
+    final HarborController? controller = anchor != null
+        ? _portOf(HarborController.maybeOf(context))
+        : switch (target) {
+            HarborFlareTarget.topmost => fleet?.topmost,
+            HarborFlareTarget.sea => fleet?.sea,
+          } ?? HarborController.maybeOf(context);
     if (controller != null) {
       controller.raiseFlare(entry);
     } else if (Overlay.maybeOf(context) case final OverlayState overlay) {
@@ -1504,6 +1641,15 @@ abstract final class HarborFlares {
       return entry;
     }
     return entry;
+  }
+
+  /// The port [harbor] is in: the first harbor of its route, or of its sheet over the sea.
+  static HarborController? _portOf(final HarborController? harbor) {
+    HarborController? port = harbor;
+    while (port != null && !port.isRouteLevel) {
+      port = port.parent;
+    }
+    return port ?? harbor;
   }
 
   static final Expando<_OverlayQueue> _overlayQueues = Expando<_OverlayQueue>();
@@ -1581,9 +1727,13 @@ class _OverlayFlare extends StatefulWidget {
 
 class _OverlayFlareState extends State<_OverlayFlare> {
   static const EdgeInsets _margin = EdgeInsets.all(16.0);
+  static const EdgeInsets _anchoredMargin = EdgeInsets.all(8.0);
 
   Timer? _removal;
   bool _removed = false;
+
+  /// Where an anchored flare landed; it does not flip, so this is never read.
+  late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.entry.side);
 
   @override
   void initState() {
@@ -1607,6 +1757,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
   @override
   void dispose() {
     widget.entry.showing.removeListener(_changed);
+    _landed.dispose();
     _removal?.cancel();
     if (!_removed) {
       // The overlay went away with the flare still up: nothing is left to show it.
@@ -1627,9 +1778,27 @@ class _OverlayFlareState extends State<_OverlayFlare> {
       math.max(padding.right, keyboard.right),
       math.max(padding.bottom, keyboard.bottom),
     );
+    final HarborFlareEntry entry = widget.entry;
+    if (entry.anchor case final HarborAnchor anchor) {
+      // Placed as a portal buoy with no harbor around it is: by its anchor, as it paints.
+      return _PortalBuoyLayout(
+        harbor: null,
+        anchor: anchor,
+        side: entry.side,
+        gap: entry.gap,
+        overlap: 0.0,
+        crossAlignment: entry.crossAlignment,
+        crossOffset: 0.0,
+        margin: covered + _anchoredMargin,
+        flips: false,
+        textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+        landed: _landed,
+        child: _Flare(entry: entry),
+      );
+    }
     return Padding(
       padding: covered + _margin,
-      child: Align(alignment: widget.entry.alignment, child: _Flare(entry: widget.entry)),
+      child: Align(alignment: entry.alignment, child: _Flare(entry: entry)),
     );
   }
 }
@@ -1655,6 +1824,17 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   Timer? _timeout;
   bool _inSight = true;
 
+  /// Whether the flare's anchor is in the tree; always for a flare with none.
+  bool _anchored = true;
+
+  void _anchorMoved() {
+    final bool anchored = widget.entry.anchor?.box != null;
+    if (anchored != _anchored) {
+      _anchored = anchored;
+      _syncTimeout();
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -1676,6 +1856,10 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     super.initState();
     widget.entry.showing.addListener(_changed);
     _controller.addStatusListener(_statusChanged);
+    if (widget.entry.anchor case final HarborAnchor anchor) {
+      anchor.addListener(_anchorMoved);
+      _anchored = anchor.box != null;
+    }
   }
 
   void _changed() {
@@ -1691,7 +1875,8 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   void _syncTimeout() {
     final HarborFlareEntry entry = widget.entry;
     final Duration? duration = entry.duration;
-    final bool running = duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight;
+    final bool running =
+        duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight && _anchored;
     if (running && _timeout == null) {
       _timeout = Timer(duration, () => entry.lower(reason: HarborFlareClosedReason.timeout));
     } else if (!running) {
@@ -1704,6 +1889,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   void dispose() {
     _timeout?.cancel();
     widget.entry.showing.removeListener(_changed);
+    widget.entry.anchor?.removeListener(_anchorMoved);
     _controller.removeStatusListener(_statusChanged);
     _animation.dispose();
     _controller.dispose();

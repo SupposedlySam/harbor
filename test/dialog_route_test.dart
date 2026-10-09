@@ -309,4 +309,124 @@ void main() {
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
     expect(find.text('Page action'), findsOneWidget);
   });
+
+  group('transitionBuilder (#63)', () {
+    Widget dialogContent(final BuildContext _) => const Center(child: SizedBox(key: ValueKey<String>('dialog'), width: 100, height: 100));
+
+    testWidgets('replaces the fade, and is handed the animation curved by animationStyle', (final tester) async {
+      final BuildContext page = await _page(tester);
+      Animation<double>? handed;
+      unawaited(showHarborDialog<void>(
+        page,
+        animationStyle: const AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn),
+        transitionBuilder: (final BuildContext context, final Animation<double> animation, final Animation<double> _, final Widget child) {
+          handed = animation;
+          return ScaleTransition(key: const ValueKey<String>('entrance'), scale: animation, child: child);
+        },
+        builder: dialogContent,
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(handed!.value, closeTo(Curves.easeIn.transform(0.5), 0.001));
+      expect(find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byKey(const ValueKey<String>('entrance'))), findsOneWidget);
+      // The builder replaces the fade rather than running inside it.
+      expect(find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byType(FadeTransition)), findsNothing);
+      await tester.pumpAndSettle();
+      expect(handed!.value, 1.0);
+    });
+
+    testWidgets('under reduced motion is handed kAlwaysCompleteAnimation, so the dialog is simply there', (final tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      final BuildContext page = await _page(tester);
+      Animation<double>? handed;
+      Animation<double>? handedSecondary;
+      unawaited(showHarborDialog<void>(
+        page,
+        transitionBuilder: (final BuildContext context, final Animation<double> animation, final Animation<double> secondary, final Widget child) {
+          handed = animation;
+          handedSecondary = secondary;
+          return ScaleTransition(scale: animation, child: child);
+        },
+        builder: dialogContent,
+      ));
+      await tester.pump();
+      expect(handed, same(kAlwaysCompleteAnimation));
+      expect(handedSecondary, same(kAlwaysDismissedAnimation));
+      expect(tester.getSize(find.byKey(const ValueKey<String>('dialog'))), const Size(100, 100));
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('HarborDialogRoute (#63)', () {
+    testWidgets('showHarborDialog pushes one', (final tester) async {
+      final BuildContext page = await _page(tester);
+      final BuildContext dialog = await _open(tester, page);
+      expect(ModalRoute.of(dialog), isA<HarborDialogRoute<void>>());
+    });
+
+    testWidgets("pushed by hand, it keeps the page's themes and completes with the popped result", (final tester) async {
+      late BuildContext dialog;
+      final BuildContext page = await _page(
+        tester,
+        wrap: (final Widget page) => DefaultTextStyle(style: const TextStyle(fontSize: 31), child: page),
+      );
+      final HarborDialogRoute<String> route = HarborDialogRoute<String>(
+        context: page,
+        builder: (final BuildContext context) {
+          dialog = context;
+          return const Center(child: Text('Pick'));
+        },
+      );
+      final Future<String?> result = Navigator.of(page).push(route);
+      await tester.pumpAndSettle();
+      expect(route.isCurrent, isTrue);
+      expect(ModalRoute.of(dialog), same(route));
+      expect(DefaultTextStyle.of(dialog).style.fontSize, 31);
+      expect(route.barrierLabel, 'Dismiss');
+      expect(route.barrierColor, const Color(0x80000000));
+      Navigator.of(dialog).pop('blue');
+      await tester.pumpAndSettle();
+      expect(await result, 'blue');
+    });
+
+    testWidgets('inheritClearWater measures the clear water when the route is pushed, not when it is made', (final tester) async {
+      final ValueNotifier<double> header = ValueNotifier<double>(40);
+      addTearDown(header.dispose);
+      late BuildContext page;
+      late BuildContext dialog;
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+          home: ValueListenableBuilder<double>(
+            valueListenable: header,
+            builder: (final BuildContext context, final double height, final Widget? _) => Harbor(
+              top: <HarborDock>[HarborDock.quay(child: SizedBox(height: height))],
+              body: Builder(
+                builder: (final BuildContext context) {
+                  page = context;
+                  return const SizedBox.expand();
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      final HarborDialogRoute<void> route = HarborDialogRoute<void>(
+        context: page,
+        inheritClearWater: true,
+        builder: (final BuildContext context) {
+          dialog = context;
+          return const SizedBox.expand();
+        },
+      );
+      header.value = 120;
+      await tester.pump();
+      final Rect clear = Harbor.of(page).clearWaterInGlobal()!;
+      unawaited(Navigator.of(page).push(route));
+      await tester.pumpAndSettle();
+      expect(clear.top, greaterThan(120));
+      expect(MediaQuery.paddingOf(dialog).top, clear.top);
+    });
+  });
 }
