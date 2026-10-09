@@ -631,11 +631,16 @@ showHarborSheet(
 `dragToClose:` is off by default, where `showModalBottomSheet`'s `enableDrag` is
 on, so a Material app that wants its sheets to follow a downward drag turns it on,
 as above. With it on, a content-sized sheet follows the
-finger down by any part that doesn't scroll, and closes on a fling or when let
-go under half shown. A draggable sheet closes at its floor, and its
+finger down by any part that doesn't scroll, and closes on a fling faster than
+`closeFlingVelocity:` (700, as a modal bottom sheet) or when let go under half shown. A draggable sheet closes at its floor, and its
 `HarborSheetExtent(snapSizes:)` are the heights it snaps to (by default its
 rest and its ceiling). A fling down on its header from its lowest height goes
-to the floor and closes it, as a fling on its list does. `HarborSheetExtent(shouldCloseOnMinExtent: false)` rests at the floor
+to the floor and closes it when it is faster than 700 logical px/s, the speed
+at which a Material `BottomSheet` closes; a slower one goes back to that height.
+`closeFlingVelocity:` sets that speed, on either kind of sheet
+(`closeFlingVelocity: 400` is the speed harbor 0.3 used). A fling on its list is
+`DraggableScrollableSheet`'s own, as in a modal bottom sheet: from the lowest
+height it closes the sheet at any speed. `HarborSheetExtent(shouldCloseOnMinExtent: false)` rests at the floor
 instead. A draggable sheet opened some other way, by `showModalBottomSheet` or
 `showGeneralDialog`, closes that route instead; in a modal bottom sheet give it
 `expand: false`, as you would a `DraggableScrollableSheet`, so a tap above it
