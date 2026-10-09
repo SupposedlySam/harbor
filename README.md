@@ -253,6 +253,12 @@ end and its reveals leave the keyboard out, and it does not cast the keyboard
 off, so a moored block inside can still keep clear of it, and the fairway
 holds still while the keyboard moves. The sliver and `paddingOf` take it too.
 
+`HarborWaters.dockFaceOf(context, HarborEdge.top)` is how far the header
+reaches, to its inner face, whether or not it has a wake: for artwork that
+lines up under a frosted header. It holds still while the keyboard moves. It
+reads zero inside a fairway, which has cast its ends off; start the fairway in
+open water to lay artwork under the header.
+
 `HarborMoored(clear: HarborClear.coast)` keeps clear of the coast alone: a hero
 title under a translucent header that must not touch the status bar.
 `follow: HarborFollow.resting` holds still while a dock grows over it.
