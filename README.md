@@ -217,8 +217,8 @@ as it would in a `Row`.
 | Moored | `HarborMoored(edges:, clear:, follow:, tide:, mooringLine:, minimum:, extra:)` | Forms, fixed buttons, static blocks |
 | Moored to one edge | `HarborMoored(edges: {HarborEdge.bottom})` | A form footer under a page header: it clears the coast and the keyboard at the bottom, and leaves the header to the rest of the page |
 | Mooring line | `HarborMooringLine(child:)` | A row that lines up with the page margin |
-| Fairway | `HarborFairway(slivers:, minimum:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
-| One sliver | `HarborFairwaySliver(sliver:, minimum:)` | A sliver in your own `CustomScrollView` |
+| Fairway | `HarborFairway(slivers:, minimum:, clear:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
+| One sliver | `HarborFairwaySliver(sliver:, minimum:, clear:)` | A sliver in your own `CustomScrollView` |
 | Pinned header | `HarborSliverDock(child:)` | A header or tab strip inside the scroll that pins at the docks' face and stacks |
 | Sticky | `HarborSticky(child:)` | A pill that rides with its item, then sticks below the docks and pinned headers |
 | Centered | `HarborCenter(overlapBudget:)` | Controls centered in the frame that may overlap the docks by at most a budget |
@@ -235,6 +235,16 @@ still rests on a frosted tab bar: beneath, the docks, their wakes and
 `MediaQuery.padding` are measured from the layer's edge. A fairway needs no
 such option across its scroll: it casts off only its own ends, so a carousel's
 items are handed the docks above and below it as they are.
+
+`HarborFairway(clear: HarborClear.coast)` rests its ends clear of the coast
+alone: a list that keeps its last row off the home indicator but scrolls on
+under a frosted tab bar, or a carousel that runs under a rail. Its ends cast off
+the coast alone, as `HarborCastOff(docks: false)` does, so its rows still read
+how far the docks reach, measured from the fairway's edge, and can pad
+themselves under them. Pinned sliver docks still pin at the docks' face, reveals
+still bring a row clear of the docks, and the bottom end still keeps clear of
+the keyboard. `HarborFairwaySliver` and `HarborFairway.paddingOf` take the same
+`clear:`.
 
 `HarborMoored(clear: HarborClear.coast)` keeps clear of the coast alone: a hero
 title under a translucent header that must not touch the status bar.
