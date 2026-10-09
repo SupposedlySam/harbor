@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -146,9 +147,13 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   Widget build(final BuildContext context) {
     final HarborDock dock = widget.dock;
     final HarborWake wake = widget.leavesWake ? dock.wake : HarborWake.none;
+    final double? reserved = dock.reserved;
     final Widget content = Padding(
       padding: widget.coastPadding,
-      child: MediaQuery(data: widget.mediaQuery, child: dock.child),
+      child: reserved == null
+          ? MediaQuery(data: widget.mediaQuery, child: dock.child)
+          // Whatever coast it took counts toward its extent, so it reaches the larger of the two.
+          : SizedBox.square(dimension: math.max(0.0, reserved - HarborEdges.of(widget.coastPadding, widget.edge))),
     );
     final Widget dockBody = Stack(
       children: <Widget>[
@@ -187,7 +192,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
           ),
         );
       },
-      child: Listener(behavior: dock.hitTestBehavior, child: dockBody),
+      child: reserved != null ? IgnorePointer(child: dockBody) : Listener(behavior: dock.hitTestBehavior, child: dockBody),
     );
   }
 

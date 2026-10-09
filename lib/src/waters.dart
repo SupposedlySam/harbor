@@ -322,6 +322,14 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
   /// takes the keyboard's ground out of both. Zero once a dock has absorbed
   /// the coast or a layer has cast it off; outside any harbor,
   /// `MediaQuery.viewPadding`.
+  ///
+  /// It holds the home indicator even in a body that ends at the keyboard, so
+  /// a footer there keeps its height as the keyboard comes and goes. A footer
+  /// that sits on the keyboard instead, and gives the home indicator's room
+  /// back while the keyboard covers it, reads `MediaQuery.viewPaddingOf`: in a
+  /// body that clears the tide it is the home indicator with the keyboard
+  /// down and 0 with it up, the share of the indicator the keyboard leaves
+  /// uncovered on the way.
   static double steadyCoastOf(final BuildContext context, final HarborEdge edge) {
     final HarborWatersData? raw = maybeRawOf(context, aspect: HarborWatersAspect.coast);
     if (raw == null) {
