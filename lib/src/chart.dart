@@ -21,6 +21,7 @@ class HarborChartEntry {
     required this.docks,
     required this.obstruction,
     required this.tide,
+    this.isolated = false,
   });
 
   final String label;
@@ -34,9 +35,17 @@ class HarborChartEntry {
   final EdgeInsetsDirectional obstruction;
   final double tide;
 
+  /// Whether this harbor floats on an isolated sea: a `HarborSea` mounted
+  /// inside another harbor (a phone drawn inside a page, a preview), which
+  /// keeps a fleet, a tide gauge and flares of its own. Its [depth] counts
+  /// from that sea, not from the app's, and its rects are in global
+  /// coordinates like every other harbor's.
+  final bool isolated;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'label': label,
     'depth': depth,
+    'isolated': isolated,
     'frame': _rect(frame),
     'body': _rect(body),
     'clearWater': _rect(clearWater),
@@ -76,9 +85,22 @@ abstract final class HarborChart {
     return fleet == null ? const <HarborChartEntry>[] : snapshotOf(fleet);
   }
 
+  /// Every harbor in [fleet], outermost first, from its last layout.
   static List<HarborChartEntry> snapshotOf(final HarborFleet fleet) => <HarborChartEntry>[
     for (final HarborController harbor in fleet.harbors)
       if (_entryOf(harbor) case final HarborChartEntry entry) entry,
+  ];
+
+  /// Every harbor of every live sea, with no context: for tooling (a debug
+  /// panel, a log, an automation driver) that runs outside the widget tree.
+  ///
+  /// Seas are listed in the order they were mounted, each outermost first, as
+  /// [snapshot] lists one. A sea mounted inside another harbor (a phone drawn
+  /// in a page) is listed too, with [HarborChartEntry.isolated] set on each of
+  /// its harbors. A sea that has been disposed is gone from the list, and a
+  /// harbor that has not laid out yet is not in it.
+  static List<HarborChartEntry> snapshotAll() => <HarborChartEntry>[
+    for (final HarborFleet fleet in _seas.keys) ...snapshotOf(fleet),
   ];
 
   /// The harbor nearest [context], as [snapshot] has it: in global
@@ -107,6 +129,7 @@ abstract final class HarborChart {
     return HarborChartEntry(
       label: harbor.debugLabel ?? 'harbor',
       depth: depth,
+      isolated: _seas[harbor.fleet] ?? false,
       frame: global(layout.frame),
       body: global(layout.body),
       clearWater: global(layout.clearWater),
@@ -128,23 +151,48 @@ abstract final class HarborChart {
     );
   }
 
-  static HarborFleet? _serviceFleet;
+  /// The fleets of the live seas, in the order they were mounted, and whether
+  /// each is isolated.
+  static final Map<HarborFleet, bool> _seas = <HarborFleet, bool>{};
   static bool _registered = false;
 
-  /// Serves the chart of [fleet] over the VM service as `ext.harbor.chart`, so
-  /// a tool driving the app can ask where everything is. Debug and profile only.
+  /// Lists [fleet] on the chart of live seas while its sea is mounted. Called
+  /// by the harbor that makes a fleet; [unregister] it when that harbor goes.
+  @internal
+  static void register(final HarborFleet fleet, {required final bool isolated}) {
+    _seas[fleet] = isolated;
+    _registerExtension();
+  }
+
+  /// Takes [fleet] off the chart of live seas.
+  @internal
+  static void unregister(final HarborFleet fleet) => _seas.remove(fleet);
+
+  /// Serves the chart over the VM service as `ext.harbor.chart`, so a tool
+  /// driving the app can ask where everything is, and lists [fleet] on it.
+  /// Debug and profile only.
+  ///
+  /// Every sea is served already: a harbor that makes a fleet lists it while
+  /// it is mounted. A fleet served by hand stays listed. The extension answers
+  /// `{"harbors": [...]}` for every sea that is not isolated, and with the
+  /// parameter `isolated=true` for isolated seas too (see [snapshotAll]).
   static void serve(final HarborFleet fleet) {
-    _serviceFleet = fleet;
+    _seas.putIfAbsent(fleet, () => false);
+    _registerExtension();
+  }
+
+  static void _registerExtension() {
     if (_registered || kReleaseMode) {
       return;
     }
     _registered = true;
     try {
       developer.registerExtension('ext.harbor.chart', (final String method, final Map<String, String> params) async {
-        final HarborFleet? f = _serviceFleet;
-        final List<Map<String, Object?>> json = f == null
-            ? const <Map<String, Object?>>[]
-            : <Map<String, Object?>>[for (final HarborChartEntry e in snapshotOf(f)) e.toJson()];
+        final bool withIsolated = params['isolated'] == 'true';
+        final List<Map<String, Object?>> json = <Map<String, Object?>>[
+          for (final HarborChartEntry e in snapshotAll())
+            if (withIsolated || !e.isolated) e.toJson(),
+        ];
         return developer.ServiceExtensionResponse.result(jsonEncode(<String, Object?>{'harbors': json}));
       });
     } on Object {
@@ -213,6 +261,9 @@ class _HarborChartOverlayState extends State<HarborChartOverlay> with SingleTick
 
   @override
   void dispose() {
+    if (_ownFleet case final HarborFleet fleet) {
+      HarborChart.unregister(fleet);
+    }
     _ticker.dispose();
     _repaint.dispose();
     super.dispose();
@@ -224,7 +275,7 @@ class _HarborChartOverlayState extends State<HarborChartOverlay> with SingleTick
     if (fleet == null) {
       if (_ownFleet == null) {
         _ownFleet = HarborFleet();
-        HarborChart.serve(_ownFleet!);
+        HarborChart.register(_ownFleet!, isolated: false);
       }
       fleet = _ownFleet;
     }

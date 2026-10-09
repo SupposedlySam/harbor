@@ -64,13 +64,15 @@ class Harbor extends StatefulWidget {
     this.maxExtentFraction,
     this.wakePainter,
     this.debugLabel,
-  }) : _isSea = false;
+  }) : _isSea = false,
+       _observers = const <HarborFleetObserver>[];
 
   /// The outermost harbor of a sea: see [HarborSea].
   const Harbor._sea({
     this.coast,
     this.margin,
     required this.body,
+    required this._observers,
   }) : top = const <HarborDock>[],
        bottom = const <HarborDock>[],
        start = const <HarborDock>[],
@@ -87,6 +89,9 @@ class Harbor extends StatefulWidget {
 
   /// Whether this is the outermost harbor of a [HarborSea].
   final bool _isSea;
+
+  /// A sea's [HarborSea.observers].
+  final List<HarborFleetObserver> _observers;
 
   /// Docks against the top edge, listed top to bottom.
   final List<HarborDock> top;
@@ -251,17 +256,17 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
     if (fleet == null) {
       if (_ownFleet == null) {
         _ownFleet = HarborFleet();
-        if (!isolated) {
-          HarborChart.serve(_ownFleet!);
-        }
+        HarborChart.register(_ownFleet!, isolated: isolated);
       }
       fleet = _ownFleet;
     }
+    // Before the sea joins, so its observers hear it join too.
+    _observe(fleet!);
     if (_controller == null || !identical(_controller!.parent, parent) || !identical(_controller!.fleet, fleet)) {
       _controller?.leave();
       _controller = HarborController(
         parent: parent,
-        fleet: fleet!,
+        fleet: fleet,
         isPort: widget.newPort || parent == null,
         debugLabel: widget.debugLabel,
       )..onChanged = _rebuild;
@@ -270,6 +275,30 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
     _controller!.route = ModalRoute.of(context);
     if (isolated || HarborTideScope.maybeGaugeOf(context, listen: false) == null) {
       _ownGauge ??= HarborTideGauge();
+    }
+  }
+
+  /// The fleet this sea's observers are registered with, and which.
+  HarborFleet? _observedFleet;
+  List<HarborFleetObserver> _observing = const <HarborFleetObserver>[];
+
+  void _observe(final HarborFleet fleet) {
+    if (identical(fleet, _observedFleet) && listEquals(_observing, widget._observers)) {
+      return;
+    }
+    if (_observedFleet case final HarborFleet old) {
+      _observing.forEach(old.removeObserver);
+    }
+    _observedFleet = fleet;
+    _observing = List<HarborFleetObserver>.of(widget._observers);
+    _observing.forEach(fleet.addObserver);
+  }
+
+  @override
+  void didUpdateWidget(final Harbor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_observedFleet case final HarborFleet fleet) {
+      _observe(fleet);
     }
   }
 
@@ -293,6 +322,15 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller?.leave();
+    if (_ownFleet case final HarborFleet fleet) {
+      HarborChart.unregister(fleet);
+    }
+    // After the frame, once the leaves of this frame (the sea's own and its
+    // pages', which go first) have been delivered to them.
+    if (_observedFleet case final HarborFleet fleet when _observing.isNotEmpty) {
+      final List<HarborFleetObserver> observing = _observing;
+      SchedulerBinding.instance.addPostFrameCallback((final Duration _) => observing.forEach(fleet.removeObserver));
+    }
     _ownGauge?.dispose();
     super.dispose();
   }
@@ -532,9 +570,20 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
 ///
 ///  * `MaterialApp.builder`, whose output `MaterialApp` wraps in its `ScaffoldMessenger`, above the [Navigator].
 class HarborSea extends StatelessWidget {
-  const HarborSea({super.key, this.coast = HarborCoast.ambient, this.margin, required this.child});
+  const HarborSea({
+    super.key,
+    this.coast = HarborCoast.ambient,
+    this.margin,
+    this.observers = const <HarborFleetObserver>[],
+    required this.child,
+  });
 
   final HarborCoast coast;
+
+  /// Told of every harbor that joins or leaves this sea's fleet, the sea
+  /// included, after the frame it happens in, as `Navigator.observers` are
+  /// told of routes. See [HarborFleetObserver].
+  final List<HarborFleetObserver> observers;
 
   /// The mooring line for the whole app, resolved against the reading
   /// direction where the sea is mounted.
@@ -543,13 +592,21 @@ class HarborSea extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(final BuildContext context) => Harbor._sea(coast: coast, margin: margin, body: child);
+  Widget build(final BuildContext context) =>
+      Harbor._sea(coast: coast, margin: margin, observers: observers, body: child);
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
+    properties.add(
+      IterableProperty<HarborFleetObserver>(
+        'observers',
+        observers,
+        level: observers.isEmpty ? DiagnosticLevel.fine : DiagnosticLevel.info,
+      ),
+    );
   }
 
 }
