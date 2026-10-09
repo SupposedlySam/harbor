@@ -27,8 +27,13 @@ after the keyboard moves, for a test that checks that frame or pumps on its
 own; `settle: true` pumps until nothing is animating.
 
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
-`iPhone17Landscape`, `foldableOpen`, `dualScreenCover`, `television`, plus the
-`phones` and `all` lists. `trial.clearWaterAround(finder)` and `isInClearWater`
+`iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenOpen` (a hinge),
+`dualScreenCover`, `television`, plus the `phones` and `all` lists. Each goes on
+the test view at its own `devicePixelRatio`; `device.copyWith(devicePixelRatio: 1.0)`
+trials one at another. `pumpSeaTrial(textScaleFactor: 2.0)` reports a larger
+system text size, as `tester.platformDispatcher.textScaleFactorTestValue` does,
+so a dock is measured at the size its text grew to. Both are reset when the test
+ends. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
 `trial.docksAround(finder)` lists the docks of the harbor around it.
 

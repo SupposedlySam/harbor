@@ -42,7 +42,10 @@ class HarborWake with Diagnosticable {
     : this._(HarborWakeKind.fade, length: length, blurSigma: blurSigma, restsAt: restsAt);
 
   /// A line of [thickness] on the dock's inner face.
-  const HarborWake.hairline({final double thickness = 1.0, final Color color = const Color(0x33FFFFFF)})
+  ///
+  /// [color] is a translucent black by default, a shade of whatever bar it is
+  /// drawn on, as `BorderSide`'s default is black. A dark bar passes its own.
+  const HarborWake.hairline({final double thickness = 1.0, final Color color = const Color(0x1F000000)})
     : this._(HarborWakeKind.hairline, length: thickness, color: color, restsAt: HarborRest.dockEdge);
 
   final HarborWakeKind kind;
@@ -88,7 +91,7 @@ class HarborWake with Diagnosticable {
         properties.add(EnumProperty<HarborRest>('restsAt', restsAt, defaultValue: HarborRest.wakeEnd));
       case HarborWakeKind.hairline:
         properties.add(DoubleProperty('thickness', length, defaultValue: 1.0));
-        properties.add(ColorProperty('color', color, defaultValue: const Color(0x33FFFFFF)));
+        properties.add(ColorProperty('color', color, defaultValue: const Color(0x1F000000)));
     }
   }
 }

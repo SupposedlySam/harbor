@@ -54,16 +54,18 @@ SemanticsNode? _readOut(final WidgetTester tester, final String label) {
   return null;
 }
 
-/// [node]'s rect in the view's logical coordinates: every transform up to the root, which only
-/// scales to physical pixels.
+/// [node]'s rect in the view's logical coordinates.
 Rect _semanticsRect(final SemanticsNode node) {
   Rect rect = node.rect;
-  for (SemanticsNode? at = node; at != null && at.parent != null; at = at.parent) {
+  // Every transform up to and including the root, which leaves the rect in physical pixels however
+  // deep the view's scale sits, then back to logical ones by the view's own ratio.
+  for (SemanticsNode? at = node; at != null; at = at.parent) {
     if (at.transform case final Matrix4 transform) {
       rect = MatrixUtils.transformRect(transform, rect);
     }
   }
-  return rect;
+  final double ratio = WidgetsBinding.instance.platformDispatcher.implicitView!.devicePixelRatio;
+  return Rect.fromLTRB(rect.left / ratio, rect.top / ratio, rect.right / ratio, rect.bottom / ratio);
 }
 
 void main() {

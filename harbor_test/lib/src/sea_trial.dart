@@ -6,9 +6,12 @@ import 'trial_device.dart';
 
 /// Pumps a harbor on a [HarborTrialDevice] and moves its tide.
 extension HarborSeaTrials on WidgetTester {
-  /// Puts [widget] through its sea trials on [device]: the device's size and
-  /// coast go on the test view itself, so everything that reads the view or
-  /// `MediaQuery` sees the same device. The view is reset when the test ends.
+  /// Puts [widget] through its sea trials on [device]: the device's size,
+  /// pixel ratio and coast go on the test view itself, so everything that reads
+  /// the view or `MediaQuery` sees the same device. [textScaleFactor] is the
+  /// text size the platform reports, as the system font-size setting does, so
+  /// docks are measured at the size their text grows to. The view and the text
+  /// scale are reset when the test ends.
   ///
   /// [widget] is pumped as is: give it a `MaterialApp` with a `HarborSea` in its
   /// builder for an app, or a bare `Harbor` inside a `Directionality`.
@@ -17,13 +20,16 @@ extension HarborSeaTrials on WidgetTester {
     final HarborTrialDevice device = HarborTrialDevice.iPhone17,
     final bool tideIn = false,
     final TextDirection textDirection = TextDirection.ltr,
+    final double textScaleFactor = 1.0,
     final bool wrapInView = true,
   }) async {
     final HarborSeaTrial trial = HarborSeaTrial._(this, device);
     view
-      ..devicePixelRatio = 1.0
-      ..physicalSize = device.size;
+      ..devicePixelRatio = device.devicePixelRatio
+      ..physicalSize = device.size * device.devicePixelRatio;
     addTearDown(view.reset);
+    platformDispatcher.textScaleFactorTestValue = textScaleFactor;
+    addTearDown(platformDispatcher.clearTextScaleFactorTestValue);
     trial._apply(tideIn: tideIn);
     await pumpWidget(
       wrapInView
@@ -87,25 +93,27 @@ class HarborSeaTrial {
 
   void _apply({required final bool tideIn}) {
     _tideIn = tideIn;
-    final EdgeInsets padding = device.coastWhen(tideIn: tideIn);
+    final double ratio = device.devicePixelRatio;
     _tester.view
-      ..padding = FakeViewPadding(left: padding.left, top: padding.top, right: padding.right, bottom: padding.bottom)
-      ..viewPadding = FakeViewPadding(
-        left: device.coast.left,
-        top: device.coast.top,
-        right: device.coast.right,
-        bottom: device.coast.bottom,
-      )
-      ..viewInsets = FakeViewPadding(bottom: tideIn ? device.tideHeight : 0.0)
+      ..padding = _physical(device.coastWhen(tideIn: tideIn), ratio)
+      ..viewPadding = _physical(device.coast, ratio)
+      ..viewInsets = FakeViewPadding(bottom: (tideIn ? device.tideHeight : 0.0) * ratio)
       ..displayFeatures = device.displayFeatures;
   }
+
+  static FakeViewPadding _physical(final EdgeInsets insets, final double ratio) => FakeViewPadding(
+    left: insets.left * ratio,
+    top: insets.top * ratio,
+    right: insets.right * ratio,
+    bottom: insets.bottom * ratio,
+  );
 
   /// The clear water of the harbor nearest [finder]'s widget, in global
   /// coordinates: the rectangle no coast, dock or tide covers.
   Rect clearWaterAround(final Finder finder) {
     final HarborChartEntry? harbor = HarborChart.nearest(finder.evaluate().single);
     if (harbor == null) {
-      throw StateError('No harbor has been laid out around ${finder.describeMatch(Plurality.one)}.');
+      throw TestFailure('No harbor has been laid out around ${finder.describeMatch(Plurality.one)}.');
     }
     return harbor.clearWater;
   }

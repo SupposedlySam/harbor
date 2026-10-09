@@ -379,20 +379,25 @@ Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
 right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
-deprecated.) While its anchor is not in the tree, an anchored buoy is not shown,
-takes no taps and is not read out by screen readers. It is placed again in every
-frame that is drawn, so it moves with its anchor in the same frame, a row
-scrolling under an open menu included. A `HarborAnchor` refers to one
-`HarborAnchorPoint`, so give each row of a list its own; in debug builds two
-points left on one anchor are reported after the frame, as two leaders on one
-`LayerLink` are.
+deprecated.) Across that side it is centred on its anchor unless its
+`crossAlignment` says `start` or `end`, the anchor's edges in reading order (or
+its top and bottom beside it), as a dropdown lines up under its button's leading
+edge; `crossOffset` moves it on from there, toward the reading end. While its
+anchor is not in the tree, an anchored buoy is not shown, takes no taps and is
+not read out by screen readers. It is placed again in every frame that is drawn,
+so it moves with its anchor in the same frame, a row scrolling under an open
+menu included. A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each
+row of a list its own; in debug builds two points left on one anchor are
+reported after the frame, as two leaders on one `LayerLink` are.
 `alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Unlike a route, it does not trap keyboard
-focus.
+before it are hidden while it is up. Its `barrierLabel` ('Dismiss' when none is
+given) is what a screen reader announces for the barrier; a Material app passes
+`MaterialLocalizations.of(context).modalBarrierDismissLabel`. Unlike a route, it
+does not trap keyboard focus.
 A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
 `alignment`, placed as a buoy at that alignment would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.
@@ -434,6 +439,9 @@ final menu = OverlayPortalController();
 HarborPortalBuoy(                       // in a list row, anywhere below a harbor
   controller: menu,
   side: HarborBuoySide.below,
+  crossAlignment: HarborBuoyCrossAlignment.start, // under the row's leading edge
+  onDismiss: menu.hide,                   // a tap outside, Escape or back
+  consumeOutsideTaps: true,               // and that tap presses nothing else
   buoyBuilder: (context) => const RowMenu(),
   child: GestureDetector(onTap: menu.toggle, child: row),
 )
@@ -447,7 +455,20 @@ harbor around the row by its `child` (or by an `anchor`). Until that anchor is
 in the tree, it is not shown, takes no taps and is not read out. When its `side` has
 no room, it `flips` to the other side of the anchor, so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
-room, it is held inside the clear water.
+room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
+the buoy is the side it landed on, so a popover can point its arrow at the
+anchor after a flip. The buoy is placed as it paints, so it hears of a flip on
+the next frame.
+
+With an `onDismiss`, a portal buoy closes as a `MenuAnchor` does: its buoy and
+its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss`
+while a tap on the row that opened it is left to the row, and so do Escape with
+focus in either and back (before it reaches the page). The tap goes on to what
+is under it, as a `MenuAnchor`'s does, unless `consumeOutsideTaps` is set. It
+puts up no barrier and leaves the page to screen readers, as a menu does. So in
+a modal buoy, a tap on the barrier while the portal buoy is open calls both
+`onDismiss`es, and in a dialog it calls the portal buoy's and closes the
+dialog, as it does with a `MenuAnchor` open in a dialog.
 
 ## Sheets and dialogs
 
@@ -481,7 +502,13 @@ it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
 page is on top (from the first frame of that page's push until its pop has
 finished, since the sheet is drawn above every page rather than inside its
-own), and it leaves when its page is replaced or removed. A
+own), and it leaves when its page is replaced or removed. Escape closes it as
+back does, from focus in the sheet or in a harbor on its page, and is left to
+the widgets above while no such sheet is up. It is not modal, as a persistent
+bottom sheet is not: it is a focus scope of its own, as a route is, so Tab goes
+through the sheet in order and then on to the page, and it leaves focus where it
+was when it opens unless you pass `requestFocus: true`. Then focus goes back to
+the page when it closes. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
@@ -521,7 +548,7 @@ it with no result: it returns its value only through `HarborSheet.close`.
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics, and `barrierLabel:` is what a
-screen reader announces for the barrier ('Close sheet' when none is given), with
+screen reader announces for the barrier ('Dismiss' when none is given), with
 `barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
 sheet is a semantics scope of its own, and screen readers announce its
 `semanticLabel:` as it opens. The barrier's semantics end at the sheet's top, as
@@ -532,8 +559,8 @@ the screen unless you give it a `maxWidth`.
 A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
 into it, an observer of page routes does not count it as a screen, a draggable sheet
 inside it closes it, and its content is a route of its own for screen readers, named by `semanticLabel:`. It
-takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Close
-dialog' when none is given), `anchorPoint:` (which screen of a dual-screen
+takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Dismiss'
+when none is given), `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
 `animationStyle:` (its fade, 180 ms by default).
 
@@ -541,6 +568,14 @@ Three more options are named and behave as `showModalBottomSheet`'s. `isDismissi
 makes a sheet the user has to answer: a tap on the barrier does nothing, and
 back still closes it. `requestFocus: false` leaves focus in the page.
 `anchorPoint:` picks which screen of a dual-screen device it opens on.
+
+What harbor draws on its own is drawn as the widgets layer draws it, with no
+theme: sheet and dialog barriers are `showGeneralDialog`'s half-black
+(`0x80000000`), and a hairline wake is a translucent black (`0x1F000000`), a
+shade of whatever bar it is on, as `BorderSide`'s default is black; a dark bar
+passes its own `color:`. Every barrier harbor puts up is announced with the
+label it is given and otherwise with 'Dismiss', the English that Material and
+Cupertino fall back to, since `WidgetsLocalizations` has none to offer.
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
@@ -691,7 +726,10 @@ arrives, and `settle: true` pumps until nothing is animating.
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
-`device.displayFeatures` puts a device's folds and hinges on the view. `trial.clearWaterAround(finder)` and `isInClearWater`
+Each device goes on the view at its own `devicePixelRatio`, and
+`device.displayFeatures` puts its folds and hinges there.
+`pumpSeaTrial(textScaleFactor:)` grows the system text size, so docks are
+measured at the size their text grew to. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
 `trial.docksAround(finder)` lists the docks of the harbor around a widget. Both
 read `HarborChart.nearest`, so a test of your own can too.

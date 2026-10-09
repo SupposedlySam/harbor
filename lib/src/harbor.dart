@@ -13,6 +13,7 @@ import 'dock.dart';
 import 'dock_slot.dart';
 import 'edge.dart';
 import 'render_harbor.dart';
+import 'sheet.dart';
 import 'tide.dart';
 import 'wake.dart';
 import 'waters.dart';
@@ -463,6 +464,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
       ),
       children: children,
     );
+    result = HarborNonModalSheetActions(route: controller.route, child: result);
     result = HarborScope(controller: controller, child: result);
     if (_ownFleet != null) {
       result = HarborFleetScope(fleet: _ownFleet!, child: result);
