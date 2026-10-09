@@ -15,7 +15,10 @@ them a place and a rule, so your content stops doing inset arithmetic.
 
 *Left, a harbor. Right, a phone running the real package, driven by the same
 clock. The GIF is the opening; [the narrated video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
-(three and a half minutes) tours everything in the package on a phone, from the coast to sea trials.*
+(three and a half minutes) tours everything in the package on a phone, from the coast to sea trials.
+[The wide-format video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase_wide.mp4)
+(one minute) shows what changes on other screens: a rail on a tablet, right-to-left, a
+phone on its side, a dual-screen hinge, and a television's title-safe band.*
 
 Depends on the Flutter SDK only. Sea trials for widget tests come in a package
 of their own, `harbor_test`, so the test framework stays out of your app's
@@ -752,8 +755,10 @@ deprecated: importing it points to `harbor_test`. It will be removed in a later 
 `example/` is a small harbor game that exercises every pattern above. Toggle
 the chart in its Harbor Office to see the layers.
 
-The video at the top of this page is `example/lib/showcase/`: run it with
-`fvm flutter run -t lib/showcase_main.dart`. `example/tool/render_showcase.sh`
+The videos at the top of this page are `example/lib/showcase/` (the phone tour,
+`fvm flutter run -t lib/showcase_main.dart`) and `example/lib/showcase_wide/` (the
+wide-format one, `fvm flutter run -t lib/showcase_wide_main.dart`; render it with
+`render_showcase.sh showcase_wide`). `example/tool/render_showcase.sh`
 records it frame by frame on the test clock, so it comes out the same every
 time, and `example/test/showcase_test.dart` checks each caption against the
 real page on the phone.

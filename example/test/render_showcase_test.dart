@@ -3,6 +3,7 @@
 //
 //   SHOWCASE_OUT=build/showcase                  every frame, at SHOWCASE_FPS (default 30)
 //   SHOWCASE_OUT=build/showcase SHOWCASE_AT=5,20  only the stills at those seconds
+//   SHOWCASE_CUT=showcase_wide                    the wide-format video instead of the phone tour
 //
 // The clock is the test's own, stepped one frame at a time, so dock animations inside the real
 // harbor run in step with the timeline and every recording is identical.
@@ -17,10 +18,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor_example/showcase/showcase.dart';
 import 'package:harbor_example/showcase/timeline.dart';
+import 'package:harbor_example/showcase_wide/timeline.dart';
+import 'package:harbor_example/showcase_wide/wide.dart';
 
 import 'showcase_stamp.dart';
 
 final String? _out = Platform.environment['SHOWCASE_OUT'];
+
+/// Which video: the phone tour unless SHOWCASE_CUT names the wide one.
+final ShowcaseCut _cut = ShowcaseCut.values.firstWhere(
+  (final ShowcaseCut cut) => cut.directory == (Platform.environment['SHOWCASE_CUT'] ?? 'showcase'),
+  orElse: () => throw StateError('SHOWCASE_CUT must be one of ${ShowcaseCut.values.map((final ShowcaseCut c) => c.directory)}'),
+);
+
+double get _duration => _cut == ShowcaseCut.wide ? WideTimeline.duration : ShowcaseTimeline.duration;
+
+Widget _video(final double t) => _cut == ShowcaseCut.wide ? WideShowcase(time: t) : HarborShowcase(time: t);
 
 /// flutter_test draws text in a box font unless real fonts are loaded under the names used.
 Future<void> _loadFonts() async {
@@ -69,14 +82,14 @@ void main() {
           key: boundary,
           child: ValueListenableBuilder<double>(
             valueListenable: time,
-            builder: (final BuildContext context, final double t, final Widget? _) => HarborShowcase(time: t),
+            builder: (final BuildContext context, final double t, final Widget? _) => _video(t),
           ),
         ),
       ),
     );
 
     final Duration step = Duration(microseconds: 1000000 ~/ fps);
-    final int frames = (ShowcaseTimeline.duration * fps).floor();
+    final int frames = (_duration * fps).floor();
     for (int i = 0; i < frames; i++) {
       final double t = i / fps;
       // Two pumps: the first lays out half a frame early, the second at the frame's time, which
@@ -110,7 +123,7 @@ void main() {
     // test/showcase_media_test.dart can tell when the committed video goes stale. Stills are not a
     // video, so only a full recording stamps.
     if (stills == null) {
-      stampFile(Directory.current.path).writeAsStringSync('${showcaseStamp(Directory.current.path)}\n');
+      stampFile(Directory.current.path, _cut).writeAsStringSync('${showcaseStamp(Directory.current.path, _cut)}\n');
     }
   }, skip: _out == null);
 }

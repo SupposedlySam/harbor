@@ -21,9 +21,12 @@
 
 import 'dart:io';
 
-/// The README's videos. Each has its own sources, stamp and media under doc/media.
+/// The README's two videos: the phone tour and the wide-format one. Each has its own sources,
+/// stamp and media under doc/media.
 enum ShowcaseCut {
-  phone('showcase', <String>[]);
+  phone('showcase', <String>[]),
+  // The wide video reuses these from the phone tour, so a change to them changes it too.
+  wide('showcase_wide', <String>['caption.dart', 'narration.dart', 'phone.dart', 'plates.dart', 'timeline.dart']);
 
   const ShowcaseCut(this.directory, this.sharedFromPhone);
 
