@@ -34,7 +34,8 @@ class HarborSheetExtent with Diagnosticable {
   /// The taller snap and the ceiling.
   final double max;
 
-  /// The drag floor; dragged to it, or flung down past the lowest snap, the sheet closes.
+  /// The drag floor; dragged to it, or flung down past the lowest snap faster
+  /// than [HarborSheet.closeFlingVelocity], the sheet closes.
   final double min;
 
   final bool snap;
@@ -106,7 +107,9 @@ class HarborSheet extends StatelessWidget {
     this.contentBuilder,
     this.clip,
     this.dragToClose = false,
-  }) : builder = null,
+    this.closeFlingVelocity = 700.0,
+  }) : assert(closeFlingVelocity >= 0.0),
+       builder = null,
        extent = null,
        controller = null,
        expand = true;
@@ -135,7 +138,9 @@ class HarborSheet extends StatelessWidget {
     this.debugLabel,
     this.contentBuilder,
     this.clip,
-  }) : body = null,
+    this.closeFlingVelocity = 700.0,
+  }) : assert(closeFlingVelocity >= 0.0),
+       body = null,
        maxExtentFraction = null,
        dragToClose = false;
 
@@ -188,6 +193,22 @@ class HarborSheet extends StatelessWidget {
   /// always closes when dragged below its floor.
   final bool dragToClose;
 
+  /// How fast a fling down, in logical pixels per second, closes the sheet:
+  /// 700 by default, the speed at which a Material `BottomSheet` closes. A
+  /// slower fling settles the sheet instead.
+  ///
+  /// A content-sized sheet with [dragToClose] closes on a faster fling from
+  /// any height, and when let go under half shown, as a modal bottom sheet
+  /// does. A draggable sheet closes on a faster fling on its header from its
+  /// lowest snap; a slower one goes back to that snap. A fling on its header
+  /// faster than 1200, or than this if it is higher, closes it from any height.
+  /// [double.infinity] leaves only the floor to close it.
+  ///
+  /// A fling on a draggable sheet's list is [DraggableScrollableSheet]'s own,
+  /// as it is in a modal bottom sheet: it goes to the next snap size its way,
+  /// and from the lowest to the floor, which closes the sheet, at any speed.
+  final double closeFlingVelocity;
+
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -211,6 +232,7 @@ class HarborSheet extends StatelessWidget {
     properties.add(ObjectFlagProperty<TransitionBuilder>.has('contentBuilder', contentBuilder));
     properties.add(DiagnosticsProperty<ShapeBorder>('clip', clip, defaultValue: null));
     properties.add(FlagProperty('dragToClose', value: dragToClose, ifTrue: 'drag to close'));
+    properties.add(DoubleProperty('closeFlingVelocity', closeFlingVelocity, defaultValue: 700.0, unit: 'px/s'));
   }
 
   /// Closes the sheet [context] is in, whichever way it was opened, and
@@ -282,7 +304,7 @@ class HarborSheet extends StatelessWidget {
     return GestureDetector(
       onVerticalDragStart: (final DragStartDetails _) => host?.host.dragStart(),
       onVerticalDragUpdate: (final DragUpdateDetails details) => host?.host.dragBy(details.primaryDelta ?? 0.0),
-      onVerticalDragEnd: (final DragEndDetails details) => host?.host.dragEnd(details.primaryVelocity ?? 0.0),
+      onVerticalDragEnd: (final DragEndDetails details) => host?.host.dragEnd(details.primaryVelocity ?? 0.0, closeFlingVelocity),
       child: sheet,
     );
   }
@@ -307,6 +329,12 @@ class HarborSheet extends StatelessWidget {
     return sheet;
   }
 }
+
+// A fling on a draggable sheet's header faster than this goes to the next snap its way.
+const double _snapFlingVelocity = 400.0;
+
+// A fling down on a draggable sheet's header faster than this closes it from any height.
+const double _closeFromAnyHeightVelocity = 1200.0;
 
 class _DraggableSheetBody extends StatefulWidget {
   const _DraggableSheetBody({required this.sheet, required this.extent});
@@ -349,19 +377,24 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     final double velocity = details.primaryVelocity ?? 0.0;
     final double size = _controller.size;
     final bool closes = _extent.shouldCloseOnMinExtent;
-    if (closes && (size <= _extent.min + 0.001 || velocity > 1200)) {
+    final double closeFling = widget.sheet.closeFlingVelocity;
+    if (closes && (size <= _extent.min + 0.001 || velocity > math.max(_closeFromAnyHeightVelocity, closeFling))) {
       _close();
       return;
     }
     double target = size;
     if (_extent.snap) {
-      // As a dragged list snaps: a fling goes to the next size its way, the
-      // floor past the lowest, and a slow release to the nearest.
+      // As a dragged list snaps: a fling goes to the next size its way, and a
+      // slow release to the nearest. Past the lowest, a fling goes to the
+      // floor, and so closes the sheet only when faster than closeFlingVelocity.
       final List<double> snaps = _extent._snaps;
-      if (velocity < -400) {
+      final Iterable<double> lower = snaps.where((final double snap) => snap < size - 0.001);
+      if (velocity < -_snapFlingVelocity) {
         target = snaps.firstWhere((final double snap) => snap > size + 0.001, orElse: () => snaps.last);
-      } else if (velocity > 400) {
-        target = snaps.lastWhere((final double snap) => snap < size - 0.001, orElse: () => _extent.min);
+      } else if (velocity > _snapFlingVelocity && lower.isNotEmpty) {
+        target = lower.last;
+      } else if (lower.isEmpty && velocity > (closes ? closeFling : _snapFlingVelocity)) {
+        target = _extent.min;
       } else {
         target = snaps.reduce((final double a, final double b) => (size - a).abs() <= (size - b).abs() ? a : b);
       }
@@ -781,7 +814,7 @@ class _SheetHost {
     slide.value -= delta / _height;
   }
 
-  void dragEnd(final double velocity) {
+  void dragEnd(final double velocity, final double closeFlingVelocity) {
     final AnimationController? slide = this.slide;
     if (slide == null) {
       return;
@@ -789,7 +822,7 @@ class _SheetHost {
     // On from where the finger let go, along the curve for what is left of the way.
     _follow(Split(slide.value, endCurve: _curve), Split(slide.value, endCurve: _reverseCurve));
     // As a modal bottom sheet has it: a fling down, or let go under half shown.
-    if (velocity > 700 || slide.value < 0.5) {
+    if (velocity > closeFlingVelocity || slide.value < 0.5) {
       close?.call();
     } else {
       unawaited(slide.forward());
