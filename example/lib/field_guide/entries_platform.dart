@@ -136,6 +136,13 @@ class _CoastEntryState extends State<CoastEntry> {
     // No focus, the whole phone: the coast is at the bottom as well as the top, and the Home indicator
     // switch changes only the bottom.
     className: 'HarborCoast',
+    tryThis: const <TryStep>[
+      TryStep('Open The stage and switch off Status bar', 'The top sand band goes and the header moves up to the top: ambient takes the coast the platform reports.'),
+      TryStep('Pick coast: HarborCoast.fixed(...)', 'The coast is 24 top and bottom though Status bar is still off: fixed says what the coast is, whatever the device reports.'),
+      TryStep('Pick HarborCoast.ambient and iPhone 17 landscape', 'Sand bands appear down both sides and the bar sits 21 up: ambient follows the landscape phone\'s side insets.'),
+      TryStep('Pick coast: HarborCoast.none', 'Every band goes and the header and bar sit on the glass: none has no coast, for a frame that must look the same anywhere.'),
+      TryStep('Tap the keyboard button under the tide gauge', 'The rows don\'t make way: none has no tide either, though Readings still show the stage\'s keyboard.'),
+    ],
     realWorld:
         'The coast is the land at the water’s edge: cliffs, beaches and rocks. However fine the harbor, no boat can '
         'moor on the cliffs; the sea simply stops there.',
@@ -329,6 +336,12 @@ class _TitleSafeEntryState extends State<TitleSafeEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborCoast.titleSafe',
+    tryThis: const <TryStep>[
+      TryStep('Slide fraction % to 10', 'The brass line moves in to 10% and the header and HarborMoored card follow it: docks and moored content keep clear.'),
+      TryStep('Slide fraction % to 0', 'The line reaches the edges and the card sits in the corner: a TV reports no insets of its own.'),
+      TryStep('Pick HarborTitleSafe: fixed start 96', 'The left band widens to 96 while the others stay 48 and 27: .fixed gives a band per edge.'),
+      TryStep('Open The stage and switch on Right-to-left', 'The wide band moves to the right and the card with it: the start edge follows the reading direction.'),
+    ],
     device: StageDevice.television,
     tide: false,
     realWorld:
@@ -466,6 +479,11 @@ class _ScaleModelEntryState extends State<ScaleModelEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborScaleModel',
+    tryThis: const <TryStep>[
+      TryStep('Pick letterbox: night', 'The bars above and below the TV turn dark navy: the letterbox fills what the 16:9 model leaves of the phone.'),
+      TryStep('Open The stage and pick Device: iPhone 17 landscape', 'The model is pillarboxed now, and Readings show the home indicator reaching it, scaled up to B 35 inside the model.'),
+      TryStep('Switch on coast: titleSafe(0.05)', 'The TV\'s header and rail move in from its edges: the model adds its own title-safe coast to what reaches it.'),
+    ],
     realWorld:
         'A ship in a bottle is a whole ship built at a fixed small scale and slipped through the neck. Every mast and '
         'sail keeps its proportions, and the world outside the glass never touches it.',
@@ -627,6 +645,11 @@ class _EdgeEntryState extends State<EdgeEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborEdge',
+    tryThis: const <TryStep>[
+      TryStep('Open The stage and switch on Right-to-left', 'The red port light moves to the right and the green to the left: start and end follow the reading direction.'),
+      TryStep('Pick Device: iPhone 17 landscape', 'Each side dock reaches the glass and holds its light past the 62-point inset: side docks absorb the coast too.'),
+      TryStep('Pick side docks: HarborDock.pier', 'The body widens under both lights, but its text still keeps clear of them: piers on start and end, like top and bottom.'),
+    ],
     realWorld:
         'A ship shows a red running light on her port side and a green one to starboard. Port and starboard belong to '
         'the ship, not to whoever is watching: turn her around and the red light is still on her port side.',
@@ -815,6 +838,12 @@ class _ChartEntryState extends State<ChartEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborChart',
+    tryThis: const <TryStep>[
+      TryStep('Tap the keyboard button under the tide gauge', 'A blue band covers the keyboard: the chart draws the tide over the teal piers and sand quays.'),
+      TryStep('Switch on breakwater sheet', 'A sheet opens and its harbor joins the chart and the Readings\' list: every harbor on screen is charted.'),
+      TryStep('Switch off list HarborChart.snapshot', 'The listing leaves Readings: it was HarborChart.snapshot(context), the same data the overlay draws.'),
+      TryStep('Open The stage and switch off HarborChartOverlay', 'The shading goes but nothing moves: the overlay is a debug drawing over the layout, not part of it.'),
+    ],
     settings: _settings,
     realWorld:
         'A nautical chart shows a harbor from above: where the land is, how deep the water runs (the soundings), where '
@@ -989,6 +1018,12 @@ class _SeaTrialEntryState extends State<SeaTrialEntry> {
     // No focus, the whole phone: a device chip changes the whole screen, and the readout of its size, coast
     // and waterline is at the top, with the keyboard and the composer at the bottom.
     className: 'pumpSeaTrial',
+    tryThis: const <TryStep>[
+      TryStep('Tap the keyboard button under the tide gauge', 'The composer rides up to the red waterline and the readout says tideIn true: what trial.raiseTide() does in a test.'),
+      TryStep('Open The stage and pick Device: iPhone SE', 'The readout and the code card switch to HarborTrialDevice.iPhoneSE, with its own size, coast and waterline.'),
+      TryStep('Pick Device: iPhone 17 landscape', 'A short keyboard on a short screen: the waterline is 202, and the composer still rides it.'),
+      TryStep('Lower the tide and switch off Home indicator', 'The composer drops to the bottom edge: a floating dock sits on the home indicator until the keyboard comes.'),
+    ],
     settings: _settings,
     realWorld:
         'Before a new ship is handed over she goes out on sea trials: flags flying, a tug standing by, she is run at '
@@ -1274,6 +1309,12 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborWakePainter',
+    tryThis: const <TryStep>[
+      TryStep('Scroll the rows up under the header', 'The rows fade at the header but the moon and stars behind them stay sharp: with no wakePainter, a fairway fades its rows.'),
+      TryStep('Pick wakePainter: HarborWakeMask.alphaWake', 'Now the night sky fades under the header too: alphaWake fades the whole body, background and all.'),
+      TryStep('Pick wakePainter: tintedWake (your own)', 'A brass haze lies over the band instead of a fade: your own painter is handed each band\'s dockEdge and wakeEnd.'),
+      TryStep('Slide length to 48', 'The haze now reaches 48 past the header: length sets wakeEnd, and the painter draws the new band.'),
+    ],
     focus: const StageFocus.top(440),
     realWorld:
         'A moving boat leaves a wake: a V of waves spreading out behind her at the same angle whatever her size, '
