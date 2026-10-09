@@ -228,6 +228,23 @@ Each one **casts off** what it cleared, so nothing beneath clears it again.
 `HarborCastOff` does the same for a layer you pad by hand, and
 `HarborFairway.paddingOf` gives a third-party list the right scroll padding.
 
+A third-party list that reads only `MediaQuery.padding` (a chat list, a feed)
+already gets, in a harbor's body, the larger of the coast and the docks on every
+edge. What it misses is the wake, reveal widening, the mooring line, `minimum`
+and, under `bodyClearsTide: false`, the keyboard. Give it
+`HarborFairway.paddingOf(context)` if it takes a padding; otherwise rewrite
+`MediaQuery` around it yourself, with `MediaQuery.of(context).copyWith(padding: ...)`.
+That rewrites Flutter's `MediaQuery`, not harbor's waters, so nothing drifts from
+harbor's measurements. Harbor itself never puts the keyboard into `padding`.
+
+A fairway under a header it does not own, which already cleared the top, goes
+in `HarborCastOff(edges: {HarborEdge.top})`: on that edge `MediaQuery` and the
+waters read zero, so the fairway's first row, the cover its pinned sliver docks
+pin at and its reveals all leave the top alone, as a `Scaffold`'s body does
+under its app bar. `{HarborEdge.bottom}` does the same for a list that stops
+short of the bottom of the screen. To start the first sliver under the header
+instead, use `startsInOpenWater` (below).
+
 A layer that pads by the coast alone (a page's safe-area margin, read from
 `HarborWaters.of(context).coast`) casts off the coast and keeps the docks with
 `HarborCastOff(edges: {HarborEdge.bottom}, docks: false)`. A list inside it
@@ -259,8 +276,10 @@ lines up under a frosted header. It holds still while the keyboard moves. It
 reads zero inside a fairway, which has cast its ends off; start the fairway in
 open water to lay artwork under the header.
 
-`HarborMoored(clear: HarborClear.coast)` keeps clear of the coast alone: a hero
-title under a translucent header that must not touch the status bar.
+`HarborMoored(clear: HarborClear.coast)` keeps clear of the coast alone, without
+the keyboard: a hero title under a translucent header that must not touch the
+status bar. To keep clear of the coast and the keyboard but not a header, moor
+the bottom edge alone: the header is on the top edge, so it is left to the page.
 `follow: HarborFollow.resting` holds still while a dock grows over it.
 `HarborFairway(startsInOpenWater: true)` starts its first sliver at the frame's
 edge, under the docks, for a hero that runs under a translucent header. That
@@ -282,10 +301,6 @@ sliver starts clear of the leading ones. `anchor:` is the one that reads
 differently: it is a fraction of the water between the docks, not of the
 viewport that runs under them, so `anchor: 1` puts the center on a composer's
 face and lifts it with the keyboard.
-
-`clear: HarborClear.coast` keeps clear of the coast alone, without the keyboard.
-To keep clear of the coast and the keyboard but not a header, moor the bottom
-edge alone: the header is on the top edge, so it is left to the page.
 
 Fairways also draw the wake: their content fades as it sails under a dock with
 a fade wake, while open water (a background, a hero) is left as it is. Give a

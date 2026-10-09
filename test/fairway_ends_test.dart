@@ -406,4 +406,29 @@ void main() {
       expect(_rect(tester, 'row29').bottom, 667);
     });
   });
+
+  // The README's answer to #58, held: no per-end flags, a cast-off around the fairway.
+  // Breaks if: a fairway's spacer or cover keeps a top that a cast-off above it zeroed.
+  testWidgets("in a cast-off of the top, a fairway leaves the top to the header that already cleared it", (final tester) async {
+    await tester.pumpSeaTrial(
+      _app(
+        Harbor(
+          top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(length: 12), child: _bar('header', 50))],
+          body: HarborCastOff(
+            edges: const <HarborEdge>{HarborEdge.top},
+            child: HarborFairway(
+              slivers: <Widget>[
+                const SliverToBoxAdapter(child: SizedBox(height: 200)),
+                HarborSliverDock(child: _bar('pinned', 40)),
+                _rows(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(_rect(tester, 'pinned').top, 200, reason: 'the first sliver starts at the top');
+    await _scrollBy(tester, -600);
+    expect(_rect(tester, 'pinned').top, 0, reason: 'the cover is zero too');
+  });
 }
