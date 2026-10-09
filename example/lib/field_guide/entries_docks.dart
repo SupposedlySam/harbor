@@ -202,8 +202,8 @@ class _QuayEntryState extends State<QuayEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
+    // No focus, the whole phone: its switches take away the top quay as well as the bottom one.
     className: 'HarborDock.quay',
-    focus: const StageFocus.bottom(440),
     realWorld:
         'A quay is a stone wall built on the shore, with bollards along its edge. Boats lie alongside it; the water '
         'starts where the stone ends, and nothing sails underneath.',
@@ -352,7 +352,9 @@ class _AssertCard extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => HarborMoored(
     mooringLine: true,
-    child: Center(
+    // On the bottom edge, where the docks it refuses would be, so the page's bottom view shows it.
+    child: Align(
+      alignment: Alignment.bottomCenter,
       child: Container(
         key: const ValueKey<String>('assert card'),
         padding: const EdgeInsets.all(16),

@@ -610,6 +610,11 @@ void main() {
       await _tapKey(tester, 'tabBar: pier');
       await _showStage(tester);
       expect(find.byKey(const ValueKey<String>('assert card')), findsOneWidget);
+      // It sits in the bottom 480 the page focuses on, not off the top of that view.
+      final (:Rect screen, :double scale) = _screen(tester);
+      final Rect card = _rect(tester, 'assert card');
+      expect(card.top, greaterThanOrEqualTo(screen.bottom - 480 * scale));
+      expect(card.bottom, lessThanOrEqualTo(screen.bottom));
       expect(find.byKey(const ValueKey<String>('composer')), findsNothing);
       expect(_code(tester), endsWith('// Asserts: a quay listed inside a pier.'));
       await _tapKey(tester, 'tabBar: quay');
