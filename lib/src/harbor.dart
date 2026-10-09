@@ -139,6 +139,18 @@ class Harbor extends StatefulWidget {
   /// This harbor's name on a chart.
   final String? debugLabel;
 
+  /// The handle of the nearest harbor above [context], as `Scaffold.of`
+  /// returns the nearest `ScaffoldState`. Throws a [FlutterError], in release
+  /// builds too, when there is none; [maybeOf] returns null instead.
+  ///
+  /// It does not make [context] depend on the harbor: read it in a callback
+  /// or a lifecycle method, not to decide what to build.
+  static HarborController of(final BuildContext context) =>
+      HarborController.maybeOf(context) ?? (throw harborNotFound(context, 'Harbor'));
+
+  /// The handle of the nearest harbor above [context], or null when there is none.
+  static HarborController? maybeOf(final BuildContext context) => HarborController.maybeOf(context);
+
   @override
   State<Harbor> createState() => _HarborState();
 

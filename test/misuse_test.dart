@@ -48,6 +48,27 @@ void main() {
     );
   });
 
+  // Breaks if: Harbor.of points a reader at HarborController's methods, or stops throwing.
+  testWidgets('Harbor.of with no harbor above says to use Harbor.maybeOf', (final tester) async {
+    late BuildContext bare;
+    await tester.pumpWidget(
+      Builder(
+        builder: (final BuildContext c) {
+          bare = c;
+          return const SizedBox();
+        },
+      ),
+    );
+    expect(
+      () => Harbor.of(bare),
+      throwsA(
+        isA<FlutterError>()
+            .having((final FlutterError e) => e.toStringDeep(), 'message', contains('Harbor.of() called'))
+            .having((final FlutterError e) => e.toStringDeep(), 'message', contains('call Harbor.maybeOf()')),
+      ),
+    );
+  });
+
   testWidgets('a harbor given unbounded height names itself and says to hug its body', (final tester) async {
     final List<FlutterErrorDetails> errors = await _errorsWhile(
       () => tester.pumpSeaTrial(

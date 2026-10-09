@@ -26,6 +26,7 @@ export 'src/controller.dart'
         HarborDockRecord,
         HarborFleet,
         HarborLayoutRecord,
+        HarborPontoonHandle,
         HarborSignalClosedReason,
         HarborSignalEntry,
         HarborSignalTransitionBuilder,

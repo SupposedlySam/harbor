@@ -82,12 +82,14 @@ enum HarborSignalClosedReason {
   remove,
 }
 
-/// A transient buoy raised by `HarborSignals.raise`.
+/// A transient buoy raised by `HarborSignals.raise`, which returns it.
 ///
 /// Signals raised at the same alignment in one harbor take turns, as a
 /// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
 /// it has been lowered and has run its exit.
 class HarborSignalEntry {
+  /// Signals are raised with `HarborSignals.raise`.
+  @internal
   HarborSignalEntry({
     required this.builder,
     required this.alignment,
@@ -150,8 +152,14 @@ class HarborSignalEntry {
   /// rectangle boxed the signal into a foldable's cover screen after the device opened. The
   /// rectangle from the raise is the fallback once that harbor has gone.
   Rect? get avoidInGlobal => raisedIn?.clearWaterInGlobal() ?? _avoidAtRaise;
-  final ValueNotifier<bool> showing = ValueNotifier<bool>(true);
-  HarborController? owner;
+
+  /// Whether the signal is still up: false from the moment it is lowered.
+  ValueListenable<bool> get showing => _showing;
+  final ValueNotifier<bool> _showing = ValueNotifier<bool>(true);
+
+  /// The harbor showing the signal.
+  HarborController? get owner => _owner;
+  HarborController? _owner;
 
   final Completer<HarborSignalClosedReason> _closed = Completer<HarborSignalClosedReason>();
   HarborSignalClosedReason? _reason;
@@ -162,9 +170,9 @@ class HarborSignalEntry {
 
   /// Lowers the signal. The first [reason] given is the one [closed] reports.
   void lower({final HarborSignalClosedReason reason = HarborSignalClosedReason.lower}) {
-    if (showing.value) {
+    if (_showing.value) {
       _reason = reason;
-      showing.value = false;
+      _showing.value = false;
     }
   }
 
@@ -287,11 +295,14 @@ class HarborFleet {
 
 /// A harbor's handle on itself, for its docks, its content and its neighbors.
 ///
-/// Get it with [HarborController.of]. Claims, pontoons and breakwaters
-/// registered here change what the harbor builds; they are applied on the
-/// next frame when they arrive during one.
+/// Get it with `Harbor.of`, as a `Scaffold`'s is got with `Scaffold.of`. The
+/// harbor makes it; claims, pontoons and breakwaters registered here change
+/// what the harbor builds, and are applied on the next frame when they arrive
+/// during one.
 class HarborController {
-  HarborController({required this.parent, required this.fleet, required this.isPort, this.debugLabel});
+  /// Made by the harbor it belongs to.
+  @internal
+  HarborController({required this.parent, required this.fleet, required this.isPort, this._debugLabel});
 
   /// The harbor this one sits in, if any.
   final HarborController? parent;
@@ -303,16 +314,27 @@ class HarborController {
   /// with [isRouteLevel] instead.
   final bool isPort;
 
-  String? debugLabel;
+  /// This harbor's name on a chart.
+  String? get debugLabel => _debugLabel;
+  @internal
+  set debugLabel(final String? value) => _debugLabel = value;
+  String? _debugLabel;
 
   /// Called when something registered here changes what the harbor builds.
+  @internal
   VoidCallback? onChanged;
 
-  /// Docks this harbor has, by edge; kept up to date by the harbor.
-  Set<HarborEdge> dockedEdges = <HarborEdge>{};
+  /// The edges this harbor has docks on.
+  Set<HarborEdge> get dockedEdges => Set<HarborEdge>.unmodifiable(_dockedEdges);
+  @internal
+  set dockedEdges(final Set<HarborEdge> value) => _dockedEdges = value;
+  Set<HarborEdge> _dockedEdges = <HarborEdge>{};
 
   /// The route this harbor is in, if any.
-  ModalRoute<Object?>? route;
+  ModalRoute<Object?>? get route => _route;
+  @internal
+  set route(final ModalRoute<Object?>? value) => _route = value;
+  ModalRoute<Object?>? _route;
 
   /// Whether this is the first harbor of its route, or sits right on the sea:
   /// a port signals can go to.
@@ -321,14 +343,31 @@ class HarborController {
     return parent == null || parent.parent == null || !identical(route, parent.route);
   }
 
+  /// The last layout, in this harbor's coordinates.
+  @Deprecated(
+    'Read HarborChart.nearest(context), which has the same rectangles in global coordinates, or listen to '
+    'clearWater. This getter goes in a later release.',
+  )
+  HarborLayoutRecord? get lastLayout => _layoutRecord;
+
+  /// The render object of the harbor.
+  @Deprecated(
+    'Read HarborChart.nearest(context) for the harbor\'s rectangles in global coordinates, or clearWaterInGlobal(). '
+    'This getter goes in a later release.',
+  )
+  RenderBox? get renderBox => layoutBox;
+
   /// The last layout, for charts and for overlays that need the clear water.
-  HarborLayoutRecord? lastLayout;
+  @internal
+  HarborLayoutRecord? get layoutRecord => _layoutRecord;
+  HarborLayoutRecord? _layoutRecord;
 
   /// The render object of the harbor, to map the last layout into global coordinates.
-  RenderBox? renderBox;
+  @internal
+  RenderBox? layoutBox;
 
   final List<HarborClaim> _claims = <HarborClaim>[];
-  final List<_Pontoon> _pontoons = <_Pontoon>[];
+  final List<HarborPontoonHandle> _pontoons = <HarborPontoonHandle>[];
   final List<HarborBreakwater> _breakwaters = <HarborBreakwater>[];
   final List<HarborSignalEntry> _signals = <HarborSignalEntry>[];
   final Map<HarborSignalEntry, VoidCallback> _signalListeners = <HarborSignalEntry, VoidCallback>{};
@@ -341,31 +380,14 @@ class HarborController {
 
   /// The nearest harbor above [context]. Throws a [FlutterError], in release
   /// builds too, when there is none; [maybeOf] returns null instead.
-  static HarborController of(final BuildContext context) {
-    final HarborController? controller = maybeOf(context);
-    if (controller != null) {
-      return controller;
-    }
-    throw FlutterError.fromParts(<DiagnosticsNode>[
-      ErrorSummary('HarborController.of() called with a context that has no Harbor above it.'),
-      ErrorDescription(
-        'No Harbor ancestor could be found starting from the context that was passed to HarborController.of(). '
-        'This usually happens when the context is from the widget whose build method creates the Harbor, '
-        'or when the widget is outside every HarborSea.',
-      ),
-      ErrorHint(
-        'Use a Builder, or a widget of its own, below the Harbor to get a context inside it. '
-        'For a widget that may be used outside a harbor, call HarborController.maybeOf() and handle null.',
-      ),
-      context.describeElement('The context used was'),
-    ]);
-  }
+  static HarborController of(final BuildContext context) =>
+      maybeOf(context) ?? (throw harborNotFound(context, 'HarborController'));
 
   /// The nearest harbor, from this one outward, that has a dock on [edge].
   HarborController? withDockOn(final HarborEdge edge) {
     HarborController? candidate = this;
     while (candidate != null) {
-      if (candidate.dockedEdges.contains(edge)) {
+      if (candidate._dockedEdges.contains(edge)) {
         return candidate;
       }
       candidate = candidate.parent;
@@ -410,25 +432,28 @@ class HarborController {
 
   // Pontoons.
 
-  Object addPontoon(final HarborEdge edge, final HarborDock dock) {
-    final _Pontoon pontoon = _Pontoon(edge, dock);
+  /// Moors [dock] on [edge] of this harbor, as a [HarborPontoon] does, until
+  /// the returned handle is given to [removePontoon].
+  HarborPontoonHandle addPontoon(final HarborEdge edge, final HarborDock dock) {
+    final HarborPontoonHandle pontoon = HarborPontoonHandle._(edge, dock);
     _pontoons.add(pontoon);
     _changed();
     return pontoon;
   }
 
-  void updatePontoon(final Object handle, final HarborEdge edge, final HarborDock dock) {
-    final _Pontoon pontoon = handle as _Pontoon;
-    if (pontoon.edge == edge && identical(pontoon.dock, dock)) {
+  /// Moves the pontoon [handle] stands for to [edge] and rebuilds it as [dock].
+  void updatePontoon(final HarborPontoonHandle handle, final HarborEdge edge, final HarborDock dock) {
+    if (handle._edge == edge && identical(handle._dock, dock)) {
       return;
     }
-    pontoon
-      ..edge = edge
-      ..dock = dock;
+    handle
+      .._edge = edge
+      .._dock = dock;
     _changed();
   }
 
-  void removePontoon(final Object handle) {
+  /// Takes the pontoon [handle] stands for out of this harbor.
+  void removePontoon(final HarborPontoonHandle handle) {
     if (_pontoons.remove(handle)) {
       _changed();
     }
@@ -436,8 +461,8 @@ class HarborController {
 
   /// Docks moored here from deeper in the tree, by edge, in arrival order.
   List<HarborDock> pontoonsOn(final HarborEdge edge) => <HarborDock>[
-    for (final _Pontoon p in _pontoons)
-      if (p.edge == edge) p.dock,
+    for (final HarborPontoonHandle p in _pontoons)
+      if (p._edge == edge) p._dock,
   ];
 
   // Breakwaters.
@@ -500,7 +525,7 @@ class HarborController {
   List<HarborSignalEntry> get signals => List<HarborSignalEntry>.unmodifiable(_signals);
 
   void _raiseSignal(final HarborSignalEntry signal) {
-    signal.owner = this;
+    signal._owner = this;
     _signals.add(signal);
     void lowered() {
       if (signal.showing.value) {
@@ -552,10 +577,13 @@ class HarborController {
   }
 
   /// Raises [signal] on this harbor.
+  @internal
   void raiseSignal(final HarborSignalEntry signal) => _raiseSignal(signal);
 
   // Lifecycle.
 
+  /// Called by the harbor as it mounts.
+  @internal
   void join() => fleet._join(this);
 
   final List<VoidCallback> _leaveListeners = <VoidCallback>[];
@@ -565,6 +593,8 @@ class HarborController {
 
   void removeLeaveListener(final VoidCallback listener) => _leaveListeners.remove(listener);
 
+  /// Called by the harbor as it leaves the tree.
+  @internal
   void leave() {
     for (final VoidCallback listener in List<VoidCallback>.of(_leaveListeners)) {
       listener();
@@ -605,15 +635,16 @@ class HarborController {
   ValueListenable<Rect> get clearWater => _clearWater;
 
   /// Called by the harbor's layout.
+  @internal
   void recordLayout(final HarborLayoutRecord record) {
-    lastLayout = record;
+    _layoutRecord = record;
     if (_clearWater.value == record.clearWater || _clearWaterPending) {
       return;
     }
     _clearWaterPending = true;
     SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
       _clearWaterPending = false;
-      final HarborLayoutRecord? latest = lastLayout;
+      final HarborLayoutRecord? latest = _layoutRecord;
       if (latest != null) {
         _clearWater.value = latest.clearWater;
       }
@@ -622,8 +653,8 @@ class HarborController {
 
   /// The water nothing covers, in global coordinates, from the last layout.
   Rect? clearWaterInGlobal() {
-    final RenderBox? box = renderBox;
-    final HarborLayoutRecord? layout = lastLayout;
+    final RenderBox? box = layoutBox;
+    final HarborLayoutRecord? layout = _layoutRecord;
     if (box == null || layout == null || !box.attached || !box.hasSize) {
       return null;
     }
@@ -631,11 +662,19 @@ class HarborController {
   }
 }
 
-class _Pontoon {
-  _Pontoon(this.edge, this.dock);
+/// A dock moored on a harbor by [HarborController.addPontoon]; give it to
+/// [HarborController.updatePontoon] and [HarborController.removePontoon].
+class HarborPontoonHandle {
+  HarborPontoonHandle._(this._edge, this._dock);
 
-  HarborEdge edge;
-  HarborDock dock;
+  HarborEdge _edge;
+  HarborDock _dock;
+
+  /// The edge the pontoon is moored on.
+  HarborEdge get edge => _edge;
+
+  /// The dock it is moored as.
+  HarborDock get dock => _dock;
 }
 
 class _BreakwaterNotifier extends ChangeNotifier {
@@ -664,3 +703,19 @@ class HarborFleetScope extends InheritedWidget {
   @override
   bool updateShouldNotify(final HarborFleetScope oldWidget) => fleet != oldWidget.fleet;
 }
+
+/// The error `of` throws when no harbor is above [context], naming [owner]'s
+/// `of` and `maybeOf`, as `Scaffold.of` names its own.
+FlutterError harborNotFound(final BuildContext context, final String owner) => FlutterError.fromParts(<DiagnosticsNode>[
+  ErrorSummary('$owner.of() called with a context that has no Harbor above it.'),
+  ErrorDescription(
+    'No Harbor ancestor could be found starting from the context that was passed to $owner.of(). '
+    'This usually happens when the context is from the widget whose build method creates the Harbor, '
+    'or when the widget is outside every HarborSea.',
+  ),
+  ErrorHint(
+    'Use a Builder, or a widget of its own, below the Harbor to get a context inside it. '
+    'For a widget that may be used outside a harbor, call $owner.maybeOf() and handle null.',
+  ),
+  context.describeElement('The context used was'),
+]);

@@ -142,6 +142,97 @@ void main() {
     });
   });
 
+  group('The handle', () {
+    Future<({BuildContext page, BuildContext component, BuildContext outside})> nested(
+      final WidgetTester tester,
+    ) async {
+      late BuildContext page;
+      late BuildContext component;
+      late BuildContext outside;
+      await tester.pumpSeaTrial(
+        Column(
+          children: <Widget>[
+            _Probe((final BuildContext c) => outside = c, child: const SizedBox(height: 10)),
+            Expanded(
+              child: _app(
+                Harbor(
+                  debugLabel: 'page',
+                  top: <HarborDock>[
+                    HarborDock.pier(
+                      debugLabel: 'header',
+                      child: _Probe((final BuildContext c) => page = c, child: _bar('header', 50)),
+                    ),
+                  ],
+                  body: HarborMoored(
+                    child: Harbor(debugLabel: 'component', body: _Probe((final BuildContext c) => component = c)),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      return (page: page, component: component, outside: outside);
+    }
+
+    // Breaks if: Harbor.of answers with any harbor but the nearest, as Scaffold.of does with its state.
+    testWidgets('Harbor.of and Harbor.maybeOf find the nearest harbor', (final tester) async {
+      final (:BuildContext page, :BuildContext component, :BuildContext outside) = await nested(tester);
+      expect(Harbor.of(component), same(HarborController.of(component)));
+      expect(Harbor.of(page), same(HarborController.of(page)));
+      expect(Harbor.of(component), isNot(same(Harbor.of(page))));
+      expect(Harbor.maybeOf(component), same(Harbor.of(component)));
+      expect(Harbor.maybeOf(outside), isNull);
+    });
+
+    // Breaks if: the chart of the nearest harbor is not in global coordinates, or is some other
+    // harbor's.
+    testWidgets('HarborChart.nearest reads the nearest harbor in global coordinates', (final tester) async {
+      final (:BuildContext page, :BuildContext component, :BuildContext outside) = await nested(tester);
+      final HarborChartEntry pageChart = HarborChart.nearest(page)!;
+      expect(pageChart.label, 'page');
+      final HarborDockRecord header = pageChart.docks.single;
+      expect(header.label, 'header');
+      // The dock's ground runs from the top of the screen, 10 below the probe above the app.
+      expect(header.rect.top, 10);
+      expect(header.rect.bottom, 10 + _statusBar + 50);
+      expect(pageChart.clearWater, Harbor.of(page).clearWaterInGlobal());
+
+      final HarborChartEntry componentChart = HarborChart.nearest(component)!;
+      expect(componentChart.label, 'component');
+      expect(componentChart.clearWater.top, header.rect.bottom);
+      expect(HarborChart.nearest(outside), isNull);
+    });
+
+    // Breaks if: updatePontoon or removePontoon miss the pontoon its handle stands for.
+    testWidgets('a pontoon added by hand is held by a typed handle', (final tester) async {
+      late BuildContext body;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => body = c))));
+      final HarborController harbor = Harbor.of(body);
+      final HarborPontoonHandle handle = harbor.addPontoon(
+        HarborEdge.top,
+        HarborDock.pier(debugLabel: 'pontoon', child: _bar('pontoon', 40)),
+      );
+      await tester.pumpAndSettle();
+      expect(handle.edge, HarborEdge.top);
+      expect(HarborChart.nearest(body)!.docks.single.edge, HarborEdge.top);
+
+      harbor.updatePontoon(
+        handle,
+        HarborEdge.bottom,
+        HarborDock.quay(debugLabel: 'pontoon', child: _bar('pontoon', 40)),
+      );
+      await tester.pumpAndSettle();
+      expect(handle.edge, HarborEdge.bottom);
+      expect(HarborChart.nearest(body)!.docks.single.edge, HarborEdge.bottom);
+
+      harbor.removePontoon(handle);
+      await tester.pumpAndSettle();
+      expect(HarborChart.nearest(body)!.docks, isEmpty);
+      expect(find.byKey(const ValueKey<String>('pontoon')), findsNothing);
+    });
+  });
+
   group('Breakwaters', () {
     Future<HarborController> page(final WidgetTester tester) async {
       late BuildContext body;

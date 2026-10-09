@@ -76,46 +76,56 @@ abstract final class HarborChart {
     return fleet == null ? const <HarborChartEntry>[] : snapshotOf(fleet);
   }
 
-  static List<HarborChartEntry> snapshotOf(final HarborFleet fleet) {
-    final List<HarborChartEntry> entries = <HarborChartEntry>[];
-    for (final HarborController harbor in fleet.harbors) {
-      final RenderBox? box = harbor.renderBox;
-      final HarborLayoutRecord? layout = harbor.lastLayout;
-      if (box == null || layout == null || !box.attached || !box.hasSize) {
-        continue;
-      }
-      final Matrix4 toGlobal = box.getTransformTo(null);
-      Rect global(final Rect r) => MatrixUtils.transformRect(toGlobal, r);
-      int depth = 0;
-      for (HarborController? p = harbor.parent; p != null; p = p.parent) {
-        depth++;
-      }
-      entries.add(
-        HarborChartEntry(
-          label: harbor.debugLabel ?? 'harbor',
-          depth: depth,
-          frame: global(layout.frame),
-          body: global(layout.body),
-          clearWater: global(layout.clearWater),
-          docks: <HarborDockRecord>[
-            for (final HarborDockRecord d in layout.docks)
-              HarborDockRecord(
-                edge: d.edge,
-                kind: d.kind,
-                rect: global(d.rect),
-                extent: d.extent,
-                restingExtent: d.restingExtent,
-                state: d.state,
-                tide: d.tide,
-                label: d.label,
-              ),
-          ],
-          obstruction: layout.obstruction,
-          tide: layout.tide,
-        ),
-      );
+  static List<HarborChartEntry> snapshotOf(final HarborFleet fleet) => <HarborChartEntry>[
+    for (final HarborController harbor in fleet.harbors)
+      if (_entryOf(harbor) case final HarborChartEntry entry) entry,
+  ];
+
+  /// The harbor nearest [context], as [snapshot] has it: in global
+  /// coordinates, from its last layout. Null when there is no harbor above
+  /// [context] or it has not laid out yet.
+  ///
+  /// This is how a test or a tool reads a harbor's frame, clear water and
+  /// docks, as `flutter_test` reads a widget's place through its render object.
+  static HarborChartEntry? nearest(final BuildContext context) {
+    final HarborController? harbor = HarborController.maybeOf(context);
+    return harbor == null ? null : _entryOf(harbor);
+  }
+
+  static HarborChartEntry? _entryOf(final HarborController harbor) {
+    final RenderBox? box = harbor.layoutBox;
+    final HarborLayoutRecord? layout = harbor.layoutRecord;
+    if (box == null || layout == null || !box.attached || !box.hasSize) {
+      return null;
     }
-    return entries;
+    final Matrix4 toGlobal = box.getTransformTo(null);
+    Rect global(final Rect r) => MatrixUtils.transformRect(toGlobal, r);
+    int depth = 0;
+    for (HarborController? p = harbor.parent; p != null; p = p.parent) {
+      depth++;
+    }
+    return HarborChartEntry(
+      label: harbor.debugLabel ?? 'harbor',
+      depth: depth,
+      frame: global(layout.frame),
+      body: global(layout.body),
+      clearWater: global(layout.clearWater),
+      docks: <HarborDockRecord>[
+        for (final HarborDockRecord d in layout.docks)
+          HarborDockRecord(
+            edge: d.edge,
+            kind: d.kind,
+            rect: global(d.rect),
+            extent: d.extent,
+            restingExtent: d.restingExtent,
+            state: d.state,
+            tide: d.tide,
+            label: d.label,
+          ),
+      ],
+      obstruction: layout.obstruction,
+      tide: layout.tide,
+    );
   }
 
   static HarborFleet? _serviceFleet;

@@ -122,7 +122,7 @@ class HarborPontoon extends StatefulWidget {
 
 class _HarborPontoonState extends State<HarborPontoon> {
   HarborController? _controller;
-  Object? _handle;
+  HarborPontoonHandle? _handle;
 
   @override
   void didChangeDependencies() {
@@ -150,7 +150,7 @@ class _HarborPontoonState extends State<HarborPontoon> {
       _remove();
       return;
     }
-    final Object? handle = _handle;
+    final HarborPontoonHandle? handle = _handle;
     if (handle == null) {
       _handle = controller.addPontoon(widget.edge, widget.dock);
     } else {
@@ -159,7 +159,7 @@ class _HarborPontoonState extends State<HarborPontoon> {
   }
 
   void _remove() {
-    final Object? handle = _handle;
+    final HarborPontoonHandle? handle = _handle;
     if (handle != null) {
       _controller?.removePontoon(handle);
       _handle = null;
