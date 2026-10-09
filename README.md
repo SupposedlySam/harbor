@@ -11,12 +11,12 @@ them a place and a rule, so your content stops doing inset arithmetic.
 > them, or is open water. The tide (the keyboard) rises over whatever doesn't
 > float.**
 
-[![An illustrated harbor beside a phone running harbor. A pier is the header rows scroll under, and a quay is the tab bar the list stops at.](https://raw.githubusercontent.com/SupposedlySam/harbor/main/doc/media/showcase.gif)](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
+[![An illustrated harbor beside a phone running harbor. A pier is the header rows scroll under, and a quay is the tab bar the list stops at.](https://raw.githubusercontent.com/SupposedlySam/harbor/main/doc/media/showcase.gif)](https://cdn.jsdelivr.net/gh/SupposedlySam/harbor@main/doc/media/showcase.mp4)
 
 *Left, a harbor. Right, a phone running the real package, driven by the same
-clock. The GIF is the opening; [the narrated video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
+clock. The GIF is the opening; [the narrated video](https://cdn.jsdelivr.net/gh/SupposedlySam/harbor@main/doc/media/showcase.mp4)
 (three and a half minutes) tours everything in the package on a phone, from the coast to sea trials.
-[The wide-format video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase_wide.mp4)
+[The wide-format video](https://cdn.jsdelivr.net/gh/SupposedlySam/harbor@main/doc/media/showcase_wide.mp4)
 (one minute) shows what changes on other screens: a rail on a tablet, right-to-left, a
 phone on its side, a dual-screen hinge, and a television's title-safe band.*
 
