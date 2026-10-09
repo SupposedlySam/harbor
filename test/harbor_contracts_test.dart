@@ -870,6 +870,9 @@ void main() {
       expect(waters.docksResting, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
       expect(waters.wakeOf(HarborEdge.top), const HarborWakeBand(dockEdge: 50, wakeEnd: 50 + 12));
       expect(waters.hasDocks, containsAll(HarborEdge.vertical));
+      final HarborWatersData raw = HarborWaters.maybeRawOf(beneath)!;
+      expect(raw.docks, waters.docks, reason: 'measured from the layer, not left for MediaQuery to clamp');
+      expect(raw.docksResting, waters.docksResting);
       expect(HarborWaters.steadyCoastOf(beneath, HarborEdge.bottom), 0, reason: 'the steady coast went with the coast');
     });
 
