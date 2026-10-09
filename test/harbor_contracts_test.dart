@@ -1049,6 +1049,80 @@ void main() {
       });
     });
 
+    // A fairway that clears the coast alone casts off the coast and hands its rows the docks, the
+    // way `HarborCastOff(docks: false)` does. Neither it nor a row reading the docks has a reason to
+    // rebuild while the keyboard moves under a body that does not clear it.
+    // Breaks if: the fairway reads the coast, the waters or MediaQuery beyond the aspect it uses.
+    testWidgets('a fairway that clears the coast alone holds still while the keyboard moves, and so do its rows', (
+      final tester,
+    ) async {
+      final List<double> insetsSeen = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: Column(
+              children: <Widget>[
+                const SizedBox(
+                  height: 40,
+                  child: HarborFairway(
+                    scrollDirection: Axis.horizontal,
+                    clear: HarborClear.coast,
+                    slivers: <Widget>[
+                      SliverToBoxAdapter(child: SizedBox(width: 50, child: _AspectReader(HarborWatersAspect.docks))),
+                    ],
+                  ),
+                ),
+                _Probe((final BuildContext c) => insetsSeen.add(MediaQuery.viewInsetsOf(c).bottom), child: const SizedBox(height: 10)),
+              ],
+            ),
+          ),
+        ),
+        device: device,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborFairway, _AspectReader});
+      insetsSeen.clear();
+      await slideTide(tester, tideIn: true);
+      expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
+      expect(rebuilds, <Type, int>{HarborFairway: 0, _AspectReader: 0});
+    });
+
+    // A vertical fairway follows the keyboard only for its bottom end, so one that leaves the
+    // keyboard to someone else has nothing to follow.
+    // Breaks if: tide: false still reads the keyboard, or the fairway reads MediaQuery as a whole.
+    testWidgets('a fairway that leaves the keyboard holds still while it moves', (final tester) async {
+      final List<double> insetsSeen = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+            body: Column(
+              children: <Widget>[
+                const SizedBox(height: 100, child: HarborFairway(tide: false, slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 10))])),
+                const SizedBox(
+                  height: 100,
+                  child: HarborFairway(
+                    tide: false,
+                    clear: HarborClear.coast,
+                    slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 10))],
+                  ),
+                ),
+                _Probe((final BuildContext c) => insetsSeen.add(MediaQuery.viewInsetsOf(c).bottom), child: const SizedBox(height: 10)),
+              ],
+            ),
+          ),
+        ),
+        device: device,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborFairway});
+      insetsSeen.clear();
+      await slideTide(tester, tideIn: true);
+      expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
+      expect(rebuilds, <Type, int>{HarborFairway: 0});
+    });
+
     // A body that clears the tide takes the keyboard out of its view padding, as
     // `MediaQueryData.removeViewInsets` does, so on a phone with a home indicator the steady
     // coast's clamp is reached on every frame the keyboard moves. The iPhone SE above has no

@@ -357,6 +357,24 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
     return math.min(value, bound);
   }
 
+  /// How far the docks on [edge] reach into [context]'s area, to their inner
+  /// face: a header's bottom edge, where its wake (if it has one) begins. For
+  /// artwork that lines up under a frosted header, with or without a wake.
+  ///
+  /// It is the wake band's [HarborWakeBand.dockEdge] where [edge] has a fade
+  /// wake, and [HarborWatersData.docks] otherwise, which is the face itself when
+  /// the wake adds no clearance (no wake, a hairline, or a fade that rests at
+  /// the dock's edge). Zero where nothing is docked, and beneath anything that
+  /// cast the edge off, a fairway's ends included.
+  ///
+  /// It depends on the [HarborWatersAspect.docks] aspect alone, so its reader
+  /// holds still while the keyboard moves.
+  static double dockFaceOf(final BuildContext context, final HarborEdge edge) {
+    final HarborWatersData waters = of(context, aspect: HarborWatersAspect.docks);
+    final HarborWakeBand? band = waters.wakes[edge];
+    return band != null ? band.dockEdge : HarborEdges.of(waters.docks, edge);
+  }
+
   /// What is still in the way on [edge] at [context]: the one number content
   /// lays out against. The larger of `MediaQuery.padding` and, at the bottom,
   /// whatever of the keyboard still reaches here.
