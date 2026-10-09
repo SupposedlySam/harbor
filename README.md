@@ -375,6 +375,7 @@ Harbor(
 
 HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (_) => Toast('Saved'));
 HarborFlares.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+HarborFlares.raise(context, anchor: copyAnchor, side: HarborBuoySide.above, builder: (_) => Toast('Copied'));
 final undo = HarborFlares.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
 final HarborFlareClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
 HarborFlares.raise(
@@ -427,6 +428,16 @@ A flare goes to the port on top (a sheet over a page over the sea), so a `low`
 flare clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 flare moves to the one now on top.
+
+A flare raised with an `anchor` sits by a `HarborAnchorPoint` instead, as an
+anchored buoy does: on its `side` (`below` by default), `gap` away (8), lined up
+by its `crossAlignment` (centred), and kept in the clear water: "Copied" by the
+button that copied. Give it the anchor alone, without a slot or an alignment,
+and raise it from the page that holds the anchor: it is shown by that page's
+port, not the one on top. Flares at one anchor and side take turns. While the
+anchor is out of the tree the flare is not shown, takes no taps and is not read
+out, and its time stops. If its page is popped, it does not move to the port now
+on top: it is lowered, and `closed` reports `remove`.
 
 Flares raised at the same slot or alignment of one port take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before
@@ -491,6 +502,16 @@ a modal buoy, a tap on the barrier while the portal buoy is open calls both
 `onDismiss`es, and in a dialog it calls the portal buoy's and closes the
 dialog, as it does with a `MenuAnchor` open in a dialog.
 
+A portal buoy leaves focus where it was when it opens, as a `MenuAnchor` does.
+`requestFocus: true` makes it take focus as a sheet with no barrier does: the buoy
+is a focus scope of its own that becomes the first focus of the scope around its
+`child` (the page's, or a modal buoy's or a dialog's), so a control in it with
+`autofocus: true` takes it from there. It is not modal, so Tab past its last control
+does what it does at a route's edge rather than going round inside it. When it
+closes, focus goes back to where it was, if focus is still in the buoy. It needs an
+`onDismiss`, so Escape from inside it can close it; that Escape closes the portal buoy
+before a modal buoy it was opened from.
+
 ## Sheets and dialogs
 
 ```dart
@@ -532,6 +553,32 @@ was when it opens unless you pass `requestFocus: true`. Then focus goes back to
 the page when it closes. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
+
+A page that handles back itself with `PopScope(canPop: false)` (a tab bar that
+goes back a tab) keeps back from a modal buoy, a portal buoy and a sheet with no
+barrier, as it does from a `Drawer` or a persistent bottom sheet:
+`Navigator.maybePop` sees `canPop: false` before it looks at the page's local
+history, which is where harbor ties them, so only your handler hears back. Close
+them from that handler first, with `Navigator.pop`, which removes the newest
+entry of that history:
+
+```dart
+PopScope(
+  canPop: false,
+  onPopInvokedWithResult: (didPop, _) {
+    if (didPop) return;
+    if (ModalRoute.of(context)!.willHandlePopInternally) {
+      Navigator.of(context).pop(); // closes the top buoy, portal buoy or barrier-less sheet
+      return;
+    }
+    tabs.back();
+  },
+  child: Harbor(...),
+)
+```
+
+Each back press then closes one of them, the newest first, and only once they are
+all closed does it reach `tabs.back()`.
 
 ```dart
 final HarborSheetController nowPlaying = HarborSheetController();
@@ -583,7 +630,22 @@ inside it closes it, and its content is a route of its own for screen readers, n
 takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Dismiss'
 when none is given), `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
-`animationStyle:` (its fade, 180 ms by default).
+`animationStyle:` (its fade, 180 ms by default). `transitionBuilder:` brings your own
+entrance and exit in place of the fade, as `showGeneralDialog`'s does: it is handed the
+route's animation curved by `animationStyle`, and under reduced motion an animation that
+is already complete, so the dialog is simply there.
+
+`showHarborDialog` pushes a `HarborDialogRoute`, as `showDialog` pushes a `DialogRoute`.
+Push one yourself to keep the route or to choose the navigator:
+
+```dart
+final HarborDialogRoute<bool> confirm = HarborDialogRoute<bool>(context: context, builder: (_) => const ConfirmDelete());
+final bool? delete = await Navigator.of(context).push(confirm);
+```
+
+It takes the same options. The page at `context` lends it its themes and, with
+`inheritClearWater: true`, its clear water, both read as the route is pushed rather than
+when it is made.
 
 Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
 makes a sheet the user has to answer: a tap on the barrier does nothing, and
