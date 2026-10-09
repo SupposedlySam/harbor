@@ -716,7 +716,11 @@ class RenderHarbor extends RenderBox
       double cap = maxHeight.isFinite ? maxHeight : double.infinity;
       final double? fraction = g.maxExtentFraction;
       if (fraction != null && cap.isFinite) {
-        cap = (cap - tide) * fraction + tide;
+        // A share of the space above the keyboard, plus the keyboard's ground, which a body that
+        // clears the tide takes inside the frame. A body that does not leaves the keyboard outside
+        // the frame's height, so the share is of the whole: adding the keyboard back let a 0.9
+        // sheet whose body ran under the keyboard grow past 0.9 of the screen.
+        cap = g.bodyClearsTide ? (cap - tide) * fraction + tide : cap * fraction;
       }
       final double bodyMax = math.max(0.0, cap - insetV);
       if (body != null) {

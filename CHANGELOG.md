@@ -1,3 +1,8 @@
+## 0.4.2
+
+* `HarborSheet(bodyClearsTide: false)`, and on `HarborSheet.draggable`, leaves the keyboard to the sheet's body, as `Harbor.bodyClearsTide` does a page's: the body runs under the keyboard and reads it in `MediaQuery.viewInsets`, a floating footer still rides up on it, and `maxExtentFraction` (or a draggable sheet's extents) is a share of the whole height. For a toolbar or inspector that manages the keyboard itself. `true` stays the default, so nothing changes for existing sheets. ([#95](https://github.com/SupposedlySam/harbor/issues/95))
+* Fixed: a `Harbor` sized to its body (`HarborSizing.hugBody`) with `maxExtentFraction` and `bodyClearsTide: false` added the keyboard's height to its cap, though its body leaves the keyboard outside its height, so with the keyboard up it grew past its fraction of the screen. The cap is now that fraction of the whole height. With `bodyClearsTide: true` (every sheet until now) it is unchanged.
+
 ## 0.4.1
 
 * `HarborDock.reserve(extent:)` holds an edge for something drawn elsewhere (a footer in an overlay, a bar a parent paints) so the body keeps clear of it. It reaches `extent` in from the edge, coast included (the larger of the two) when it is the outermost dock, and `extent` past the docks outside it when it is not. It paints nothing and takes no taps; `kind:` (a pier by default) and `tide:` are a dock's. The way to say this before, a pier with an empty child and `minimum: extent`, reserved nothing when another dock sat outside it, since only the outermost dock takes the coast and its minimum. ([#92](https://github.com/SupposedlySam/harbor/issues/92))

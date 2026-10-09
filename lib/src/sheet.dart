@@ -113,6 +113,7 @@ class HarborSheet extends StatelessWidget {
     this.closeFlingVelocity = 700.0,
     this.clearsTopCoast = true,
     this.clearsSides = false,
+    this.bodyClearsTide = true,
   }) : assert(closeFlingVelocity >= 0.0),
        builder = null,
        extent = null,
@@ -146,6 +147,7 @@ class HarborSheet extends StatelessWidget {
     this.closeFlingVelocity = 700.0,
     this.clearsTopCoast = true,
     this.clearsSides = false,
+    this.bodyClearsTide = true,
   }) : assert(closeFlingVelocity >= 0.0),
        body = null,
        maxExtentFraction = null,
@@ -243,6 +245,18 @@ class HarborSheet extends StatelessWidget {
   /// this insets only what is over the surface, and only the sides.
   final bool clearsSides;
 
+  /// Whether the sheet keeps its body above the keyboard, as [Harbor.bodyClearsTide] does a
+  /// page's. True by default: the body ends at the keyboard and the sheet's height is capped by
+  /// the space above it.
+  ///
+  /// False leaves the keyboard to the body, for a sheet that manages it itself: a toolbar that
+  /// holds a keyboard-sized space so nothing jumps when a field takes focus, or an inspector the
+  /// keyboard may cover while something above it is edited. The body then runs under the
+  /// keyboard and reads it in `MediaQuery.viewInsets`, a [HarborTideStance.float] footer still
+  /// rides up on it, and [maxExtentFraction] (or a draggable sheet's extents) is a share of the
+  /// whole height, the keyboard included.
+  final bool bodyClearsTide;
+
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -269,6 +283,7 @@ class HarborSheet extends StatelessWidget {
     properties.add(DoubleProperty('closeFlingVelocity', closeFlingVelocity, defaultValue: 700.0, unit: 'px/s'));
     properties.add(FlagProperty('clearsTopCoast', value: clearsTopCoast, ifFalse: 'casts off the top coast'));
     properties.add(FlagProperty('clearsSides', value: clearsSides, ifTrue: 'clears the sides'));
+    properties.add(FlagProperty('bodyClearsTide', value: bodyClearsTide, ifFalse: 'body under the keyboard'));
   }
 
   /// Closes the sheet [context] is in, whichever way it was opened, and
@@ -291,6 +306,7 @@ class HarborSheet extends StatelessWidget {
   Widget _harbor(final Widget body, {required final bool hug, final Widget? header}) {
     Widget port = Harbor(
       newPort: true,
+      bodyClearsTide: bodyClearsTide,
       sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
       maxExtentFraction: hug ? maxExtentFraction : null,
       debugLabel: debugLabel ?? 'sheet',
@@ -477,20 +493,21 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
   @override
   Widget build(final BuildContext context) {
     final _SheetHostScope? host = _SheetHostScope.maybeOf(context);
-    final double tide = MediaQuery.viewInsetsOf(context).bottom;
+    final Widget sheet = LayoutBuilder(
+      builder: (final BuildContext context, final BoxConstraints constraints) {
+        _available = constraints.maxHeight;
+        return _draggable(host);
+      },
+    );
+    if (!widget.sheet.bodyClearsTide) {
+      // The body manages the keyboard: the extents are of the whole height, and the keyboard
+      // stays in the body's view insets.
+      return sheet;
+    }
     // Fractions are of the space above the keyboard.
     return Padding(
-      padding: EdgeInsets.only(bottom: tide),
-      child: MediaQuery.removeViewInsets(
-        context: context,
-        removeBottom: true,
-        child: LayoutBuilder(
-          builder: (final BuildContext context, final BoxConstraints constraints) {
-            _available = constraints.maxHeight;
-            return _draggable(host);
-          },
-        ),
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: MediaQuery.removeViewInsets(context: context, removeBottom: true, child: sheet),
     );
   }
 
@@ -501,7 +518,7 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
     if (host != null && !host.host.hasDragExtent) {
       WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
         if (!host.host.hasDragExtent) {
-          host.reportExtent(_extent.rest);
+          host.reportExtent(_extent.rest, _available);
         }
       });
     }
@@ -516,7 +533,7 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
           );
     return NotificationListener<DraggableScrollableNotification>(
       onNotification: (final DraggableScrollableNotification n) {
-        host?.reportExtent(n.extent);
+        host?.reportExtent(n.extent, _available);
         if (n.shouldCloseOnMinExtent && n.extent <= n.minExtent + 0.001) {
           _close();
         }
@@ -982,10 +999,8 @@ class _SheetHost {
       // screen the barrier covers.
       sheet = Semantics(scopesRoute: true, namesRoute: true, explicitChildNodes: true, label: semanticLabel, child: sheet);
     }
-    final double tide = mediaQuery.viewInsets.bottom;
     return _SheetHostScope(
       host: this,
-      available: math.max(0.0, mediaQuery.size.height - tide - top),
       child: MediaQuery.removePadding(
         context: context,
         removeTop: !keepsTopCoast,
@@ -1013,15 +1028,16 @@ class _SheetHost {
 }
 
 class _SheetHostScope extends InheritedWidget {
-  const _SheetHostScope({required this.host, required this.available, required super.child});
+  const _SheetHostScope({required this.host, required super.child});
 
   final _SheetHost host;
-  final double available;
 
   static _SheetHostScope? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<_SheetHostScope>();
 
-  void reportExtent(final double extent) => host.reportExtent(extent, available);
+  /// [extent] is a share of [available], the height the draggable sheet lays out in: the space
+  /// above the keyboard, or the whole height when its body manages the keyboard.
+  void reportExtent(final double extent, final double available) => host.reportExtent(extent, available);
 
   void close([final Object? result]) => host.close?.call(result);
 
