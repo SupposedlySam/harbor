@@ -147,6 +147,10 @@ class HarborFairway extends StatelessWidget {
   /// Whether the first sliver starts at the frame's edge, under the docks, as
   /// a hero image that runs under a translucent header does. Pinned sliver
   /// docks still pin at the docks' face, and reveals still keep clear of them.
+  ///
+  /// The first sliver is handed back the leading end alone, so it can keep its
+  /// title clear of the status bar: the trailing end, the keyboard and the
+  /// trailing mooring line stay cast off.
   final bool startsInOpenWater;
 
   final ScrollCacheExtent? scrollCacheExtent;
@@ -291,7 +295,7 @@ class HarborFairway extends StatelessWidget {
       wakes: wakes,
       child: _fairway(
         context,
-        castOff,
+        leadingEdge,
         vertical,
         startsInOpenWater ? 0.0 : leading,
         clearLeading,
@@ -315,7 +319,7 @@ class HarborFairway extends StatelessWidget {
 
   Widget _fairway(
     final BuildContext context,
-    final Set<HarborEdge> castOff,
+    final HarborEdge leadingEdge,
     final bool vertical,
     final double leading,
     final double clearLeading,
@@ -342,16 +346,10 @@ class HarborFairway extends StatelessWidget {
       AxisDirection.left => EdgeInsets.only(left: trailExtra, right: leadExtra),
     };
     Widget first(final Widget sliver) {
-      Widget result = leadsWithDock ? _SliverDockAbsorb(coast: absorbed, child: sliver) : sliver;
-      if (startsInOpenWater) {
-        // Content that starts in open water keeps the coast and docks it starts under.
-        final HarborWatersData? openWaterWaters = HarborWaters.maybeRawOf(context);
-        result = MediaQuery(
-          data: MediaQuery.of(context),
-          child: openWaterWaters == null ? result : HarborWaters(data: openWaterWaters, child: result),
-        );
-      }
-      return result;
+      final Widget result = leadsWithDock ? _SliverDockAbsorb(coast: absorbed, child: sliver) : sliver;
+      // Content that starts in open water keeps the coast and docks it starts under, on the
+      // leading end alone: the trailing end and the keyboard are still cast off.
+      return startsInOpenWater ? _HarborOpenWaterSliver(sliver: result) : result;
     }
 
     // With a center, the cover leads the slivers that grow forward from it,
@@ -362,53 +360,115 @@ class HarborFairway extends StatelessWidget {
       fromViewportEdge: !shrinkWrap && (center != null || anchor != 0.0),
     );
     final bool centersFirst = center != null && slivers.first.key == center;
+    // The trailing end is cast off first and the leading end beneath it, so the first sliver of a
+    // fairway that starts in open water can be handed the view between the two.
+    final bool margin = !vertical && mooringLine;
     return HarborCastOff(
-      edges: castOff,
+      edges: <HarborEdge>{leadingEdge.opposite},
       tide: vertical,
-      margin: !vertical && mooringLine,
-      child: _HarborScrollView(
-        reveal: reveal(revealMargin + math.max(0.0, leading - cover)),
-        reverseReveal: reveal(revealMargin + clearLeading),
-        anchorLeading: center == null ? 0.0 : (centersFirst ? leading : clearLeading),
-        anchorTrailing: center == null ? leading + trailing : trailing,
-        scrollDirection: scrollDirection,
-        reverse: reverse,
-        controller: controller,
-        primary: primary,
-        physics: physics,
-        scrollBehavior: scrollBehavior,
-        shrinkWrap: shrinkWrap,
-        center: center == null ? null : _coverKey,
-        anchor: anchor,
-        scrollCacheExtent: scrollCacheExtent,
-        paintOrder: paintOrder,
-        semanticChildCount: semanticChildCount,
-        dragStartBehavior: dragStartBehavior,
-        keyboardDismissBehavior: keyboardDismissBehavior,
-        restorationId: restorationId,
-        clipBehavior: clipBehavior,
-        hitTestBehavior: hitTestBehavior,
-        slivers: <Widget>[
-          if (center == null) coverSliver,
-          SliverToBoxAdapter(
-            child: SizedBox(width: vertical ? null : leading, height: vertical ? leading : null),
+      margin: margin,
+      child: _HarborOpenWaterView(
+        enabled: startsInOpenWater,
+        child: HarborCastOff(
+          edges: <HarborEdge>{leadingEdge},
+          margin: margin,
+          child: _HarborScrollView(
+            reveal: reveal(revealMargin + math.max(0.0, leading - cover)),
+            reverseReveal: reveal(revealMargin + clearLeading),
+            anchorLeading: center == null ? 0.0 : (centersFirst ? leading : clearLeading),
+            anchorTrailing: center == null ? leading + trailing : trailing,
+            scrollDirection: scrollDirection,
+            reverse: reverse,
+            controller: controller,
+            primary: primary,
+            physics: physics,
+            scrollBehavior: scrollBehavior,
+            shrinkWrap: shrinkWrap,
+            center: center == null ? null : _coverKey,
+            anchor: anchor,
+            scrollCacheExtent: scrollCacheExtent,
+            paintOrder: paintOrder,
+            semanticChildCount: semanticChildCount,
+            dragStartBehavior: dragStartBehavior,
+            keyboardDismissBehavior: keyboardDismissBehavior,
+            restorationId: restorationId,
+            clipBehavior: clipBehavior,
+            hitTestBehavior: hitTestBehavior,
+            slivers: <Widget>[
+              if (center == null) coverSliver,
+              SliverToBoxAdapter(
+                child: SizedBox(width: vertical ? null : leading, height: vertical ? leading : null),
+              ),
+              for (int i = 0; i < slivers.length; i++) ...<Widget>[
+                if (center != null && slivers[i].key == center) coverSliver,
+                SliverPadding(
+                  key: switch (slivers[i].key) {
+                    final Key key => _HarborSliverKey(key),
+                    null => null,
+                  },
+                  padding: crossPadding.resolve(direction),
+                  sliver: i == 0 ? first(slivers[i]) : slivers[i],
+                ),
+              ],
+              SliverToBoxAdapter(
+                child: SizedBox(width: vertical ? null : trailing, height: vertical ? trailing : null),
+              ),
+            ],
           ),
-          for (int i = 0; i < slivers.length; i++) ...<Widget>[
-            if (center != null && slivers[i].key == center) coverSliver,
-            SliverPadding(
-              key: switch (slivers[i].key) {
-                final Key key => _HarborSliverKey(key),
-                null => null,
-              },
-              padding: crossPadding.resolve(direction),
-              sliver: i == 0 ? first(slivers[i]) : slivers[i],
-            ),
-          ],
-          SliverToBoxAdapter(
-            child: SizedBox(width: vertical ? null : trailing, height: vertical ? trailing : null),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+/// Publishes, to the first sliver of a fairway that starts in open water, the view between the
+/// fairway's two cast-offs: its leading end still there, its trailing end, the keyboard and the
+/// trailing mooring line already cast off.
+///
+/// It is in the tree either way, so turning [enabled] on or off keeps the scroll view's state;
+/// only while it is on does it depend on what it publishes.
+class _HarborOpenWaterView extends StatelessWidget {
+  const _HarborOpenWaterView({required this.enabled, required this.child});
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  Widget build(final BuildContext context) => _HarborOpenWaterScope(
+    media: enabled ? MediaQuery.of(context) : null,
+    waters: enabled ? HarborWaters.maybeRawOf(context) : null,
+    child: child,
+  );
+}
+
+class _HarborOpenWaterScope extends InheritedWidget {
+  const _HarborOpenWaterScope({required this.media, required this.waters, required super.child});
+
+  final MediaQueryData? media;
+  final HarborWatersData? waters;
+
+  @override
+  bool updateShouldNotify(final _HarborOpenWaterScope oldWidget) => media != oldWidget.media || waters != oldWidget.waters;
+}
+
+/// The first sliver of a fairway that starts in open water, in the view [_HarborOpenWaterView]
+/// publishes.
+class _HarborOpenWaterSliver extends StatelessWidget {
+  const _HarborOpenWaterSliver({required this.sliver});
+
+  final Widget sliver;
+
+  @override
+  Widget build(final BuildContext context) {
+    final _HarborOpenWaterScope? scope = context.dependOnInheritedWidgetOfExactType<_HarborOpenWaterScope>();
+    final MediaQueryData? media = scope?.media;
+    if (media == null) {
+      return sliver;
+    }
+    final HarborWatersData? waters = scope!.waters;
+    return MediaQuery(
+      data: media,
+      child: waters == null ? sliver : HarborWaters(data: waters, child: sliver),
     );
   }
 }

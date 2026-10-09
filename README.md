@@ -240,7 +240,9 @@ items are handed the docks above and below it as they are.
 title under a translucent header that must not touch the status bar.
 `follow: HarborFollow.resting` holds still while a dock grows over it.
 `HarborFairway(startsInOpenWater: true)` starts its first sliver at the frame's
-edge, under the docks, for a hero that runs under a translucent header.
+edge, under the docks, for a hero that runs under a translucent header. That
+sliver is handed back the leading end alone; the trailing end and the keyboard
+stay cast off.
 `minimum:` on a fairway or a fairway sliver is a floor on each end, as on
 `SafeArea`: the end rests clear of whatever is in the way or the minimum,
 whichever is larger, so a phone with a home button still keeps 16 under the last row.

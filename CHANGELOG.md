@@ -1,5 +1,6 @@
 ## Unreleased
 
+* **Fixed, and it can move content:** with `HarborFairway(startsInOpenWater: true)`, the first sliver is handed back the leading end alone ([#60](https://github.com/SupposedlySam/harbor/issues/60)). Before, it was given the fairway's own `MediaQuery` and waters from above its cast-off, so it also read the trailing end (a tab bar, the home indicator), the keyboard, and on a horizontal fairway the trailing side and its mooring line, all of which the fairway had already cleared. A list whose only sliver is the first one cleared its bottom twice. Content in that sliver that read `MediaQuery.padding`, `viewInsets` or the waters on the trailing end now reads zero there.
 * **Fixed, and it can move content:** `HarborFairwaySliver` casts off the ends it cleared, as Flutter's `SliverSafeArea` removes the padding it applied and as the README promised ([#67](https://github.com/SupposedlySam/harbor/issues/67)). Before, it only padded, so a `SafeArea`, a `HarborMoored` or a `MediaQuery.padding` reader in its sliver cleared the header, the status bar, the home indicator or the keyboard a second time. Content there that read those values now reads zero on the ends the sliver cleared (and no keyboard, when it cleared the bottom); an end given `clearLeading: false` or `clearTrailing: false` is left as it was.
 
 ## 0.3.1+1
