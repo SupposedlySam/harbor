@@ -113,6 +113,31 @@ void main() {
   });
 
   group('With startsInOpenWater, the first sliver gets back its leading end alone (#60)', () {
+    // Breaks if: open water zeroes the whole leading spacer again, the caller's padding and minimum
+    // with the clearance (#74).
+    testWidgets("open water skips the leading clearance but keeps the fairway's own padding and minimum", (final tester) async {
+      Future<double> firstRowTop(final EdgeInsetsDirectional padding, final EdgeInsetsDirectional minimum) async {
+        await tester.pumpSeaTrial(
+          _app(
+            Harbor(
+              top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+              body: HarborFairway(
+                startsInOpenWater: true,
+                padding: padding,
+                minimum: minimum,
+                slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext _) {}))],
+              ),
+            ),
+          ),
+        );
+        return tester.getTopLeft(find.byType(_Probe)).dy;
+      }
+
+      expect(await firstRowTop(EdgeInsetsDirectional.zero, EdgeInsetsDirectional.zero), 0, reason: 'positive control: open water, no padding');
+      expect(await firstRowTop(const EdgeInsetsDirectional.only(top: 16), EdgeInsetsDirectional.zero), 16, reason: 'its own padding stays');
+      expect(await firstRowTop(EdgeInsetsDirectional.zero, const EdgeInsetsDirectional.only(top: 24)), 24, reason: 'its minimum stays');
+    });
+
     // Breaks if: the first sliver is handed the fairway's own MediaQuery and waters again, from
     // above its cast-off, trailing end and keyboard included.
     testWidgets('a vertical fairway hands its first sliver neither the trailing end nor the keyboard', (final tester) async {

@@ -356,7 +356,9 @@ class HarborFairway extends StatelessWidget {
         context,
         leadingEdge,
         vertical,
-        startsInOpenWater ? 0.0 : leading,
+        // Open water skips only the clearance at the leading end: the caller's own padding and
+        // minimum there still apply (#74).
+        startsInOpenWater ? HarborEdges.of(minimum, leadingEdge) + HarborEdges.of(padding, leadingEdge) : leading,
         clearLeading,
         cover,
         trailing,
