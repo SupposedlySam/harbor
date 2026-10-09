@@ -638,15 +638,18 @@ class RenderHarbor extends RenderBox
         continue;
       }
       final double dockEdge = math.max(0.0, far[e]! - HarborEdges.of(bodyInset, e));
-      ownWakes[e] = HarborWakeBand(dockEdge: dockEdge, wakeEnd: dockEdge + wake.length);
+      ownWakes[e] = HarborWakeBand(
+        dockEdge: dockEdge,
+        wakeEnd: dockEdge + wake.length,
+        // A fade at its defaults leaves them to the painter, as before they were options.
+        dockOpacity: wake.dockOpacity == 0.25 ? null : wake.dockOpacity,
+        curve: wake.curve == Curves.linear ? null : wake.curve,
+      );
     }
     final Map<HarborEdge, HarborWakeBand> wakes = <HarborEdge, HarborWakeBand>{
       for (final MapEntry<HarborEdge, HarborWakeBand> inherited in g.inheritedWakes.entries)
         if (!ownWakes.containsKey(inherited.key) && HarborEdges.of(bodyInset, inherited.key) < inherited.value.wakeEnd)
-          inherited.key: HarborWakeBand(
-            dockEdge: math.max(0.0, inherited.value.dockEdge - HarborEdges.of(bodyInset, inherited.key)),
-            wakeEnd: inherited.value.wakeEnd - HarborEdges.of(bodyInset, inherited.key),
-          ),
+          inherited.key: inherited.value.measuredFrom(HarborEdges.of(bodyInset, inherited.key)),
       ...ownWakes,
     };
 

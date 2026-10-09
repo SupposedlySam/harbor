@@ -31,15 +31,47 @@ enum HarborWakeKind { none, fade, hairline }
 ///  * [ShaderMask] and [BackdropFilter], which a fade wake paints with.
 @immutable
 class HarborWake with Diagnosticable {
-  const HarborWake._(this.kind, {this.length = 0.0, this.blurSigma = 0.0, this.color, this.restsAt = HarborRest.wakeEnd});
+  const HarborWake._(
+    this.kind, {
+    this.length = 0.0,
+    this.blurSigma = 0.0,
+    this.color,
+    this.restsAt = HarborRest.wakeEnd,
+    this.dockOpacity = 0.25,
+    this.curve = Curves.linear,
+  }) : assert(dockOpacity >= 0.0 && dockOpacity <= 1.0, 'dockOpacity is an opacity, from 0 to 1.');
 
   /// No boundary at all.
   static const HarborWake none = HarborWake._(HarborWakeKind.none);
 
   /// Content fades out over [length] past the dock's inner face, and the
   /// water under the dock is frosted by [blurSigma] if it is above zero.
-  const HarborWake.fade({final double length = 16.0, final double blurSigma = 0.0, final HarborRest restsAt = HarborRest.wakeEnd})
-    : this._(HarborWakeKind.fade, length: length, blurSigma: blurSigma, restsAt: restsAt);
+  ///
+  /// Content is [dockOpacity] opaque at the dock's inner face, rises to fully
+  /// opaque where the wake ends along [curve], and fades from [dockOpacity] to
+  /// clear under the dock itself. The defaults, a quarter opaque and a
+  /// straight line, are the ramp every fade had before these were options.
+  /// `dockOpacity: 1` makes a band that still counts toward where content
+  /// rests ([restsAt]) but does not fade anything past the dock.
+  ///
+  /// A fade is an alpha mask, so it takes no colour: it shows whatever is
+  /// behind the content. For a tint, colour that background or give the dock
+  /// a `backdrop`; for a scrim drawn over the content, give the `Harbor` a
+  /// `wakePainter`, which is handed the measured bands.
+  const HarborWake.fade({
+    final double length = 16.0,
+    final double blurSigma = 0.0,
+    final HarborRest restsAt = HarborRest.wakeEnd,
+    final double dockOpacity = 0.25,
+    final Curve curve = Curves.linear,
+  }) : this._(
+         HarborWakeKind.fade,
+         length: length,
+         blurSigma: blurSigma,
+         restsAt: restsAt,
+         dockOpacity: dockOpacity,
+         curve: curve,
+       );
 
   /// A line of [thickness] on the dock's inner face.
   ///
@@ -61,6 +93,13 @@ class HarborWake with Diagnosticable {
 
   final HarborRest restsAt;
 
+  /// How opaque content is at the dock's inner face, for a fade.
+  final double dockOpacity;
+
+  /// The shape of a fade's ramp from [dockOpacity] at the dock's inner face to
+  /// fully opaque where the wake ends.
+  final Curve curve;
+
   /// How much of [length] adds to the distance content rests from the dock.
   double get clearance => kind == HarborWakeKind.fade && restsAt == HarborRest.wakeEnd ? length : 0.0;
 
@@ -71,10 +110,12 @@ class HarborWake with Diagnosticable {
       other.length == length &&
       other.blurSigma == blurSigma &&
       other.color == color &&
-      other.restsAt == restsAt;
+      other.restsAt == restsAt &&
+      other.dockOpacity == dockOpacity &&
+      other.curve == curve;
 
   @override
-  int get hashCode => Object.hash(kind, length, blurSigma, color, restsAt);
+  int get hashCode => Object.hash(kind, length, blurSigma, color, restsAt, dockOpacity, curve);
 
   @override
   String toStringShort() => '${objectRuntimeType(this, 'HarborWake')}.${kind.name}';
@@ -89,6 +130,8 @@ class HarborWake with Diagnosticable {
         properties.add(DoubleProperty('length', length, defaultValue: 16.0));
         properties.add(DoubleProperty('blurSigma', blurSigma, defaultValue: 0.0));
         properties.add(EnumProperty<HarborRest>('restsAt', restsAt, defaultValue: HarborRest.wakeEnd));
+        properties.add(DoubleProperty('dockOpacity', dockOpacity, defaultValue: 0.25));
+        properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.linear));
       case HarborWakeKind.hairline:
         properties.add(DoubleProperty('thickness', length, defaultValue: 1.0));
         properties.add(ColorProperty('color', color, defaultValue: const Color(0x1F000000)));
@@ -116,15 +159,18 @@ class HarborWakeMask extends SingleChildRenderObjectWidget {
   const HarborWakeMask({super.key, required this.wakes, this.dockOpacity = 0.25, super.child});
 
   /// The default [HarborWakePainter]: an alpha mask over the body, transparent
-  /// at the body's edge, a quarter opaque at the dock's inner face, and fully
-  /// opaque where the wake ends. Give it to `Harbor(wakePainter:)` to fade the
+  /// at the body's edge, a quarter opaque at the dock's inner face (or the
+  /// band's own [HarborWakeBand.dockOpacity]), and fully opaque where the wake
+  /// ends, along the band's [HarborWakeBand.curve]. Give it to `Harbor(wakePainter:)` to fade the
   /// whole body.
   static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborWakeBand> wakes, final Widget body) =>
       HarborWakeMask(wakes: wakes, child: body);
 
   final Map<HarborEdge, HarborWakeBand> wakes;
 
-  /// How visible content is at the dock's inner face.
+  /// How visible content is at the dock's inner face, for a band that does
+  /// not say ([HarborWakeBand.dockOpacity] is null, as it is for a
+  /// `HarborWake.fade` at its default).
   final double dockOpacity;
 
   @override
@@ -176,6 +222,9 @@ class RenderHarborWakeMask extends RenderProxyBox {
       markNeedsPaint();
     }
   }
+
+  /// How many steps a curved ramp is drawn in.
+  static const int _rampSamples = 12;
 
   final LayerHandle<ShaderMaskLayer> _vertical = LayerHandle<ShaderMaskLayer>();
   final LayerHandle<ShaderMaskLayer> _horizontal = LayerHandle<ShaderMaskLayer>();
@@ -235,8 +284,8 @@ class RenderHarborWakeMask extends RenderProxyBox {
       return const LinearGradient(colors: <Color>[Color(0xFFFFFFFF), Color(0xFFFFFFFF)]);
     }
     double at(final double distance) => (distance / extent).clamp(0.0, 1.0);
-    final Color clear = const Color(0xFFFFFFFF).withValues(alpha: 0.0);
-    final Color dock = const Color(0xFFFFFFFF).withValues(alpha: _dockOpacity);
+    Color alpha(final double value) => const Color(0xFFFFFFFF).withValues(alpha: value);
+    final Color clear = alpha(0.0);
     const Color solid = Color(0xFFFFFFFF);
     final List<Color> colors = <Color>[];
     final List<double> stops = <double>[];
@@ -245,16 +294,37 @@ class RenderHarborWakeMask extends RenderProxyBox {
       stops.add(stops.isEmpty ? stop : (stop < stops.last ? stops.last : stop));
     }
 
+    // A curved ramp is sampled into stops between the dock's face and the
+    // wake's end; a straight one needs none, so the default ramp is the three
+    // stops it always was.
+    Iterable<(double, double)> ramp(final HarborWakeBand band) sync* {
+      final Curve curve = band.curve ?? Curves.linear;
+      if (curve == Curves.linear) {
+        return;
+      }
+      final double dock = band.dockOpacity ?? _dockOpacity;
+      for (int i = 1; i < _rampSamples; i++) {
+        final double t = i / _rampSamples;
+        yield (band.dockEdge + band.length * t, dock + (1.0 - dock) * curve.transform(t));
+      }
+    }
+
     if (near.wakeEnd > 0) {
       add(clear, 0.0);
-      add(dock, at(near.dockEdge));
+      add(alpha(near.dockOpacity ?? _dockOpacity), at(near.dockEdge));
+      for (final (double distance, double opacity) in ramp(near)) {
+        add(alpha(opacity), at(distance));
+      }
       add(solid, at(near.wakeEnd));
     } else {
       add(solid, 0.0);
     }
     if (far.wakeEnd > 0) {
       add(solid, at(extent - far.wakeEnd));
-      add(dock, at(extent - far.dockEdge));
+      for (final (double distance, double opacity) in ramp(far).toList().reversed) {
+        add(alpha(opacity), at(extent - distance));
+      }
+      add(alpha(far.dockOpacity ?? _dockOpacity), at(extent - far.dockEdge));
       add(clear, 1.0);
     } else {
       add(solid, 1.0);

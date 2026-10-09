@@ -197,6 +197,7 @@ as it would in a `Row`.
 | Option | Use it for |
 |---|---|
 | `wake: HarborWake.fade(length:, blurSigma:, restsAt:)` | Content fades as it passes under; it rests past the fade (`HarborRest.wakeEnd`) or at the dock (`.dockEdge`) |
+| `wake: HarborWake.fade(dockOpacity:, curve:)` | The fade's ramp: how opaque content is at the dock's face (a quarter by default) and the curve out to the wake's end (a straight line). `dockOpacity: 1` is a band that counts toward where content rests but fades nothing past the dock. A fade is an alpha mask, so it takes no colour: tint the background or the dock's `backdrop`, or paint a scrim with `Harbor(wakePainter:)` |
 | `wake: HarborWake.hairline()` | A line on the dock's inner face, for a bar content scrolls up to |
 | `tide: HarborTideStance.float` | Rides up on the keyboard, staying on top of it: a composer, a sheet's footer. It sits on the home indicator until the keyboard is taller than it, so it never dips |
 | `tide: HarborTideStance.pilings` | Stays put; the keyboard covers it: a tab bar (the default) |
