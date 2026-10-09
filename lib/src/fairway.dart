@@ -71,6 +71,7 @@ class HarborFairway extends StatelessWidget {
     this.minimum = EdgeInsetsDirectional.zero,
     this.mooringLine = true,
     this.clear = HarborClear.everything,
+    this.tide = true,
     this.revealMargin = 0.0,
     this.wake = true,
     this.startsInOpenWater = false,
@@ -108,6 +109,7 @@ class HarborFairway extends StatelessWidget {
     this.minimum = EdgeInsetsDirectional.zero,
     this.mooringLine = true,
     this.clear = HarborClear.everything,
+    this.tide = true,
     this.revealMargin = 0.0,
     this.wake = true,
     this.startsInOpenWater = false,
@@ -170,9 +172,16 @@ class HarborFairway extends StatelessWidget {
   /// still pin at the docks' face, and reveals still keep clear of everything
   /// over the viewport.
   ///
-  /// The bottom end keeps clear of the keyboard either way, as a reveal needs
-  /// that room to bring a row above it.
+  /// The bottom end keeps clear of the keyboard either way, unless [tide] is
+  /// false, as a reveal needs that room to bring a row above it.
   final HarborClear clear;
+
+  /// Whether a vertical fairway keeps clear of the keyboard, as on
+  /// [HarborMoored.tide]. False leaves it to something else: a list in a host
+  /// whose body already ends at the keyboard, or one that stays put while a
+  /// keyboard opens over it. The bottom end and reveals then leave the keyboard
+  /// out, and it is not cast off, so content inside can still keep clear of it.
+  final bool tide;
 
   /// Extra room kept around a revealed row, beyond what covers the edge: a TV
   /// row that keeps the focused card a step in from the rail.
@@ -227,6 +236,7 @@ class HarborFairway extends StatelessWidget {
     );
     properties.add(FlagProperty('mooringLine', value: mooringLine, ifFalse: 'no mooring line'));
     properties.add(EnumProperty<HarborClear>('clear', clear, defaultValue: HarborClear.everything));
+    properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
     properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
     properties.add(FlagProperty('wake', value: wake, ifFalse: 'no wake'));
     properties.add(FlagProperty('startsInOpenWater', value: startsInOpenWater, ifTrue: 'starts in open water'));
@@ -244,7 +254,8 @@ class HarborFairway extends StatelessWidget {
   /// The scroll padding a third-party list should use to sail this fairway's
   /// way: clearance at both ends along [axis], at least [minimum], plus
   /// [extra]. Cast off the same edges beneath it with [HarborCastOff]
-  /// (`docks: false` for [HarborClear.coast]).
+  /// (`docks: false` for [HarborClear.coast], and `tide: true` unless [tide] is
+  /// false).
   static EdgeInsets paddingOf(
     final BuildContext context, {
     final Axis axis = Axis.vertical,
@@ -252,12 +263,13 @@ class HarborFairway extends StatelessWidget {
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final bool mooringLine = true,
     final HarborClear clear = HarborClear.everything,
+    final bool tide = true,
   }) {
     final TextDirection direction = Directionality.of(context);
     final EdgeInsetsDirectional extraHere = HarborEdges.resolve(extra, direction);
     final EdgeInsetsDirectional minimumHere = HarborEdges.resolve(minimum, direction);
     double end(final HarborEdge edge) {
-      double value = _endClearance(context, edge, clear: clear, tide: true);
+      double value = _endClearance(context, edge, clear: clear, tide: tide);
       if (!edge.isVertical && mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
@@ -288,7 +300,7 @@ class HarborFairway extends StatelessWidget {
         ? (reverse ? HarborEdge.bottom : HarborEdge.top)
         : (reverse ? HarborEdge.end : HarborEdge.start);
     double clearance(final HarborEdge edge, final HarborClear clear) {
-      double value = _endClearance(context, edge, clear: clear, tide: true);
+      double value = _endClearance(context, edge, clear: clear, tide: tide);
       if (!vertical && mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
@@ -320,7 +332,7 @@ class HarborFairway extends StatelessWidget {
     final HarborWakeBand? band = waters.wakes[leadingEdge];
     double cover = band == null
         ? leadingAll
-        : math.max(HarborWaters.clearanceOf(context, leadingEdge) - band.length, HarborEdges.of(coast(), leadingEdge));
+        : math.max(HarborWaters.clearanceOf(context, leadingEdge, tide: tide) - band.length, HarborEdges.of(coast(), leadingEdge));
     cover = math.max(0.0, math.min(cover, leadingAll + absorbed) - absorbed);
 
     final Set<HarborEdge> castOff = vertical ? HarborEdge.vertical : HarborEdge.horizontal;
@@ -420,7 +432,7 @@ class HarborFairway extends StatelessWidget {
     final bool docks = clear == HarborClear.everything;
     return HarborCastOff(
       edges: <HarborEdge>{leadingEdge.opposite},
-      tide: vertical,
+      tide: vertical && tide,
       margin: margin,
       docks: docks,
       child: _HarborOpenWaterView(
@@ -962,6 +974,7 @@ class HarborFairwaySliver extends StatelessWidget {
     this.clearLeading = true,
     this.clearTrailing = true,
     this.clear = HarborClear.everything,
+    this.tide = true,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
     required this.sliver,
@@ -974,6 +987,10 @@ class HarborFairwaySliver extends StatelessWidget {
   /// [HarborClear.coast] it casts off the coast alone, and reveals still keep
   /// clear of everything over the viewport.
   final HarborClear clear;
+
+  /// Whether a bottom end it clears keeps clear of the keyboard, and casts it
+  /// off, as on [HarborFairway.tide].
+  final bool tide;
   final EdgeInsetsGeometry padding;
 
   /// A floor on the clearance at each end it clears, as on [HarborFairway.minimum].
@@ -986,6 +1003,7 @@ class HarborFairwaySliver extends StatelessWidget {
     properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
     properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
     properties.add(EnumProperty<HarborClear>('clear', clear, defaultValue: HarborClear.everything));
+    properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
     );
@@ -1007,7 +1025,7 @@ class HarborFairwaySliver extends StatelessWidget {
     final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
     final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     double clearance(final HarborEdge edge, final HarborClear clear) =>
-        math.max(_endClearance(context, edge, clear: clear, tide: true), HarborEdges.of(minimum, edge));
+        math.max(_endClearance(context, edge, clear: clear, tide: tide), HarborEdges.of(minimum, edge));
     final double leading = clearLeading ? clearance(leadingEdge, clear) : 0.0;
     final double trailing = clearTrailing ? clearance(trailingEdge, clear) : 0.0;
     // Reveals keep clear of everything over the viewport, whatever the ends clear.
@@ -1035,7 +1053,7 @@ class HarborFairwaySliver extends StatelessWidget {
         padding: insets.resolve(direction),
         sliver: HarborCastOff(
           edges: cleared,
-          tide: cleared.contains(HarborEdge.bottom),
+          tide: tide && cleared.contains(HarborEdge.bottom),
           margin: false,
           docks: all,
           child: sliver,

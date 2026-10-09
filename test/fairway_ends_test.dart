@@ -309,4 +309,101 @@ void main() {
       expect(HarborWaters.of(item).coast.top, 0);
     });
   });
+
+  group('A fairway that leaves the keyboard to someone else (#59)', () {
+    // An iPhone SE has no bottom coast, so the keyboard is all that is in the way at the bottom.
+    const HarborTrialDevice phone = HarborTrialDevice.iPhoneSE;
+    const double keyboardTop = 667 - 260;
+
+    // Breaks if: tide: false still adds the keyboard to the bottom end, or casts it off.
+    testWidgets('its last row rests at the bottom with the keyboard up, and its rows still read the keyboard', (
+      final tester,
+    ) async {
+      late BuildContext item;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            body: HarborFairway(
+              tide: false,
+              slivers: <Widget>[
+                SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
+                _rows(),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      await trial.raiseTide();
+      expect(trial.waterline, keyboardTop, reason: 'positive control: the keyboard is up');
+      expect(MediaQuery.viewInsetsOf(item).bottom, 260);
+      await _scrollBy(tester, -5000);
+      expect(_rect(tester, 'row29').bottom, 667);
+    });
+
+    // Breaks if: reveals still widen by the keyboard.
+    testWidgets('reveals leave the keyboard out', (final tester) async {
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(Harbor(bodyClearsTide: false, body: HarborFairway(tide: false, slivers: <Widget>[_rows()]))),
+        device: phone,
+      );
+      await trial.raiseTide();
+      // Row 8 is at 20 + 8 * 50 = 420, under the keyboard but on the screen.
+      tester.renderObject(find.byKey(const ValueKey<String>('row8'))).showOnScreen();
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'row8').bottom, 470);
+    });
+
+    // Breaks if: paddingOf ignores tide.
+    testWidgets('paddingOf leaves the keyboard out', (final tester) async {
+      late EdgeInsets padding;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            body: Builder(
+              builder: (final BuildContext context) {
+                padding = HarborFairway.paddingOf(context, tide: false);
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      await trial.raiseTide();
+      expect(padding, const EdgeInsets.only(top: 20));
+    });
+
+    // Breaks if: the sliver ignores tide, or casts off the keyboard it left.
+    testWidgets('so does a fairway sliver, and its sliver still reads the keyboard', (final tester) async {
+      late BuildContext item;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bodyClearsTide: false,
+            body: CustomScrollView(
+              slivers: <Widget>[
+                HarborFairwaySliver(
+                  tide: false,
+                  sliver: SliverMainAxisGroup(
+                    slivers: <Widget>[
+                      SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
+                      _rows(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      await trial.raiseTide();
+      expect(MediaQuery.viewInsetsOf(item).bottom, 260);
+      await _scrollBy(tester, -5000);
+      expect(_rect(tester, 'row29').bottom, 667);
+    });
+  });
 }
