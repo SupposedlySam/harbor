@@ -104,7 +104,8 @@ class HarborDock with Diagnosticable {
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
-  }) : kind = HarborDockKind.pier;
+  }) : kind = HarborDockKind.pier,
+       reserved = null;
 
   /// The body stops at it, as at `Scaffold.appBar`.
   ///
@@ -126,10 +127,53 @@ class HarborDock with Diagnosticable {
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
-  }) : kind = HarborDockKind.quay;
+  }) : kind = HarborDockKind.quay,
+       reserved = null;
+
+  /// A dock with nothing to lay out that holds [extent] against its edge, for
+  /// something drawn elsewhere that the body must still keep clear of (a footer
+  /// in an overlay, a bar a parent paints). It reaches [extent] in from the
+  /// edge, coast included: the larger of the coast and [extent] when it is the
+  /// outermost dock on its edge, and [extent] past the docks outside it when it
+  /// is not. It paints nothing and takes no taps, so whatever it stands in for
+  /// gets them.
+  ///
+  /// [kind] is a pier by default, so the body runs under it and keeps clear of
+  /// it through its padding; a quay makes the body stop at it. [tide] is how it
+  /// meets the keyboard, as for any dock: on pilings it stays at the edge,
+  /// floating it rides up on the keyboard.
+  ///
+  /// Before this, the way to say it was a pier whose child was
+  /// `SizedBox.shrink()` with `minimum: extent`, which reserved nothing when
+  /// another dock sat outside it, since only the outermost dock takes the coast
+  /// and its minimum.
+  const HarborDock.reserve({
+    this.key,
+    required final double extent,
+    this.kind = HarborDockKind.pier,
+    this.tide = HarborTideStance.pilings,
+    this.coast,
+    this.state = HarborDockState.open,
+    this.extentPolicy = HarborExtentPolicy.hold,
+    this.duration = const Duration(milliseconds: 250),
+    this.curve = Curves.easeInOutCubic,
+    this.animationStyle,
+    this.withdrawsAtHighTide = false,
+    this.debugLabel,
+  }) : assert(extent >= 0.0, 'A reserved extent cannot be negative.'),
+       reserved = extent,
+       child = const SizedBox.shrink(),
+       wake = HarborWake.none,
+       backdrop = null,
+       hitTestBehavior = HitTestBehavior.translucent,
+       restingExtent = null,
+       minimum = 0.0;
 
   /// Keeps the dock's state (its slide animation) when the docks around it change.
   final Key? key;
+
+  /// The extent a [HarborDock.reserve] holds; null for a dock with a child.
+  final double? reserved;
 
   final Widget child;
   final HarborDockKind kind;
@@ -194,7 +238,22 @@ class HarborDock with Diagnosticable {
         HarborTideStance.dryDock => HarborCoastStance.none,
       };
 
-  HarborDock copyWith({final HarborDockState? state, final Widget? child, final HarborTideStance? tide}) => kind == HarborDockKind.pier
+  HarborDock copyWith({final HarborDockState? state, final Widget? child, final HarborTideStance? tide}) => reserved != null
+      ? HarborDock.reserve(
+          key: key,
+          extent: reserved!,
+          kind: kind,
+          tide: tide ?? this.tide,
+          coast: coast,
+          state: state ?? this.state,
+          extentPolicy: extentPolicy,
+          duration: duration,
+          curve: curve,
+          animationStyle: animationStyle,
+          withdrawsAtHighTide: withdrawsAtHighTide,
+          debugLabel: debugLabel,
+        )
+      : kind == HarborDockKind.pier
       ? HarborDock.pier(
           key: key,
           child: child ?? this.child,
@@ -233,7 +292,7 @@ class HarborDock with Diagnosticable {
         );
 
   @override
-  String toStringShort() => '${objectRuntimeType(this, 'HarborDock')}.${kind.name}';
+  String toStringShort() => '${objectRuntimeType(this, 'HarborDock')}.${reserved != null ? 'reserve' : kind.name}';
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -257,6 +316,7 @@ class HarborDock with Diagnosticable {
     properties.add(FlagProperty('withdrawsAtHighTide', value: withdrawsAtHighTide, ifTrue: 'withdraws at high tide'));
     properties.add(DoubleProperty('restingExtent', restingExtent, defaultValue: null));
     properties.add(DoubleProperty('minimum', minimum, defaultValue: 0.0));
+    properties.add(DoubleProperty('reserved', reserved, defaultValue: null));
     properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
 }

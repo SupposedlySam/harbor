@@ -198,6 +198,12 @@ it is in a `Row`, and an `AppBar` in a `top` dock is as tall as its toolbar.
 Something that fills whatever it is given, like a `ListView`, needs a size, just
 as it would in a `Row`.
 
+`HarborDock.reserve(extent: 80)` holds an edge for something drawn elsewhere
+(a footer in an overlay, a bar a parent paints): it reaches 80 in from the
+edge, coast included, or 80 past the docks outside it, paints nothing and takes
+no taps. It is a pier by default (`kind: HarborDockKind.quay` stops the body
+at it) and takes a `tide:` like any dock.
+
 **The side docks own the corners.** A `start` or `end` dock runs the frame's
 full height, and a `top` or `bottom` dock runs between them, as a tablet's
 `NavigationRail` sits beside its `AppBar`. A header beside a rail starts where
@@ -220,7 +226,7 @@ focus (`restingExtent:`) holds the header at its resting width.
 | `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
-| `minimum: 16` | At least this much room on the edge, coast or not. With an empty child (`SizedBox.shrink()`), a dock that reaches the larger of the coast and the minimum; `coast: HarborCoastStance.none` and a sized child reach exactly that size |
+| `minimum: 16` | At least this much room on the edge, coast or not, for the dock outermost on its edge (the one that takes the coast) |
 | `hitTestBehavior:` | Opaque by default, so taps on the header never reach rows under it |
 
 ## Content
@@ -356,7 +362,10 @@ that clears the tide has no `viewPadding` left at the bottom while the keyboard
 is up, so read it here. It rebuilds its reader when the view padding changes,
 as `MediaQuery.viewPaddingOf` does, but not on every frame of the keyboard. It
 is zero below a quay that absorbed the coast, and below anything that cast the
-edge off.
+edge off. A footer that sits on the keyboard instead, giving the home
+indicator's room back while the keyboard covers it, reads
+`MediaQuery.viewPaddingOf` in a body that clears the tide: the indicator with
+the keyboard down, 0 with it up.
 
 ### A keyboard the platform does not report
 
