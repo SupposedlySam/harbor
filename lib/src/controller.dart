@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'buoy.dart' show HarborAnchor, HarborBuoy, HarborBuoyCrossAlignment, HarborBuoySide;
 import 'dock.dart';
 import 'edge.dart';
 import 'tide.dart';
@@ -86,7 +87,8 @@ enum HarborFlareClosedReason {
 ///
 /// Flares raised at the same alignment in one harbor take turns, as a
 /// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
-/// it has been lowered and has run its exit.
+/// it has been lowered and has run its exit. Flares raised by an [anchor] take
+/// turns per anchor and [side].
 class HarborFlareEntry {
   /// Flares are raised with `HarborFlares.raise`.
   @internal
@@ -100,13 +102,35 @@ class HarborFlareEntry {
     this.animationStyle,
     this.transitionBuilder,
     this.liveRegion = true,
+    this.anchor,
+    this.side = HarborBuoySide.below,
+    this.gap = 8.0,
+    this.crossAlignment = HarborBuoyCrossAlignment.center,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
   static const Duration _minimumLinger = Duration(milliseconds: 300);
 
   final WidgetBuilder builder;
+
+  /// Where the flare sits in the clear water. Not read for a flare with an [anchor].
   final Alignment alignment;
+
+  /// What the flare sits by, as a [HarborBuoy.anchored] does, in place of an [alignment]; null
+  /// for a flare at a slot or an alignment.
+  final HarborAnchor? anchor;
+
+  /// Which side of its [anchor] the flare sits on.
+  final HarborBuoySide side;
+
+  /// How far the flare sits from its [anchor].
+  final double gap;
+
+  /// How the flare lines up with its [anchor] across its [side].
+  final HarborBuoyCrossAlignment crossAlignment;
+
+  /// Where the flare takes its turn: flares at one place are shown one at a time.
+  Object get _place => anchor == null ? alignment : (anchor, side);
 
   /// How long the flare stays once it is in sight: its entrance has run and
   /// no other route covers its harbor. Counted again from the start each time
@@ -186,13 +210,13 @@ class HarborFlareEntry {
 /// Completes [flare]'s [HarborFlareEntry.closed]: it has left the screen.
 void flareLeft(final HarborFlareEntry flare) => flare._left();
 
-/// The flares of [flares] that are in sight: the first at each alignment.
-/// The others wait their turn behind it.
+/// The flares of [flares] that are in sight: the first at each alignment, or at each anchor and
+/// side. The others wait their turn behind it.
 List<HarborFlareEntry> flaresInSight(final Iterable<HarborFlareEntry> flares) {
-  final Set<Alignment> taken = <Alignment>{};
+  final Set<Object> taken = <Object>{};
   return <HarborFlareEntry>[
     for (final HarborFlareEntry flare in flares)
-      if (taken.add(flare.alignment)) flare,
+      if (taken.add(flare._place)) flare,
   ];
 }
 
@@ -253,11 +277,12 @@ class HarborFleet {
   void _leave(final HarborController controller) {
     _harbors.remove(controller);
     // Flares on a harbor that is leaving move to the one now on top. With no
-    // harbor left to show them, they are lowered, which stops their timers.
+    // harbor left to show them, they are lowered, which stops their timers. An
+    // anchored flare's anchor left with its page, so it is lowered too.
     final List<HarborFlareEntry> orphans = controller._releaseFlares();
     final HarborController? top = topmost;
     for (final HarborFlareEntry flare in orphans) {
-      if (top != null) {
+      if (top != null && flare.anchor == null) {
         top._raiseFlare(flare);
       } else {
         flare

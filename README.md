@@ -375,6 +375,7 @@ Harbor(
 
 HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (_) => Toast('Saved'));
 HarborFlares.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+HarborFlares.raise(context, anchor: copyAnchor, side: HarborBuoySide.above, builder: (_) => Toast('Copied'));
 final undo = HarborFlares.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
 final HarborFlareClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
 HarborFlares.raise(
@@ -427,6 +428,16 @@ A flare goes to the port on top (a sheet over a page over the sea), so a `low`
 flare clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 flare moves to the one now on top.
+
+A flare raised with an `anchor` sits by a `HarborAnchorPoint` instead, as an
+anchored buoy does: on its `side` (`below` by default), `gap` away (8), lined up
+by its `crossAlignment` (centred), and kept in the clear water: "Copied" by the
+button that copied. Give it the anchor alone, without a slot or an alignment,
+and raise it from the page that holds the anchor: it is shown by that page's
+port, not the one on top. Flares at one anchor and side take turns. While the
+anchor is out of the tree the flare is not shown, takes no taps and is not read
+out, and its time stops. If its page is popped, it does not move to the port now
+on top: it is lowered, and `closed` reports `remove`.
 
 Flares raised at the same slot or alignment of one port take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before

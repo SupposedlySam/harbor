@@ -532,12 +532,22 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     final List<HarborBuoy> all = <HarborBuoy>[
       ...buoys,
       for (final HarborFlareEntry flare in flaresInSight(flares))
-        HarborBuoy(
-          key: ObjectKey(flare),
-          alignment: flare.alignment,
-          within: _local(context, flare.avoidInGlobal),
-          child: _Flare(entry: flare),
-        ),
+        if (flare.anchor case final HarborAnchor anchor)
+          HarborBuoy.anchored(
+            key: ObjectKey(flare),
+            anchor: anchor,
+            side: flare.side,
+            gap: flare.gap,
+            crossAlignment: flare.crossAlignment,
+            child: _Flare(entry: flare),
+          )
+        else
+          HarborBuoy(
+            key: ObjectKey(flare),
+            alignment: flare.alignment,
+            within: _local(context, flare.avoidInGlobal),
+            child: _Flare(entry: flare),
+          ),
     ];
     return _BuoyLayout(
       buoys: all,
@@ -1537,6 +1547,19 @@ abstract final class HarborFlares {
   /// reading direction of [context], the page that raised it, whose themes the
   /// flare also keeps.
   ///
+  /// [anchor] places the flare by a [HarborAnchorPoint] instead, as a
+  /// [HarborBuoy.anchored] is placed: on its [side], [gap] away, lined up by
+  /// [crossAlignment], and kept inside the clear water. Give it alone, without
+  /// a [slot] or an [alignment], and raise it from the page that holds the
+  /// anchor: an anchored flare is shown by that page's port rather than the
+  /// one on top ([target] is not read), so it never sits over a sheet or
+  /// dialog by an anchor beneath it. Flares at one anchor and side take turns.
+  /// While the anchor is out of the tree the flare is not shown, takes no taps
+  /// and is not read out, and its time stops. If its page is popped, it is
+  /// lowered with [HarborFlareClosedReason.remove] rather than moving to the
+  /// port now on top. [side], [gap] and [crossAlignment] are not read without
+  /// an anchor.
+  ///
   /// The flare fades and scales in and out over [animationStyle] (220 ms each
   /// way by default). [AnimationStyle.noAnimation] shows it as it is, for a
   /// widget that brings its own entrance; [transitionBuilder] builds your own
@@ -1553,7 +1576,8 @@ abstract final class HarborFlares {
   /// screen not yet built from a harbor), the flare goes to the nearest
   /// [Overlay], kept clear of `MediaQuery.padding` and `viewInsets`. With no
   /// overlay either, it is reported through [FlutterError.reportError] and
-  /// returned already lowered.
+  /// returned already lowered. An anchored flare in an overlay is placed by its
+  /// anchor in the same water.
   static HarborFlareEntry raise(
     final BuildContext context, {
     required final WidgetBuilder builder,
@@ -1565,8 +1589,13 @@ abstract final class HarborFlares {
     final AnimationStyle? animationStyle,
     final HarborFlareTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
+    final HarborAnchor? anchor,
+    final HarborBuoySide side = HarborBuoySide.below,
+    final double gap = 8.0,
+    final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
+    assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
     // A flare is built in its harbor's buoy layer, not where it was raised, so it takes the
     // themes and text style of the place that raised it, as a sheet does. Without this a page
@@ -1584,11 +1613,17 @@ abstract final class HarborFlares {
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
       liveRegion: liveRegion,
+      anchor: anchor,
+      side: side,
+      gap: gap,
+      crossAlignment: crossAlignment,
     );
-    final HarborController? controller = switch (target) {
-      HarborFlareTarget.topmost => fleet?.topmost,
-      HarborFlareTarget.sea => fleet?.sea,
-    } ?? HarborController.maybeOf(context);
+    final HarborController? controller = anchor != null
+        ? _portOf(HarborController.maybeOf(context))
+        : switch (target) {
+            HarborFlareTarget.topmost => fleet?.topmost,
+            HarborFlareTarget.sea => fleet?.sea,
+          } ?? HarborController.maybeOf(context);
     if (controller != null) {
       controller.raiseFlare(entry);
     } else if (Overlay.maybeOf(context) case final OverlayState overlay) {
@@ -1606,6 +1641,15 @@ abstract final class HarborFlares {
       return entry;
     }
     return entry;
+  }
+
+  /// The port [harbor] is in: the first harbor of its route, or of its sheet over the sea.
+  static HarborController? _portOf(final HarborController? harbor) {
+    HarborController? port = harbor;
+    while (port != null && !port.isRouteLevel) {
+      port = port.parent;
+    }
+    return port ?? harbor;
   }
 
   static final Expando<_OverlayQueue> _overlayQueues = Expando<_OverlayQueue>();
@@ -1683,9 +1727,13 @@ class _OverlayFlare extends StatefulWidget {
 
 class _OverlayFlareState extends State<_OverlayFlare> {
   static const EdgeInsets _margin = EdgeInsets.all(16.0);
+  static const EdgeInsets _anchoredMargin = EdgeInsets.all(8.0);
 
   Timer? _removal;
   bool _removed = false;
+
+  /// Where an anchored flare landed; it does not flip, so this is never read.
+  late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.entry.side);
 
   @override
   void initState() {
@@ -1709,6 +1757,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
   @override
   void dispose() {
     widget.entry.showing.removeListener(_changed);
+    _landed.dispose();
     _removal?.cancel();
     if (!_removed) {
       // The overlay went away with the flare still up: nothing is left to show it.
@@ -1729,9 +1778,27 @@ class _OverlayFlareState extends State<_OverlayFlare> {
       math.max(padding.right, keyboard.right),
       math.max(padding.bottom, keyboard.bottom),
     );
+    final HarborFlareEntry entry = widget.entry;
+    if (entry.anchor case final HarborAnchor anchor) {
+      // Placed as a portal buoy with no harbor around it is: by its anchor, as it paints.
+      return _PortalBuoyLayout(
+        harbor: null,
+        anchor: anchor,
+        side: entry.side,
+        gap: entry.gap,
+        overlap: 0.0,
+        crossAlignment: entry.crossAlignment,
+        crossOffset: 0.0,
+        margin: covered + _anchoredMargin,
+        flips: false,
+        textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+        landed: _landed,
+        child: _Flare(entry: entry),
+      );
+    }
     return Padding(
       padding: covered + _margin,
-      child: Align(alignment: widget.entry.alignment, child: _Flare(entry: widget.entry)),
+      child: Align(alignment: entry.alignment, child: _Flare(entry: entry)),
     );
   }
 }
@@ -1757,6 +1824,17 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   Timer? _timeout;
   bool _inSight = true;
 
+  /// Whether the flare's anchor is in the tree; always for a flare with none.
+  bool _anchored = true;
+
+  void _anchorMoved() {
+    final bool anchored = widget.entry.anchor?.box != null;
+    if (anchored != _anchored) {
+      _anchored = anchored;
+      _syncTimeout();
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -1778,6 +1856,10 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     super.initState();
     widget.entry.showing.addListener(_changed);
     _controller.addStatusListener(_statusChanged);
+    if (widget.entry.anchor case final HarborAnchor anchor) {
+      anchor.addListener(_anchorMoved);
+      _anchored = anchor.box != null;
+    }
   }
 
   void _changed() {
@@ -1793,7 +1875,8 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   void _syncTimeout() {
     final HarborFlareEntry entry = widget.entry;
     final Duration? duration = entry.duration;
-    final bool running = duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight;
+    final bool running =
+        duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight && _anchored;
     if (running && _timeout == null) {
       _timeout = Timer(duration, () => entry.lower(reason: HarborFlareClosedReason.timeout));
     } else if (!running) {
@@ -1806,6 +1889,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   void dispose() {
     _timeout?.cancel();
     widget.entry.showing.removeListener(_changed);
+    widget.entry.anchor?.removeListener(_anchorMoved);
     _controller.removeStatusListener(_statusChanged);
     _animation.dispose();
     _controller.dispose();
