@@ -20,7 +20,9 @@ Future<void> _wholePhone(final WidgetTester tester) async {
   }
 }
 
-Future<void> _pumpEntry(final WidgetTester tester, final Widget entry) async {
+/// Pumps [entry]; unless [wholePhone] is false, the stage then shows the whole
+/// phone whatever the page's own focus.
+Future<void> _pumpEntry(final WidgetTester tester, final Widget entry, {final bool wholePhone = true}) async {
   tester.view.physicalSize = const Size(402, 874);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -33,7 +35,9 @@ Future<void> _pumpEntry(final WidgetTester tester, final Widget entry) async {
     ),
   );
   await tester.pump();
-  await _wholePhone(tester);
+  if (wholePhone) {
+    await _wholePhone(tester);
+  }
   await tester.pump();
   await tester.pump(_step);
   expect(tester.takeException(), isNull);
@@ -121,6 +125,14 @@ Future<void> _popStage(final WidgetTester tester, final String keyInside) async 
 Widget _page(final String id) => Builder(
   builder: (final BuildContext context) => floatingEntries.firstWhere((final GuideEntry e) => e.id == id).page(context),
 );
+
+/// Expects [key] to be drawn inside the stage's view, not cut off past it.
+void _expectInView(final WidgetTester tester, final String key) {
+  final Rect view = tester.getRect(_key('stage'));
+  final Rect rect = _rect(tester, key);
+  expect(rect.top, greaterThanOrEqualTo(view.top - 0.6), reason: '$key top');
+  expect(rect.bottom, lessThanOrEqualTo(view.bottom + 0.6), reason: '$key bottom');
+}
 
 Matcher _near(final double value) => moreOrLessEquals(value, epsilon: 0.6);
 Matcher _atMost(final double value) => lessThanOrEqualTo(value + 0.6);
@@ -238,6 +250,79 @@ void main() {
       ),
     );
     expect(tester.takeException(), isNull);
+  });
+
+  // -------------------------------------------------------------------------
+  // What each page shows of the phone
+
+  // Under each page's own focus, what opens or raises a thing on the stage is in view, and so is
+  // every part of the phone the thing's behaviour moves.
+  for (final (String id, List<String> keys) page in <(String, List<String>)>[
+    ('buoy', <String>['free buoy', 'buoy tab bar']),
+    ('buoy-anchored', <String>['anchor button', 'anchored buoy', 'anchored header', 'draggable anchor']),
+    ('buoy-modal', <String>['call the launch', 'modal buoy', 'modal header', 'modal tab bar']),
+    ('buoy-portal', <String>['stage row 0', 'portal tab bar']),
+    ('signals', <String>['raise top', 'raise low', 'open flares sheet', 'flares tab bar']),
+    ('sheet', <String>['open sheet']),
+    ('sheet-draggable', <String>['open draggable sheet']),
+    ('sheet-breakwater', <String>['open breakwater sheet']),
+    ('dialog', <String>['open dialog', 'office header', 'office footer']),
+    ('lighthouse-reveal', <String>['reveal', 'reveal header', 'beacon field']),
+    ('beacon-obscured', <String>['obscured header', 'header title', 'covered readout', 'hero title']),
+    ('lighthouse-region', <String>['open lift sheet', 'lift boat']),
+  ]) {
+    testWidgets('${page.$1}: under the page’s own focus, ${page.$2.join(', ')} are in view', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, _page(page.$1), wholePhone: false);
+      for (final String key in page.$2) {
+        _expectInView(tester, key);
+      }
+    });
+  }
+
+  testWidgets('HarborSheet: under the page’s own focus, the tallest sheet is in view, header to footer', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('sheet'), wholePhone: false);
+    await _tapStage(tester, 'open sheet');
+    await tester.pump(_step);
+    await _slide(tester, 'rows', 16);
+    await _slide(tester, 'maxExtent %', 100);
+    _expectInView(tester, 'sheet header');
+    _expectInView(tester, 'sheet footer');
+    await _popStage(tester, 'sheet footer');
+  });
+
+  testWidgets(
+    'HarborBeacon(keepInSight:): under the page’s own focus, reveal, the field and the keyboard are in view',
+    (final WidgetTester tester) async {
+      await _pumpEntry(tester, _page('lighthouse-reveal'), wholePhone: false);
+      await _tapStage(tester, 'beacon field');
+      await _raiseTideForBeacon(tester);
+      _expectInView(tester, 'reveal');
+      _expectInView(tester, 'beacon field');
+      expect(_keyboardTop(tester), lessThan(tester.getRect(_key('stage')).bottom));
+    },
+  );
+
+  testWidgets('HarborLighthouseRegion: under the page’s own focus, the open sheet and the lifted boat are in view', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('lighthouse-region'), wholePhone: false);
+    await _openLiftSheet(tester);
+    _expectInView(tester, 'open lift sheet');
+    _expectInView(tester, 'lift sheet header');
+    _expectInView(tester, 'lift boat');
+  });
+
+  testWidgets('showHarborSheet(breakwater: true): under the page’s own focus, the button and the sheet are in view', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('sheet-breakwater'), wholePhone: false);
+    await _openBreakwater(tester);
+    _expectInView(tester, 'open breakwater sheet');
+    _expectInView(tester, 'breakwater sheet header');
   });
 
   // -------------------------------------------------------------------------
@@ -458,7 +543,9 @@ void main() {
   // -------------------------------------------------------------------------
   // HarborPortalBuoy
 
-  testWidgets('HarborPortalBuoy: the menu opened from the first row sits gap below it', (final WidgetTester tester) async {
+  testWidgets('HarborPortalBuoy: the menu opened from the first row sits gap below it', (
+    final WidgetTester tester,
+  ) async {
     await _pumpEntry(tester, _page('buoy-portal'));
     final double s = _scale(tester);
     await _tapStage(tester, 'stage row 0');
@@ -523,7 +610,10 @@ void main() {
     expect(_rect(tester, 'modal buoy').center.dy, _near(water.center.dy));
     expect(_rect(tester, 'modal buoy').center.dx, _near(water.center.dx));
     expect(find.text('HarborBuoy(modal: true)'), findsWidgets);
-    expect(_code(tester), contains('HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'));
+    expect(
+      _code(tester),
+      contains('HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'),
+    );
   });
 
   testWidgets('HarborBuoy(modal: true): not modal, both buoys float, the first at the bottom center', (
@@ -695,18 +785,17 @@ void main() {
     expect(_code(tester), contains('footer: MakeSailButton(),'));
   });
 
-  testWidgets(
-    'HarborSheet: with a header, the body ends at the footer, with no empty band between them',
-    (final WidgetTester tester) async {
-      await _pumpEntry(tester, _page('sheet'));
-      final double s = _scale(tester);
-      await _tapStage(tester, 'open sheet');
-      await tester.pump(_step);
-      // The footer's dock starts 12 above its button.
-      expect(_rect(tester, 'sheet body').bottom, _near(_rect(tester, 'sheet footer').top - 12 * s));
-      await _popStage(tester, 'sheet footer');
-    },
-  );
+  testWidgets('HarborSheet: with a header, the body ends at the footer, with no empty band between them', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('sheet'));
+    final double s = _scale(tester);
+    await _tapStage(tester, 'open sheet');
+    await tester.pump(_step);
+    // The footer's dock starts 12 above its button.
+    expect(_rect(tester, 'sheet body').bottom, _near(_rect(tester, 'sheet footer').top - 12 * s));
+    await _popStage(tester, 'sheet footer');
+  });
 
   testWidgets('HarborSheet: its footer’s Make sail closes it', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('sheet'));
