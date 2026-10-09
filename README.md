@@ -97,7 +97,7 @@ If you know the Flutter widget, this is where to look in harbor, and what is dif
 | **Fairway** | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A fairway clears both ends, keyboard included, and widens every reveal by what covers its edges. `HarborFairwaySliver` is the `SliverSafeArea` of a scroll view you build yourself |
 | **Pinned header** (`HarborSliverDock`) | `PinnedHeaderSliver`, `SliverAppBar(pinned: true)` | It pins at the docks' face rather than the viewport's edge, several stack, and reveals keep clear of it |
 | **Open water** | Content outside any `SafeArea` that reads `MediaQuery.padding` itself | `waters` splits each edge into coast and docks, which `MediaQuery.padding` adds together |
-| **Cast off** (`HarborCastOff`) | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; a cast-off zeroes it, and with `tide:` the keyboard, and zeroes harbor's own waters, so harbor widgets beneath read zero too |
+| **Cast off** (`HarborCastOff`) | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; a cast-off zeroes it, and with `tide:` the keyboard, and zeroes harbor's own waters, so harbor widgets beneath read zero too. `docks: false` casts off the coast alone and leaves the docks, which `removePadding` cannot tell apart |
 | **Float / pilings** | Float: the bottom of a resizing `Scaffold`'s body. Pilings: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per dock, so a composer can float while the tab bar under it stays on pilings |
 | **Dry dock** | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
 | **Make way** | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the dock's ground as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the ground back |
@@ -227,6 +227,14 @@ as it would in a `Row`.
 Each one **casts off** what it cleared, so nothing beneath clears it again.
 `HarborCastOff` does the same for a layer you pad by hand, and
 `HarborFairway.paddingOf` gives a third-party list the right scroll padding.
+
+A layer that pads by the coast alone (a page's safe-area margin, read from
+`HarborWaters.of(context).coast`) casts off the coast and keeps the docks with
+`HarborCastOff(edges: {HarborEdge.bottom}, docks: false)`. A list inside it
+still rests on a frosted tab bar: beneath, the docks, their wakes and
+`MediaQuery.padding` are measured from the layer's edge. A fairway needs no
+such option across its scroll: it casts off only its own ends, so a carousel's
+items are handed the docks above and below it as they are.
 
 `HarborMoored(clear: HarborClear.coast)` keeps clear of the coast alone: a hero
 title under a translucent header that must not touch the status bar.
