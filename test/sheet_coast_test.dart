@@ -6,7 +6,7 @@ import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
 // How a sheet hands the coast to its header, body and footer: the top coast with
-// `keepsTopCoast` (#75).
+// `keepsTopCoast` (#75) and the side coast (#76).
 
 const double _headerHeight = 40.0;
 
@@ -31,7 +31,8 @@ Future<BuildContext> _page(final WidgetTester tester, final HarborTrialDevice de
       color: const Color(0xFF000000),
       pageRouteBuilder: <T>(final RouteSettings settings, final WidgetBuilder builder) => PageRouteBuilder<T>(
         settings: settings,
-        pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) => builder(context),
+        pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) =>
+            builder(context),
       ),
       builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
       home: Harbor(
@@ -50,18 +51,21 @@ Future<BuildContext> _page(final WidgetTester tester, final HarborTrialDevice de
 
 /// Opens a sheet with a surface, a header, a body and a footer, each recording its padding.
 ///
-/// The body is not moored, so it shows what the sheet hands it rather than what a moored
-/// widget would clear for itself.
+/// The body is not moored unless [mooredBody], so it shows what the sheet hands it rather
+/// than what a moored widget would clear for itself.
 Future<Map<String, EdgeInsets>> _open(
   final WidgetTester tester,
   final HarborTrialDevice device, {
   required final bool draggable,
   final bool keepsTopCoast = false,
   final bool? clearsTopCoast,
+  final bool? clearsSides,
+  final bool mooredBody = false,
 }) async {
   final BuildContext page = await _page(tester, device);
   final Map<String, EdgeInsets> padding = <String, EdgeInsets>{};
   const Widget surface = SizedBox.expand(key: ValueKey<String>('surface'));
+  Widget body() => mooredBody ? HarborMoored(child: _probe('body', 100.0, padding)) : _probe('body', 100.0, padding);
   unawaited(
     showHarborSheet<void>(
       page,
@@ -70,20 +74,22 @@ Future<Map<String, EdgeInsets>> _open(
           ? HarborSheet.draggable(
               extent: const HarborSheetExtent(rest: 1.0, max: 1.0),
               clearsTopCoast: clearsTopCoast ?? true,
+              clearsSides: clearsSides ?? false,
               surface: surface,
               header: _probe('header', _headerHeight, padding),
               footer: _probe('footer', 40.0, padding),
               builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
                 controller: controller,
-                slivers: <Widget>[SliverToBoxAdapter(child: _probe('body', 100.0, padding))],
+                slivers: <Widget>[SliverToBoxAdapter(child: body())],
               ),
             )
           : HarborSheet(
               clearsTopCoast: clearsTopCoast ?? true,
+              clearsSides: clearsSides ?? false,
               surface: surface,
               header: _probe('header', _headerHeight, padding),
               footer: _probe('footer', 40.0, padding),
-              body: _probe('body', 100.0, padding),
+              body: body(),
             ),
     ),
   );
@@ -160,5 +166,60 @@ void main() {
         }
       });
     }
+  });
+
+  group('HarborSheet(clearsSides:) on a phone on its side (#76)', () {
+    const HarborTrialDevice landscape = HarborTrialDevice.iPhone17Landscape;
+    final double left = landscape.coast.left;
+    final double right = landscape.size.width - landscape.coast.right;
+
+    for (final bool draggable in <bool>[false, true]) {
+      testWidgets('true: header, body and footer clear the side coast and cast it off (draggable: $draggable)', (
+        final tester,
+      ) async {
+        final Map<String, EdgeInsets> padding = await _open(tester, landscape, draggable: draggable, clearsSides: true);
+        for (final String part in <String>['header', 'body', 'footer']) {
+          final Rect rect = _rect(tester, part);
+          expect(rect.left, left, reason: part);
+          expect(rect.right, right, reason: part);
+          expect(padding[part]!.left, 0.0, reason: part);
+          expect(padding[part]!.right, 0.0, reason: part);
+        }
+        // The surface still runs edge to edge.
+        expect(_rect(tester, 'surface').left, 0.0);
+        expect(_rect(tester, 'surface').right, landscape.size.width);
+      });
+
+      testWidgets('false, the default: content spans the sheet and is handed the side coast (draggable: $draggable)', (
+        final tester,
+      ) async {
+        final Map<String, EdgeInsets> padding = await _open(tester, landscape, draggable: draggable);
+        for (final String part in <String>['header', 'body', 'footer']) {
+          final Rect rect = _rect(tester, part);
+          expect(rect.left, 0.0, reason: part);
+          expect(rect.right, landscape.size.width, reason: part);
+          expect(padding[part]!.left, left, reason: part);
+          expect(padding[part]!.right, landscape.coast.right, reason: part);
+        }
+        expect(_rect(tester, 'surface').left, 0.0);
+        expect(_rect(tester, 'surface').right, landscape.size.width);
+      });
+
+      testWidgets('a moored body is not pushed in twice (draggable: $draggable)', (final tester) async {
+        await _open(tester, landscape, draggable: draggable, clearsSides: true, mooredBody: true);
+        expect(_rect(tester, 'body').left, left);
+        expect(_rect(tester, 'body').right, right);
+      });
+    }
+
+    testWidgets('it leaves a phone with no side coast as it was', (final tester) async {
+      await _open(tester, phone, draggable: false);
+      final Rect header = _rect(tester, 'header');
+      final Rect body = _rect(tester, 'body');
+      await tester.pumpWidget(const SizedBox());
+      await _open(tester, phone, draggable: false, clearsSides: true);
+      expect(_rect(tester, 'header'), header);
+      expect(_rect(tester, 'body'), body);
+    });
   });
 }

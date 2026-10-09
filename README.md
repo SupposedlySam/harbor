@@ -585,6 +585,16 @@ it, and the top coast is cast off for its content, which reads zero there.
 Without `keepsTopCoast` it changes nothing: the sheet stops short of the status
 bar and is handed no top coast to clear.
 
+On a phone on its side, or with a cutout on a side edge, `HarborSheet(clearsSides: true)`
+keeps the header, body and footer clear of the coast on the left and right and
+casts it off, so nothing beneath clears it again, while the surface still runs
+edge to edge. It is off by default, as `showModalBottomSheet`'s `useSafeArea`
+is: then the header and footer run the sheet's full width and are handed the
+side coast in `MediaQuery.padding`, and so is the body, which clears it only
+where it moors. `useSafeArea` insets the whole sheet, its surface
+and its top too; `clearsSides` insets only what is over the surface, and only
+the sides.
+
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and flares and buoys keep to the screen that holds them, never across the hinge.
 A flat fold, which has no width, may still be spanned.

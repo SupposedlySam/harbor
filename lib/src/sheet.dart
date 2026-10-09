@@ -11,6 +11,7 @@ import 'controller.dart';
 import 'dock.dart';
 import 'edge.dart';
 import 'harbor.dart';
+import 'moored.dart';
 import 'render_harbor.dart';
 import 'tide.dart';
 import 'wake.dart';
@@ -111,6 +112,7 @@ class HarborSheet extends StatelessWidget {
     this.dragToClose = false,
     this.closeFlingVelocity = 700.0,
     this.clearsTopCoast = true,
+    this.clearsSides = false,
   }) : assert(closeFlingVelocity >= 0.0),
        builder = null,
        extent = null,
@@ -143,6 +145,7 @@ class HarborSheet extends StatelessWidget {
     this.clip,
     this.closeFlingVelocity = 700.0,
     this.clearsTopCoast = true,
+    this.clearsSides = false,
   }) : assert(closeFlingVelocity >= 0.0),
        body = null,
        maxExtentFraction = null,
@@ -226,6 +229,20 @@ class HarborSheet extends StatelessWidget {
   /// up there.
   final bool clearsTopCoast;
 
+  /// Whether the header, body and footer clear the coast on the left and right
+  /// (a phone's notch in landscape, a cutout on a side edge) and cast it off,
+  /// so content beneath does not clear it again. The [surface] still runs edge
+  /// to edge.
+  ///
+  /// Off by default, as `showModalBottomSheet`'s `useSafeArea` is: the header
+  /// and footer then run the sheet's full width and are handed the side coast
+  /// in `MediaQuery.padding`, as is the body, which clears it where it moors.
+  /// Material's `useSafeArea` (`ModalBottomSheetRoute.useSafeArea`, in the
+  /// Flutter SDK's `packages/flutter/lib/src/material/bottom_sheet.dart`) wraps
+  /// the whole sheet in a `SafeArea(bottom: false)`, surface and top included;
+  /// this insets only what is over the surface, and only the sides.
+  final bool clearsSides;
+
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -251,6 +268,7 @@ class HarborSheet extends StatelessWidget {
     properties.add(FlagProperty('dragToClose', value: dragToClose, ifTrue: 'drag to close'));
     properties.add(DoubleProperty('closeFlingVelocity', closeFlingVelocity, defaultValue: 700.0, unit: 'px/s'));
     properties.add(FlagProperty('clearsTopCoast', value: clearsTopCoast, ifFalse: 'casts off the top coast'));
+    properties.add(FlagProperty('clearsSides', value: clearsSides, ifTrue: 'clears the sides'));
   }
 
   /// Closes the sheet [context] is in, whichever way it was opened, and
@@ -296,6 +314,11 @@ class HarborSheet extends StatelessWidget {
       // The coast alone: the sheet keeps the height keepsTopCoast gave it, and its new port is
       // handed no status bar to clear. The mooring line stays.
       port = HarborCastOff(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: port);
+    }
+    if (clearsSides) {
+      // Moored to the side coast alone, inside the surface, so the surface still runs edge to edge
+      // and the new port beneath is handed no side coast. The mooring line stays.
+      port = HarborMoored(edges: HarborEdge.horizontal, clear: HarborClear.coast, tide: false, child: port);
     }
     return port;
   }
