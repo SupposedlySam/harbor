@@ -393,11 +393,16 @@ reported after the frame, as two leaders on one `LayerLink` are.
 puts a button where a right-to-left reader expects it.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
-alone, a tap beside the buoy or back calls its `onDismiss`, and the buoys listed
-before it are hidden while it is up. Its `barrierLabel` ('Dismiss' when none is
-given) is what a screen reader announces for the barrier; a Material app passes
-`MaterialLocalizations.of(context).modalBarrierDismissLabel`. Unlike a route, it
-does not trap keyboard focus.
+alone, a tap beside the buoy, back or Escape calls its `onDismiss`, and the buoys
+listed before it are hidden while it is up. Its `barrierLabel` ('Dismiss' when
+none is given) is what a screen reader announces for the barrier; a Material app
+passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`. It holds
+keyboard focus as a dialog does: it takes focus when it opens, Tab goes round
+inside it and the arrow keys (a TV remote's D-pad) stop at its edges, and focus
+goes back to where it was when it closes. `requestFocus: false` leaves focus on
+the page, as it does for a route; Escape from there still closes the buoy, unless
+focus is on a page of a `Navigator` nested in the harbor's body, whose route
+answers Escape before the harbor does.
 A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
 `alignment`, placed as a buoy at that alignment would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.

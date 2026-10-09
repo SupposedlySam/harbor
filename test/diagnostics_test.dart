@@ -66,6 +66,8 @@ void main() {
         side: HarborBuoySide.below,
         modal: true,
         onDismiss: () {},
+        requestFocus: false,
+        barrierLabel: 'Close menu',
         child: _child,
       );
       expect(menu.toStringShort(), 'HarborBuoy.anchored');
@@ -74,6 +76,8 @@ void main() {
         'side: below',
         'modal',
         'has onDismiss',
+        'does not take focus',
+        'barrierLabel: "Close menu"',
       ]);
     });
 

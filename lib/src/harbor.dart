@@ -464,6 +464,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
       ),
       children: children,
     );
+    result = HarborModalBuoyActions(buoys: widget.buoys, child: result);
     result = HarborNonModalSheetActions(route: controller.route, child: result);
     result = HarborScope(controller: controller, child: result);
     if (_ownFleet != null) {
