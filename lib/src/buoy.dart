@@ -360,8 +360,9 @@ class HarborBuoy with Diagnosticable {
 
   /// Whether a modal buoy takes focus when it opens, as [Route.requestFocus]: its scope is
   /// focused, so a child with `autofocus: true` takes it from there. With false, focus stays where
-  /// it was, and Escape from the page still dismisses the buoy. Ignored for a buoy that is not
-  /// [modal].
+  /// it was, and Escape from the page still dismisses the buoy, though not from a page of a
+  /// [Navigator] nested in the harbor's body: that page's route answers Escape first. Ignored for a
+  /// buoy that is not [modal].
   final bool requestFocus;
 
   /// The colour of a modal buoy's barrier; clear by default, so the page shows as it is.
@@ -599,7 +600,10 @@ class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
 
 /// Escape (a [DismissIntent]) from anywhere in a harbor calls its top modal buoy's
 /// [HarborBuoy.onDismiss], from focus in the buoy or on the page behind it. With no modal buoy up
-/// it is left to the widgets above, as `RawMenuAnchor` leaves it while its menu is closed.
+/// it is left to the widgets above, as `RawMenuAnchor` leaves it while its menu is closed: a page
+/// route answers Escape with an action that is disabled, which would stop the search there. For
+/// the same reason, a page of a navigator nested in the harbor's body keeps Escape from reaching
+/// this.
 class HarborModalBuoyActions extends StatelessWidget {
   const HarborModalBuoyActions({super.key, required this.buoys, required this.child});
 

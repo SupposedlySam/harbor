@@ -2,7 +2,8 @@
 // Escape, and a focus scope that holds the keyboard as a dialog's does. Until 0.2.0 `modal: true`
 // only hid the buoys listed before it, and taps and back reached the page; in 0.2.0 focus stayed
 // on the page and Escape did nothing. Each test fails on that behaviour, except the one that
-// checks Escape is left alone with no modal buoy up.
+// checks Escape is left to the widgets above with no modal buoy up, which fails if the harbor maps
+// Escape to a disabled action instead.
 
 import 'dart:async';
 
@@ -119,7 +120,11 @@ class _FocusPageState extends State<_FocusPage> {
   );
 }
 
-Future<_FocusPageState> _pumpFocusPage(final WidgetTester tester, {final _FocusPage home = const _FocusPage()}) async {
+Future<_FocusPageState> _pumpFocusPage(
+  final WidgetTester tester, {
+  final _FocusPage home = const _FocusPage(),
+  final Widget Function(Widget page)? around,
+}) async {
   await tester.pumpSeaTrial(
     MaterialApp(
       navigatorKey: _navigator,
@@ -128,7 +133,7 @@ Future<_FocusPageState> _pumpFocusPage(final WidgetTester tester, {final _FocusP
     ),
     device: HarborTrialDevice.androidGesture,
   );
-  unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => home)));
+  unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => around?.call(home) ?? home)));
   await tester.pumpAndSettle();
   final _FocusPageState page = tester.state<_FocusPageState>(find.byType(_FocusPage));
   page.opener.requestFocus();
@@ -296,13 +301,55 @@ void main() {
       expect(page.dismissed, 1, reason: 'Escape from the page still dismisses it');
     });
 
-    testWidgets('Escape with no modal buoy up is left to the widgets above', (final tester) async {
-      final _FocusPageState page = await _pumpFocusPage(tester);
+    // An Actions inside the page route and above the harbor sees Escape only if the harbor maps
+    // nothing for it: a disabled action in the harbor would stop the search there, and the page
+    // route alone could not tell, since it ignores Escape too.
+    testWidgets('Escape with no modal buoy up reaches the Actions above the harbor', (final tester) async {
+      int aboveEscapes = 0;
+      final _FocusPageState page = await _pumpFocusPage(
+        tester,
+        around: (final Widget harbor) => Actions(
+          actions: <Type, Action<Intent>>{DismissIntent: CallbackAction<DismissIntent>(onInvoke: (final _) => aboveEscapes++)},
+          child: harbor,
+        ),
+      );
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
-      expect(page.dismissed, 0);
-      expect(find.text('Open menu'), findsOneWidget, reason: 'a page route is not dismissed by Escape');
-      expect(page.opener.hasPrimaryFocus, isTrue);
+      expect(aboveEscapes, 1, reason: 'no modal buoy: Escape is for the widgets above');
+
+      page.open();
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(page.dismissed, 1, reason: 'with the menu up, Escape closed it');
+      expect(aboveEscapes, 1, reason: 'and did not reach the widgets above');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(aboveEscapes, 2, reason: 'once it closed, Escape is theirs again');
+    });
+
+    testWidgets('Escape closes a modal buoy before a sheet with no barrier under it', (final tester) async {
+      final _FocusPageState page = await _pumpFocusPage(tester);
+      unawaited(showHarborSheet<void>(
+        tester.element(find.text('Open menu')),
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 120, child: Text('sheet'))),
+      ));
+      await tester.pumpAndSettle();
+      page.open();
+      await tester.pumpAndSettle();
+      expect(find.text('sheet'), findsOneWidget, reason: 'positive control: the sheet is up');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(page.dismissed, 1, reason: 'the first Escape closed the menu');
+      expect(find.text('sheet'), findsOneWidget, reason: 'and left the sheet');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.text('sheet'), findsNothing, reason: 'the second closed the sheet');
+      expect(find.text('Open menu'), findsOneWidget, reason: 'and left the page');
     });
   });
 }
