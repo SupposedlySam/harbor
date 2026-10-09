@@ -1,5 +1,8 @@
-## 0.2.0+1
+## 0.2.1
 
+Needs harbor 0.3.2.
+
+* The package's tests cover `HarborTideSource` under `pumpSeaTrial`, which arrived in harbor 0.3.2, so the `harbor:` constraint is raised to `^0.3.2`. `lib/` is unchanged.
 * Docs: "A dock of a given reach" shows how to build a dock that reaches a given distance from the edge, coast included, with no helper. ([#68](https://github.com/SupposedlySam/harbor/issues/68))
 
 ## 0.2.0
