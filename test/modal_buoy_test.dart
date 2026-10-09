@@ -3,7 +3,8 @@
 // only hid the buoys listed before it, and taps and back reached the page; in 0.2.0 focus stayed
 // on the page and Escape did nothing. Each test fails on that behaviour, except the one that
 // checks Escape is left to the widgets above with no modal buoy up, which fails if the harbor maps
-// Escape to a disabled action instead.
+// Escape to a disabled action instead. A buoy's child also keeps its state when the layer around it
+// changes shape: it was built again when a buoy turned modal, or a signal came up.
 
 import 'dart:async';
 
@@ -155,6 +156,70 @@ bool _focusIsInMenu(final WidgetTester tester) {
     return !inside;
   });
   return inside;
+}
+
+/// A button that counts its taps, to see whether a buoy's child keeps its state.
+class _Counter extends StatefulWidget {
+  const _Counter();
+
+  @override
+  State<_Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<_Counter> {
+  int n = 0;
+
+  @override
+  Widget build(final BuildContext context) => TextButton(onPressed: () => setState(() => n++), child: Text('n=$n'));
+}
+
+/// A speed-dial button that turns modal while it is open, and optionally a modal menu listed before
+/// it, so each can change while the other's child has state.
+class _SpeedDialPage extends StatefulWidget {
+  const _SpeedDialPage();
+
+  @override
+  State<_SpeedDialPage> createState() => _SpeedDialPageState();
+}
+
+class _SpeedDialPageState extends State<_SpeedDialPage> {
+  bool dialOpen = false;
+  bool menu = false;
+
+  void update(final VoidCallback change) => setState(change);
+
+  @override
+  Widget build(final BuildContext context) => Harbor(
+    buoys: <HarborBuoy>[
+      if (menu)
+        HarborBuoy(
+          modal: true,
+          onDismiss: () => setState(() => menu = false),
+          alignment: Alignment.topCenter,
+          child: const Text('menu'),
+        ),
+      HarborBuoy(
+        key: const ValueKey<String>('dial'),
+        modal: dialOpen,
+        onDismiss: () => setState(() => dialOpen = false),
+        child: const _Counter(),
+      ),
+    ],
+    body: const SizedBox.expand(),
+  );
+}
+
+Future<_SpeedDialPageState> _pumpSpeedDial(final WidgetTester tester) async {
+  await tester.pumpSeaTrial(
+    MaterialApp(
+      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+      home: const _SpeedDialPage(),
+    ),
+  );
+  await tester.tap(find.text('n=0'));
+  await tester.pump();
+  expect(find.text('n=1'), findsOneWidget, reason: 'positive control: the child counted the tap');
+  return tester.state<_SpeedDialPageState>(find.byType(_SpeedDialPage));
 }
 
 void main() {
@@ -350,6 +415,40 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('sheet'), findsNothing, reason: 'the second closed the sheet');
       expect(find.text('Open menu'), findsOneWidget, reason: 'and left the page');
+    });
+  });
+
+  group('a buoy\'s child keeps its state', () {
+    testWidgets('when its buoy turns modal and back', (final tester) async {
+      final _SpeedDialPageState page = await _pumpSpeedDial(tester);
+      page.update(() => page.dialOpen = true);
+      await tester.pumpAndSettle();
+      expect(find.text('n=1'), findsOneWidget, reason: 'opening the dial kept the count');
+      expect(FocusScope.of(tester.element(find.text('n=1'))).hasFocus, isTrue, reason: 'and the dial took focus as it turned modal');
+
+      page.update(() => page.dialOpen = false);
+      await tester.pumpAndSettle();
+      expect(find.text('n=1'), findsOneWidget, reason: 'closing it kept the count');
+    });
+
+    testWidgets('when another buoy turns modal and leaves', (final tester) async {
+      final _SpeedDialPageState page = await _pumpSpeedDial(tester);
+      page.update(() => page.menu = true);
+      await tester.pumpAndSettle();
+      expect(find.text('menu'), findsOneWidget, reason: 'positive control: the modal menu is up');
+      expect(find.text('n=1'), findsOneWidget, reason: 'a modal buoy coming up kept the count');
+
+      page.update(() => page.menu = false);
+      await tester.pumpAndSettle();
+      expect(find.text('n=1'), findsOneWidget, reason: 'and its leaving kept it');
+    });
+
+    testWidgets('when a signal comes up in its harbor', (final tester) async {
+      await _pumpSpeedDial(tester);
+      HarborSignals.raise(tester.element(find.text('n=1')), persist: true, builder: (final BuildContext _) => const Text('Copied'));
+      await tester.pumpAndSettle();
+      expect(find.text('Copied'), findsOneWidget, reason: 'positive control: the signal is up');
+      expect(find.text('n=1'), findsOneWidget, reason: 'a signal coming up kept the count');
     });
   });
 }

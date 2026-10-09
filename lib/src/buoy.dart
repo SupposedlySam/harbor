@@ -510,23 +510,19 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
       for (final HarborSignalEntry signal in signals)
         if (signal.raisedIn case final HarborController harbor) harbor.clearWater,
     ];
-    final Widget layer = raisers.isEmpty
-        ? _build(context)
-        : ListenableBuilder(listenable: Listenable.merge(raisers), builder: (final BuildContext context, final Widget? _) => _build(context));
     final HarborBuoy? modal = _modal;
-    if (modal == null) {
-      return layer;
-    }
-    // Under every buoy and over the page and its docks: taps beside a modal buoy dismiss it
-    // instead of reaching the page, and the barrier blocks the page's semantics.
-    // PASSTHROUGH, so the layer still gets the harbor's own constraints, which carry the clear
-    // water. StackFit.expand handed it plain tight ones, and a modal buoy was centred in the whole
-    // frame instead of the clear water.
+    // One shape whether or not a signal or a modal buoy is up, so neither coming or going
+    // remounts the buoys. PASSTHROUGH, so the layer still gets the harbor's own constraints, which
+    // carry the clear water. StackFit.expand handed it plain tight ones, and a modal buoy was
+    // centred in the whole frame instead of the clear water.
     return Stack(
       fit: StackFit.passthrough,
       children: <Widget>[
-        Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: modal.barrierLabel)),
-        layer,
+        // Under every buoy and over the page and its docks: taps beside a modal buoy dismiss it
+        // instead of reaching the page, and the barrier blocks the page's semantics.
+        if (modal != null)
+          Positioned.fill(child: ModalBarrier(color: modal.barrierColor, onDismiss: modal.onDismiss, semanticsLabel: modal.barrierLabel)),
+        ListenableBuilder(listenable: Listenable.merge(raisers), builder: (final BuildContext context, final Widget? _) => _build(context)),
       ],
     );
   }
@@ -552,7 +548,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             child: Visibility(
               visible: lastModal < 0 || i >= lastModal,
               maintainState: true,
-              child: all[i].modal ? _ModalBuoyFocus(requestFocus: all[i].requestFocus, child: all[i].child) : all[i].child,
+              child: _ModalBuoyFocus(modal: all[i].modal, requestFocus: all[i].requestFocus, child: all[i].child),
             ),
           ),
       ],
@@ -563,9 +559,13 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
 /// A modal buoy's focus scope, as a modal route's: its own node, so focus traversal ends at its
 /// edges ([FocusScopeNode]'s defaults are a dialog's: Tab loops, arrows stop). On close, the scope
 /// around it falls back to the child it focused before, as a page does when a dialog pops.
+///
+/// Every buoy has one, so a buoy that turns modal or back keeps its child: the scope comes and goes
+/// around the child, which moves under a [GlobalKey] instead of being built again.
 class _ModalBuoyFocus extends StatefulWidget {
-  const _ModalBuoyFocus({required this.requestFocus, required this.child});
+  const _ModalBuoyFocus({required this.modal, required this.requestFocus, required this.child});
 
+  final bool modal;
   final bool requestFocus;
   final Widget child;
 
@@ -575,17 +575,32 @@ class _ModalBuoyFocus extends StatefulWidget {
 
 class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
   final FocusScopeNode _scope = FocusScopeNode(debugLabel: 'HarborBuoy (modal)');
+  final GlobalKey _child = GlobalKey(debugLabel: 'HarborBuoy child');
   bool _opened = false;
 
-  // As a modal route takes focus: first focus in the scope around it, so the buoy has focus now if
-  // that scope does, and gets it when focus comes back to that scope otherwise.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_opened && widget.requestFocus) {
-      FocusScope.of(context).setFirstFocus(_scope);
+    if (!_opened) {
+      _open();
     }
     _opened = true;
+  }
+
+  @override
+  void didUpdateWidget(final _ModalBuoyFocus oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.modal) {
+      _open();
+    }
+  }
+
+  // As a modal route takes focus: first focus in the scope around it, so the buoy has focus now if
+  // that scope does, and gets it when focus comes back to that scope otherwise.
+  void _open() {
+    if (widget.modal && widget.requestFocus) {
+      FocusScope.of(context).setFirstFocus(_scope);
+    }
   }
 
   @override
@@ -595,7 +610,10 @@ class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
   }
 
   @override
-  Widget build(final BuildContext context) => FocusScope.withExternalFocusNode(focusScopeNode: _scope, child: widget.child);
+  Widget build(final BuildContext context) {
+    final Widget child = KeyedSubtree(key: _child, child: widget.child);
+    return widget.modal ? FocusScope.withExternalFocusNode(focusScopeNode: _scope, child: child) : child;
+  }
 }
 
 /// Escape (a [DismissIntent]) from anywhere in a harbor calls its top modal buoy's
