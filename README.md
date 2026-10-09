@@ -717,6 +717,34 @@ harbor without reaching into it.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
 
+Tooling that runs outside the widget tree (a debug panel, a logger, an
+automation driver) reads `HarborChart.snapshotAll()`: every harbor of every live
+sea, with no context. A sea mounted inside another harbor (a phone drawn in a
+page, a preview) is listed too, and each of its entries says `isolated: true`;
+`ext.harbor.chart` leaves those out unless it is called with `isolated=true`. A
+sea is taken off the chart when it is disposed.
+
+To hear harbors come and go, as a `NavigatorObserver` hears routes, give the sea
+a `HarborFleetObserver`:
+
+```dart
+class HarborLog extends HarborFleetObserver {
+  @override
+  void didJoin(HarborController harbor) => debugPrint('joined ${harbor.debugLabel}');
+  @override
+  void didLeave(HarborController harbor) => debugPrint('left ${harbor.debugLabel}');
+}
+
+HarborSea(observers: [HarborLog()], child: child!)
+Harbor.of(context).fleet.addObserver(log); // or on a fleet you already have; removeObserver(log)
+```
+
+A harbor joins as it is built, in the middle of a frame, so both events arrive
+after that frame, in order: by then the harbor has laid out and the chart can
+read it. A harbor that joins and leaves within one frame is reported to no one.
+The layout records behind the chart stay internal; read a harbor through
+`HarborChart.snapshotOf(harbor.fleet)` or `HarborChart.nearest`.
+
 The widget inspector and `debugDumpApp` show each harbor widget's settings, as
 they do a `SafeArea`'s or a `ListView`'s, leaving out the ones at their
 defaults: a `Harbor` lists its docks and buoys, and a dock reads as

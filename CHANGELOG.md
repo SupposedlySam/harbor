@@ -1,3 +1,8 @@
+## Unreleased
+
+* `HarborFleetObserver` hears harbors join and leave, as a `NavigatorObserver` hears routes: `didJoin` and `didLeave` are given the harbor's `HarborController`, after the frame it joined or left in. Register one with `HarborSea(observers:)` or `HarborFleet.addObserver` (and `removeObserver`), on the fleet from `Harbor.of(context).fleet`. ([#64](https://github.com/SupposedlySam/harbor/issues/64))
+* `HarborChart.snapshotAll()` reads every harbor of every live sea with no context, for tooling outside the widget tree. A sea inside another harbor (a phone drawn in a page) is listed too, and `HarborChartEntry.isolated` (also in its `toJson()`) says so; `ext.harbor.chart` leaves isolated seas out unless called with `isolated=true`. Fixed: the VM-service extension kept the last sea it was given after that sea was disposed. It now reads the seas that are mounted. ([#64](https://github.com/SupposedlySam/harbor/issues/64))
+
 ## 0.3.1+1
 
 * Docs: the README's videos play in the browser when clicked, instead of downloading. They are linked through jsDelivr, which serves them as video. No code changes.
