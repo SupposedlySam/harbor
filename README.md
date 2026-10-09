@@ -583,7 +583,22 @@ inside it closes it, and its content is a route of its own for screen readers, n
 takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Dismiss'
 when none is given), `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
-`animationStyle:` (its fade, 180 ms by default).
+`animationStyle:` (its fade, 180 ms by default). `transitionBuilder:` brings your own
+entrance and exit in place of the fade, as `showGeneralDialog`'s does: it is handed the
+route's animation curved by `animationStyle`, and under reduced motion an animation that
+is already complete, so the dialog is simply there.
+
+`showHarborDialog` pushes a `HarborDialogRoute`, as `showDialog` pushes a `DialogRoute`.
+Push one yourself to keep the route or to choose the navigator:
+
+```dart
+final HarborDialogRoute<bool> confirm = HarborDialogRoute<bool>(context: context, builder: (_) => const ConfirmDelete());
+final bool? delete = await Navigator.of(context).push(confirm);
+```
+
+It takes the same options. The page at `context` lends it its themes and, with
+`inheritClearWater: true`, its clear water, both read as the route is pushed rather than
+when it is made.
 
 Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
 makes a sheet the user has to answer: a tap on the barrier does nothing, and
