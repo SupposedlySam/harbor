@@ -576,6 +576,15 @@ sheet reports how far it covers the page that opened it, and that page's
 content keeps clear of it while it's up: in the same frame as the sheet is
 drawn, as it slides in and out and as it is dragged.
 
+`showHarborSheet(keepsTopCoast: true)` lets a sheet reach the top of the
+screen, and hands its header and body the status bar to clear, as a page's
+are. A header that paints under the status bar and pads its own title would
+pad twice, so it passes `HarborSheet(clearsTopCoast: false)` (on
+`HarborSheet.draggable` too): the sheet keeps the height `keepsTopCoast` gave
+it, and the top coast is cast off for its content, which reads zero there.
+Without `keepsTopCoast` it changes nothing: the sheet stops short of the status
+bar and is handed no top coast to clear.
+
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and flares and buoys keep to the screen that holds them, never across the hinge.
 A flat fold, which has no width, may still be spanned.

@@ -9,10 +9,12 @@ import 'package:flutter/widgets.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'dock.dart';
+import 'edge.dart';
 import 'harbor.dart';
 import 'render_harbor.dart';
 import 'tide.dart';
 import 'wake.dart';
+import 'waters.dart';
 
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
@@ -108,6 +110,7 @@ class HarborSheet extends StatelessWidget {
     this.clip,
     this.dragToClose = false,
     this.closeFlingVelocity = 700.0,
+    this.clearsTopCoast = true,
   }) : assert(closeFlingVelocity >= 0.0),
        builder = null,
        extent = null,
@@ -139,6 +142,7 @@ class HarborSheet extends StatelessWidget {
     this.contentBuilder,
     this.clip,
     this.closeFlingVelocity = 700.0,
+    this.clearsTopCoast = true,
   }) : assert(closeFlingVelocity >= 0.0),
        body = null,
        maxExtentFraction = null,
@@ -209,6 +213,19 @@ class HarborSheet extends StatelessWidget {
   /// and from the lowest to the floor, which closes the sheet, at any speed.
   final double closeFlingVelocity;
 
+  /// Whether the header and body clear the top coast (the status bar) the
+  /// sheet is handed. False leaves the sheet where it is and casts the top
+  /// coast off for its content, which reads zero there: a header that paints
+  /// under the status bar and pads its own title, or a body that runs to the
+  /// top of a sheet capped at a fraction of the screen.
+  ///
+  /// It only matters for a sheet opened with `showHarborSheet(keepsTopCoast: true)`.
+  /// Otherwise the sheet stops short of the status bar and is handed no top
+  /// coast, so there is nothing to clear. `keepsTopCoast` decides how far up
+  /// the sheet may reach; this decides whether its content pads for what is
+  /// up there.
+  final bool clearsTopCoast;
+
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -233,6 +250,7 @@ class HarborSheet extends StatelessWidget {
     properties.add(DiagnosticsProperty<ShapeBorder>('clip', clip, defaultValue: null));
     properties.add(FlagProperty('dragToClose', value: dragToClose, ifTrue: 'drag to close'));
     properties.add(DoubleProperty('closeFlingVelocity', closeFlingVelocity, defaultValue: 700.0, unit: 'px/s'));
+    properties.add(FlagProperty('clearsTopCoast', value: clearsTopCoast, ifFalse: 'casts off the top coast'));
   }
 
   /// Closes the sheet [context] is in, whichever way it was opened, and
@@ -252,27 +270,35 @@ class HarborSheet extends StatelessWidget {
     Navigator.maybePop<T>(context, result);
   }
 
-  Harbor _harbor(final Widget body, {required final bool hug, final Widget? header}) => Harbor(
-    newPort: true,
-    sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
-    maxExtentFraction: hug ? maxExtentFraction : null,
-    debugLabel: debugLabel ?? 'sheet',
-    top: <HarborDock>[
-      if ((header ?? this.header) != null)
-        HarborDock.pier(wake: headerWake, debugLabel: 'sheet header', child: (header ?? this.header)!),
-    ],
-    bottom: <HarborDock>[
-      if (footer != null)
-        HarborDock.quay(
-          tide: footerTide,
-          wake: footerWake,
-          minimum: footerMinimum,
-          debugLabel: 'sheet footer',
-          child: footer!,
-        ),
-    ],
-    body: body,
-  );
+  Widget _harbor(final Widget body, {required final bool hug, final Widget? header}) {
+    Widget port = Harbor(
+      newPort: true,
+      sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
+      maxExtentFraction: hug ? maxExtentFraction : null,
+      debugLabel: debugLabel ?? 'sheet',
+      top: <HarborDock>[
+        if ((header ?? this.header) != null)
+          HarborDock.pier(wake: headerWake, debugLabel: 'sheet header', child: (header ?? this.header)!),
+      ],
+      bottom: <HarborDock>[
+        if (footer != null)
+          HarborDock.quay(
+            tide: footerTide,
+            wake: footerWake,
+            minimum: footerMinimum,
+            debugLabel: 'sheet footer',
+            child: footer!,
+          ),
+      ],
+      body: body,
+    );
+    if (!clearsTopCoast) {
+      // The coast alone: the sheet keeps the height keepsTopCoast gave it, and its new port is
+      // handed no status bar to clear. The mooring line stays.
+      port = HarborCastOff(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: port);
+    }
+    return port;
+  }
 
   @override
   Widget build(final BuildContext context) {
@@ -632,6 +658,11 @@ class HarborSheetController extends ChangeNotifier {
 ///
 /// [anchorPoint] picks the screen a sheet opens on, on a device with a hinge:
 /// the one nearest it, as for [DisplayFeatureSubScreen].
+///
+/// With [keepsTopCoast], the sheet may reach the top of the screen rather than
+/// stopping short of the status bar, and its content is handed the status bar
+/// to clear. [HarborSheet.clearsTopCoast] false keeps that height and casts the
+/// status bar off for content that pads for it itself.
 ///
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
 /// bottom sheet theme's cap passes
