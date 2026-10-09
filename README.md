@@ -20,6 +20,10 @@ clock. The GIF is the opening; [the narrated video](https://cdn.jsdelivr.net/gh/
 (one minute) shows what changes on other screens: a rail on a tablet, right-to-left, a
 phone on its side, a dual-screen hinge, and a television's title-safe band.*
 
+**[Try every class in your browser](https://supposedlysam.github.io/harbor/):** the Harbor
+Field Guide, with a pretend phone for each class, its options, and a tide gauge to bring the
+keyboard in and out.
+
 Depends on the Flutter SDK only. Sea trials for widget tests come in a package
 of their own, `harbor_test`, so the test framework stays out of your app's
 dependencies.
@@ -785,7 +789,7 @@ and each runs a real harbor page on the phone: sheets, dialogs and flares open
 on the phone's own navigator as the narrator names them. Narration: the Kokoro-82M
 voice `am_liam`, generated on device by Kass.
 
-The **Harbor Field Guide** (the book button on the game's first page, or
+The **Harbor Field Guide** ([in your browser](https://supposedlysam.github.io/harbor/), the book button on the game's first page, or
 `fvm flutter run -t lib/field_guide_main.dart`) has a page for every class,
 named as it is in code, with a drawing of the real thing it's named after and a
 pretend phone to try it on: its own status bar, home indicator and keyboard, a
