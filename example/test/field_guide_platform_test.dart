@@ -493,17 +493,45 @@ void main() {
 
     testWidgets('the breakwater sheet joins the chart and the list', (final WidgetTester tester) async {
       await _pumpEntry(tester, const ChartEntry());
-      await _tap(tester, _key('breakwater sheet button'));
+      await _tap(tester, _key('toggle breakwater sheet'));
       await _step(tester, 4);
       final List<HarborChartEntry> after = HarborChart.snapshot(tester.element(_key('chart tab bar')));
       expect(after.map((final HarborChartEntry e) => e.label), contains('breakwater sheet'));
       expect(_reading(tester, snapshot), contains("\n'breakwater sheet' · depth "));
     });
 
+    testWidgets('the sheet switch closes the sheet, and follows it when the stage dismisses it', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, const ChartEntry());
+      List<String> harbors() => <String>[
+        for (final HarborChartEntry e in HarborChart.snapshot(tester.element(_key('chart tab bar')))) e.label,
+      ];
+      bool switchOn() => tester.widget<SwitchListTile>(_key('toggle breakwater sheet')).value;
+
+      await _tap(tester, _key('toggle breakwater sheet'));
+      await _step(tester, 4);
+      expect(_key('breakwater sheet body'), findsOneWidget);
+      expect(switchOn(), isTrue);
+      await _tap(tester, _key('toggle breakwater sheet'));
+      await _step(tester, 4);
+      expect(_key('breakwater sheet body'), findsNothing);
+      expect(harbors(), isNot(contains('breakwater sheet')));
+      expect(switchOn(), isFalse);
+
+      // Dismissed on the stage (its barrier tapped), the sheet turns the switch off.
+      await _tap(tester, _key('toggle breakwater sheet'));
+      await _step(tester, 4);
+      await tester.tapAt(tester.getRect(_key('stage')).topCenter + const Offset(0, 40));
+      await _step(tester, 4);
+      expect(_key('breakwater sheet body'), findsNothing);
+      expect(switchOn(), isFalse);
+    });
+
     testWidgets('with the list off, the readings stop following the chart', (final WidgetTester tester) async {
       await _pumpEntry(tester, const ChartEntry());
       await _tap(tester, _key('toggle list HarborChart.snapshot'));
-      await _tap(tester, _key('breakwater sheet button'));
+      await _tap(tester, _key('toggle breakwater sheet'));
       await _step(tester, 4);
       expect(_reading(tester, snapshot) ?? '', isNot(contains('breakwater sheet')));
     });

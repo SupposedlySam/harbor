@@ -133,8 +133,9 @@ class _CoastEntryState extends State<CoastEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
+    // No focus, the whole phone: the coast is at the bottom as well as the top, and the Home indicator
+    // switch changes only the bottom.
     className: 'HarborCoast',
-    focus: const StageFocus.top(380),
     realWorld:
         'The coast is the land at the water’s edge: cliffs, beaches and rocks. However fine the harbor, no boat can '
         'moor on the cliffs; the sea simply stops there.',
@@ -763,11 +764,52 @@ class ChartEntry extends StatefulWidget {
 class _ChartEntryState extends State<ChartEntry> {
   final StageSettings _settings = StageSettings()..chart = true;
   bool _list = true;
+  bool _sheet = false;
+
+  /// The stage's page, for a context inside the stage's navigator to open the sheet from.
+  final GlobalKey _page = GlobalKey(debugLabel: 'chart page');
 
   @override
   void dispose() {
     _settings.dispose();
     super.dispose();
+  }
+
+  /// Opens the breakwater sheet on the stage, or closes it. The switch follows the sheet, so it
+  /// goes off when the sheet is dismissed on the stage too.
+  void _setSheet(final bool open) {
+    final BuildContext? page = _page.currentContext;
+    if (page == null || open == _sheet) {
+      return;
+    }
+    setState(() => _sheet = open);
+    if (!open) {
+      Navigator.of(page).pop();
+      return;
+    }
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        breakwater: true,
+        builder: (final BuildContext context) => HarborSheet(
+          debugLabel: 'breakwater sheet',
+          header: const StageHeader(title: 'breakwater sheet'),
+          body: Padding(
+            key: const ValueKey<String>('breakwater sheet body'),
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'This sheet is a harbor of its own: see it on the chart and in the snapshot.',
+              style: TextStyle(color: Palette.foam.withValues(alpha: 0.85)),
+            ),
+          ),
+          footer: const StageBar(label: 'sheet footer'),
+        ),
+      ).then((final void _) {
+        if (mounted) {
+          setState(() => _sheet = false);
+        }
+      }),
+    );
   }
 
   @override
@@ -789,8 +831,11 @@ class _ChartEntryState extends State<ChartEntry> {
         value: _list,
         onChanged: (final bool v) => setState(() => _list = v),
       ),
+      // In an app a button on the page opens the sheet; here the switch stands in for it, so
+      // the whole phone stays in view while you flip it.
+      ToggleControl(label: 'breakwater sheet', value: _sheet, onChanged: _setSheet),
       Text(
-        'Open the breakwater sheet from the buoy: its harbor joins the chart.',
+        'Open the breakwater sheet: its harbor joins the chart.',
         style: TextStyle(color: Palette.foam.withValues(alpha: 0.7), fontSize: 12),
       ),
     ],
@@ -810,6 +855,7 @@ class _ChartEntryState extends State<ChartEntry> {
         '\n'
         '// Over the VM service: ext.harbor.chart → {"harbors": [...]}',
     stage: (final BuildContext context) => Harbor(
+      key: _page,
       debugLabel: 'chart page',
       top: <HarborDock>[
         HarborDock.pier(
@@ -826,7 +872,6 @@ class _ChartEntryState extends State<ChartEntry> {
           child: StageBar(key: ValueKey<String>('chart tab bar'), label: 'quay tab bar'),
         ),
       ],
-      buoys: const <HarborBuoy>[HarborBuoy(alignment: Alignment.bottomRight, child: _SheetBuoy())],
       body: _ChartLog(
         enabled: _list,
         child: HarborFairway(
@@ -839,36 +884,6 @@ class _ChartEntryState extends State<ChartEntry> {
         ),
       ),
     ),
-  );
-}
-
-class _SheetBuoy extends StatelessWidget {
-  const _SheetBuoy();
-
-  @override
-  Widget build(final BuildContext context) => FilledButton.icon(
-    key: const ValueKey<String>('breakwater sheet button'),
-    style: FilledButton.styleFrom(backgroundColor: Palette.sail, foregroundColor: Palette.night),
-    onPressed: () => unawaited(
-      showHarborSheet<void>(
-        context,
-        breakwater: true,
-        builder: (final BuildContext context) => HarborSheet(
-          debugLabel: 'breakwater sheet',
-          header: const StageHeader(title: 'breakwater sheet'),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'This sheet is a harbor of its own: see it on the chart and in the snapshot.',
-              style: TextStyle(color: Palette.foam.withValues(alpha: 0.85)),
-            ),
-          ),
-          footer: const StageBar(label: 'sheet footer'),
-        ),
-      ),
-    ),
-    icon: const BuoyArt(size: 22),
-    label: const Text('HarborBuoy · sheet', style: TextStyle(fontFamily: 'Menlo', fontSize: 12)),
   );
 }
 
@@ -971,8 +986,9 @@ class _SeaTrialEntryState extends State<SeaTrialEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
+    // No focus, the whole phone: a device chip changes the whole screen, and the readout of its size, coast
+    // and waterline is at the top, with the keyboard and the composer at the bottom.
     className: 'pumpSeaTrial',
-    focus: const StageFocus.bottom(520),
     settings: _settings,
     realWorld:
         'Before a new ship is handed over she goes out on sea trials: flags flying, a tug standing by, she is run at '
