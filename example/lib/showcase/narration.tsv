@@ -3,7 +3,6 @@ intro	The status bar, the home indicator, the keyboard, and your own headers and
 intro	Harbor gives each one a place, so your content stops doing inset arithmetic.
 sea	It starts with the sea. Mount it once, above your navigator, and every harbor floats on it.
 coast	The coast is what the platform takes: the status bar, the home indicator, a notch.
-coast	On a television, the coast is the title-safe band around the edge of the screen.
 pier	The pier, built out over the water.
 pier	A header your content scrolls under.
 pier	Boats pass beneath the pier, the way your rows slide under the header.
@@ -31,13 +30,12 @@ pontoon	A pontoon is a dock moored from deep inside the page, like an unsaved ch
 buoy	A buoy floats in the clear water: a floating button, a speech bubble by its anchor.
 buoy	A modal buoy puts a barrier over the page. Tap beside it, or go back, and it closes.
 portal	A portal buoy opens from anywhere: a menu from a list row flips above it when there is no room.
-signal	A signal is a toast. It goes to the page on top, clear of the docks, and screen readers announce it.
+signal	A flare is a toast. It goes to the page on top, clear of the docks, and screen readers announce it.
 sheet	A sheet is a new port of its own, with its own pier and its own floating quay.
 sheet	It stops short of the status bar, and its footer clears the home indicator once.
 breakwater	A breakwater sheet tells the page how much of it is covered, so the page keeps clear of it.
 dialog	A dialog can keep to the clear water of the page that opened it.
 lighthouse	The lighthouse keeps things in sight: a focused field is brought back above the keyboard.
-tv	On a television, a scale model lays the harbor out on a reference screen and scales it to fit.
 chart	The chart shows every dock's ground, each harbor's clear water, and the tide, as you work.
-trials	Sea trials test it all on real devices: phones, foldables and televisions, with the keyboard up.
+trials	Sea trials test it all on real devices, phones and foldables, with the keyboard up.
 outro	Docks claim the edges. Everything else moors clear of them.

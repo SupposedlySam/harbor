@@ -1411,8 +1411,8 @@ enum HarborFlareTarget {
 ///
 /// See also:
 ///
-///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages; flares are not
-///    queued.
+///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages one at a time;
+///    flares queue per slot, so flares at different slots show together.
 abstract final class HarborFlares {
   /// Raises [builder]'s flare in [target]'s clear water at [slot], lowered
   /// after [duration] (or when the returned entry is lowered). If its harbor

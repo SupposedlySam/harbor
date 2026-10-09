@@ -1232,7 +1232,6 @@ class _TrialsDemo extends StatelessWidget {
     ('phones', 'iPhone 16 · the composer rides the keyboard'),
     ('phones', 'Pixel 9, three-button nav · the tab bar clears it'),
     ('foldables', 'Galaxy Z Fold, open · sheets keep off the hinge'),
-    ('televisions', 'Android TV · the header keeps title-safe'),
     ('keyboard', 'Every device, keyboard up · nothing covered'),
   ];
 

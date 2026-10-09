@@ -15,7 +15,7 @@ them a place and a rule, so your content stops doing inset arithmetic.
 
 *Left, a harbor. Right, a phone running the real package, driven by the same
 clock. The GIF is the opening; [the narrated video](https://github.com/SupposedlySam/harbor/blob/main/doc/media/showcase.mp4)
-(four minutes) tours everything in the package, from the coast to sea trials.*
+(three and a half minutes) tours everything in the package on a phone, from the coast to sea trials.*
 
 Depends on the Flutter SDK only. Sea trials for widget tests come in a package
 of their own, `harbor_test`, so the test framework stays out of your app's

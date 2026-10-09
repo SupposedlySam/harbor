@@ -69,7 +69,6 @@ abstract final class ShowcaseTimeline {
     'breakwater': 'Breakwater',
     'dialog': 'Dialog',
     'lighthouse': 'Lighthouse',
-    'tv': 'Scale model',
     'chart': 'Chart',
     'trials': 'Sea trials',
     'outro': 'flutter pub add harbor',

@@ -3,10 +3,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../art/palette.dart';
-import 'package:harbor/harbor.dart';
-
+import 'caption.dart';
 import 'harbor_scene.dart';
-import 'narration.dart';
 import 'phone.dart';
 import 'plates.dart';
 import 'timeline.dart';
@@ -54,9 +52,7 @@ class _HarborShowcaseState extends State<HarborShowcase> {
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: _onTv(t)
-                                ? _TvSet(time: t)
-                                : FittedBox(child: _Bezel(child: ShowcasePhone(time: t, parts: _parts))),
+                            child: FittedBox(child: _Bezel(child: ShowcasePhone(time: t, parts: _parts))),
                           ),
                         ),
                       ),
@@ -64,24 +60,26 @@ class _HarborShowcaseState extends State<HarborShowcase> {
                   ],
                 ),
               ),
-              SizedBox(height: _captionHeight, child: _Caption(time: t)),
+              SizedBox(
+                height: _captionHeight,
+                child: Builder(
+                  builder: (final BuildContext context) {
+                    final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(t);
+                    return ShowcaseCaption(
+                      term: chapter.term,
+                      pronounced: chapter.pronounced,
+                      line: ShowcaseTimeline.lineAt(t),
+                      install: chapter == ShowcaseTimeline.outro,
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
-}
-
-/// Whether the device on the right is a television: for the scale model, and for the coast's
-/// line about a television's title-safe band.
-bool _onTv(final double t) {
-  final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(t);
-  if (chapter.key == 'tv') {
-    return true;
-  }
-  final List<NarrationLine> coast = Narration.of('coast');
-  return chapter.key == 'coast' && coast.length > 1 && t >= coast[1].start - 0.3;
 }
 
 /// The left half: the panorama for the chapters it was drawn for, the field guide's plate for the
@@ -113,114 +111,6 @@ class _Left extends StatelessWidget {
   }
 }
 
-/// A television running a harbor in a scale model: laid out on a 1200 × 675 reference screen,
-/// scaled to the set, with the title-safe band as its coast.
-class _TvSet extends StatelessWidget {
-  const _TvSet({required this.time});
-
-  final double time;
-
-  static const Size _screen = Size(480, 270);
-
-  @override
-  Widget build(final BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xFF15181C),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF3A3F45), width: 3),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: SizedBox.fromSize(
-            size: _screen,
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                size: _screen,
-                padding: EdgeInsets.zero,
-                viewPadding: EdgeInsets.zero,
-                viewInsets: EdgeInsets.zero,
-                textScaler: TextScaler.noScaling,
-              ),
-              child: Theme(
-                data: ThemeData(useMaterial3: true, colorSchemeSeed: Palette.shallows, fontFamily: 'Georgia'),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    const HarborScaleModel(
-                      referenceSize: Size(1200, 675),
-                      coast: HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)),
-                      child: HarborSea(child: _TvPage()),
-                    ),
-                    // The title-safe band, marked as a broadcast monitor marks it.
-                    IgnorePointer(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: _screen.width * 0.05, vertical: _screen.height * 0.05),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(border: Border.all(color: Palette.brass.withValues(alpha: 0.9), width: 2)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      Container(width: 120, height: 14, color: const Color(0xFF2A2F35)),
-      Container(width: 220, height: 8, decoration: BoxDecoration(color: const Color(0xFF2A2F35), borderRadius: BorderRadius.circular(4))),
-      const SizedBox(height: 14),
-      const Text('title-safe', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.w700, color: Palette.brass)),
-    ],
-  );
-}
-
-class _TvPage extends StatelessWidget {
-  const _TvPage();
-
-  @override
-  Widget build(final BuildContext context) => Material(
-    color: const Color(0xFF0E2233),
-    child: Harbor(
-      top: const <HarborDock>[
-        HarborDock.quay(
-          backdrop: ColoredBox(color: Color(0xFF0E2233)),
-          // On the mooring line, which on a television keeps to the title-safe band.
-          child: HarborMooringLine(
-            child: SizedBox(
-              height: 90,
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text('Harbor TV', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w700, color: Palette.brass)),
-              ),
-            ),
-          ),
-        ),
-      ],
-      body: HarborMoored(
-        child: GridView.count(
-          crossAxisCount: 4,
-          mainAxisSpacing: 24,
-          crossAxisSpacing: 24,
-          childAspectRatio: 1.5,
-          physics: const NeverScrollableScrollPhysics(),
-          children: <Widget>[
-            for (int i = 0; i < 8; i++)
-              Container(
-                decoration: BoxDecoration(color: showcaseBoats[i].$4, borderRadius: BorderRadius.circular(18)),
-                alignment: Alignment.center,
-                child: Icon(showcaseBoats[i].$3, color: Colors.white, size: 64),
-              ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
 class _Bezel extends StatelessWidget {
   const _Bezel({required this.child});
 
@@ -237,61 +127,6 @@ class _Bezel extends StatelessWidget {
   );
 }
 
-/// The caption: the harbor word, and the line the narrator is saying, word for word.
-///
-/// Lines swap at once as each is spoken, with no fade or scroll: the eye belongs on the harbor and
-/// the phone, and someone watching without sound reads exactly what is being said.
-class _Caption extends StatelessWidget {
-  const _Caption({required this.time});
-
-  final double time;
-
-  @override
-  Widget build(final BuildContext context) {
-    final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(time);
-    final bool install = chapter == ShowcaseTimeline.outro;
-    return ColoredBox(
-      color: Palette.deepSea,
-      child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Row(
-            children: <Widget>[
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    chapter.term,
-                    style: TextStyle(
-                      fontFamily: install ? 'Menlo' : 'Georgia',
-                      fontSize: install ? 34 : 46,
-                      fontWeight: FontWeight.w700,
-                      color: Palette.brass,
-                    ),
-                  ),
-                  // How the word is pronounced, for the words whose spelling does not tell you.
-                  if (chapter.pronounced case final String pronounced)
-                    Text(pronounced, style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontStyle: FontStyle.italic, color: Palette.foam.withValues(alpha: 0.8))),
-                ],
-              ),
-              const SizedBox(width: 28),
-              Container(width: 2, height: 52, color: Palette.brass.withValues(alpha: 0.5)),
-              const SizedBox(width: 28),
-              Expanded(
-                child: Text(
-                  ShowcaseTimeline.lineAt(time),
-                  key: const ValueKey<String>('caption line'),
-                  maxLines: 3,
-                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 24, height: 1.2, color: Palette.foam),
-                ),
-              ),
-            ],
-          ),
-        ),
-    );
-  }
-}
-
 /// One outline on the phone: which part, what to call it, which side its tag sits on, and
 /// whether it is dashed because something covers it.
 typedef _Outline = ({PhonePart part, String label, bool left, bool covered});
@@ -306,10 +141,6 @@ class _OutlinePainter extends CustomPainter {
   final GlobalKey stage;
 
   List<_Outline> get _lit {
-    // On the television the phone is not in the tree, and its parts' keys point at nothing.
-    if (_onTv(t)) {
-      return const <_Outline>[];
-    }
     switch (ShowcaseTimeline.chapterAt(t).key) {
       case 'sea':
         return const <_Outline>[(part: PhonePart.screen, label: 'HarborSea', left: true, covered: false)];
