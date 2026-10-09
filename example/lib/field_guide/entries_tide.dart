@@ -190,6 +190,24 @@ class _TideOfEntryState extends State<TideOfEntry> {
   Widget build(final BuildContext context) => GuidePage(
     settings: _settings,
     className: 'HarborTide.of',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'height climbs to 336, phase goes rising then high, and highWater settles at 336 instead of the 40% estimate.',
+      ),
+      TryStep(
+        'Switch bodyClearsTide off',
+        'remaining jumps from 0 to 336: the body now runs under the keyboard, so all of it reaches the readout.',
+      ),
+      TryStep(
+        'Tap the keyboard button again',
+        'phase reads falling while it slides, then low; highWater keeps 336, the last height the keyboard settled at.',
+      ),
+      TryStep(
+        'Drag the tide gauge to about 5 and let go',
+        'height, remaining and highWater all read 168: high water follows wherever the keyboard settles, down as well as up.',
+      ),
+    ],
     // The whole phone: the readout sits at the top of the body and the keyboard it reads comes up
     // from the bottom; a bottom crop cut the readout off until the tide was in.
     realWorld:
@@ -344,6 +362,20 @@ class _FloatEntryState extends State<FloatEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborTideStance.float',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The composer rides up on top of the keyboard: a floating dock rises with the tide, and the list ends just above it.',
+      ),
+      TryStep(
+        'Drag the tide gauge slowly up from the bottom',
+        'The composer waits until the keyboard has covered the home indicator, then sits on the waterline at every height.',
+      ),
+      TryStep(
+        'Pick tide: pilings, with the keyboard up',
+        'The composer drops back to the bottom and the keyboard covers it, but the list still ends at the keyboard\'s top edge.',
+      ),
+    ],
     focus: const StageFocus.bottom(460),
     realWorld:
         'A floating dock sits on air drums and is held to tall guide piles by hoops. When the tide comes in it slides up '
@@ -389,6 +421,20 @@ class PilingsEntry extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborTideStance.pilings',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The keyboard slides up over the tab bar, which stays put underneath: a dock on pilings does not move with the tide.',
+      ),
+      TryStep(
+        'Watch the brass body ends here line',
+        'It sits on the keyboard\'s top edge, not on the hidden tab bar: the body still ends at the waterline.',
+      ),
+      TryStep(
+        'Drag the tide gauge down to about 2',
+        'The keyboard now covers only the tab bar\'s lower part, so the body ends at the tab bar until the keyboard passes it.',
+      ),
+    ],
     focus: const StageFocus.bottom(460),
     realWorld:
         'A fixed pier is built high on tall pilings driven into the seabed. The deck never moves: the tide climbs the '
@@ -426,6 +472,20 @@ class FloatAndPilingsEntry extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborTideStance.float + .pilings',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The composer lifts off the tab bar and rides the keyboard; the tab bar stays where it is, under the keyboard.',
+      ),
+      TryStep(
+        'Drag the tide gauge down to about 2',
+        'The composer settles back on the tab bar: it only floats once the keyboard rises past the tab bar.',
+      ),
+      TryStep(
+        'Watch the body ends here line as you drag',
+        'It always sits on the composer\'s top edge: the body ends at the top dock, wherever the tide has put it.',
+      ),
+    ],
     focus: const StageFocus.bottom(480),
     realWorld:
         'A floating pontoon is often moored beside a fixed pier. At low water the pontoon sits well below the pier deck; '
@@ -466,6 +526,24 @@ class _DryDockEntryState extends State<DryDockEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborTideStance.dryDock',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The swatches give way to the keyboard and the tab row reads highWater 336, no longer an estimate.',
+      ),
+      TryStep(
+        'Tap the keyboard button again',
+        'The swatches come back in exactly the keyboard\'s ground, so the tab row and the list above it never move.',
+      ),
+      TryStep(
+        'Switch showsChildAtHighTide on, tap the keyboard button',
+        'The swatches stay drawn while the keyboard slides over them, instead of vanishing the moment it starts in.',
+      ),
+      TryStep(
+        'Drag the tide gauge to about 5 and let go',
+        'highWater drops to 168 and the ground shrinks to match: the dock keeps the height the keyboard last settled at.',
+      ),
+    ],
     focus: const StageFocus.bottom(480),
     realWorld:
         'A graving dry dock is a stone basin with a gate. With the gate shut and the water pumped out, a ship sits on '
@@ -621,6 +699,24 @@ class _CoastStanceEntryState extends State<CoastStanceEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborCoastStance',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The composer rides the keyboard and the hatched coast 34 band goes: live drops the home indicator under the keyboard.',
+      ),
+      TryStep(
+        'Pick coast: steady',
+        'The hatched band comes back between composer and keyboard: steady keeps the home indicator\'s height at any tide.',
+      ),
+      TryStep(
+        'Pick coast: none, then tap the keyboard button',
+        'No band at all, even at low tide: the bar runs to the screen\'s edge, for a child that clears the edge itself.',
+      ),
+      TryStep(
+        'Pick coast: live, then Device: Android 3-button',
+        'The band reads coast 48: the coast is whatever the device puts at the bottom, here its three-button bar.',
+      ),
+    ],
     focus: const StageFocus.bottom(460),
     realWorld:
         'A seawall is where the land meets the sea: the coast itself. High and low water are marked on its face, and how '
@@ -759,6 +855,24 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborDock.withdrawsAtHighTide',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The tool strip slides away and the composer rides the keyboard alone; the list grows into the strip\'s ground.',
+      ),
+      TryStep(
+        'Tap the keyboard button again',
+        'The strip slides back on top of the composer once the keyboard is down.',
+      ),
+      TryStep(
+        'Drag the tide gauge up to about 3',
+        'The strip is already gone: it withdraws as soon as any keyboard is in, not only at full height.',
+      ),
+      TryStep(
+        'Switch withdrawsAtHighTide off, keyboard still up',
+        'The strip comes back and rides the keyboard on top of the composer, taking its room from the list.',
+      ),
+    ],
     focus: const StageFocus.bottom(480),
     realWorld:
         'Some boats live on a slipway: a ramp into the water. Before the tide comes up the ramp they are hauled out on '
@@ -856,6 +970,28 @@ class _BodyClearsTideEntryState extends State<BodyClearsTideEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'Harbor.bodyClearsTide',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The body ends here line rises to the keyboard\'s top and the red HarborMoored marker rides above it.',
+      ),
+      TryStep(
+        'Look at Harbor body under Readings',
+        'keyboard reads 0: with bodyClearsTide on, the body never hears of the keyboard, as under a resizing Scaffold.',
+      ),
+      TryStep(
+        'Switch bodyClearsTide off',
+        'The line drops to the screen\'s bottom, under the keyboard, but the marker stays above it: HarborMoored keeps clear.',
+      ),
+      TryStep(
+        'Look at Harbor body under Readings again',
+        'keyboard now reads 336: the body runs under the keyboard and is told how far in MediaQuery.viewInsets.',
+      ),
+      TryStep(
+        'Tap the keyboard button, then flip the switch',
+        'Nothing moves with the keyboard down: the setting only matters while the tide is in.',
+      ),
+    ],
     focus: const StageFocus.bottom(480),
     realWorld:
         'A lock gate holds the water back: on one side the level stays low, on the other it is high. Open the paddles and '

@@ -103,6 +103,12 @@ class _HarborEntryState extends State<HarborEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'Harbor',
+    tryThis: const <TryStep>[
+      TryStep('Slide margin to 40', 'The HarborMooringLine marker moves in, but the body\'s brass box stays put: rows keep the margin, the body runs edge to edge.'),
+      TryStep('Switch off top dock', 'The body\'s box rises to the top of the screen, yet its label still clears the status bar: moored content keeps off the coast.'),
+      TryStep('Tap the keyboard button under the tide gauge', 'The keyboard covers the bottom dock and the body now ends at its top: bodyClearsTide keeps the body above the waterline.'),
+      TryStep('Switch off bodyClearsTide, keyboard still up', 'The body runs down under the keyboard to the bottom dock, and Readings show how far the keyboard reaches over it.'),
+    ],
     realWorld:
         'A harbor is a bay of calm water sheltered by breakwaters, with quays and piers built along its edges and a town '
         'on the shore. Boats come in through the mouth and tie up wherever there is room.',
@@ -183,26 +189,23 @@ class _SeaView extends StatelessWidget {
     child: HarborOpenWater(
       builder: (final BuildContext context, final HarborWatersData waters) {
         final EdgeInsets coast = waters.coast.resolve(Directionality.of(context));
-        Widget band(final String text) => ColoredBox(
-          color: Palette.brass.withValues(alpha: 0.35),
-          child: Align(
-            alignment: AlignmentDirectional.bottomEnd,
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Text(text, style: const TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Palette.foam)),
-            ),
-          ),
-        );
+        Widget band() => ColoredBox(color: Palette.brass.withValues(alpha: 0.35));
+        // The readings sit inside the side insets and are always drawn, so a corner or a notch never
+        // cuts them off, and a 0 inset reads 0 rather than vanishing with its band.
+        Widget label(final String text) => Text(text, style: const TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Palette.foam));
         return Stack(
           children: <Widget>[
             const Positioned.fill(child: HarborSeaArt()),
-            Positioned(top: 0, left: 0, right: 0, height: coast.top, child: band('coast T ${coast.top.toStringAsFixed(0)}')),
+            Positioned(top: 0, left: 0, right: 0, height: coast.top, child: band()),
+            Positioned(bottom: 0, left: 0, right: 0, height: coast.bottom, child: band()),
             Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: coast.bottom,
-              child: band('coast B ${coast.bottom.toStringAsFixed(0)}'),
+              key: const ValueKey<String>('coast labels'),
+              bottom: coast.bottom + 4,
+              right: coast.right + 8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[label('coast T ${coast.top.toStringAsFixed(0)}'), label('coast B ${coast.bottom.toStringAsFixed(0)}')],
+              ),
             ),
             Positioned.fill(
               child: HarborMoored(
@@ -242,6 +245,12 @@ class _HarborSeaEntryState extends State<HarborSeaEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSea',
+    tryThis: const <TryStep>[
+      TryStep('Open The stage and switch off Status bar', 'The top coast band goes to 0 and the HarborMoored marker moves up: the sea reads its coast from MediaQuery.'),
+      TryStep('Switch Status bar on, pick Device: iPhone 17 landscape', 'The marker steps in to 78, the 62-point side inset plus the sea\'s 16 margin, and the bottom band thins to 21.'),
+      TryStep('Tap the keyboard button under the tide gauge', 'The bottom band drops to 0 under the keyboard, but nothing on the sea moves: HarborSea clears nothing out of its way itself.'),
+      TryStep('Switch on nested HarborSea', 'The top band grows and the marker moors below the outer pier: a sea inside a harbor reads that pier as coast.'),
+    ],
     realWorld:
         'The open sea runs out to the horizon, and every harbor on every coast is built on it. It has no quays of its '
         'own; it is just the water, and the coast around it.',
@@ -298,6 +307,12 @@ class _NewPortEntryState extends State<NewPortEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'Harbor(newPort: true)',
+    tryThis: const <TryStep>[
+      TryStep('Scroll the rows up under Harbor(newPort: false)', 'They slide under the brass header and fade at its edge: the inner harbor\'s rows sail under its own pier.'),
+      TryStep('Switch on newPort', 'The inner header jumps up level with the outer one, under the status bar: a new port sees only the coast, not outer docks.'),
+      TryStep('Open The stage and switch off Status bar', 'Both headers move up to the top together: the coast is all a new port answers to.'),
+      TryStep('Switch off newPort', 'The inner header drops back below the outer one: a nested harbor counts the outer pier as part of its coast.'),
+    ],
     realWorld:
         'Further up the coast is another harbor town with its own quays and breakwater. Ships that put in there tie up '
         'to its walls; the first town\'s piers are nothing to them.',
@@ -379,6 +394,12 @@ class _HugBodyEntryState extends State<HugBodyEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSizing.hugBody',
+    tryThis: const <TryStep>[
+      TryStep('Slide body height to 300', 'The sheet grows with its body and stays on the bottom: hugBody makes the harbor as tall as its body plus its quay.'),
+      TryStep('Open The stage and pick Device: iPhone SE', 'The sheet is 34 shorter: no home indicator for the quay to absorb, and the harbor hugs what is left.'),
+      TryStep('Pick sizing: fill', 'The sheet takes the whole screen whatever the body asks for: fill, the default, is how a page sizes.'),
+      TryStep('Slide body height again', 'Only the label changes and the sheet stays full height: under fill, the body is given the space, not asked for it.'),
+    ],
     realWorld:
         'A davit on the quay hoists a skiff out of the water. The winch takes in just enough cable to lift the boat clear, '
         'so the load hangs exactly as tall as the boat it carries.',

@@ -24,6 +24,7 @@ class GuidePage extends StatefulWidget {
     required this.stage,
     required this.code,
     this.controls = const <Widget>[],
+    this.tryThis = const <TryStep>[],
     this.device = StageDevice.iPhone17,
     this.tide = true,
     this.focus = StageFocus.whole,
@@ -50,6 +51,10 @@ class GuidePage extends StatefulWidget {
 
   /// This class's own options.
   final List<Widget> controls;
+
+  /// What to do on this page, and what to watch for: shown first among the controls, so opening a
+  /// page says how to try the class.
+  final List<TryStep> tryThis;
 
   final StageDevice device;
 
@@ -85,6 +90,10 @@ class _GuidePageState extends State<GuidePage> {
   Widget build(final BuildContext context) {
     final bool sideBySide = MediaQuery.sizeOf(context).width >= GuidePage.sideBySideWidth;
     final List<Widget> controls = <Widget>[
+      if (widget.tryThis.isNotEmpty) ...<Widget>[
+        TryThisCard(steps: widget.tryThis),
+        const SizedBox(height: 10),
+      ],
       if (widget.controls.isNotEmpty) ...<Widget>[
         _Panel(title: widget.className, children: widget.controls),
         const SizedBox(height: 10),
@@ -440,6 +449,76 @@ class _Line extends StatelessWidget {
 }
 
 const TextStyle _panelTitle = TextStyle(fontFamily: 'Menlo', color: Palette.brass, fontWeight: FontWeight.w700);
+
+/// One thing to try on a guide page: what to do, and what to watch happen.
+@immutable
+class TryStep {
+  const TryStep(this.action, this.watch);
+
+  /// What to do, in the controls' own words: "Switch on make way: bottom".
+  final String action;
+
+  /// What should happen on the stage, and why it matters.
+  final String watch;
+}
+
+/// The page's directions: numbered steps, each an action and what to watch for.
+class TryThisCard extends StatelessWidget {
+  const TryThisCard({super.key, required this.steps});
+
+  final List<TryStep> steps;
+
+  @override
+  Widget build(final BuildContext context) => DecoratedBox(
+    key: const ValueKey<String>('try this'),
+    decoration: BoxDecoration(
+      color: Palette.brass.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: Palette.brass.withValues(alpha: 0.7)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Row(
+            children: <Widget>[
+              Icon(Icons.touch_app_rounded, size: 18, color: Palette.brass),
+              SizedBox(width: 6),
+              Text('Try this', style: _panelTitle),
+            ],
+          ),
+          for (int i = 0; i < steps.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(
+                    width: 22,
+                    child: Text('${i + 1}.', style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.brass, fontSize: 13)),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(steps[i].action, style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.foam, fontSize: 13)),
+                        const SizedBox(height: 2),
+                        Text(
+                          steps[i].watch,
+                          style: TextStyle(color: Palette.foam.withValues(alpha: 0.75), fontSize: 12.5, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
 
 class _Panel extends StatelessWidget {
   const _Panel({required this.title, required this.children, this.header});
