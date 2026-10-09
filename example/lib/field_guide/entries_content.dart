@@ -1156,7 +1156,6 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborMakeWay',
-    focus: const StageFocus.bottom(500),
     realWorld:
         'In a narrow channel a small sailboat gives way to a big ship that can only steer in the channel: it bears away '
         'to the edge, or heaves to, and comes back once the ship has passed.',
@@ -1173,6 +1172,10 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         labelOf: (final HarborYield m) => m.name,
         onChanged: (final HarborYield m) => setState(() => _mode = m),
       ),
+      // In an app the claim comes from content (a panel, a search field); here the switches stand in
+      // for it, so the whole phone stays in view while you flip them.
+      ToggleControl(label: 'make way: top', value: _top, onChanged: (final bool v) => setState(() => _top = v)),
+      ToggleControl(label: 'make way: bottom', value: _bottom, onChanged: (final bool v) => setState(() => _bottom = v)),
     ],
     code:
         '// Declarative: while it is in the tree.\n'
@@ -1199,34 +1202,6 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
             child: HarborFairway(
               key: const ValueKey<String>('make way fairway'),
               slivers: <Widget>[
-                SliverToBoxAdapter(
-                  child: HarborMooringLine(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: _MakeWayButton(
-                              key: const ValueKey<String>('make way top'),
-                              label: 'top',
-                              on: _top,
-                              onPressed: () => setState(() => _top = !_top),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _MakeWayButton(
-                              key: const ValueKey<String>('make way bottom'),
-                              label: 'bottom',
-                              on: _bottom,
-                              onPressed: () => setState(() => _bottom = !_bottom),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
                 SliverList.list(children: _rows(0, 16)),
               ],
             ),
@@ -1234,25 +1209,6 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         ),
       ),
     ),
-  );
-}
-
-class _MakeWayButton extends StatelessWidget {
-  const _MakeWayButton({super.key, required this.label, required this.on, required this.onPressed});
-
-  final String label;
-  final bool on;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(final BuildContext context) => FilledButton(
-    style: FilledButton.styleFrom(
-      backgroundColor: on ? Palette.buoyRed : Palette.brass,
-      foregroundColor: on ? Colors.white : Palette.night,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-    ),
-    onPressed: onPressed,
-    child: Text(on ? 'Release $label' : 'Make way: $label', style: const TextStyle(fontFamily: 'Menlo', fontSize: 12)),
   );
 }
 

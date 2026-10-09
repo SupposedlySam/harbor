@@ -712,16 +712,15 @@ void main() {
   group('HarborMakeWay', () {
     Future<void> pump(final WidgetTester tester) => _pumpEntry(tester, _page('talk-make-way'));
 
-    Future<void> press(final WidgetTester tester, final String key) async {
-      await _tapStage(tester, key);
+    Future<void> press(final WidgetTester tester, final String edge) async {
+      await _tap(tester, 'toggle make way: $edge');
       await tester.pump(_step);
     }
 
     testWidgets('withdraw bottom: the tab bar leaves and gives its ground back', (final WidgetTester tester) async {
       await pump(tester);
       expect(_rect(tester, 'make way fairway').bottom, _near(_rect(tester, 'quay bar').top));
-      await press(tester, 'make way bottom');
-      expect(find.text('Release bottom'), findsOneWidget);
+      await press(tester, 'bottom');
       expect(_code(tester), contains('HarborMakeWay(edge: HarborEdge.bottom, mode: HarborYield.withdraw, child: ...)'));
       expect(_rect(tester, 'make way fairway').bottom, _near(_frameBottom(tester)));
       expect(_rect(tester, 'quay bar').top, greaterThanOrEqualTo(_frameBottom(tester) - 0.6));
@@ -729,9 +728,8 @@ void main() {
 
     testWidgets('releasing the claim brings the tab bar back', (final WidgetTester tester) async {
       await pump(tester);
-      await press(tester, 'make way bottom');
-      await press(tester, 'make way bottom');
-      expect(find.text('Make way: bottom'), findsOneWidget);
+      await press(tester, 'bottom');
+      await press(tester, 'bottom');
       expect(_code(tester), contains('// (bottom: no claim)'));
       expect(_rect(tester, 'make way fairway').bottom, _near(_rect(tester, 'quay bar').top));
       expect(_rect(tester, 'quay bar').bottom, lessThan(_frameBottom(tester)));
@@ -743,7 +741,7 @@ void main() {
       await pump(tester);
       final double rowTop = _rect(tester, 'stage row 0').top;
       final double pierBottom = _rect(tester, 'pier header').bottom;
-      await press(tester, 'make way top');
+      await press(tester, 'top');
       expect(_code(tester), contains('HarborMakeWay(edge: HarborEdge.top, mode: HarborYield.withdraw, child: ...)'));
       expect(_rect(tester, 'pier header').bottom, lessThanOrEqualTo(_frameTop(tester) + 0.6));
       // The rows move up by the pier's ground: down to the status bar.
@@ -755,7 +753,7 @@ void main() {
       await _tap(tester, 'mode: dark');
       final double rowGap = _rect(tester, 'stage row 0').top - _rect(tester, 'pier header').bottom;
       expect(_key('pier header').hitTestable(), findsOneWidget);
-      await press(tester, 'make way top');
+      await press(tester, 'top');
       expect(_code(tester), contains('HarborMakeWay(edge: HarborEdge.top, mode: HarborYield.dark, child: ...)'));
       expect(_rect(tester, 'stage row 0').top - _rect(tester, 'pier header').bottom, _near(rowGap));
       expect(_opacityOf(tester, 'pier header'), 0);
@@ -767,7 +765,7 @@ void main() {
     ) async {
       await pump(tester);
       await _tap(tester, 'mode: dark');
-      await press(tester, 'make way bottom');
+      await press(tester, 'bottom');
       expect(_rect(tester, 'make way fairway').bottom, _near(_rect(tester, 'quay bar').top));
       expect(_opacityOf(tester, 'quay bar'), 0);
     });
@@ -777,7 +775,7 @@ void main() {
       await _tap(tester, 'mode: dark');
       await _tap(tester, 'mode: withdraw');
       expect(_code(tester), contains('.makeWay(HarborEdge.bottom, mode: HarborYield.withdraw);'));
-      await press(tester, 'make way bottom');
+      await press(tester, 'bottom');
       expect(_rect(tester, 'make way fairway').bottom, _near(_frameBottom(tester)));
     });
 
@@ -785,7 +783,7 @@ void main() {
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await press(tester, 'make way bottom');
+      await press(tester, 'bottom');
       expect(_rect(tester, 'make way fairway').bottom, _near(_frameBottom(tester)));
       await _tap(tester, 'mode: dark');
       await tester.pump(_step);
