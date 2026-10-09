@@ -62,6 +62,10 @@ class GuidePage extends StatefulWidget {
   /// Settings to share with the entry (to read the tide, say); one is made if null.
   final StageSettings? settings;
 
+  /// From Material's "expanded" width up, the controls sit beside the stage; below it, on a
+  /// quay along the bottom, where a phone held upright has room for them.
+  static const double sideBySideWidth = 840;
+
   @override
   State<GuidePage> createState() => _GuidePageState();
 }
@@ -79,9 +83,21 @@ class _GuidePageState extends State<GuidePage> {
 
   @override
   Widget build(final BuildContext context) {
-    // The page is a harbor of its own: the header is a pier over the top,
-    // and the controls are a quay along the bottom, so the stage between
-    // them stays in sight while you change things.
+    final bool sideBySide = MediaQuery.sizeOf(context).width >= GuidePage.sideBySideWidth;
+    final List<Widget> controls = <Widget>[
+      if (widget.controls.isNotEmpty) ...<Widget>[
+        _Panel(title: widget.className, children: widget.controls),
+        const SizedBox(height: 10),
+      ],
+      StageControls(settings: _settings, tide: widget.tide, focus: widget.focus),
+      const SizedBox(height: 10),
+      ProbeReadout(settings: _settings),
+      CodeCard(code: widget.code),
+    ];
+    // The page is a harbor of its own: the header is a pier over the top. On a phone the controls
+    // are a quay along the bottom, so the stage between them stays in sight while you change
+    // things; on a wide screen they are a panel beside the stage, in the body, which harbor keeps
+    // clear of the header.
     return HarborPage(
       child: Harbor(
         newPort: true,
@@ -94,80 +110,127 @@ class _GuidePageState extends State<GuidePage> {
           ),
         ],
         bottom: <HarborDock>[
-          HarborDock.quay(
-            debugLabel: 'control quay',
-            backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.97)),
-            child: ControlQuay(
-              children: <Widget>[
-                if (widget.controls.isNotEmpty) ...<Widget>[
-                  _Panel(title: widget.className, children: widget.controls),
-                  const SizedBox(height: 10),
-                ],
-                StageControls(settings: _settings, tide: widget.tide, focus: widget.focus),
-                const SizedBox(height: 10),
-                ProbeReadout(settings: _settings),
-                CodeCard(code: widget.code),
-              ],
+          if (!sideBySide)
+            HarborDock.quay(
+              debugLabel: 'control quay',
+              backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.97)),
+              child: ControlQuay(children: controls),
             ),
-          ),
         ],
         body: Sea(
           mood: SeaMood.night,
           child: HarborMoored(
             mooringLine: true,
-            child: LayoutBuilder(
-              builder: (final BuildContext context, final BoxConstraints body) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const SizedBox(height: 8),
-                  // Unfolded, the plate takes at most half the page and scrolls,
-                  // so the stage always keeps the rest.
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: body.maxHeight / 2),
-                    child: _Plate(
-                      art: widget.art,
-                      className: widget.className,
-                      realWorld: widget.realWorld,
-                      inYourApp: widget.inYourApp,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListenableBuilder(
-                      listenable: _settings,
-                      builder: (final BuildContext context, final Widget? _) => LayoutBuilder(
-                        builder: (final BuildContext context, final BoxConstraints constraints) => Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            Expanded(
-                              child: Stage(
-                                settings: _settings,
-                                builder: widget.stage,
-                                maxHeight: constraints.maxHeight,
-                                focus: widget.focus,
-                              ),
-                            ),
-                            if (!_settings.device.tv && (widget.tide || !widget.focus.isWhole)) ...<Widget>[
-                              const SizedBox(width: 10),
-                              SizedBox(
-                                width: 48,
-                                child: TideGauge(settings: _settings, tide: widget.tide, focus: widget.focus),
-                              ),
-                            ],
-                          ],
-                        ),
+            child: sideBySide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Expanded(child: _stageColumn()),
+                      const SizedBox(width: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: SizedBox(width: 400, child: ControlPanel(children: controls)),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
+                    ],
+                  )
+                : _stageColumn(),
           ),
         ),
       ),
     );
   }
+
+  /// The plate and the stage, with the tide gauge beside the stage.
+  Widget _stageColumn() => LayoutBuilder(
+    builder: (final BuildContext context, final BoxConstraints body) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const SizedBox(height: 8),
+        // Unfolded, the plate takes at most half the page and scrolls,
+        // so the stage always keeps the rest.
+        ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: body.maxHeight / 2),
+          child: _Plate(
+            art: widget.art,
+            className: widget.className,
+            realWorld: widget.realWorld,
+            inYourApp: widget.inYourApp,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: ListenableBuilder(
+            listenable: _settings,
+            builder: (final BuildContext context, final Widget? _) => LayoutBuilder(
+              builder: (final BuildContext context, final BoxConstraints constraints) => Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Expanded(
+                    child: Stage(
+                      settings: _settings,
+                      builder: widget.stage,
+                      maxHeight: constraints.maxHeight,
+                      focus: widget.focus,
+                    ),
+                  ),
+                  if (!_settings.device.tv && (widget.tide || !widget.focus.isWhole)) ...<Widget>[
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 48,
+                      child: TideGauge(settings: _settings, tide: widget.tide, focus: widget.focus),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    ),
+  );
+}
+
+/// The controls beside the stage on a wide screen: the same as the control quay's, in a panel
+/// that scrolls on its own, with the whole page's height to use.
+class ControlPanel extends StatelessWidget {
+  const ControlPanel({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(final BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Palette.night.withValues(alpha: 0.97),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Palette.brass.withValues(alpha: 0.35)),
+    ),
+    child: Material(
+      type: MaterialType.transparency,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.tune_rounded, size: 18, color: Palette.brass),
+                SizedBox(width: 8),
+                Text('Controls', style: _panelTitle),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              key: const ValueKey<String>('control panel'),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// The controls, on a quay along the bottom of the page: the class's own
