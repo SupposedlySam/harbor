@@ -1,3 +1,8 @@
+## 0.4.3
+
+* Fixed: `HarborSheet(clearsTopCoast: false)` cast the status bar out of the sheet's clear water along with its header and body, so a flare or buoy raised in a full-height sheet could sit under the status bar. The header and body still read no top coast; the sheet's clear water, where flares, buoys and `HarborChart` look, keeps the status bar out as it does with the option off. ([#97](https://github.com/SupposedlySam/harbor/issues/97))
+* Fixed: with no `HarborSea`, a `HarborCastOff` or `HarborMoored` above a harbor started from empty waters, so every edge read zero beneath it, not just the edges it cast off. A sheet with `clearsSides: true` read a bottom inset of 0 instead of the home indicator (34 on an iPhone 17). It now starts from what a reader there sees, `MediaQuery`'s padding. ([#98](https://github.com/SupposedlySam/harbor/issues/98))
+
 ## 0.4.2
 
 * `HarborSheet(bodyClearsTide: false)`, and on `HarborSheet.draggable`, leaves the keyboard to the sheet's body, as `Harbor.bodyClearsTide` does a page's: the body runs under the keyboard and reads it in `MediaQuery.viewInsets`, a floating footer still rides up on it, and `maxExtentFraction` (or a draggable sheet's extents) is a share of the whole height. For a toolbar or inspector that manages the keyboard itself. `true` stays the default, so nothing changes for existing sheets. ([#95](https://github.com/SupposedlySam/harbor/issues/95))

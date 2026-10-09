@@ -512,6 +512,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         viewHeight: ambient.size.height,
         frameSize: widget.newPort || outer == null || outer.frameSize.isEmpty ? null : outer.frameSize,
         maxExtentFraction: widget.maxExtentFraction,
+        clearWaterFloor: HarborClearWaterFloor.of(context),
       ),
       children: children,
     );

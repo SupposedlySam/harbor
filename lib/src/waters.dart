@@ -473,7 +473,10 @@ class HarborCastOff extends StatelessWidget {
     if (tide) {
       data = data.removeViewInsets(removeBottom: true);
     }
-    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? const HarborWatersData()).castOff(
+    // Outside any harbor, the waters a reader here would see: all of MediaQuery's padding as coast.
+    // Empty waters zeroed every edge beneath, not just these: a sheet with clearsSides opened with
+    // no HarborSea read a bottom inset of 0 instead of the home indicator (#98).
+    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? HarborWaters.of(context)).castOff(
       edges,
       margin: margin,
     );
@@ -511,7 +514,7 @@ class HarborCastOff extends StatelessWidget {
     if (tide) {
       data = data.removeViewInsets(removeBottom: true);
     }
-    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? const HarborWatersData())._castOffCoast(
+    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? HarborWaters.of(context))._castOffCoast(
       edges,
       cleared: cleared,
       margin: margin,
@@ -521,4 +524,21 @@ class HarborCastOff extends StatelessWidget {
       child: HarborWaters(data: waters, child: child),
     );
   }
+}
+
+/// The coast a layer cast off above a harbor that still covers the harbor's frame, which the
+/// harbor keeps out of its clear water though its content reads zero there. A sheet with
+/// `clearsTopCoast: false` casts the status bar off for its header and body, yet the sheet still
+/// reaches under it, so flares, buoys and the chart must keep clear of it (#97).
+@internal
+class HarborClearWaterFloor extends InheritedWidget {
+  const HarborClearWaterFloor({super.key, required this.floor, required super.child});
+
+  final EdgeInsetsDirectional floor;
+
+  static EdgeInsetsDirectional of(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<HarborClearWaterFloor>()?.floor ?? EdgeInsetsDirectional.zero;
+
+  @override
+  bool updateShouldNotify(final HarborClearWaterFloor oldWidget) => floor != oldWidget.floor;
 }
