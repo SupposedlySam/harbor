@@ -441,6 +441,199 @@ void main() {
     });
   });
 
+  group("A signal's time", () {
+    Future<BuildContext> pumpPage(final WidgetTester tester, {final GlobalKey<NavigatorState>? navigator}) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(
+        MaterialApp(
+          navigatorKey: navigator,
+          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+          home: Material(child: Harbor(body: _Probe((final BuildContext c) => page = c))),
+        ),
+      );
+      return page;
+    }
+
+    // Breaks if: the default is not a SnackBar's 4 s.
+    testWidgets('is 4 s by default, as a SnackBar’s is', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('toast', 30));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 3500));
+      expect(entry.showing.value, isTrue);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(entry.showing.value, isFalse);
+    });
+
+    // Breaks if: the time starts when the signal is raised rather than once its entrance has run.
+    testWidgets('starts once its entrance has finished', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: const AnimationStyle(duration: Duration(seconds: 1)),
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('toast', 30),
+      );
+      // Frame by frame, as a device draws them, so the entrance ends when it would.
+      for (int i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(entry.showing.value, isTrue, reason: 'it has been in full view for only 0.5 s');
+      for (int i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(entry.showing.value, isFalse);
+    });
+
+    // Breaks if: the time runs while another route covers the page the signal is on.
+    testWidgets('waits while another route covers its page', (final tester) async {
+      final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+      final BuildContext page = await pumpPage(tester, navigator: navigator);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('toast', 30),
+      );
+      await tester.pumpAndSettle();
+      unawaited(navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext c) => const SizedBox.expand())));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 3));
+      expect(entry.showing.value, isTrue, reason: 'nobody could see it');
+
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('toast')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(entry.showing.value, isFalse, reason: 'its time ran once the page was back on top');
+    });
+
+    // Breaks if: persist is ignored, so a signal with a button times out before a screen reader
+    // reaches it, as a SnackBar with an action does not.
+    testWidgets('with persist, does not run out', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        persist: true,
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('undo', 30),
+      );
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 10));
+      expect(entry.showing.value, isTrue);
+
+      entry.lower();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('undo')), findsNothing);
+      expect(reason, HarborSignalClosedReason.lower);
+    });
+
+    // Breaks if: closed completes before the exit has run, or with the wrong reason.
+    testWidgets('closes with timeout once its exit has run', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        duration: const Duration(seconds: 1),
+        builder: (final BuildContext c) => _bar('toast', 30),
+      );
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+      expect(entry.showing.value, isFalse);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(reason, isNull, reason: 'it is still on its way out');
+      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.byKey(const ValueKey<String>('toast')), findsNothing);
+      expect(reason, HarborSignalClosedReason.timeout);
+    });
+  });
+
+  group('Signals at the same place', () {
+    final Finder first = find.byKey(const ValueKey<String>('first'));
+    final Finder second = find.byKey(const ValueKey<String>('second'));
+
+    // Breaks if: two signals at one slot are shown at once, drawn over each other, rather than one
+    // after the other as a ScaffoldMessenger shows its snack bars; or the one waiting starts its
+    // time before it is shown.
+    testWidgets('are shown one at a time, each after the last has left', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      final HarborSignalEntry one = HarborSignals.raise(page, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      final HarborSignalEntry two = HarborSignals.raise(
+        page,
+        slot: HarborSignalSlot.low,
+        builder: (final BuildContext c) => _bar('second', 30),
+        duration: const Duration(seconds: 1),
+      );
+      await tester.pumpAndSettle();
+      expect(first, findsOneWidget);
+      expect(second, findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      expect(two.showing.value, isTrue, reason: 'its time has not started while it waits');
+
+      one.lower();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(first, findsOneWidget, reason: 'the first runs its exit before the next comes in');
+      expect(second, findsNothing);
+      await tester.pumpAndSettle();
+      expect(first, findsNothing);
+      expect(second, findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(two.showing.value, isFalse);
+      await tester.pumpAndSettle();
+    });
+
+    // Breaks if: a signal lowered while it waits is still shown when its turn comes, or its closed
+    // future waits for an exit it never had.
+    testWidgets('leave the queue at once when lowered while waiting', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      final HarborSignalEntry one = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      final HarborSignalEntry two = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('third', 30), duration: null);
+      HarborSignalClosedReason? reason;
+      unawaited(two.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+
+      two.lower();
+      await tester.pump();
+      expect(reason, HarborSignalClosedReason.lower);
+      one.lower();
+      await tester.pumpAndSettle();
+      expect(second, findsNothing);
+      expect(find.byKey(const ValueKey<String>('third')), findsOneWidget);
+    });
+
+    testWidgets('without a harbor, are shown one at a time in the overlay', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
+      final HarborSignalEntry one = HarborSignals.raise(page, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      HarborSignals.raise(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      await tester.pumpAndSettle();
+      expect(first, findsOneWidget);
+      expect(second, findsNothing);
+
+      one.lower();
+      await tester.pumpAndSettle();
+      expect(first, findsNothing);
+      expect(second, findsOneWidget);
+    });
+
+    // Positive control: the queue is per place, so signals at two slots still show together.
+    testWidgets('at two slots, are shown together', (final tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
+      HarborSignals.raise(page, slot: HarborSignalSlot.top, builder: (final BuildContext c) => _bar('first', 30), duration: null);
+      HarborSignals.raise(page, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      await tester.pumpAndSettle();
+      expect(first, findsOneWidget);
+      expect(second, findsOneWidget);
+    });
+  });
+
   group('The tide', () {
     Future<HarborSeaTrial> page(final WidgetTester tester, final List<HarborTideState> seen) =>
         tester.pumpSeaTrial(_app(Harbor(bodyClearsTide: false, body: _TideReader(seen))));
@@ -599,11 +792,19 @@ void main() {
     // No bottom coast, so the keyboard moving changes viewInsets and nothing else.
     const HarborTrialDevice device = HarborTrialDevice.iPhoneSE;
 
-    // Brings the keyboard in or out over ten frames, as the platform animates it.
-    Future<void> slideTide(final WidgetTester tester, {required final bool tideIn}) async {
+    // Brings the keyboard in or out over ten frames, as the platform animates it. On a phone that
+    // stops reporting its home indicator in padding under the keyboard, the padding goes with it.
+    Future<void> slideTide(
+      final WidgetTester tester, {
+      required final bool tideIn,
+      final HarborTrialDevice on = device,
+    }) async {
       for (int i = 1; i <= 10; i++) {
         final double share = tideIn ? i / 10 : 1 - i / 10;
-        tester.view.viewInsets = FakeViewPadding(bottom: device.tideHeight * share);
+        final EdgeInsets coast = on.coastWhen(tideIn: share > 0);
+        tester.view
+          ..padding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
+          ..viewInsets = FakeViewPadding(bottom: on.tideHeight * share);
         await tester.pump(const Duration(milliseconds: 16));
       }
       // Long enough for the tide gauge to settle.
@@ -702,6 +903,75 @@ void main() {
         HarborMoored: 0,
         HarborFairway: 0,
       });
+    });
+
+    // A body that clears the tide takes the keyboard out of its view padding, as
+    // `MediaQueryData.removeViewInsets` does, so on a phone with a home indicator the steady
+    // coast's clamp is reached on every frame the keyboard moves. The iPhone SE above has no
+    // bottom coast and never reaches it.
+    // Breaks if: HarborWaters.of subscribes coast readers to the steady coast's clamp.
+    testWidgets('a coast-only moored block holds still while the keyboard rises over a home indicator', (final tester) async {
+      const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
+      final List<HarborTideState> tide = <HarborTideState>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                const HarborMoored(
+                  edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
+                  clear: HarborClear.coast,
+                  tide: false,
+                  child: SizedBox(height: 10),
+                ),
+                const _AspectReader(HarborWatersAspect.coast),
+                SizedBox(height: 10, child: _TideReader(tide)),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborMoored, _AspectReader, _TideReader});
+      await slideTide(tester, tideIn: true, on: phone);
+      expect(rebuilds[_TideReader], greaterThanOrEqualTo(10), reason: 'positive control: the keyboard moved on every frame');
+      // Once each, for the platform taking the home indicator out of the padding.
+      expect(rebuilds[HarborMoored], 1);
+      expect(rebuilds[_AspectReader], 1);
+    });
+
+    // The standard is `MediaQuery.viewPaddingOf`: it rebuilds when the view padding changes, and
+    // the steady coast should rebuild no more often than that while holding its value.
+    // Breaks if: steadyCoastOf depends on the tide gauge, which notifies on every frame.
+    testWidgets('the steady coast holds still while the keyboard rises over a home indicator', (final tester) async {
+      const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
+      final List<double> steady = <double>[];
+      final List<double> viewPadding = <double>[];
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Column(
+              children: <Widget>[
+                _Probe(
+                  (final BuildContext c) => steady.add(HarborWaters.steadyCoastOf(c, HarborEdge.bottom)),
+                  child: const SizedBox(height: 10),
+                ),
+                _Probe(
+                  (final BuildContext c) => viewPadding.add(MediaQuery.viewPaddingOf(c).bottom),
+                  child: const SizedBox(height: 10),
+                ),
+              ],
+            ),
+          ),
+        ),
+        device: phone,
+      );
+      steady.clear();
+      viewPadding.clear();
+      await slideTide(tester, tideIn: true, on: phone);
+      expect(viewPadding.last, 0, reason: 'positive control: the body took the keyboard out of its view padding');
+      expect(steady, everyElement(phone.coast.bottom));
+      expect(steady.length, lessThanOrEqualTo(viewPadding.length));
     });
 
     // Breaks if: isInOf depends on the tide gauge as a whole, which notifies on every frame.
@@ -910,5 +1180,16 @@ void main() {
     await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+  });
+
+  // Breaks if: a builder stops taking the named builder type a caller holds it in.
+  testWidgets('open water and a draggable sheet take named builder types', (final tester) async {
+    final HarborWatersWidgetBuilder background = (final BuildContext context, final HarborWatersData waters) =>
+        SizedBox(key: const ValueKey<String>('water'), height: waters.frameSize.height);
+    final ScrollableWidgetBuilder list = (final BuildContext context, final ScrollController controller) =>
+        HarborFairway(controller: controller, slivers: const <Widget>[]);
+    await tester.pumpSeaTrial(_app(Harbor(body: HarborOpenWater(builder: background))));
+    expect(_rect(tester, 'water').height, tester.view.physicalSize.height / tester.view.devicePixelRatio);
+    expect(HarborSheet.draggable(builder: list).builder, same(list));
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
@@ -31,6 +32,11 @@ enum HarborClear {
 /// What's in the way is the coast, the docks and, at the bottom, the tide.
 /// The mooring line (the harbor's margin) is added on [edges] when
 /// [mooringLine] is set. A fixed Save button, a form, a block of static text.
+///
+/// See also:
+///
+///  * [SafeArea], the closest Flutter widget, which keeps clear of `MediaQuery.padding` alone and so
+///    misses the keyboard.
 class HarborMoored extends StatelessWidget {
   const HarborMoored({
     super.key,
@@ -57,12 +63,28 @@ class HarborMoored extends StatelessWidget {
   final bool mooringLine;
 
   /// A floor on each edge: the clearance or this, whichever is larger.
-  final EdgeInsetsDirectional minimum;
+  final EdgeInsetsGeometry minimum;
 
   /// Your own spacing, added on top.
-  final EdgeInsetsDirectional extra;
+  final EdgeInsetsGeometry extra;
 
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<HarborEdge>('edges', edges, defaultValue: HarborEdge.all));
+    properties.add(EnumProperty<HarborClear>('clear', clear, defaultValue: HarborClear.everything));
+    properties.add(EnumProperty<HarborFollow>('follow', follow, defaultValue: HarborFollow.live));
+    properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
+    properties.add(FlagProperty('mooringLine', value: mooringLine, ifTrue: 'mooring line'));
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
+    );
+    properties.add(
+      DiagnosticsProperty<EdgeInsetsGeometry>('extra', extra, defaultValue: EdgeInsetsDirectional.zero),
+    );
+  }
 
   /// What a [HarborMoored] with these settings would pad [context] by.
   static EdgeInsetsDirectional clearanceOf(
@@ -72,14 +94,18 @@ class HarborMoored extends StatelessWidget {
     final HarborFollow follow = HarborFollow.live,
     final bool tide = true,
     final bool mooringLine = false,
-    final EdgeInsetsDirectional minimum = EdgeInsetsDirectional.zero,
-    final EdgeInsetsDirectional extra = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
   }) {
+    EdgeInsetsDirectional resolved(final EdgeInsetsGeometry insets) =>
+        insets is EdgeInsetsDirectional ? insets : HarborEdges.resolve(insets, Directionality.of(context));
+    final EdgeInsetsDirectional minimumHere = resolved(minimum);
+    final EdgeInsetsDirectional extraHere = resolved(extra);
     // Each part of the waters is read only where it is used, so a mooring line
     // in a list under the keyboard does not rebuild as the keyboard moves.
     double clearance(final HarborEdge edge) {
       if (!edges.contains(edge)) {
-        return HarborEdges.of(extra, edge);
+        return HarborEdges.of(extraHere, edge);
       }
       double value = switch ((clear, follow)) {
         (HarborClear.coast, _) => HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
@@ -95,7 +121,7 @@ class HarborMoored extends StatelessWidget {
       if (mooringLine) {
         value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
       }
-      return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(extra, edge);
+      return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(extraHere, edge);
     }
 
     return HarborEdges.build(clearance);
@@ -129,11 +155,22 @@ class HarborMoored extends StatelessWidget {
 /// whatever is in the way there (a side cutout, a rail). For a row in a list,
 /// a heading, a tile grid: anything that should line up with the page margin
 /// while the list itself runs to the frame's edge.
+///
+/// See also:
+///
+///  * [Padding], which a page margin is in Flutter; a mooring line adds whatever is in the way on the
+///    sides.
 class HarborMooringLine extends StatelessWidget {
   const HarborMooringLine({super.key, this.follow = HarborFollow.live, required this.child});
 
   final HarborFollow follow;
   final Widget child;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<HarborFollow>('follow', follow, defaultValue: HarborFollow.live));
+  }
 
   @override
   Widget build(final BuildContext context) => HarborMoored(
@@ -145,13 +182,22 @@ class HarborMooringLine extends StatelessWidget {
   );
 }
 
+/// The signature of [HarborOpenWater.builder]: builds open water from the
+/// [waters] it lies in, as a `LayoutWidgetBuilder` builds from its constraints.
+typedef HarborWatersWidgetBuilder = Widget Function(BuildContext context, HarborWatersData waters);
+
 /// Open water: content that ignores the docks and the coast (a background, a
 /// map, a full-bleed image), told how far each of them reaches so it can place
 /// what it draws.
+///
+/// See also:
+///
+///  * [MediaQuery.paddingOf], which adds the coast and the docks together; these waters keep them
+///    apart.
 class HarborOpenWater extends StatelessWidget {
   const HarborOpenWater({super.key, required this.builder});
 
-  final Widget Function(BuildContext context, HarborWatersData waters) builder;
+  final HarborWatersWidgetBuilder builder;
 
   @override
   Widget build(final BuildContext context) => builder(context, HarborWaters.of(context));

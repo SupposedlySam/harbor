@@ -38,6 +38,9 @@ class HarborClaim {
 /// A breakwater: a sheet (or any overlay) reporting how far it covers the
 /// bottom of the harbor that opened it, so that harbor's content keeps clear
 /// of it while it is up.
+///
+/// Flutter has no equivalent: a `Scaffold` lifts its floating action button over a bottom sheet but
+/// leaves the body under it.
 class HarborBreakwater {
   HarborBreakwater._(this._controller, this._coverage, {this.measuresTop = false});
 
@@ -64,7 +67,26 @@ class HarborBreakwater {
 /// runs from 0 to 1 as the signal is raised and back as it is lowered.
 typedef HarborSignalTransitionBuilder = Widget Function(BuildContext context, Animation<double> animation, Widget child);
 
+/// Why a signal was closed, as [HarborSignalEntry.closed] reports it.
+enum HarborSignalClosedReason {
+  /// [HarborSignalEntry.lower] was called.
+  lower,
+
+  /// A screen reader's dismiss action lowered it.
+  dismiss,
+
+  /// Its [HarborSignalEntry.duration] ran out.
+  timeout,
+
+  /// Nothing was left to show it: its harbor or overlay went away with no other to move to.
+  remove,
+}
+
 /// A transient buoy raised by `HarborSignals.raise`, which returns it.
+///
+/// Signals raised at the same alignment in one harbor take turns, as a
+/// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
+/// it has been lowered and has run its exit.
 class HarborSignalEntry {
   /// Signals are raised with `HarborSignals.raise`.
   @internal
@@ -72,6 +94,7 @@ class HarborSignalEntry {
     required this.builder,
     required this.alignment,
     required this.duration,
+    this.persist = false,
     final Rect? avoidInGlobal,
     this.raisedIn,
     this.animationStyle,
@@ -84,7 +107,16 @@ class HarborSignalEntry {
 
   final WidgetBuilder builder;
   final Alignment alignment;
+
+  /// How long the signal stays once it is in sight: its entrance has run and
+  /// no other route covers its harbor. Counted again from the start each time
+  /// it comes back into sight. Null never times out, the same as [persist].
   final Duration? duration;
+
+  /// Whether the signal stays up after [duration] until it is lowered, as a
+  /// `SnackBar` with `persist` does. Give it to a signal with a button (an
+  /// Undo), so a screen-reader user has time to reach it.
+  final bool persist;
 
   /// The duration and curve of the entrance and exit, 220 ms each way by
   /// default; [AnimationStyle.noAnimation] shows and removes the signal as it is.
@@ -129,8 +161,39 @@ class HarborSignalEntry {
   HarborController? get owner => _owner;
   HarborController? _owner;
 
-  /// Lowers the signal.
-  void lower() => _showing.value = false;
+  final Completer<HarborSignalClosedReason> _closed = Completer<HarborSignalClosedReason>();
+  HarborSignalClosedReason? _reason;
+
+  /// Completes once the signal has left the screen, after its exit, with why
+  /// it was lowered; at once for a signal lowered before its turn came.
+  Future<HarborSignalClosedReason> get closed => _closed.future;
+
+  /// Lowers the signal. The first [reason] given is the one [closed] reports.
+  void lower({final HarborSignalClosedReason reason = HarborSignalClosedReason.lower}) {
+    if (_showing.value) {
+      _reason = reason;
+      _showing.value = false;
+    }
+  }
+
+  void _left() {
+    if (!_closed.isCompleted) {
+      _closed.complete(_reason ?? HarborSignalClosedReason.lower);
+    }
+  }
+}
+
+/// Completes [signal]'s [HarborSignalEntry.closed]: it has left the screen.
+void signalLeft(final HarborSignalEntry signal) => signal._left();
+
+/// The signals of [signals] that are in sight: the first at each alignment.
+/// The others wait their turn behind it.
+List<HarborSignalEntry> signalsInSight(final Iterable<HarborSignalEntry> signals) {
+  final Set<Alignment> taken = <Alignment>{};
+  return <HarborSignalEntry>[
+    for (final HarborSignalEntry signal in signals)
+      if (taken.add(signal.alignment)) signal,
+  ];
 }
 
 /// The dock positions and clearances a harbor laid out last, in its own coordinates.
@@ -197,7 +260,9 @@ class HarborFleet {
       if (top != null) {
         top._raiseSignal(signal);
       } else {
-        signal.lower();
+        signal
+          ..lower(reason: HarborSignalClosedReason.remove)
+          .._left();
       }
     }
   }
@@ -313,11 +378,10 @@ class HarborController {
   static HarborController? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<HarborScope>()?.controller;
 
-  static HarborController of(final BuildContext context) {
-    final HarborController? controller = maybeOf(context);
-    assert(controller != null, 'No Harbor above this context.');
-    return controller!;
-  }
+  /// The nearest harbor above [context]. Throws a [FlutterError], in release
+  /// builds too, when there is none; [maybeOf] returns null instead.
+  static HarborController of(final BuildContext context) =>
+      maybeOf(context) ?? (throw harborNotFound(context, 'HarborController'));
 
   /// The nearest harbor, from this one outward, that has a dock on [edge].
   HarborController? withDockOn(final HarborEdge edge) {
@@ -464,14 +528,22 @@ class HarborController {
     signal._owner = this;
     _signals.add(signal);
     void lowered() {
-      if (!signal.showing.value) {
-        // Leave time for the signal's own exit animation.
-        _signalRemovals[signal] ??= Timer(signal.lingers, () {
-          _signalRemovals.remove(signal);
-          _forgetSignal(signal);
-          _changed();
-        });
+      if (signal.showing.value) {
+        return;
       }
+      if (!signalsInSight(_signals).contains(signal)) {
+        // Lowered while it waited its turn: it has no exit to run.
+        _forgetSignal(signal);
+        signal._left();
+        return;
+      }
+      // Leave time for the signal's own exit animation.
+      _signalRemovals[signal] ??= Timer(signal.lingers, () {
+        _signalRemovals.remove(signal);
+        _forgetSignal(signal);
+        signal._left();
+        _changed();
+      });
     }
 
     _signalListeners[signal] = lowered;
@@ -488,7 +560,7 @@ class HarborController {
   }
 
   /// Lets go of every signal, cancelling pending removals, and returns those
-  /// still showing.
+  /// still showing, in the order they were raised.
   List<HarborSignalEntry> _releaseSignals() {
     final List<HarborSignalEntry> showing = _signals.where((final HarborSignalEntry s) => s.showing.value).toList();
     for (final Timer removal in _signalRemovals.values) {
@@ -497,6 +569,9 @@ class HarborController {
     _signalRemovals.clear();
     for (final HarborSignalEntry signal in List<HarborSignalEntry>.of(_signals)) {
       _forgetSignal(signal);
+      if (!signal.showing.value) {
+        signal._left();
+      }
     }
     return showing;
   }
@@ -628,3 +703,19 @@ class HarborFleetScope extends InheritedWidget {
   @override
   bool updateShouldNotify(final HarborFleetScope oldWidget) => fleet != oldWidget.fleet;
 }
+
+/// The error `of` throws when no harbor is above [context], naming [owner]'s
+/// `of` and `maybeOf`, as `Scaffold.of` names its own.
+FlutterError harborNotFound(final BuildContext context, final String owner) => FlutterError.fromParts(<DiagnosticsNode>[
+  ErrorSummary('$owner.of() called with a context that has no Harbor above it.'),
+  ErrorDescription(
+    'No Harbor ancestor could be found starting from the context that was passed to $owner.of(). '
+    'This usually happens when the context is from the widget whose build method creates the Harbor, '
+    'or when the widget is outside every HarborSea.',
+  ),
+  ErrorHint(
+    'Use a Builder, or a widget of its own, below the Harbor to get a context inside it. '
+    'For a widget that may be used outside a harbor, call $owner.maybeOf() and handle null.',
+  ),
+  context.describeElement('The context used was'),
+]);

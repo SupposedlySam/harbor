@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -9,10 +10,15 @@ import 'tide.dart';
 import 'waters.dart';
 
 /// The lighthouse keeps things in sight.
+///
+/// See also:
+///
+///  * [RenderObject.showOnScreen], which [reveal] calls, and [Scrollable.ensureVisible], its widget-level cousin.
 abstract final class HarborLighthouse {
   /// Brings the widget at [context] into sight, [clearance] clear of whatever
   /// covers the edges of the scroll views it is in (docks and keyboard
-  /// included, when those scroll views are fairways).
+  /// included, when those scroll views are fairways). With reduced motion
+  /// ([MediaQueryData.disableAnimations]) it jumps there, whatever [duration] says.
   static void reveal(
     final BuildContext context, {
     final double clearance = 0.0,
@@ -24,7 +30,8 @@ abstract final class HarborLighthouse {
       return;
     }
     final Rect bounds = target.paintBounds.inflate(clearance);
-    target.showOnScreen(rect: bounds, duration: duration, curve: curve);
+    final bool still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    target.showOnScreen(rect: bounds, duration: still ? Duration.zero : duration, curve: curve);
   }
 
   /// How much of [box] (0 to 1) the docks and coast on [edge] of its nearest
@@ -59,6 +66,11 @@ abstract final class HarborLighthouse {
 /// beacons reveals just the field being typed in. Inside a [HarborLighthouseRegion] it can [lift] instead:
 /// the region moves its content up until the beacon clears what covers it, and
 /// settles back when that goes away.
+///
+/// See also:
+///
+///  * `TextField.scrollPadding`, the closest Flutter setting to [keepInSight]. [onObscured] and [lift]
+///    have no Flutter equivalent.
 class HarborBeacon extends StatefulWidget {
   const HarborBeacon({
     super.key,
@@ -99,6 +111,18 @@ class HarborBeacon extends StatefulWidget {
 
   @override
   State<HarborBeacon> createState() => _HarborBeaconState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<HarborEdge>('edge', edge, defaultValue: HarborEdge.top));
+    properties.add(ObjectFlagProperty<ValueChanged<double>>.has('onObscured', onObscured));
+    properties.add(FlagProperty('keepInSight', value: keepInSight, ifTrue: 'keep in sight'));
+    properties.add(FlagProperty('onlyWhileFocused', value: onlyWhileFocused, ifTrue: 'only while focused'));
+    properties.add(FlagProperty('lift', value: lift, ifTrue: 'lift'));
+    properties.add(DoubleProperty('clearance', clearance, defaultValue: 0.0));
+    properties.add(FlagProperty('holdPosition', value: holdPosition, ifTrue: 'holding position'));
+  }
 }
 
 class _HarborBeaconState extends State<HarborBeacon> {
@@ -220,20 +244,37 @@ class _HarborBeaconState extends State<HarborBeacon> {
 /// `lift` set would be covered by what covers the bottom (a sheet, a
 /// breakwater, the keyboard), the region moves its content up just far enough,
 /// and back down when the cover goes. Content already clear stays where it is.
+/// With reduced motion ([MediaQueryData.disableAnimations]) it moves at once.
 class HarborLighthouseRegion extends StatefulWidget {
   const HarborLighthouseRegion({
     super.key,
     this.duration = const Duration(milliseconds: 280),
     this.curve = Curves.easeOutCubic,
+    this.animationStyle,
     required this.child,
   });
 
   final Duration duration;
   final Curve curve;
+
+  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
+  /// duration and curve. Its `duration` and `curve` are for lifting, and its `reverseDuration` and
+  /// `reverseCurve` for settling back down; each falls back to the forward one, then to [duration]
+  /// and [curve]. [AnimationStyle.noAnimation] moves the content at once.
+  final AnimationStyle? animationStyle;
   final Widget child;
 
   @override
   State<HarborLighthouseRegion> createState() => _LighthouseRegionState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 280)),
+    );
+    properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeOutCubic));
+  }
 }
 
 class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTickerProviderStateMixin {
@@ -243,8 +284,9 @@ class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTi
   double _to = 0.0;
   bool _pending = false;
   final GlobalKey _contentKey = GlobalKey();
+  late Curve _moveCurve = widget.curve;
 
-  double get _offset => _from + (_to - _from) * widget.curve.transform(_lift.value);
+  double get _offset => _from + (_to - _from) * _moveCurve.transform(_lift.value);
 
   void _register(final _HarborBeaconState beacon) {
     _beacons.add(beacon);
@@ -308,9 +350,19 @@ class _LighthouseRegionState extends State<HarborLighthouseRegion> with SingleTi
     if ((target - _to).abs() < 0.5) {
       return;
     }
+    final AnimationStyle? style = widget.animationStyle;
+    final Duration liftDuration = style?.duration ?? widget.duration;
+    final Curve liftCurve = style?.curve ?? widget.curve;
+    final bool lifting = target < _offset;
     _from = _offset;
     _to = target;
+    _moveCurve = lifting ? liftCurve : style?.reverseCurve ?? liftCurve;
     _lift
+      ..duration = MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : lifting
+          ? liftDuration
+          : style?.reverseDuration ?? liftDuration
       ..value = 0.0
       ..forward();
   }

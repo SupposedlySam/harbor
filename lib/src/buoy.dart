@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show DisplayFeature, DisplayFeatureState;
 
-import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -18,6 +18,9 @@ class HarborAnchor extends ChangeNotifier {
 
   final String? debugLabel;
 
+  @override
+  String toString() => debugLabel == null ? describeIdentity(this) : '${describeIdentity(this)}($debugLabel)';
+
   RenderBox? _box;
   bool _disposed = false;
 
@@ -25,6 +28,14 @@ class HarborAnchor extends ChangeNotifier {
   RenderBox? get box => (_box != null && _box!.attached && _box!.hasSize) ? _box : null;
 
   void _attach(final RenderBox box) {
+    assert(() {
+      final RenderBox? previous = _box;
+      if (previous != null && !identical(previous, box)) {
+        (_debugPreviousBoxes ??= <RenderBox>{}).add(previous);
+        _debugScheduleSharedCheck();
+      }
+      return true;
+    }());
     _box = box;
     _moved();
   }
@@ -34,12 +45,55 @@ class HarborAnchor extends ChangeNotifier {
       _box = null;
       _moved();
     }
+    assert(() {
+      _debugPreviousBoxes?.remove(box);
+      return true;
+    }());
+  }
+
+  // The boxes a later attach replaced. As with a LayerLink's leaders, each one
+  // must detach by the end of the frame, or two points share this anchor.
+  Set<RenderBox>? _debugPreviousBoxes;
+  bool _debugSharedCheckScheduled = false;
+
+  void _debugScheduleSharedCheck() {
+    if (_debugSharedCheckScheduled) {
+      return;
+    }
+    _debugSharedCheckScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
+      _debugSharedCheckScheduled = false;
+      final Set<RenderBox> stillAttached = <RenderBox>{
+        for (final RenderBox previous in _debugPreviousBoxes ?? const <RenderBox>{})
+          if (previous.attached && !identical(previous, _box)) previous,
+      };
+      _debugPreviousBoxes = null;
+      if (stillAttached.isEmpty || _disposed) {
+        return;
+      }
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('More than one HarborAnchorPoint is using the same HarborAnchor${debugLabel == null ? '' : ' "$debugLabel"'}.'),
+          ErrorDescription(
+            'An anchor refers to one point. With several attached, a buoy anchored to it sits by whichever '
+            'laid out last, and when that one leaves the anchor has no point while the others are still there.',
+          ),
+          ErrorHint(
+            'Give each HarborAnchorPoint its own HarborAnchor, for example one per row of a list, '
+            'or wrap only the row whose buoy is showing.',
+          ),
+          if (_box case final RenderBox current) current.describeForError('The point the anchor is using'),
+          for (final RenderBox previous in stillAttached) previous.describeForError('Also attached'),
+        ]),
+        library: 'harbor',
+      ));
+    }, debugLabel: 'HarborAnchor.sharedCheck');
   }
 
   bool _pending = false;
 
   void _moved() {
-    if (_pending || _disposed) {
+    if (_pending || _disposed || !hasListeners) {
       return;
     }
     _pending = true;
@@ -71,6 +125,12 @@ class HarborAnchorPoint extends SingleChildRenderObjectWidget {
   @override
   void updateRenderObject(final BuildContext context, final RenderObject renderObject) {
     (renderObject as _RenderAnchorPoint).anchor = anchor;
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
   }
 }
 
@@ -119,16 +179,28 @@ class _RenderAnchorPoint extends RenderProxyBox {
   }
 }
 
-/// Which side of its anchor an anchored buoy sits on. [before] and [after]
-/// are in reading order: [before] is on the right under right-to-left.
-enum HarborBuoySide { above, below, before, after }
+/// Which side of its anchor an anchored buoy sits on. [start] and [end] are in
+/// reading order, as in `AlignmentDirectional.centerStart`: [start] is on the
+/// right under right-to-left.
+enum HarborBuoySide {
+  above,
+  below,
+  start,
+  end;
+
+  @Deprecated('Use HarborBuoySide.start, the reading-order name Flutter uses.')
+  static const HarborBuoySide before = start;
+
+  @Deprecated('Use HarborBuoySide.end, the reading-order name Flutter uses.')
+  static const HarborBuoySide after = end;
+}
 
 /// Where a buoy of [size] sits by the anchor at [at], inside [water]: on
 /// [side], [gap] away, overlapping it by [overlap], and centered on it across
 /// that side. It is kept inside [water] across the side, and above or below
 /// its anchor, never past the far edge. With [flips], it goes to the opposite
 /// side when [side] has no room and that one has, and is never past the far
-/// edge before or after its anchor either.
+/// edge at the start or end of its anchor either.
 Offset _anchoredOffset({
   required final Rect water,
   required final Rect at,
@@ -143,8 +215,8 @@ Offset _anchoredOffset({
   final AxisDirection preferred = switch (side) {
     HarborBuoySide.above => AxisDirection.up,
     HarborBuoySide.below => AxisDirection.down,
-    HarborBuoySide.before => rtl ? AxisDirection.right : AxisDirection.left,
-    HarborBuoySide.after => rtl ? AxisDirection.left : AxisDirection.right,
+    HarborBuoySide.start => rtl ? AxisDirection.right : AxisDirection.left,
+    HarborBuoySide.end => rtl ? AxisDirection.left : AxisDirection.right,
   };
   double along(final AxisDirection d) => switch (d) {
     AxisDirection.up => at.top - gap - size.height + overlap,
@@ -185,8 +257,13 @@ Offset _anchoredOffset({
 ///
 /// Give buoys to [Harbor.buoys]. A modal buoy hides the buoys listed before it
 /// while it is up (a menu over a tooltip).
+///
+/// See also:
+///
+///  * `Scaffold.floatingActionButton`, the closest Flutter slot, and [ModalBarrier], which a modal
+///    buoy's barrier is like.
 @immutable
-class HarborBuoy {
+class HarborBuoy with Diagnosticable {
   /// A buoy at [alignment] within the clear water, [margin] in from its edges.
   const HarborBuoy({
     this.key,
@@ -252,6 +329,36 @@ class HarborBuoy {
   /// Keeps the buoy inside this rectangle (in the harbor's own coordinates)
   /// as well as inside the clear water.
   final Rect? within;
+
+  @override
+  String toStringShort() =>
+      anchor == null ? objectRuntimeType(this, 'HarborBuoy') : '${objectRuntimeType(this, 'HarborBuoy')}.anchored';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
+    if (anchor == null) {
+      properties.add(
+        DiagnosticsProperty<AlignmentGeometry>('alignment', alignment, defaultValue: Alignment.bottomCenter),
+      );
+      properties.add(
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(16.0)),
+      );
+      properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
+    } else {
+      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
+      properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
+      properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+      properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+      properties.add(
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)),
+      );
+    }
+    properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
+    properties.add(ObjectFlagProperty<VoidCallback>.has('onDismiss', onDismiss));
+    properties.add(ColorProperty('barrierColor', barrierColor, defaultValue: const Color(0x00000000)));
+  }
 }
 
 /// The layer a harbor floats its buoys in.
@@ -368,7 +475,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     final int lastModal = buoys.lastIndexWhere((final HarborBuoy b) => b.modal);
     final List<HarborBuoy> all = <HarborBuoy>[
       ...buoys,
-      for (final HarborSignalEntry signal in signals)
+      for (final HarborSignalEntry signal in signalsInSight(signals))
         HarborBuoy(
           key: ObjectKey(signal),
           alignment: signal.alignment,
@@ -432,7 +539,7 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
 
 class _BuoyParentData extends ContainerBoxParentData<RenderBox> {
   /// Whether the last paint painted this buoy. An anchored buoy is not painted while its anchor
-  /// has no box, and its offset is then stale, so it takes no taps either.
+  /// has no box, and its offset is then stale, so it takes no taps and is not read out either.
   bool painted = false;
 }
 
@@ -480,44 +587,21 @@ class _RenderBuoyLayer extends RenderBox
     _textDirection = value;
     markNeedsLayout();
   }
-  final Set<HarborAnchor> _listening = <HarborAnchor>{};
 
   set buoys(final List<HarborBuoy> value) {
     _buoys = value;
-    _syncAnchors();
     markNeedsLayout();
   }
 
-  void _syncAnchors() {
-    final Set<HarborAnchor> wanted = <HarborAnchor>{
-      for (final HarborBuoy b in _buoys)
-        if (b.anchor != null) b.anchor!,
-    };
-    for (final HarborAnchor a in _listening.difference(wanted)) {
-      a.removeListener(markNeedsLayout);
-    }
-    if (attached) {
-      for (final HarborAnchor a in wanted.difference(_listening)) {
-        a.addListener(markNeedsLayout);
-      }
-    }
-    _listening
-      ..clear()
-      ..addAll(attached ? wanted : <HarborAnchor>{});
-  }
-
+  // Its own layer, since it is painted again every frame while it has an anchored buoy.
   @override
-  void attach(final PipelineOwner owner) {
-    super.attach(owner);
-    _syncAnchors();
-  }
+  bool get isRepaintBoundary => true;
+
+  final _FollowEveryFrame _follow = _FollowEveryFrame();
 
   @override
   void detach() {
-    for (final HarborAnchor a in _listening) {
-      a.removeListener(markNeedsLayout);
-    }
-    _listening.clear();
+    _follow.cancel();
     super.detach();
   }
 
@@ -557,13 +641,20 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
+    if (_buoys.any((final HarborBuoy b) => b.anchor != null)) {
+      _follow.next(markNeedsPaint);
+    }
     RenderBox? child = firstChild;
     int i = 0;
     while (child != null) {
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
       final RenderBox? anchorBox = buoy.anchor?.box;
-      data.painted = buoy.anchor == null || anchorBox != null;
+      final bool painted = buoy.anchor == null || anchorBox != null;
+      if (painted != data.painted) {
+        data.painted = painted;
+        markNeedsSemanticsUpdate();
+      }
       if (buoy.anchor != null) {
         if (anchorBox == null) {
           child = data.nextSibling;
@@ -588,6 +679,18 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   bool paintsChild(final RenderBox child) => (child.parentData! as _BuoyParentData).painted;
+
+  @override
+  void visitChildrenForSemantics(final RenderObjectVisitor visitor) {
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final _BuoyParentData data = child.parentData! as _BuoyParentData;
+      if (data.painted) {
+        visitor(child);
+      }
+      child = data.nextSibling;
+    }
+  }
 
   @override
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) {
@@ -619,6 +722,11 @@ class _RenderBuoyLayer extends RenderBox
 /// [gap] away, [margin] in from the water's edges. When [side] has no room
 /// and the opposite side has, it [flips] there; otherwise it is kept inside
 /// the clear water.
+///
+/// See also:
+///
+///  * [RawMenuAnchor] and `MenuAnchor`, which also open from an [OverlayPortal] and add menu
+///    semantics, keyboard navigation and tap-outside dismissal, which this does not.
 class HarborPortalBuoy extends StatefulWidget {
   const HarborPortalBuoy({
     super.key,
@@ -657,6 +765,18 @@ class HarborPortalBuoy extends StatefulWidget {
 
   @override
   State<HarborPortalBuoy> createState() => _HarborPortalBuoyState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<OverlayPortalController>('controller', controller));
+    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor, defaultValue: null));
+    properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
+    properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
+    properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)));
+    properties.add(FlagProperty('flips', value: flips, ifFalse: 'no flip'));
+  }
 }
 
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
@@ -738,14 +858,18 @@ class _RenderPortalBuoy extends RenderShiftedBox {
   bool _placed = false;
 
   void _listen(final _PortalBuoyLayout c) {
-    c.anchor.addListener(markNeedsPaint);
     c.harbor?.clearWater.addListener(markNeedsLayout);
   }
 
   void _unlisten(final _PortalBuoyLayout c) {
-    c.anchor.removeListener(markNeedsPaint);
     c.harbor?.clearWater.removeListener(markNeedsLayout);
   }
+
+  // Its own layer, since it is painted again every frame.
+  @override
+  bool get isRepaintBoundary => true;
+
+  final _FollowEveryFrame _follow = _FollowEveryFrame();
 
   @override
   void attach(final PipelineOwner owner) {
@@ -755,6 +879,7 @@ class _RenderPortalBuoy extends RenderShiftedBox {
 
   @override
   void detach() {
+    _follow.cancel();
     _unlisten(_config);
     super.detach();
   }
@@ -789,16 +914,22 @@ class _RenderPortalBuoy extends RenderShiftedBox {
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
+    _follow.next(markNeedsPaint);
     final RenderBox? child = this.child;
     final RenderBox? anchorBox = _config.anchor.box;
-    _placed = child != null && anchorBox != null;
-    if (!_placed) {
+    final bool placed = child != null && anchorBox != null;
+    if (placed != _placed) {
+      _placed = placed;
+      markNeedsSemanticsUpdate();
+    }
+    if (!placed) {
       return;
     }
-    final BoxParentData data = child!.parentData! as BoxParentData;
+    final BoxParentData data = child.parentData! as BoxParentData;
+    final Offset was = data.offset;
     data.offset = _anchoredOffset(
       water: _water(),
-      at: MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size),
+      at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
       size: child.size,
       side: _config.side,
       gap: _config.gap,
@@ -806,12 +937,49 @@ class _RenderPortalBuoy extends RenderShiftedBox {
       textDirection: _config.textDirection,
       flips: _config.flips,
     );
+    // Layout refreshes semantics, but the buoy is placed here, after it, so a move refreshes them too.
+    if (data.offset != was) {
+      markNeedsSemanticsUpdate();
+    }
     context.paintChild(child, data.offset + offset);
+  }
+
+  @override
+  bool paintsChild(final RenderBox child) => _placed;
+
+  @override
+  void visitChildrenForSemantics(final RenderObjectVisitor visitor) {
+    if (_placed) {
+      super.visitChildrenForSemantics(visitor);
+    }
   }
 
   @override
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) =>
       _placed && super.hitTestChildren(result, position: position);
+}
+
+/// Paints an anchored buoy again at the start of every frame that is drawn, as
+/// `OverlayPortal.overlayChildLayoutBuilder` lays its child out again, so the
+/// buoy is placed by where its anchor is in that frame. An anchor that scrolls
+/// is moved without being laid out or painted (a list row is its own layer), so
+/// it cannot say that it moved in time, or at all. Asks for no frame itself.
+class _FollowEveryFrame {
+  int? _id;
+
+  void next(final VoidCallback repaint) {
+    _id ??= SchedulerBinding.instance.scheduleFrameCallback((final Duration _) {
+      _id = null;
+      repaint();
+    }, scheduleNewFrame: false);
+  }
+
+  void cancel() {
+    if (_id case final int id) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(id);
+      _id = null;
+    }
+  }
 }
 
 /// Where a signal is raised within the clear water of its harbor.
@@ -837,10 +1005,26 @@ enum HarborSignalTarget {
 }
 
 /// Transient buoys: messages raised in a harbor's clear water for a while.
+///
+/// See also:
+///
+///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages; signals are not
+///    queued.
 abstract final class HarborSignals {
   /// Raises [builder]'s signal in [target]'s clear water at [slot], lowered
   /// after [duration] (or when the returned entry is lowered). If its harbor
   /// leaves (the page is popped), the signal moves to the port now on top.
+  ///
+  /// Signals at the same slot or alignment take turns, as a
+  /// `ScaffoldMessenger` shows its snack bars one at a time: each comes in once
+  /// the one before it has left. To replace the signal that is up, lower it.
+  /// [HarborSignalEntry.closed] completes once a signal has left, with why.
+  ///
+  /// [duration] (4 s, a `SnackBar`'s) counts only while the signal is in
+  /// sight: from the end of its entrance, and not while another route covers
+  /// its page. With [persist] the signal stays until it is lowered, as a
+  /// `SnackBar` with `persist` does; give it to a signal with a button, so a
+  /// screen-reader user has time to reach it.
   ///
   /// [alignment] places the signal at an exact point instead of a slot, as
   /// [HarborBuoy.alignment] places a buoy; give one or the other, or neither
@@ -870,7 +1054,8 @@ abstract final class HarborSignals {
     required final WidgetBuilder builder,
     final HarborSignalSlot? slot,
     final AlignmentGeometry? alignment,
-    final Duration? duration = const Duration(seconds: 3),
+    final Duration? duration = const Duration(seconds: 4),
+    final bool persist = false,
     final HarborSignalTarget target = HarborSignalTarget.topmost,
     final AnimationStyle? animationStyle,
     final HarborSignalTransitionBuilder? transitionBuilder,
@@ -887,6 +1072,7 @@ abstract final class HarborSignals {
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
       alignment: alignment?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr) ?? (slot ?? HarborSignalSlot.high).alignment,
       duration: duration,
+      persist: persist,
       // Sent to the sea, a signal clears only the coast.
       avoidInGlobal: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context)?.clearWaterInGlobal() : null,
       raisedIn: target == HarborSignalTarget.topmost ? HarborController.maybeOf(context) : null,
@@ -901,11 +1087,10 @@ abstract final class HarborSignals {
     if (controller != null) {
       controller.raiseSignal(entry);
     } else if (Overlay.maybeOf(context) case final OverlayState overlay) {
-      late final OverlayEntry host;
-      host = OverlayEntry(builder: (final BuildContext _) => _OverlaySignal(entry: entry, host: host));
-      overlay.insert(host);
+      (_overlayQueues[overlay] ??= _OverlayQueue(overlay)).raise(entry);
     } else {
-      entry.lower();
+      entry.lower(reason: HarborSignalClosedReason.remove);
+      signalLeft(entry);
       FlutterError.reportError(FlutterErrorDetails(
         exception: FlutterError.fromParts(<DiagnosticsNode>[
           ErrorSummary('HarborSignals.raise found no Harbor, HarborSea or Overlay above the context, so the signal was not shown.'),
@@ -915,34 +1100,77 @@ abstract final class HarborSignals {
       ));
       return entry;
     }
-    if (duration != null) {
-      _lowerAfter(entry, duration);
-    }
     return entry;
   }
 
-  /// Lowers [entry] after [duration], and stops waiting as soon as it is
-  /// lowered some other way (by hand, or because nothing is left to show it).
-  static void _lowerAfter(final HarborSignalEntry entry, final Duration duration) {
-    final Timer timer = Timer(duration, entry.lower);
+  static final Expando<_OverlayQueue> _overlayQueues = Expando<_OverlayQueue>();
+}
+
+/// The signals raised into one overlay, which take turns at each alignment as
+/// they do in a harbor.
+class _OverlayQueue {
+  _OverlayQueue(this.overlay);
+
+  final OverlayState overlay;
+  final List<HarborSignalEntry> _signals = <HarborSignalEntry>[];
+  final Set<HarborSignalEntry> _inserted = <HarborSignalEntry>{};
+
+  void raise(final HarborSignalEntry entry) {
+    _signals.add(entry);
     void lowered() {
-      if (!entry.showing.value) {
-        timer.cancel();
+      if (!entry.showing.value && !_inserted.contains(entry)) {
         entry.showing.removeListener(lowered);
+        _signals.remove(entry);
+        signalLeft(entry);
       }
     }
 
     entry.showing.addListener(lowered);
+    _insertInSight();
+  }
+
+  void _insertInSight() {
+    for (final HarborSignalEntry entry in signalsInSight(_signals)) {
+      if (_inserted.add(entry)) {
+        late final OverlayEntry host;
+        host = OverlayEntry(builder: (final BuildContext _) => _OverlaySignal(entry: entry, host: host, queue: this));
+        overlay.insert(host);
+      }
+    }
+  }
+
+  /// [entry] has run its exit and left the overlay: the next at its place comes in.
+  void left(final HarborSignalEntry entry) {
+    _forget(entry);
+    _insertInSight();
+  }
+
+  /// The overlay went away under [entry], so the signals waiting behind it have
+  /// nothing left to show them either.
+  void gone(final HarborSignalEntry entry) {
+    _forget(entry);
+    for (final HarborSignalEntry waiting in List<HarborSignalEntry>.of(_signals)) {
+      if (!_inserted.contains(waiting)) {
+        waiting.lower(reason: HarborSignalClosedReason.remove);
+      }
+    }
+  }
+
+  void _forget(final HarborSignalEntry entry) {
+    _signals.remove(entry);
+    _inserted.remove(entry);
+    signalLeft(entry);
   }
 }
 
 /// A signal raised where there is no harbor: in an overlay, at its slot in the
 /// water the overlay's padding and keyboard leave.
 class _OverlaySignal extends StatefulWidget {
-  const _OverlaySignal({required this.entry, required this.host});
+  const _OverlaySignal({required this.entry, required this.host, required this.queue});
 
   final HarborSignalEntry entry;
   final OverlayEntry host;
+  final _OverlayQueue queue;
 
   @override
   State<_OverlaySignal> createState() => _OverlaySignalState();
@@ -952,6 +1180,7 @@ class _OverlaySignalState extends State<_OverlaySignal> {
   static const EdgeInsets _margin = EdgeInsets.all(16.0);
 
   Timer? _removal;
+  bool _removed = false;
 
   @override
   void initState() {
@@ -963,9 +1192,11 @@ class _OverlaySignalState extends State<_OverlaySignal> {
     if (!widget.entry.showing.value) {
       // Leave time for the signal's own exit animation.
       _removal ??= Timer(widget.entry.lingers, () {
+        _removed = true;
         widget.host
           ..remove()
           ..dispose();
+        widget.queue.left(widget.entry);
       });
     }
   }
@@ -974,8 +1205,11 @@ class _OverlaySignalState extends State<_OverlaySignal> {
   void dispose() {
     widget.entry.showing.removeListener(_changed);
     _removal?.cancel();
-    // The overlay went away with the signal still up: nothing is left to show it.
-    widget.entry.lower();
+    if (!_removed) {
+      // The overlay went away with the signal still up: nothing is left to show it.
+      widget.entry.lower(reason: HarborSignalClosedReason.remove);
+      widget.queue.gone(widget.entry);
+    }
     super.dispose();
   }
 
@@ -1015,6 +1249,9 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
   );
   late final Animation<double> _scale = Tween<double>(begin: 0.92, end: 1.0).animate(_animation);
 
+  Timer? _timeout;
+  bool _inSight = true;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -1022,26 +1259,49 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
     _controller
       ..duration = reducedMotion ? Duration.zero : widget.entry.transitionDuration
       ..reverseDuration = reducedMotion ? Duration.zero : widget.entry.reverseTransitionDuration;
+    // As a ScaffoldMessenger starts a snack bar's timer only while its route is current: a page
+    // covered by another route, or kept offstage with its tickers stopped, shows nobody the signal.
+    _inSight = (ModalRoute.isCurrentOf(context) ?? true) && TickerMode.valuesOf(context).enabled;
     if (_controller.isDismissed && widget.entry.showing.value) {
       _controller.forward();
     }
+    _syncTimeout();
   }
 
   @override
   void initState() {
     super.initState();
     widget.entry.showing.addListener(_changed);
+    _controller.addStatusListener(_statusChanged);
   }
 
   void _changed() {
     if (!widget.entry.showing.value) {
       _controller.reverse();
     }
+    _syncTimeout();
+  }
+
+  void _statusChanged(final AnimationStatus _) => _syncTimeout();
+
+  /// Runs the signal's time while it is fully in and in sight, and starts it over when it comes back.
+  void _syncTimeout() {
+    final HarborSignalEntry entry = widget.entry;
+    final Duration? duration = entry.duration;
+    final bool running = duration != null && !entry.persist && entry.showing.value && _controller.isCompleted && _inSight;
+    if (running && _timeout == null) {
+      _timeout = Timer(duration, () => entry.lower(reason: HarborSignalClosedReason.timeout));
+    } else if (!running) {
+      _timeout?.cancel();
+      _timeout = null;
+    }
   }
 
   @override
   void dispose() {
+    _timeout?.cancel();
     widget.entry.showing.removeListener(_changed);
+    _controller.removeStatusListener(_statusChanged);
     _animation.dispose();
     _controller.dispose();
     super.dispose();
@@ -1064,6 +1324,11 @@ class _SignalState extends State<_Signal> with SingleTickerProviderStateMixin {
     }
     // A live region, so a screen reader announces the signal when it appears, and a dismiss
     // action to lower it, as a SnackBar has.
-    return Semantics(container: true, liveRegion: true, onDismiss: entry.lower, child: shown);
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      onDismiss: () => entry.lower(reason: HarborSignalClosedReason.dismiss),
+      child: shown,
+    );
   }
 }

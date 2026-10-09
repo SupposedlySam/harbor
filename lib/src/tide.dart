@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -24,6 +25,8 @@ enum HarborTideStance {
 enum HarborTidePhase { low, rising, high, falling }
 
 /// The tide as a harbor sees it.
+///
+/// Despite its name, this is not a [State]: it is an immutable snapshot, as [MediaQueryData] is.
 @immutable
 class HarborTideState {
   const HarborTideState({
@@ -275,6 +278,10 @@ class _HarborTideScopeElement extends InheritedElement {
 }
 
 /// Reads the tide: the keyboard, as the harbor sees it.
+///
+/// See also:
+///
+///  * [MediaQueryData.viewInsets], where the keyboard stays: harbor never moves it into `padding`.
 abstract final class HarborTide {
   /// The tide at [context]: its full height, how much of it still reaches this
   /// area, its high-water mark and its phase.
@@ -316,6 +323,8 @@ abstract final class HarborTide {
 /// The ground a dry dock keeps: a box exactly as tall as the tide's high-water
 /// mark. At low tide it shows [child] (a panel that takes the keyboard's
 /// place); at high tide the keyboard covers it. Neither moves when they trade.
+///
+/// Flutter has no equivalent: nothing in the SDK reserves the keyboard's height while it is down.
 class HarborDryDock extends StatelessWidget {
   const HarborDryDock({super.key, this.child, this.showsChildAtHighTide = false});
 
@@ -325,6 +334,14 @@ class HarborDryDock extends StatelessWidget {
   /// Whether [child] stays visible under a keyboard that does not cover it,
   /// such as a floating one.
   final bool showsChildAtHighTide;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      FlagProperty('showsChildAtHighTide', value: showsChildAtHighTide, ifTrue: 'shows child at high tide'),
+    );
+  }
 
   @override
   Widget build(final BuildContext context) {
