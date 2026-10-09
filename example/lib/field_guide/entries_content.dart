@@ -1164,6 +1164,12 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborMakeWay',
+    tryThis: const <TryStep>[
+      TryStep('Switch on make way: bottom', 'The tab bar slides away and the list runs to the bottom of the screen: withdraw gives its ground back.'),
+      TryStep('Pick mode: dark, with make way: bottom still on', 'The tab bar vanishes but keeps its ground: the list still ends where the tab bar was, and nothing moves.'),
+      TryStep('Switch on make way: top', 'The header goes the same way, and in withdraw mode the rows rise toward the status bar.'),
+      TryStep('Switch both off', 'Both docks come back; the claims were released.'),
+    ],
     realWorld:
         'In a narrow channel a small sailboat gives way to a big ship that can only steer in the channel: it bears away '
         'to the edge, or heaves to, and comes back once the ship has passed.',
