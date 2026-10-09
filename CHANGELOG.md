@@ -1,3 +1,7 @@
+## 0.3.1+1
+
+* Docs: the README's videos play in the browser when clicked, instead of downloading. They are linked through jsDelivr, which serves them as video. No code changes.
+
 ## 0.3.1
 
 * **Behaviour change:** a sheet closes on a fling down faster than 700 logical px/s, the speed at which a Material `BottomSheet` closes, and the speed is now a parameter: `HarborSheet.draggable(closeFlingVelocity:)` and `HarborSheet(closeFlingVelocity:)`. A draggable sheet's header used to close it on a fling of 400 from its lowest snap, so a moderate flick (between 400 and 700) that used to close a draggable sheet now settles it back at that snap. To keep the old feel, pass `closeFlingVelocity: 400`. A content-sized sheet with `dragToClose` already closed at 700 and is unchanged. `double.infinity` leaves only the floor to close a sheet. A fling on a draggable sheet's list is still `DraggableScrollableSheet`'s own, as in a modal bottom sheet: it closes the sheet from its lowest snap at any speed. (#48)
