@@ -63,34 +63,34 @@ class HarborBreakwater {
   }
 }
 
-/// Builds a signal's entrance and exit around [child] from [animation], which
-/// runs from 0 to 1 as the signal is raised and back as it is lowered.
-typedef HarborSignalTransitionBuilder = Widget Function(BuildContext context, Animation<double> animation, Widget child);
+/// Builds a flare's entrance and exit around [child] from [animation], which
+/// runs from 0 to 1 as the flare is raised and back as it is lowered.
+typedef HarborFlareTransitionBuilder = Widget Function(BuildContext context, Animation<double> animation, Widget child);
 
-/// Why a signal was closed, as [HarborSignalEntry.closed] reports it.
-enum HarborSignalClosedReason {
-  /// [HarborSignalEntry.lower] was called.
+/// Why a flare was closed, as [HarborFlareEntry.closed] reports it.
+enum HarborFlareClosedReason {
+  /// [HarborFlareEntry.lower] was called.
   lower,
 
   /// A screen reader's dismiss action lowered it.
   dismiss,
 
-  /// Its [HarborSignalEntry.duration] ran out.
+  /// Its [HarborFlareEntry.duration] ran out.
   timeout,
 
   /// Nothing was left to show it: its harbor or overlay went away with no other to move to.
   remove,
 }
 
-/// A transient buoy raised by `HarborSignals.raise`, which returns it.
+/// A transient buoy raised by `HarborFlares.raise`, which returns it.
 ///
-/// Signals raised at the same alignment in one harbor take turns, as a
+/// Flares raised at the same alignment in one harbor take turns, as a
 /// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
 /// it has been lowered and has run its exit.
-class HarborSignalEntry {
-  /// Signals are raised with `HarborSignals.raise`.
+class HarborFlareEntry {
+  /// Flares are raised with `HarborFlares.raise`.
   @internal
-  HarborSignalEntry({
+  HarborFlareEntry({
     required this.builder,
     required this.alignment,
     required this.duration,
@@ -108,24 +108,24 @@ class HarborSignalEntry {
   final WidgetBuilder builder;
   final Alignment alignment;
 
-  /// How long the signal stays once it is in sight: its entrance has run and
+  /// How long the flare stays once it is in sight: its entrance has run and
   /// no other route covers its harbor. Counted again from the start each time
   /// it comes back into sight. Null never times out, the same as [persist].
   final Duration? duration;
 
-  /// Whether the signal stays up after [duration] until it is lowered, as a
-  /// `SnackBar` with `persist` does. Give it to a signal with a button (an
+  /// Whether the flare stays up after [duration] until it is lowered, as a
+  /// `SnackBar` with `persist` does. Give it to a flare with a button (an
   /// Undo), so a screen-reader user has time to reach it.
   final bool persist;
 
   /// The duration and curve of the entrance and exit, 220 ms each way by
-  /// default; [AnimationStyle.noAnimation] shows and removes the signal as it is.
+  /// default; [AnimationStyle.noAnimation] shows and removes the flare as it is.
   final AnimationStyle? animationStyle;
 
   /// Builds the entrance and exit; a fade and a slight scale when null.
-  final HarborSignalTransitionBuilder? transitionBuilder;
+  final HarborFlareTransitionBuilder? transitionBuilder;
 
-  /// Whether harbor makes the signal a live region with a dismiss action, as
+  /// Whether harbor makes the flare a live region with a dismiss action, as
   /// a `SnackBar` makes itself. False leaves the semantics to [builder]'s widget.
   final bool liveRegion;
 
@@ -135,41 +135,41 @@ class HarborSignalEntry {
   /// How long the exit takes.
   Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? transitionDuration;
 
-  /// How long a lowered signal stays in the tree: its exit, and never less
+  /// How long a lowered flare stays in the tree: its exit, and never less
   /// than 300 ms, so a child that runs an exit of its own has time to.
   Duration get lingers => reverseTransitionDuration > _minimumLinger ? reverseTransitionDuration : _minimumLinger;
 
-  /// The harbor the signal was raised from, whose clear water it also keeps inside.
+  /// The harbor the flare was raised from, whose clear water it also keeps inside.
   final HarborController? raisedIn;
 
   final Rect? _avoidAtRaise;
 
-  /// The clear water of the harbor the signal was raised from, in global
-  /// coordinates: the signal stays inside it too, so it clears that harbor's
+  /// The clear water of the harbor the flare was raised from, in global
+  /// coordinates: the flare stays inside it too, so it clears that harbor's
   /// docks (a tab's own header) as well as its target's.
   ///
   /// Read from that harbor's latest layout, not kept from the moment it was raised: a stored
-  /// rectangle boxed the signal into a foldable's cover screen after the device opened. The
+  /// rectangle boxed the flare into a foldable's cover screen after the device opened. The
   /// rectangle from the raise is the fallback once that harbor has gone.
   Rect? get avoidInGlobal => raisedIn?.clearWaterInGlobal() ?? _avoidAtRaise;
 
-  /// Whether the signal is still up: false from the moment it is lowered.
+  /// Whether the flare is still up: false from the moment it is lowered.
   ValueListenable<bool> get showing => _showing;
   final ValueNotifier<bool> _showing = ValueNotifier<bool>(true);
 
-  /// The harbor showing the signal.
+  /// The harbor showing the flare.
   HarborController? get owner => _owner;
   HarborController? _owner;
 
-  final Completer<HarborSignalClosedReason> _closed = Completer<HarborSignalClosedReason>();
-  HarborSignalClosedReason? _reason;
+  final Completer<HarborFlareClosedReason> _closed = Completer<HarborFlareClosedReason>();
+  HarborFlareClosedReason? _reason;
 
-  /// Completes once the signal has left the screen, after its exit, with why
-  /// it was lowered; at once for a signal lowered before its turn came.
-  Future<HarborSignalClosedReason> get closed => _closed.future;
+  /// Completes once the flare has left the screen, after its exit, with why
+  /// it was lowered; at once for a flare lowered before its turn came.
+  Future<HarborFlareClosedReason> get closed => _closed.future;
 
-  /// Lowers the signal. The first [reason] given is the one [closed] reports.
-  void lower({final HarborSignalClosedReason reason = HarborSignalClosedReason.lower}) {
+  /// Lowers the flare. The first [reason] given is the one [closed] reports.
+  void lower({final HarborFlareClosedReason reason = HarborFlareClosedReason.lower}) {
     if (_showing.value) {
       _reason = reason;
       _showing.value = false;
@@ -178,21 +178,21 @@ class HarborSignalEntry {
 
   void _left() {
     if (!_closed.isCompleted) {
-      _closed.complete(_reason ?? HarborSignalClosedReason.lower);
+      _closed.complete(_reason ?? HarborFlareClosedReason.lower);
     }
   }
 }
 
-/// Completes [signal]'s [HarborSignalEntry.closed]: it has left the screen.
-void signalLeft(final HarborSignalEntry signal) => signal._left();
+/// Completes [flare]'s [HarborFlareEntry.closed]: it has left the screen.
+void flareLeft(final HarborFlareEntry flare) => flare._left();
 
-/// The signals of [signals] that are in sight: the first at each alignment.
+/// The flares of [flares] that are in sight: the first at each alignment.
 /// The others wait their turn behind it.
-List<HarborSignalEntry> signalsInSight(final Iterable<HarborSignalEntry> signals) {
+List<HarborFlareEntry> flaresInSight(final Iterable<HarborFlareEntry> flares) {
   final Set<Alignment> taken = <Alignment>{};
-  return <HarborSignalEntry>[
-    for (final HarborSignalEntry signal in signals)
-      if (taken.add(signal.alignment)) signal,
+  return <HarborFlareEntry>[
+    for (final HarborFlareEntry flare in flares)
+      if (taken.add(flare.alignment)) flare,
   ];
 }
 
@@ -241,7 +241,7 @@ class HarborDockRecord {
 }
 
 /// Everything harbors in one view know about each other: which is on top
-/// (where a signal goes) and the list a chart reads.
+/// (where a flare goes) and the list a chart reads.
 class HarborFleet {
   final List<HarborController> _harbors = <HarborController>[];
 
@@ -252,24 +252,24 @@ class HarborFleet {
 
   void _leave(final HarborController controller) {
     _harbors.remove(controller);
-    // Signals on a harbor that is leaving move to the one now on top. With no
+    // Flares on a harbor that is leaving move to the one now on top. With no
     // harbor left to show them, they are lowered, which stops their timers.
-    final List<HarborSignalEntry> orphans = controller._releaseSignals();
+    final List<HarborFlareEntry> orphans = controller._releaseFlares();
     final HarborController? top = topmost;
-    for (final HarborSignalEntry signal in orphans) {
+    for (final HarborFlareEntry flare in orphans) {
       if (top != null) {
-        top._raiseSignal(signal);
+        top._raiseFlare(flare);
       } else {
-        signal
-          ..lower(reason: HarborSignalClosedReason.remove)
+        flare
+          ..lower(reason: HarborFlareClosedReason.remove)
           .._left();
       }
     }
   }
 
-  /// The port on top: the frame a signal goes to. Only the first harbor of
+  /// The port on top: the frame a flare goes to. Only the first harbor of
   /// each route (and of each sheet over the sea) counts, so a frame embedded in
-  /// a page never takes a page's signals; among those, the most recently opened
+  /// a page never takes a page's flares; among those, the most recently opened
   /// whose route is showing.
   HarborController? get topmost {
     HarborController? fallback;
@@ -289,7 +289,7 @@ class HarborFleet {
     return fallback ?? (_harbors.isEmpty ? null : _harbors.first);
   }
 
-  /// The outermost harbor, where signals go when asked to stay put.
+  /// The outermost harbor, where flares go when asked to stay put.
   HarborController? get sea => _harbors.isEmpty ? null : _harbors.first;
 }
 
@@ -310,7 +310,7 @@ class HarborController {
   final HarborFleet fleet;
 
   /// Whether this harbor is a port (the sea, a route or a sheet) rather than a
-  /// component inside one. Reserved and not yet read: signals find their port
+  /// component inside one. Reserved and not yet read: flares find their port
   /// with [isRouteLevel] instead.
   final bool isPort;
 
@@ -337,7 +337,7 @@ class HarborController {
   ModalRoute<Object?>? _route;
 
   /// Whether this is the first harbor of its route, or sits right on the sea:
-  /// a port signals can go to.
+  /// a port flares can go to.
   bool get isRouteLevel {
     final HarborController? parent = this.parent;
     return parent == null || parent.parent == null || !identical(route, parent.route);
@@ -369,9 +369,9 @@ class HarborController {
   final List<HarborClaim> _claims = <HarborClaim>[];
   final List<HarborPontoonHandle> _pontoons = <HarborPontoonHandle>[];
   final List<HarborBreakwater> _breakwaters = <HarborBreakwater>[];
-  final List<HarborSignalEntry> _signals = <HarborSignalEntry>[];
-  final Map<HarborSignalEntry, VoidCallback> _signalListeners = <HarborSignalEntry, VoidCallback>{};
-  final Map<HarborSignalEntry, Timer> _signalRemovals = <HarborSignalEntry, Timer>{};
+  final List<HarborFlareEntry> _flares = <HarborFlareEntry>[];
+  final Map<HarborFlareEntry, VoidCallback> _flareListeners = <HarborFlareEntry, VoidCallback>{};
+  final Map<HarborFlareEntry, Timer> _flareRemovals = <HarborFlareEntry, Timer>{};
   final _BreakwaterNotifier _breakwaterChanges = _BreakwaterNotifier();
 
   /// The nearest harbor above [context].
@@ -520,65 +520,70 @@ class HarborController {
   /// Fires when a breakwater moves, so the harbor can lay out again without rebuilding.
   Listenable get breakwaterChanges => _breakwaterChanges;
 
-  // Signals.
+  // Flares.
 
-  List<HarborSignalEntry> get signals => List<HarborSignalEntry>.unmodifiable(_signals);
+  /// The flares raised on this harbor, in the order they were raised.
+  List<HarborFlareEntry> get flares => List<HarborFlareEntry>.unmodifiable(_flares);
 
-  void _raiseSignal(final HarborSignalEntry signal) {
-    signal._owner = this;
-    _signals.add(signal);
+  /// The flares raised on this harbor: the old name of [flares].
+  @Deprecated('Use flares. Signals were renamed flares before 1.0, so they are not mistaken for the signals package.')
+  List<HarborFlareEntry> get signals => flares;
+
+  void _raiseFlare(final HarborFlareEntry flare) {
+    flare._owner = this;
+    _flares.add(flare);
     void lowered() {
-      if (signal.showing.value) {
+      if (flare.showing.value) {
         return;
       }
-      if (!signalsInSight(_signals).contains(signal)) {
+      if (!flaresInSight(_flares).contains(flare)) {
         // Lowered while it waited its turn: it has no exit to run.
-        _forgetSignal(signal);
-        signal._left();
+        _forgetFlare(flare);
+        flare._left();
         return;
       }
-      // Leave time for the signal's own exit animation.
-      _signalRemovals[signal] ??= Timer(signal.lingers, () {
-        _signalRemovals.remove(signal);
-        _forgetSignal(signal);
-        signal._left();
+      // Leave time for the flare's own exit animation.
+      _flareRemovals[flare] ??= Timer(flare.lingers, () {
+        _flareRemovals.remove(flare);
+        _forgetFlare(flare);
+        flare._left();
         _changed();
       });
     }
 
-    _signalListeners[signal] = lowered;
-    signal.showing.addListener(lowered);
+    _flareListeners[flare] = lowered;
+    flare.showing.addListener(lowered);
     _changed();
   }
 
-  void _forgetSignal(final HarborSignalEntry signal) {
-    _signals.remove(signal);
-    final VoidCallback? listener = _signalListeners.remove(signal);
+  void _forgetFlare(final HarborFlareEntry flare) {
+    _flares.remove(flare);
+    final VoidCallback? listener = _flareListeners.remove(flare);
     if (listener != null) {
-      signal.showing.removeListener(listener);
+      flare.showing.removeListener(listener);
     }
   }
 
-  /// Lets go of every signal, cancelling pending removals, and returns those
+  /// Lets go of every flare, cancelling pending removals, and returns those
   /// still showing, in the order they were raised.
-  List<HarborSignalEntry> _releaseSignals() {
-    final List<HarborSignalEntry> showing = _signals.where((final HarborSignalEntry s) => s.showing.value).toList();
-    for (final Timer removal in _signalRemovals.values) {
+  List<HarborFlareEntry> _releaseFlares() {
+    final List<HarborFlareEntry> showing = _flares.where((final HarborFlareEntry s) => s.showing.value).toList();
+    for (final Timer removal in _flareRemovals.values) {
       removal.cancel();
     }
-    _signalRemovals.clear();
-    for (final HarborSignalEntry signal in List<HarborSignalEntry>.of(_signals)) {
-      _forgetSignal(signal);
-      if (!signal.showing.value) {
-        signal._left();
+    _flareRemovals.clear();
+    for (final HarborFlareEntry flare in List<HarborFlareEntry>.of(_flares)) {
+      _forgetFlare(flare);
+      if (!flare.showing.value) {
+        flare._left();
       }
     }
     return showing;
   }
 
-  /// Raises [signal] on this harbor.
+  /// Raises [flare] on this harbor.
   @internal
-  void raiseSignal(final HarborSignalEntry signal) => _raiseSignal(signal);
+  void raiseFlare(final HarborFlareEntry flare) => _raiseFlare(flare);
 
   // Lifecycle.
 

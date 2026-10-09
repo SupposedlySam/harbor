@@ -89,9 +89,9 @@ void main() {
     expect(_rect(tester, 'dialog').left, greaterThanOrEqualTo(_hinge.right));
   });
 
-  testWidgets('a signal keeps off the hinge', (final tester) async {
+  testWidgets('a flare keeps off the hinge', (final tester) async {
     final BuildContext page = await _pump(tester);
-    HarborSignals.raise(page, slot: HarborSignalSlot.low, duration: null, builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40));
+    HarborFlares.raise(page, slot: HarborFlareSlot.low, duration: null, builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40));
     await tester.pumpAndSettle();
     expect(_rect(tester, 'toast').overlaps(_hinge), isFalse);
   });

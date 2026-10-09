@@ -232,7 +232,7 @@ void main() {
     expect(frame.size.height, 0);
   });
 
-  testWidgets('a signal goes to the port on top and clears its footer', (final tester) async {
+  testWidgets('a flare goes to the port on top and clears its footer', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpSeaTrial(
       _app(
@@ -249,7 +249,7 @@ void main() {
         ),
       ),
     );
-    HarborSignals.raise(pageContext, slot: HarborSignalSlot.low, builder: (final BuildContext c) => _bar('toast', 30), duration: null);
+    HarborFlares.raise(pageContext, slot: HarborFlareSlot.low, builder: (final BuildContext c) => _bar('toast', 30), duration: null);
     await tester.pumpAndSettle();
     expect(_rect(tester, 'toast').bottom, lessThanOrEqualTo(_rect(tester, 'nav').top));
   });
@@ -1605,7 +1605,7 @@ void main() {
     }
   });
 
-  testWidgets('a signal skips a new port embedded in a page', (final tester) async {
+  testWidgets('a flare skips a new port embedded in a page', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpSeaTrial(
       _app(
@@ -1623,7 +1623,7 @@ void main() {
         ),
       ),
     );
-    HarborSignals.raise(pageContext, slot: HarborSignalSlot.middle, builder: (final BuildContext c) => _bar('flag', 20), duration: null);
+    HarborFlares.raise(pageContext, slot: HarborFlareSlot.middle, builder: (final BuildContext c) => _bar('flag', 20), duration: null);
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').center.dy, closeTo(874 / 2, 60));
   });
@@ -1889,7 +1889,7 @@ void main() {
     expect(_rect(tester, 'sheetHeader').top, greaterThanOrEqualTo(62 - 0.5));
   });
 
-  testWidgets('a signal raised in a nested harbor clears that harbor\'s header too', (final tester) async {
+  testWidgets('a flare raised in a nested harbor clears that harbor\'s header too', (final tester) async {
     late BuildContext tabContext;
     await tester.pumpSeaTrial(
       _app(
@@ -1908,7 +1908,7 @@ void main() {
         ),
       ),
     );
-    HarborSignals.raise(tabContext, slot: HarborSignalSlot.top, builder: (final BuildContext c) => _bar('flag', 20), duration: null);
+    HarborFlares.raise(tabContext, slot: HarborFlareSlot.top, builder: (final BuildContext c) => _bar('flag', 20), duration: null);
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').top, greaterThanOrEqualTo(_rect(tester, 'tab header').bottom));
   });
@@ -1926,7 +1926,7 @@ void main() {
     expect(chart.expand((final HarborChartEntry e) => e.docks).any((final HarborDockRecord d) => d.label == 'header'), isTrue);
   });
 
-  testWidgets('a sea inside a harbor keeps its own tide and signals', (final tester) async {
+  testWidgets('a sea inside a harbor keeps its own tide and flares', (final tester) async {
     late BuildContext inside;
     await tester.pumpSeaTrial(
       _app(
@@ -1957,7 +1957,7 @@ void main() {
     );
     await tester.pump();
     expect(HarborTide.of(inside).height, 120);
-    HarborSignals.raise(inside, slot: HarborSignalSlot.top, builder: (final BuildContext c) => _bar('inner flag', 20), duration: null);
+    HarborFlares.raise(inside, slot: HarborFlareSlot.top, builder: (final BuildContext c) => _bar('inner flag', 20), duration: null);
     await tester.pumpAndSettle();
     final Rect stage = tester.getRect(find.byType(HarborSea).last);
     expect(stage.contains(_rect(tester, 'inner flag').center), isTrue);

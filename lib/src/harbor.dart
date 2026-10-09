@@ -436,7 +436,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
 
     children.add(
       HarborSlot.buoys(
-        child: HarborBuoyLayer(buoys: widget.buoys, signals: controller.signals),
+        child: HarborBuoyLayer(buoys: widget.buoys, flares: controller.flares),
       ),
     );
 
@@ -520,13 +520,13 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
 
 /// The sea every harbor floats on. Mount it once, above the app's
 /// `Navigator` (`MaterialApp.builder` is the place), so routes, dialogs and
-/// sheets all share its coast, its tide gauge and its signals.
+/// sheets all share its coast, its tide gauge and its flares.
 ///
 /// It never moves anything out of the keyboard's way itself: each route and
 /// sheet is a [Harbor] that decides for its own docks.
 ///
 /// A sea mounted inside another harbor is a world of its own, with its own
-/// tide gauge, fleet and signals: a phone drawn inside a page, or a preview.
+/// tide gauge, fleet and flares: a phone drawn inside a page, or a preview.
 ///
 /// See also:
 ///
