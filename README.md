@@ -668,6 +668,14 @@ where it moors. `useSafeArea` insets the whole sheet, its surface
 and its top too; `clearsSides` insets only what is over the surface, and only
 the sides.
 
+A sheet keeps its body above the keyboard and caps its height by the space
+above it. `HarborSheet(bodyClearsTide: false)` leaves the keyboard to the body,
+as `Harbor(bodyClearsTide: false)` does a page's: for an editing toolbar that
+holds a keyboard-sized space so nothing jumps when a field takes focus, or an
+inspector the keyboard may cover. The body runs under the keyboard and reads it
+in `MediaQuery.viewInsets`, a floating footer still rides up on it, and the
+height cap (or a draggable sheet's extents) is a share of the whole height.
+
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and flares and buoys keep to the screen that holds them, never across the hinge.
 A flat fold, which has no width, may still be spanned.
