@@ -1,3 +1,8 @@
+## Unreleased
+
+* Signals are now **flares**, so a toast is not mistaken for the `signals` package's reactive state: `HarborFlares.raise`, `HarborFlareSlot`, `HarborFlareTarget`, `HarborFlareEntry`, `HarborFlareTransitionBuilder`, `HarborFlareClosedReason` and `HarborController.flares`. Not breaking: the old names (`HarborSignals`, `HarborSignalSlot`, `HarborSignalTarget`, `HarborSignalEntry`, `HarborSignalTransitionBuilder`, `HarborSignalClosedReason` and `HarborController.signals`) still compile as deprecated aliases, with a warning naming the new one, and go at 1.0. The message reported when a flare has nowhere to go now names `HarborFlares.raise`.
+* The first line of `HarborDock.pier`, `HarborDock.quay` and each `HarborTideStance`, which an editor's hover shows, says what it does in plain words and the Flutter widget it matches: the body runs under a pier, as under an app bar with `extendBodyBehindAppBar`, and stops at a quay, as at `Scaffold.appBar`; a `float` dock rides up on the keyboard, `pilings` stays put under it, and `dryDock` keeps its space whether it is up or down.
+
 ## 0.3.0
 
 ### Breaking changes

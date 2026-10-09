@@ -6,18 +6,22 @@ import 'package:flutter/widgets.dart';
 
 /// How a dock behaves when the tide (the keyboard) comes in.
 enum HarborTideStance {
+  /// Rides up on the keyboard, staying on top of it (a composer).
+  ///
   /// The dock floats: it rides up with the tide and sits on the waterline.
-  /// A composer.
   float,
 
+  /// Stays put; the keyboard covers it (a tab bar).
+  ///
   /// The dock stands on pilings: it stays where it is and the tide covers it.
-  /// A tab bar.
   pilings,
 
+  /// Keeps the keyboard's space whether the keyboard is up or down, so nothing moves (a styling panel).
+  ///
   /// The dock is a dry dock: it keeps the tide's ground at high-water height
   /// whether the tide is in or out, so nothing moves when the keyboard comes
   /// and goes. Its child holds a [HarborDryDock] that fills that ground at low
-  /// tide. A text-styling panel.
+  /// tide.
   dryDock,
 }
 

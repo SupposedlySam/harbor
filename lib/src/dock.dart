@@ -84,6 +84,8 @@ enum HarborExtentPolicy {
 ///    `Scaffold(extendBodyBehindAppBar: true)` an app bar is a pier.
 @immutable
 class HarborDock with Diagnosticable {
+  /// The body runs under it, as under an app bar with `extendBodyBehindAppBar`.
+  ///
   /// A dock built out over the water: content sails under it.
   const HarborDock.pier({
     this.key,
@@ -104,6 +106,8 @@ class HarborDock with Diagnosticable {
     this.debugLabel,
   }) : kind = HarborDockKind.pier;
 
+  /// The body stops at it, as at `Scaffold.appBar`.
+  ///
   /// A dock built on the shore: the body starts where it ends. A quay is pronounced "key".
   const HarborDock.quay({
     this.key,

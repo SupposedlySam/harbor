@@ -39,10 +39,11 @@ the keyboard) above everything.
 **Something on the same layer takes space. Something on a higher layer becomes
 padding for everything beneath it.**
 
-- A **quay** (pronounced "key") is a dock built on the shore. It takes its ground, and the body
-  starts where it ends, like a `Column`.
-- A **pier** is a dock built out over the water. The body runs under it and is
-  told, through `MediaQuery.padding`, how far it reaches.
+- A **quay** (pronounced "key"): the body stops at it, as at `Scaffold.appBar`. It is a dock
+  built on the shore. It takes its ground, and the body starts where it ends, like a `Column`.
+- A **pier**: the body runs under it, as under an app bar with `extendBodyBehindAppBar`. It is a
+  dock built out over the water, and the body is told, through `MediaQuery.padding`, how far it
+  reaches.
 
 That's the whole difference between a header your list scrolls under and a
 header your list starts below.
@@ -62,12 +63,12 @@ header your list starts below.
 | **Mooring line** | The page margin, applied by the content that asks for it | `Harbor(margin:)`, `HarborMooringLine` |
 | **Fairway** | A scroll view that runs under the docks and rests clear of them | `HarborFairway` |
 | **Open water** | Content that ignores the docks: backgrounds, maps, heroes | `HarborOpenWater` |
-| **Float / pilings / dry dock** | How a dock meets the tide | `HarborTideStance` |
+| **Float / pilings / dry dock** | How a dock meets the keyboard: rides up on it, stays under it, or keeps its space | `HarborTideStance` |
 | **Make way** | Content asking a dock to go dark or withdraw | `HarborMakeWay` |
 | **Pontoon** | A dock moored from deep in the tree | `HarborPontoon` |
 | **Buoy** | Something afloat in the clear water: a menu, a bubble | `HarborBuoy` |
 | **Portal buoy** | A buoy opened from anywhere: a row's menu, a button's popover | `HarborPortalBuoy` |
-| **Signal** | A transient buoy: a toast | `HarborSignals.raise` |
+| **Flare** | A transient buoy: a toast | `HarborFlares.raise` |
 | **Breakwater** | A sheet reporting how much of the page it covers | `showHarborSheet(breakwater: true)` |
 | **Lighthouse** | Keeps things in sight: reveal, lift, coverage | `HarborLighthouse`, `HarborBeacon` |
 | **Scale model** | A fixed reference screen scaled to fit (TV) | `HarborScaleModel` |
@@ -80,7 +81,7 @@ If you know the Flutter widget, this is where to look in harbor, and what is dif
 
 | Harbor | Closest Flutter concept | The difference that matters |
 |---|---|---|
-| **Sea** | `MaterialApp.builder`: one per app, above the `Navigator`, inside the `ScaffoldMessenger` that `MaterialApp` wraps around the builder's output | It holds the coast, the tide gauge and the signals every route shares. It moves nothing out of the keyboard's way itself |
+| **Sea** | `MaterialApp.builder`: one per app, above the `Navigator`, inside the `ScaffoldMessenger` that `MaterialApp` wraps around the builder's output | It holds the coast, the tide gauge and the flares every route shares. It moves nothing out of the keyboard's way itself |
 | **Harbor** | `Scaffold` | Any number of docks on all four edges, each measured. A `Scaffold` has one app bar, capped at its `preferredSize`, and one bottom bar |
 | **New port** | A route, which reads the `MediaQuery` from above the `Navigator` | A harbor that is not a new port takes the docks of the harbor around it as part of its coast |
 | **Coast** | `MediaQuery.padding` and `viewPadding` | The same insets, read from `MediaQuery`, plus a TV's title-safe band (`HarborCoast.titleSafe`) or a fixed coast (`HarborCoast.fixed`, and `HarborCoast.none` for goldens) |
@@ -100,7 +101,7 @@ If you know the Flutter widget, this is where to look in harbor, and what is dif
 | **Pontoon** | `ScaffoldState.showBottomSheet`, which puts a widget into an ancestor's frame from deep in the tree | A pontoon is a dock: it takes its ground (or the body sails under it), and leaves with the widget that added it |
 | **Buoy** | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the clear water, so it clears the coast, every dock and the keyboard. A `modal` buoy has a barrier, as `ModalBarrier` does, but it is not a route, so keyboard focus is not trapped |
 | **Portal buoy** | `OverlayPortal` (it is one), as `MenuAnchor` and `RawMenuAnchor` use | Placement only: it keeps the buoy in the clear water and flips it when its side has no room. It brings no menu semantics, keyboard navigation or tap-outside dismissal; your `controller` opens and closes it |
-| **Signal** | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Signals at one slot take turns, as snack bars do, and a signal's time counts only while it is in sight; signals at different slots show together. It builds any widget, at one of four heights (`HarborSignalSlot`), clear of the docks of the page that raised it. Both are live regions |
+| **Flare** | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Flares at one slot take turns, as snack bars do, and a flare's time counts only while it is in sight; flares at different slots show together. It builds any widget, at one of four heights (`HarborFlareSlot`), clear of the docks of the page that raised it. Both are live regions |
 | **Sheet** (`showHarborSheet`) | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborSheetBarrier.none` is `showBottomSheet` | Its header and footer are docks, so the body sails under the header and the footer floats on the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
 | **Breakwater** | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A breakwater sheet tells the page that opened it how far it covers, and the page's content keeps clear |
 | **Lighthouse** | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the docks and the keyboard of every fairway it passes through. `HarborBeacon(onObscured:)`, how much of a widget the header covers, and `HarborLighthouseRegion`, lifting content that does not scroll, have no Flutter equivalent |
@@ -170,8 +171,8 @@ What each piece does:
 ## Docks
 
 ```dart
-HarborDock.pier(child: header)          // content sails under it
-HarborDock.quay(child: tabBar)          // content starts where it ends
+HarborDock.pier(child: header)          // the body runs under it (extendBodyBehindAppBar)
+HarborDock.quay(child: tabBar)          // the body stops at it (Scaffold.appBar)
 ```
 
 Docks on one edge are listed in reading order (`top` and `bottom` top to
@@ -194,9 +195,9 @@ as it would in a `Row`.
 |---|---|
 | `wake: HarborWake.fade(length:, blurSigma:, restsAt:)` | Content fades as it passes under; it rests past the fade (`HarborRest.wakeEnd`) or at the dock (`.dockEdge`) |
 | `wake: HarborWake.hairline()` | A line on the dock's inner face, for a bar content scrolls up to |
-| `tide: HarborTideStance.float` | Rides up on the keyboard: a composer, a sheet's footer. It sits on the home indicator until the keyboard is taller than it, so it never dips |
-| `tide: HarborTideStance.pilings` | Stays put while the keyboard covers it: a tab bar (the default) |
-| `tide: HarborTideStance.dryDock` | Keeps the keyboard's ground at high-water height either way, so its child's `HarborDryDock` fills that ground when the keyboard is down. It runs to the screen's edge: no coast, no minimum |
+| `tide: HarborTideStance.float` | Rides up on the keyboard, staying on top of it: a composer, a sheet's footer. It sits on the home indicator until the keyboard is taller than it, so it never dips |
+| `tide: HarborTideStance.pilings` | Stays put; the keyboard covers it: a tab bar (the default) |
+| `tide: HarborTideStance.dryDock` | Keeps the keyboard's space whether the keyboard is up or down, so nothing moves: a styling panel. It holds that ground at high-water height either way, so its child's `HarborDryDock` fills that ground when the keyboard is down. It runs to the screen's edge: no coast, no minimum |
 | `state: HarborDockState.dark` | Not drawn and not tappable, but it keeps its ground |
 | `state: HarborDockState.withdrawn` | Slides out and gives its ground back |
 | `extentPolicy:` | How a withdrawing dock gives its ground back: `hold` (once it's gone, the default), `follow`, `release` |
@@ -315,15 +316,15 @@ instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave 
 
 What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
 by keyboard focus and by screen readers, not only by taps, and a buoy whose
-anchor is not in the tree is not read out. Signals are live
+anchor is not in the tree is not read out. Flares are live
 regions, so screen readers announce them, with a dismiss action that lowers
-them, as a `SnackBar` is. A signal whose widget is already its own live region
+them, as a `SnackBar` is. A flare whose widget is already its own live region
 (a `SnackBar`-like widget from your design library) is raised with
 `liveRegion: false`, so harbor adds no second, unlabelled one around it. A
-signal with a button is raised with `persist: true`, as a `SnackBar` with an
-action persists, so it is still there when a screen reader reaches it. Sheets and signals keep the themes of
+flare with a button is raised with `persist: true`, as a `SnackBar` with an
+action persists, so it is still there when a screen reader reaches it. Sheets and flares keep the themes of
 the page they came from, and so do dialogs. With reduced motion
-(`MediaQuery.disableAnimations`) docks, signals, sheets and dialogs appear and
+(`MediaQuery.disableAnimations`) docks, flares, sheets and dialogs appear and
 leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
 status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
 as there only the page whose status bar band is on top at the screen's top left:
@@ -348,7 +349,7 @@ nearest harbor that has a dock on that edge. A pontoon joins the harbor's
 docks on the next frame; one added by hand with `addPontoon` returns a
 `HarborPontoonHandle` to update or remove it by.
 
-## Buoys and signals
+## Buoys and flares
 
 ```dart
 Harbor(
@@ -361,11 +362,11 @@ Harbor(
   body: ...,
 )
 
-HarborSignals.raise(context, slot: HarborSignalSlot.low, builder: (_) => Toast('Saved'));
-HarborSignals.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
-final undo = HarborSignals.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
-final HarborSignalClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
-HarborSignals.raise(
+HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (_) => Toast('Saved'));
+HarborFlares.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+final undo = HarborFlares.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
+final HarborFlareClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
+HarborFlares.raise(
   context,
   transitionBuilder: (context, animation, child) => SlideTransition(
     position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(animation),
@@ -403,40 +404,44 @@ goes back to where it was when it closes. `requestFocus: false` leaves focus on
 the page, as it does for a route; Escape from there still closes the buoy, unless
 focus is on a page of a `Navigator` nested in the harbor's body, whose route
 answers Escape before the harbor does.
-A signal is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
+A flare is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
 `alignment`, placed as a buoy at that alignment would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.
 It fades and scales in over `animationStyle` (220 ms each way by default).
 A `transitionBuilder` brings your own entrance and exit, run on harbor's
 animation, and `AnimationStyle.noAnimation` shows a widget that animates
 itself as it is, as `showSnackBar(snackBarAnimationStyle:)` does. A lowered
-signal stays at least 300 ms, so its own exit can run.
-A signal goes to the port on top (a sheet over a page over the sea), so a `low`
-signal clears that sheet's footer, and it also stays clear of the docks of the
+flare stays at least 300 ms, so its own exit can run.
+A flare goes to the port on top (a sheet over a page over the sea), so a `low`
+flare clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
-signal moves to the one now on top.
+flare moves to the one now on top.
 
-Signals raised at the same slot or alignment of one port take turns, as a
+Flares raised at the same slot or alignment of one port take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before
 it has run its exit, so "Copied" tapped twice is never drawn over itself. To
-replace the signal that is up, `lower()` it; one lowered while it waits leaves
-without being shown. Signals at different slots show together. `closed`
-completes once a signal has left, with why.
+replace the flare that is up, `lower()` it; one lowered while it waits leaves
+without being shown. Flares at different slots show together. `closed`
+completes once a flare has left, with why.
 
-A signal stays 4 s, as a `SnackBar` does, and its `duration` counts only while it
+A flare stays 4 s, as a `SnackBar` does, and its `duration` counts only while it
 is in sight: from the end of its entrance, and not while another route covers
 its page (the time starts over when that route leaves). `persist: true` keeps it
-up until it is lowered, as `SnackBar(persist:)` does. Give it to a signal with a
+up until it is lowered, as `SnackBar(persist:)` does. Give it to a flare with a
 button, an Undo: a screen-reader user moving through the page needs longer than
 4 s to reach it.
 
-A signal raised with no harbor above it (a widget test that pumps a bare
+A flare raised with no harbor above it (a widget test that pumps a bare
 `MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
 goes to the nearest `Overlay`, at its slot and clear of `MediaQuery.padding` and
 `viewInsets`. With no overlay either, it is reported through
-`FlutterError.reportError`, in release builds too. A signal's timers stop when it
+`FlutterError.reportError`, in release builds too. A flare's timers stop when it
 is lowered or when nothing is left to show it, so a test that ends with one up
 has no timer pending.
+
+Flares were called signals until 0.3.0. The old names (`HarborSignals`,
+`HarborSignalSlot`, `HarborSignalEntry` and the rest) still work and are
+deprecated; they go at 1.0.
 
 ```dart
 final menu = OverlayPortalController();
@@ -499,7 +504,7 @@ content keeps clear of it while it's up: in the same frame as the sheet is
 drawn, as it slides in and out and as it is dragged.
 
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
-and signals and buoys keep to the screen that holds them, never across the hinge.
+and flares and buoys keep to the screen that holds them, never across the hinge.
 A flat fold, which has no width, may still be spanned.
 
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
@@ -704,8 +709,8 @@ defaults: a `Harbor` lists its docks and buoys, and a dock reads as
 are `Diagnosticable`, so they print the same way in a test failure or a log.
 
 Two fields are reserved and not yet read: `HarborCoastFeature.hinge` (sheets,
-dialogs, signals and buoys keep off a hinge through `MediaQuery.displayFeatures`,
-not through the coast) and `HarborController.isPort` (signals find their port by
+dialogs, flares and buoys keep off a hinge through `MediaQuery.displayFeatures`,
+not through the coast) and `HarborController.isPort` (flares find their port by
 route instead).
 
 ## Sea trials
@@ -758,7 +763,7 @@ The video is narrated. `example/tool/narrate.py` voices each line of
 clip says what the script says. The showcase's timeline is built from those
 timings, so the keyboard rises as "comes in" is spoken. Chapters the
 panorama was not drawn for show the Field Guide's drawing of the real thing,
-and each runs a real harbor page on the phone: sheets, dialogs and signals open
+and each runs a real harbor page on the phone: sheets, dialogs and flares open
 on the phone's own navigator as the narrator names them. Narration: the Kokoro-82M
 voice `am_liam`, generated on device by Kass.
 
