@@ -236,6 +236,28 @@ class _MooredEntryState extends State<MooredEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborMoored',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap the keyboard button',
+        'The red box\'s bottom edge rises to the keyboard\'s top: HarborMoored keeps clear of the keyboard as well as the docks.',
+      ),
+      TryStep(
+        'Switch tide off, keyboard still up',
+        'The box drops back to the quay bar and the keyboard covers its bottom: it still clears the docks, not the keyboard.',
+      ),
+      TryStep(
+        'Pick edges: horizontal',
+        'The box\'s top runs up under the header to the top of the screen: only the left and right edges are kept clear.',
+      ),
+      TryStep(
+        'Pick edges: all, then clear: coast',
+        'The top sits just under the status bar, behind the header: coast clears the device\'s insets but not the docks.',
+      ),
+      TryStep(
+        'Switch mooringLine on',
+        'The sides pull in by the page margin, so the box lines up with rows that use HarborMooringLine.',
+      ),
+    ],
     realWorld:
         'A moored boat is made fast with a bow line and a stern line to bollards on the quay, and fenders hang between '
         'the hull and the wall. Whatever the tide and the traffic do, it stays put, clear of the stone.',
@@ -318,6 +340,24 @@ class _MooringLineEntryState extends State<MooringLineEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborMooringLine',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Switch HarborMooringLine off',
+        'The boat rows jump out to the screen\'s edges, past the brass lines; on, they sit on the lines while stripes run edge to edge.',
+      ),
+      TryStep(
+        'Switch it on, open The stage, pick iPhone 17 landscape',
+        'The rows move in by the side cutout plus the margin, on both sides; the striped backgrounds still run edge to edge.',
+      ),
+      TryStep(
+        'Pick Device: dual screen cover',
+        'Only the right side moves in, where this device has its inset: the line follows what is in the way on each side.',
+      ),
+      TryStep(
+        'Switch on Right-to-left',
+        'The boat moves to the right end of each row, but the wider gap stays on the physical right, where the inset is.',
+      ),
+    ],
     realWorld:
         'In a marina, boats lie side by side along a quay, each made fast to the same long mooring line. However long '
         'or short each boat is, they all line up on that one rope.',
@@ -466,6 +506,28 @@ class _FairwayEntryState extends State<FairwayEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborFairway',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Scroll the list on the phone',
+        'Rows slide under the header and fade in its wake, but the first and last rows come to rest clear of header and quay bar.',
+      ),
+      TryStep(
+        'Tap ensureVisible(row 13)',
+        'Row 13 scrolls up to sit just above the quay bar, not under it: reveals land clear of the docks.',
+      ),
+      TryStep(
+        'Set revealMargin to 48 and tap the button again',
+        'Row 13 now stops 48 above the quay bar: room for whatever sits under a focused field.',
+      ),
+      TryStep(
+        'Switch startsInOpenWater on, scroll to the top',
+        'The first row starts at the very top of the screen, under the header, as a hero image would.',
+      ),
+      TryStep(
+        'Pick scrollDirection: horizontal',
+        'Cards scroll sideways and rest on the page margin at each end; the button now reveals card 5.',
+      ),
+    ],
     realWorld:
         'A fairway is the buoyed channel into a harbor: red and green lateral marks lead boats in from the open sea, '
         'past the breakwater, to their berths.',
@@ -621,6 +683,20 @@ class _FairwaySliverEntryState extends State<FairwaySliverEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborFairwaySliver',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Scroll the list to the top, then the bottom',
+        'Row 1 rests below the header and row 18 above the bottom bar: the two wrapped slivers keep clear of their ends.',
+      ),
+      TryStep(
+        'Switch first sliver off, scroll to the top',
+        'Row 1 now starts at the top of the screen, under the header: nothing at that end keeps clear any more.',
+      ),
+      TryStep(
+        'Switch last sliver off, scroll to the bottom',
+        'Row 18 ends at the screen\'s bottom edge, behind the bottom bar: an unwrapped sliver ignores the docks.',
+      ),
+    ],
     realWorld:
         'A single channel marker: one buoy on its chain, numbered, marking one leg of the channel. A whole fairway is '
         'a row of them; sometimes you only need the first and the last.',
@@ -674,6 +750,15 @@ class _SliverDockEntryState extends State<SliverDockEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSliverDock',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Scroll the list up on the phone',
+        'The Cargo strip scrolls with the rows, then pins under the header: it has become a dock for everything after it.',
+      ),
+      TryStep('Keep scrolling', 'The Crew strip pins beneath Cargo, and the rows pass under both.'),
+      TryStep('Switch second HarborSliverDock off', 'Crew is gone: only Cargo pins under the header.'),
+      TryStep('Scroll back to the top', 'Cargo lets go and scrolls back into place between the rows.'),
+    ],
     realWorld:
         'A landing stage floats on the water at the foot of a gangway. The gangway is pinned to the quay at the top, so '
         'however far you come down it, the top stays where it is, and the stage rises to meet you.',
@@ -737,6 +822,24 @@ class _StickyEntryState extends State<StickyEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSticky',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Scroll the list up on the phone',
+        'The red Tuesday pill rides up with its card, then sticks just below the HarborSliverDock strip while the card is under it.',
+      ),
+      TryStep(
+        'Keep scrolling until the card leaves',
+        'The pill stays inside its card and leaves with it: it never floats free of its item.',
+      ),
+      TryStep(
+        'Drag gap to 24 while the pill is stuck',
+        'The pill moves down at once to sit 24 below the strip; at 0 it touches it.',
+      ),
+      TryStep(
+        'Switch pinned HarborSliverDock off',
+        'With no strip pinned, the pill sticks just below the header instead: it clears whatever is pinned above.',
+      ),
+    ],
     focus: const StageFocus.top(500),
     realWorld:
         'A barnacle cements itself to a hull and goes wherever the boat goes. It never leaves the hull: when the boat '
@@ -835,6 +938,21 @@ class _CenterEntryState extends State<CenterEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborCenter',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Compare the box with the brass line',
+        'The player box is centered on the whole screen (the brass line), not on the water between header and bottom bar.',
+      ),
+      TryStep(
+        'Tap the keyboard button',
+        'The box moves up only far enough to overlap the keyboard by 24, the overlapBudget, rather than recentering.',
+      ),
+      TryStep('Drag overlapBudget to 0', 'The box rises to sit fully above the keyboard.'),
+      TryStep(
+        'Drag overlapBudget to 160',
+        'The box stays centered on the screen and lets the keyboard cover its bottom: within budget, it does not move.',
+      ),
+    ],
     realWorld:
         'A compass rose sits at the heart of a chart, and a ship keeps to the middle of the channel: centered on the '
         'whole thing, not on whatever bit of it is left.',
@@ -925,6 +1043,24 @@ class _OpenWaterEntryState extends State<OpenWaterEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborOpenWater',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Read the shaded bands',
+        'The chart runs under everything; red bands show the coast (62 top, 34 bottom) and brass ones the docks (114, 90).',
+      ),
+      TryStep(
+        'Pick bottom dock: quay',
+        'The chart stops at the bar and both bottom bands read 0: a quay takes its ground from the body.',
+      ),
+      TryStep(
+        'Pick bottom dock: pier, then tap the keyboard button',
+        'The chart ends at the keyboard and the bottom bands go: the body clears the tide, so nothing below reaches it.',
+      ),
+      TryStep(
+        'Lower the keyboard, pick Device: iPhone 17 landscape',
+        'frameSize reads 874 × 402, the top coast band goes and the bottom one reads 21: the bands follow the device.',
+      ),
+    ],
     realWorld:
         'A chart covers the whole sea, but marks how deep it is everywhere: soundings in the open water, contour lines, '
         'shading where it shoals. You can sail anywhere; the chart tells you what is there.',
@@ -1084,6 +1220,24 @@ class _CastOffEntryState extends State<CastOffEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborCastOff',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Switch HarborCastOff off',
+        'The brass SafeArea box shrinks inside the red one by the header and bottom bar again: the gap is cleared twice.',
+      ),
+      TryStep(
+        'Switch it back on',
+        'The boxes match: HarborCastOff told the SafeArea those edges were already cleared.',
+      ),
+      TryStep(
+        'Open The stage, pick Device: iPhone 17 landscape',
+        'The red box clears the side cutouts too, and the SafeArea still adds nothing.',
+      ),
+      TryStep(
+        'Pick edges: vertical',
+        'Only top and bottom are cast off now: the SafeArea pads the side cutouts a second time.',
+      ),
+    ],
     realWorld:
         'Casting off is lifting a line\'s eye off its bollard so the boat is free. Once it is off, nobody ashore is '
         'holding that line any more.',
@@ -1245,6 +1399,24 @@ class _PontoonEntryState extends State<PontoonEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborPontoon',
+    tryThis: const <TryStep>[
+      TryStep(
+        'Tap Edit on the Cargo manifest card',
+        'An Unsaved changes bar moors above the tab bar: a dock added from deep inside the list, not by the page.',
+      ),
+      TryStep(
+        'Scroll the list to the bottom',
+        'The last row rests just above the unsaved bar: the pontoon is measured like any dock, and as a pier the list runs under it.',
+      ),
+      TryStep(
+        'Tap Save on the bar',
+        'The bar leaves and the dirty switch turns off: the form\'s own flag drives the pontoon.',
+      ),
+      TryStep(
+        'Pick dock: quay, then switch dirty on',
+        'The list now ends above the bar instead of running under it: a quay takes its ground from the body.',
+      ),
+    ],
     // The whole phone: the form that moors the pontoon sits near the top, the pontoon lands at the
     // bottom, above the tab bar.
     realWorld:
