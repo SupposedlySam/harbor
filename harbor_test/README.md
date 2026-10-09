@@ -37,4 +37,25 @@ ends. `trial.clearWaterAround(finder)` and `isInClearWater`
 assert where something sits relative to everything in the way, not to a number.
 `trial.docksAround(finder)` lists the docks of the harbor around it.
 
+## A dock of a given reach
+
+A test that wants "a 94 pt bottom bar on a phone with a 34 pt home indicator"
+needs no arithmetic. A dock adds the coast to its child, and its `minimum` is a
+floor on that padding, so a dock with an empty child reaches from the screen's
+edge to the larger of the coast and `minimum`:
+
+```dart
+HarborDock.quay(minimum: reach, child: const SizedBox.shrink()) // reaches max(coast, reach)
+```
+
+To reach exactly `reach` whatever the coast, take the coast out and give the
+child the height:
+
+```dart
+HarborDock.quay(coast: HarborCoastStance.none, child: SizedBox(height: reach)) // reaches exactly reach
+```
+
+The body still keeps clear of whatever coast a shorter dock leaves uncovered,
+so with a 20 pt dock over a 34 pt home indicator, content rests 34 pt up.
+
 MIT licensed.

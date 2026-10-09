@@ -208,7 +208,7 @@ as it would in a `Row`.
 | `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
-| `minimum: 16` | At least this much room on the edge, coast or not |
+| `minimum: 16` | At least this much room on the edge, coast or not. With an empty child (`SizedBox.shrink()`), a dock that reaches the larger of the coast and the minimum; `coast: HarborCoastStance.none` and a sized child reach exactly that size |
 | `hitTestBehavior:` | Opaque by default, so taps on the header never reach rows under it |
 
 ## Content
