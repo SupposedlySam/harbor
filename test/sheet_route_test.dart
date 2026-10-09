@@ -344,6 +344,33 @@ void main() {
     expect(closed, isTrue);
   });
 
+  testWidgets('a content-sized sheet closes on a fling past 700 px/s, or past its closeFlingVelocity', (final tester) async {
+    final BuildContext page = await _page(tester);
+    bool closed = false;
+    void open({final double? closeFlingVelocity}) => unawaited(showHarborSheet<void>(
+      page,
+      builder: (final BuildContext context) => closeFlingVelocity == null
+          ? HarborSheet(dragToClose: true, body: _bar('content', 300))
+          : HarborSheet(dragToClose: true, closeFlingVelocity: closeFlingVelocity, body: _bar('content', 300)),
+    ).then((final void _) => closed = true));
+
+    // As a modal bottom sheet: a moderate fling, let go well over half shown, springs back.
+    open();
+    await tester.pumpAndSettle();
+    await tester.fling(find.byKey(const ValueKey<String>('content')), const Offset(0, 60), 550);
+    await tester.pumpAndSettle();
+    expect(closed, isFalse);
+    closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+    await tester.pumpAndSettle();
+
+    closed = false;
+    open(closeFlingVelocity: 400);
+    await tester.pumpAndSettle();
+    await tester.fling(find.byKey(const ValueKey<String>('content')), const Offset(0, 60), 550);
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+  });
+
   testWidgets('a draggable sheet snaps to the sizes it is given', (final tester) async {
     final BuildContext page = await _page(tester);
     unawaited(showHarborSheet<void>(
@@ -554,6 +581,94 @@ void main() {
       await tester.pumpAndSettle();
       expect(closed, isTrue);
       expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+    });
+
+    testWidgets('a moderate fling down from its lowest snap settles back, under Material’s 700 px/s', (final tester) async {
+      final DraggableScrollableController controller = DraggableScrollableController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
+      await tester.pumpAndSettle();
+      expect(closed, isFalse);
+      expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
+      expect(controller.size, closeTo(0.5, 0.001));
+    });
+
+    testWidgets('settles under reduced motion too', (final tester) async {
+      final DraggableScrollableController controller = DraggableScrollableController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester, disableAnimations: true);
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
+      ));
+      await tester.pumpAndSettle();
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
+      expect(controller.size, closeTo(0.5, 0.001));
+    });
+
+    testWidgets('closeFlingVelocity sets the fling that closes it', (final tester) async {
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) =>
+            HarborSheet.draggable(closeFlingVelocity: 400, header: _bar('handle', 40), builder: list),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      // The fling that settles it by default.
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
+    });
+
+    testWidgets('an infinite closeFlingVelocity never closes it on a fling, from any height', (final tester) async {
+      final DraggableScrollableController controller = DraggableScrollableController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          controller: controller,
+          closeFlingVelocity: double.infinity,
+          header: _bar('handle', 40),
+          builder: list,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
+      expect(controller.size, closeTo(0.5, 0.001));
+    });
+
+    testWidgets('with shouldCloseOnMinExtent off, a moderate fling still goes down to its floor', (final tester) async {
+      final DraggableScrollableController controller = DraggableScrollableController();
+      addTearDown(controller.dispose);
+      final BuildContext page = await _page(tester);
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          controller: controller,
+          extent: const HarborSheetExtent(shouldCloseOnMinExtent: false),
+          header: _bar('handle', 40),
+          builder: list,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
+      expect(controller.size, closeTo(0.25, 0.001));
     });
 
     testWidgets('with shouldCloseOnMinExtent off, rests at its floor instead of closing', (final tester) async {
