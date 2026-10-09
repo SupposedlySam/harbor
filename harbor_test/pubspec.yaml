@@ -1,6 +1,6 @@
 name: harbor_test
 description: "Sea trials for harbor: device presets, a pump helper that moves the keyboard, and clear-water matchers for widget tests."
-version: 0.2.0
+version: 0.2.0+1
 repository: https://github.com/SupposedlySam/harbor/tree/main/harbor_test
 issue_tracker: https://github.com/SupposedlySam/harbor/issues
 topics:

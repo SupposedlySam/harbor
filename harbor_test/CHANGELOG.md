@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0+1
 
 * Docs: "A dock of a given reach" shows how to build a dock that reaches a given distance from the edge, coast included, with no helper. ([#68](https://github.com/SupposedlySam/harbor/issues/68))
 
