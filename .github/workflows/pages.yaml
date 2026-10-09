@@ -1,0 +1,56 @@
+name: pages
+
+# Publishes the Harbor Field Guide (example/lib/field_guide_main.dart) to GitHub Pages, so anyone
+# can try every class on its pretend phone in a browser, without running the example app.
+# Live at https://supposedlysam.github.io/harbor/ once Pages is set to deploy from GitHub Actions
+# (repository Settings, Pages, Source: GitHub Actions).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push replaces one still queued, never one already deploying.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # .fvmrc is the one place the Flutter version is pinned; read it rather than repeat it here.
+      - id: sdk
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.sdk.outputs.version }}
+          channel: stable
+          cache: true
+
+      # The site is served from /harbor/, the repository's Pages path, not from the domain's root.
+      - name: Build the field guide for the web
+        working-directory: example
+        run: flutter build web -t lib/field_guide_main.dart --base-href /harbor/ --release
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: example/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
