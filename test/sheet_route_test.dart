@@ -600,6 +600,26 @@ void main() {
       expect(controller.size, closeTo(0.5, 0.001));
     });
 
+    testWidgets('a fling on its list is DraggableScrollableSheet’s own, and closes it from its lowest snap', (final tester) async {
+      final BuildContext page = await _page(tester);
+      bool closed = false;
+      unawaited(showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          header: _bar('handle', 40),
+          builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+            controller: controller,
+            slivers: <Widget>[SliverToBoxAdapter(child: _bar('list', 2000))],
+          ),
+        ),
+      ).then((final void _) => closed = true));
+      await tester.pumpAndSettle();
+      // On the list, just under the header: the list's middle is off the screen.
+      await tester.flingFrom(_rect(tester, 'handle').bottomCenter + const Offset(0, 100), const Offset(0, 60), 550);
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+    });
+
     testWidgets('settles under reduced motion too', (final tester) async {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
