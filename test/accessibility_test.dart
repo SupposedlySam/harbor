@@ -43,6 +43,31 @@ Future<List<String>> _tabOrder(final WidgetTester tester, {final int presses = 4
   return order;
 }
 
+/// The node a screen reader reaches with [label], walking the semantics tree as it does. Finders
+/// read a render object's last semantics node, which outlives the node leaving the tree.
+SemanticsNode? _readOut(final WidgetTester tester, final String label) {
+  for (final SemanticsNode node in tester.semantics.simulatedAccessibilityTraversal()) {
+    if (node.label == label) {
+      return node;
+    }
+  }
+  return null;
+}
+
+/// [node]'s rect in the view's logical coordinates.
+Rect _semanticsRect(final SemanticsNode node) {
+  Rect rect = node.rect;
+  // Every transform up to and including the root, which leaves the rect in physical pixels however
+  // deep the view's scale sits, then back to logical ones by the view's own ratio.
+  for (SemanticsNode? at = node; at != null; at = at.parent) {
+    if (at.transform case final Matrix4 transform) {
+      rect = MatrixUtils.transformRect(transform, rect);
+    }
+  }
+  final double ratio = WidgetsBinding.instance.platformDispatcher.implicitView!.devicePixelRatio;
+  return Rect.fromLTRB(rect.left / ratio, rect.top / ratio, rect.right / ratio, rect.bottom / ratio);
+}
+
 void main() {
   group('A hidden dock is out of reach', () {
     testWidgets('an open dock is focusable and read out (positive control)', (final tester) async {
@@ -137,6 +162,153 @@ void main() {
       await tester.pump();
       final FadeTransition fade = tester.widget(find.ancestor(of: find.text('Saved'), matching: find.byType(FadeTransition)).first);
       expect(fade.opacity.value, 1.0);
+    });
+
+    // The live region and the message are the same node, not two that each exist.
+    testWidgets('is one live region, labelled by its message', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await pumpPage(tester);
+      HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      await tester.pumpAndSettle();
+      expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
+      semantics.dispose();
+    });
+
+    // Failed before: no dismiss action, so a screen reader could not take a signal away, as it can a SnackBar.
+    testWidgets('is lowered by the screen reader’s dismiss action', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborSignalClosedReason? reason;
+      unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));
+      await tester.pumpAndSettle();
+      tester.semantics.performAction(find.semantics.byFlag(SemanticsFlag.isLiveRegion), SemanticsAction.dismiss);
+      expect(entry.showing.value, isFalse);
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+      expect(reason, HarborSignalClosedReason.dismiss);
+      semantics.dispose();
+    });
+
+    // Failed before: harbor wrapped it in a second live region with no label, around the widget's own.
+    testWidgets('with liveRegion: false, leaves the semantics to a widget that is its own live region', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final BuildContext page = await pumpPage(tester);
+      HarborSignals.raise(
+        page,
+        liveRegion: false,
+        builder: (final BuildContext _) => Semantics(
+          container: true,
+          liveRegion: true,
+          label: 'Saved',
+          child: const SizedBox(width: 200, height: 40),
+        ),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
+      semantics.dispose();
+    });
+  });
+
+  group("A signal's entrance", () {
+    Future<BuildContext> pumpPage(final WidgetTester tester) async {
+      late BuildContext page;
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Builder(
+              builder: (final BuildContext context) {
+                page = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      return page;
+    }
+
+    // The transitions harbor puts between [entry]'s buoy and its text; the page's own route
+    // transition sits above the buoy and is not counted.
+    Finder harborTransitions(final HarborSignalEntry entry, final Type type) => find.ancestor(
+      of: find.text('Saved'),
+      matching: find.descendant(of: find.byKey(ObjectKey(entry)), matching: find.byType(type)),
+    );
+
+    // Failed before: every signal faded and scaled in, so a widget with its own entrance played two.
+    testWidgets('with AnimationStyle.noAnimation, shows the child as it is and keeps it for its own exit', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: AnimationStyle.noAnimation,
+        builder: (final BuildContext _) => const Text('Saved'),
+        duration: null,
+      );
+      await tester.pump();
+      expect(find.text('Saved'), findsOneWidget);
+      expect(harborTransitions(entry, FadeTransition), findsNothing);
+      expect(harborTransitions(entry, ScaleTransition), findsNothing);
+
+      entry.lower();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Saved'), findsOneWidget, reason: 'it lingers for its own exit');
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+    });
+
+    // Failed before: a caller could not bring its own entrance; harbor's fade and scale always ran.
+    testWidgets("a transitionBuilder replaces the fade and scale and runs on harbor's animation", (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final List<double> seen = <double>[];
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: const AnimationStyle(duration: Duration(milliseconds: 200)),
+        transitionBuilder: (final BuildContext context, final Animation<double> animation, final Widget child) {
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (final BuildContext context, final Widget? child) {
+              seen.add(animation.value);
+              return child!;
+            },
+            child: child,
+          );
+        },
+        builder: (final BuildContext _) => const Text('Saved'),
+        duration: null,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(seen.last, closeTo(0.5, 0.01));
+      expect(harborTransitions(entry, FadeTransition), findsNothing);
+      expect(harborTransitions(entry, ScaleTransition), findsNothing);
+      await tester.pumpAndSettle();
+      expect(seen.last, 1.0);
+
+      entry.lower();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(seen.last, closeTo(0.5, 0.01), reason: 'it runs back out when lowered');
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+    });
+
+    // Failed before: a lowered signal was removed after 300 ms whatever its exit took.
+    testWidgets('stays up for the whole of a longer exit', (final tester) async {
+      final BuildContext page = await pumpPage(tester);
+      final HarborSignalEntry entry = HarborSignals.raise(
+        page,
+        animationStyle: const AnimationStyle(reverseDuration: Duration(milliseconds: 600)),
+        builder: (final BuildContext _) => const Text('Saved'),
+        duration: null,
+      );
+      await tester.pumpAndSettle();
+      entry.lower();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.text('Saved'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
     });
   });
 
@@ -275,6 +447,100 @@ void main() {
       await tester.pumpAndSettle();
       expect(firstFrame, tester.getRect(find.byKey(const ValueKey<String>('content'))).top);
     });
+
+    /// Where a row below the fold is on the frame after a reveal, and where it comes to rest.
+    /// Built in the cache extent, it is offstage until revealed.
+    Future<(double, double)> revealFrames(final WidgetTester tester, {required final bool disableAnimations}) async {
+      final GlobalKey row = GlobalKey();
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: HarborFairway(
+              slivers: <Widget>[
+                const SliverToBoxAdapter(child: SizedBox(height: 900)),
+                SliverToBoxAdapter(child: SizedBox(key: row, height: 40)),
+                const SliverToBoxAdapter(child: SizedBox(height: 1500)),
+              ],
+            ),
+          ),
+          disableAnimations: disableAnimations,
+        ),
+      );
+      HarborLighthouse.reveal(row.currentContext!);
+      await tester.pump();
+      final double firstFrame = tester.getRect(find.byKey(row, skipOffstage: false)).bottom;
+      await tester.pumpAndSettle();
+      return (firstFrame, tester.getRect(find.byKey(row, skipOffstage: false)).bottom);
+    }
+
+    testWidgets('a reveal scrolls over several frames normally (positive control)', (final tester) async {
+      final (double firstFrame, double rest) = await revealFrames(tester, disableAnimations: false);
+      expect(rest, lessThan(874));
+      expect(firstFrame, isNot(rest));
+    });
+
+    // Failed before: the row scrolled into sight over 250 ms either way.
+    testWidgets('a reveal jumps', (final tester) async {
+      final (double firstFrame, double rest) = await revealFrames(tester, disableAnimations: true);
+      expect(rest, lessThan(874));
+      expect(firstFrame, rest);
+    });
+
+    /// Where a lifted beacon is one frame after the cover rises under it, and where it comes to rest.
+    Future<(double, double)> liftFrames(final WidgetTester tester, {required final bool disableAnimations}) async {
+      final ValueNotifier<double> cover = ValueNotifier<double>(10);
+      addTearDown(cover.dispose);
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            bottom: <HarborDock>[
+              HarborDock.pier(
+                child: ValueListenableBuilder<double>(
+                  valueListenable: cover,
+                  builder: (final BuildContext context, final double height, final Widget? _) =>
+                      SizedBox(height: height),
+                ),
+              ),
+            ],
+            body: const HarborLighthouseRegion(
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    top: 600,
+                    left: 100,
+                    child: HarborBeacon(
+                      lift: true,
+                      child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          disableAnimations: disableAnimations,
+        ),
+      );
+      await tester.pumpAndSettle();
+      cover.value = 300;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      final double firstFrame = tester.getRect(find.byKey(const ValueKey<String>('boat'))).bottom;
+      await tester.pumpAndSettle();
+      return (firstFrame, tester.getRect(find.byKey(const ValueKey<String>('boat'))).bottom);
+    }
+
+    testWidgets('a region lifts over several frames normally (positive control)', (final tester) async {
+      final (double firstFrame, double rest) = await liftFrames(tester, disableAnimations: false);
+      expect(rest, lessThan(640));
+      expect(firstFrame, isNot(rest));
+    });
+
+    // Failed before: the region lifted its content over 280 ms either way.
+    testWidgets('a region lifts at once', (final tester) async {
+      final (double firstFrame, double rest) = await liftFrames(tester, disableAnimations: true);
+      expect(rest, lessThan(640));
+      expect(firstFrame, rest);
+    });
   });
 
   group('A buoy follows the reading direction', () {
@@ -333,6 +599,213 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(position.pixels, 0.0);
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+    }
+  });
+
+  group('A buoy that is not shown is not read out', () {
+    Widget bubble() => Semantics(label: 'bubble', container: true, child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30));
+
+    Widget anchoredPage(final HarborAnchor anchor, final ValueNotifier<bool> anchored) => Harbor(
+      buoys: <HarborBuoy>[HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.below, child: bubble())],
+      body: Center(
+        child: ValueListenableBuilder<bool>(
+          valueListenable: anchored,
+          builder: (final BuildContext context, final bool value, final Widget? _) =>
+              value ? HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)) : const SizedBox.shrink(),
+        ),
+      ),
+    );
+
+    // Failed before: unpainted, the bubble was still in the semantics tree at the top-left corner.
+    testWidgets('an anchored buoy is read out only while its anchor is in the tree', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final HarborAnchor anchor = HarborAnchor();
+      addTearDown(anchor.dispose);
+      final ValueNotifier<bool> anchored = ValueNotifier<bool>(false);
+      addTearDown(anchored.dispose);
+      await tester.pumpSeaTrial(_app(anchoredPage(anchor, anchored)));
+      await tester.pump();
+      expect(_readOut(tester, 'bubble'), isNull);
+
+      anchored.value = true;
+      await tester.pump();
+      await tester.pump();
+      expect(_semanticsRect(_readOut(tester, 'bubble')!), tester.getRect(find.byKey(const ValueKey<String>('bubble'))));
+
+      anchored.value = false;
+      await tester.pump();
+      await tester.pump();
+      expect(_readOut(tester, 'bubble'), isNull);
+      semantics.dispose();
+    });
+
+    // Failed before: shown with its anchor out of the tree, the menu was read out at the overlay's
+    // top-left corner. A portal buoy is placed when it paints, not when it lays out, so each step
+    // here also fails if its semantics are not refreshed then.
+    testWidgets('a portal buoy is read out only while it is placed, where it is placed', (final tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final HarborAnchor anchor = HarborAnchor();
+      addTearDown(anchor.dispose);
+      // How far below the row the anchor sits, or null while it is out of the tree.
+      final ValueNotifier<double?> anchorDrop = ValueNotifier<double?>(null);
+      addTearDown(anchorDrop.dispose);
+      final OverlayPortalController menu = OverlayPortalController();
+      await tester.pumpSeaTrial(
+        _app(
+          Harbor(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  HarborPortalBuoy(
+                    controller: menu,
+                    anchor: anchor,
+                    side: HarborBuoySide.below,
+                    buoyBuilder: (final BuildContext context) => bubble(),
+                    child: const SizedBox(width: 40, height: 40),
+                  ),
+                  ValueListenableBuilder<double?>(
+                    valueListenable: anchorDrop,
+                    builder: (final BuildContext context, final double? drop, final Widget? _) => drop == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: EdgeInsets.only(top: drop),
+                            child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      Future<void> settle() async {
+        await tester.pump();
+        await tester.pump();
+      }
+
+      menu.show();
+      await settle();
+      expect(_readOut(tester, 'bubble'), isNull);
+
+      anchorDrop.value = 0;
+      await settle();
+      final Rect placed = tester.getRect(find.byKey(const ValueKey<String>('bubble')));
+      expect(_semanticsRect(_readOut(tester, 'bubble')!), placed);
+
+      anchorDrop.value = 100;
+      await settle();
+      final Rect moved = tester.getRect(find.byKey(const ValueKey<String>('bubble')));
+      expect(moved, isNot(placed), reason: 'positive control: the menu followed its anchor');
+      expect(_semanticsRect(_readOut(tester, 'bubble')!), moved);
+
+      anchorDrop.value = null;
+      await settle();
+      expect(_readOut(tester, 'bubble'), isNull);
+      semantics.dispose();
+    });
+  });
+
+  // Scaffold scrolls only when its status bar region is what a tap at the screen's top left would
+  // hit, so it leaves a covered page alone however that page is covered. Each case runs under a
+  // Scaffold too, as the control for what a harbor page should do. Failed before: the harbor asked
+  // only whether its route was the top of its own navigator, so it scrolled each of these.
+  group('A status bar tap scrolls only the page a Scaffold would', () {
+    Future<void> tapStatusBar(final WidgetTester tester) async {
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        'flutter/status_bar',
+        SystemChannels.statusBar.codec.encodeMethodCall(const MethodCall('handleScrollToTop')),
+        (final ByteData? _) {},
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Widget list(final bool scaffold, final String name) {
+      Widget row(final BuildContext c, final int i) => SizedBox(height: 40, child: Text('$name row $i'));
+      if (scaffold) {
+        return Scaffold(body: ListView.builder(itemCount: 80, itemBuilder: row));
+      }
+      return Harbor(
+        top: const <HarborDock>[HarborDock.pier(child: SizedBox(height: 50))],
+        body: HarborFairway(slivers: <Widget>[SliverList.builder(itemCount: 80, itemBuilder: row)]),
+      );
+    }
+
+    Widget pane(final bool scaffold, final String name) => Navigator(
+      onGenerateRoute: (final RouteSettings settings) => PageRouteBuilder<void>(
+        settings: settings,
+        pageBuilder: (final BuildContext c, final Animation<double> a, final Animation<double> s) => list(scaffold, name),
+      ),
+    );
+
+    ScrollPosition scrolledTo300(final WidgetTester tester, final String name) {
+      final ScrollPosition position = tester.state<ScrollableState>(
+        find.ancestor(of: find.text('$name row 0'), matching: find.byType(Scrollable)).first,
+      ).position;
+      position.jumpTo(300);
+      return position;
+    }
+
+    for (final bool scaffold in <bool>[false, true]) {
+      final String under = scaffold ? 'under a Scaffold' : 'under a harbor';
+
+      testWidgets('$under: a page in a nested navigator stays put once a route covers the navigator', (final tester) async {
+        await tester.pumpSeaTrial(_app(pane(scaffold, 'inner')));
+        final ScrollPosition position = scrolledTo300(tester, 'inner');
+        tester.state<NavigatorState>(find.byType(Navigator).first).push(
+          PageRouteBuilder<void>(
+            pageBuilder: (final BuildContext c, final Animation<double> a, final Animation<double> s) =>
+                const ColoredBox(color: Color(0xFF000000), child: SizedBox.expand()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tapStatusBar(tester);
+        // A covered page's tickers are muted, so a scroll started under the cover would only
+        // run once the cover leaves.
+        tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+        await tester.pumpAndSettle();
+        expect(position.pixels, 300.0);
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+      testWidgets('$under: a page stays put under a full-screen overlay entry', (final tester) async {
+        await tester.pumpSeaTrial(_app(list(scaffold, 'page')));
+        final ScrollPosition position = scrolledTo300(tester, 'page');
+        final OverlayEntry cover = OverlayEntry(
+          builder: (final BuildContext c) => const ColoredBox(color: Color(0xFF000000), child: SizedBox.expand()),
+        );
+        addTearDown(cover.dispose);
+        Overlay.of(tester.element(find.text('page row 0'))).insert(cover);
+        await tester.pump();
+        await tapStatusBar(tester);
+        expect(position.pixels, 300.0);
+        cover.remove();
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+      testWidgets('$under: of two panes side by side, the one under the status bar at the left scrolls', (final tester) async {
+        await tester.pumpSeaTrial(
+          _app(
+            Row(
+              children: <Widget>[
+                Expanded(child: pane(scaffold, 'master')),
+                Expanded(child: pane(scaffold, 'detail')),
+              ],
+            ),
+          ),
+        );
+        final ScrollPosition master = scrolledTo300(tester, 'master');
+        final ScrollPosition detail = scrolledTo300(tester, 'detail');
+        await tester.pump();
+        await tapStatusBar(tester);
+        expect((master.pixels, detail.pixels), (0.0, 300.0));
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+      testWidgets('$under: a page with no status bar above it stays put', (final tester) async {
+        await tester.pumpSeaTrial(_app(list(scaffold, 'page')), device: HarborTrialDevice.iPhone17Landscape);
+        final ScrollPosition position = scrolledTo300(tester, 'page');
+        await tester.pump();
+        await tapStatusBar(tester);
+        expect(position.pixels, 300.0);
       }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
     }
   });

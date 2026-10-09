@@ -10,6 +10,7 @@ export 'src/buoy.dart'
         HarborAnchor,
         HarborAnchorPoint,
         HarborBuoy,
+        HarborBuoyCrossAlignment,
         HarborBuoySide,
         HarborPortalBuoy,
         HarborSignalSlot,
@@ -25,8 +26,12 @@ export 'src/controller.dart'
         HarborDockRecord,
         HarborFleet,
         HarborLayoutRecord,
+        HarborPontoonHandle,
+        HarborSignalClosedReason,
         HarborSignalEntry,
+        HarborSignalTransitionBuilder,
         HarborYield;
+export 'src/dialog.dart';
 export 'src/dock.dart';
 export 'src/dock_slot.dart' show HarborDockSlot;
 export 'src/edge.dart';
@@ -37,7 +42,7 @@ export 'src/make_way.dart';
 export 'src/moored.dart';
 export 'src/render_harbor.dart' show HarborSizing;
 export 'src/scale_model.dart';
-export 'src/sheet.dart';
+export 'src/sheet.dart' hide HarborNonModalSheetActions;
 export 'src/sticky.dart';
 export 'src/tide.dart' show HarborDryDock, HarborTide, HarborTidePhase, HarborTideStance, HarborTideState;
 export 'src/wake.dart' show HarborRest, HarborWake, HarborWakeKind, HarborWakeMask, HarborWakePainter, harborAlphaWake;

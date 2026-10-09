@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -9,7 +10,13 @@ import 'wake.dart';
 
 /// Builds one dock in its harbor: its coast padding, backdrop, frosting,
 /// hairline, and its dark and withdraw animations.
+@Deprecated(
+  'HarborDockSlot is how a harbor builds a dock, and stops being exported in a later release. Read where docks '
+  'are with HarborChart.nearest(context).docks (or docksAround in harbor_test), or find the dock\'s child.',
+)
 class HarborDockSlot extends StatefulWidget {
+  /// Made by the harbor for each of its docks.
+  @internal
   const HarborDockSlot({
     super.key,
     required this.dock,
@@ -41,6 +48,16 @@ class HarborDockSlot extends StatefulWidget {
 
   @override
   State<HarborDockSlot> createState() => _HarborDockSlotState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<HarborDock>('dock', dock));
+    properties.add(EnumProperty<HarborEdge>('edge', edge));
+    properties.add(EnumProperty<HarborDockState>('state', state));
+    properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('coastPadding', coastPadding));
+    properties.add(FlagProperty('leavesWake', value: leavesWake, ifTrue: 'leaves wake'));
+  }
 }
 
 class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStateMixin {
@@ -54,6 +71,11 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
     duration: widget.dock.duration,
     value: widget.state == HarborDockState.dark ? 0.0 : 1.0,
   );
+  late final CurvedAnimation _presenceCurve = CurvedAnimation(parent: _presence, curve: _curve, reverseCurve: _reverseCurve);
+  late final CurvedAnimation _lightCurve = CurvedAnimation(parent: _light, curve: _curve, reverseCurve: _reverseCurve);
+
+  Curve get _curve => widget.dock.animationStyle?.curve ?? widget.dock.curve;
+  Curve get _reverseCurve => widget.dock.animationStyle?.reverseCurve ?? _curve;
 
   @override
   void initState() {
@@ -75,16 +97,27 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   void didUpdateWidget(final HarborDockSlot oldWidget) {
     super.didUpdateWidget(oldWidget);
     _setDurations();
+    for (final CurvedAnimation curved in <CurvedAnimation>[_presenceCurve, _lightCurve]) {
+      curved
+        ..curve = _curve
+        ..reverseCurve = _reverseCurve;
+    }
     if (widget.state != oldWidget.state) {
       _apply(widget.state);
     }
   }
 
-  /// The dock's own duration, or none when the platform asks for reduced motion.
+  /// The dock's own durations, or none when the platform asks for reduced motion.
   void _setDurations() {
-    final Duration duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : widget.dock.duration;
-    _presence.duration = duration;
-    _light.duration = duration;
+    final bool still = MediaQuery.disableAnimationsOf(context);
+    final AnimationStyle? style = widget.dock.animationStyle;
+    final Duration duration = still ? Duration.zero : style?.duration ?? widget.dock.duration;
+    final Duration reverseDuration = still ? Duration.zero : style?.reverseDuration ?? duration;
+    for (final AnimationController controller in <AnimationController>[_presence, _light]) {
+      controller
+        ..duration = duration
+        ..reverseDuration = reverseDuration;
+    }
   }
 
   void _apply(final HarborDockState state) {
@@ -102,6 +135,8 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
 
   @override
   void dispose() {
+    _presenceCurve.dispose();
+    _lightCurve.dispose();
     _presence.dispose();
     _light.dispose();
     super.dispose();
@@ -127,8 +162,8 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
     return AnimatedBuilder(
       animation: Listenable.merge(<Listenable>[_presence, _light]),
       builder: (final BuildContext context, final Widget? child) {
-        final double presence = dock.curve.transform(_presence.value);
-        final double light = dock.curve.transform(_light.value);
+        final double presence = _presenceCurve.value;
+        final double light = _lightCurve.value;
         final bool hidden = widget.state != HarborDockState.open;
         return _DockFrame(
           edge: widget.edge,
@@ -377,7 +412,7 @@ class RenderHarborDockFrame extends RenderProxyBox {
     }
     final HarborWake? hairline = _hairline;
     if (hairline != null && _visualFactor > 0) {
-      final Paint paint = Paint()..color = hairline.color ?? const Color(0x33FFFFFF);
+      final Paint paint = Paint()..color = hairline.color ?? const HarborWake.hairline().color!;
       final bool ltr = _textDirection == TextDirection.ltr;
       final Rect box = offset & size;
       final double t = hairline.length;

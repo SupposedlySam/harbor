@@ -547,7 +547,7 @@ class _Deck {
   }
 
   Rect tabBarRect(final WidgetTester tester) {
-    final BuildContext context = tester.element(find.byType(HarborDockSlot).first);
+    final BuildContext context = tester.element(find.byType(Harbor).last); // inside the sea, so on its chart
     for (final HarborChartEntry entry in HarborChart.snapshot(context)) {
       for (final HarborDockRecord dock in entry.docks) {
         if (dock.label == 'tab bar') {

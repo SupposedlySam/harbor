@@ -92,7 +92,7 @@ class HarborBuoyConstraints extends BoxConstraints {
   int get hashCode => Object.hash(super.hashCode, clearWater);
 }
 
-enum HarborSlotKind { body, dock, buoys }
+enum HarborSlotKind { body, dock, statusBar, buoys }
 
 class HarborParentData extends ContainerBoxParentData<RenderBox> {
   HarborSlotKind kind = HarborSlotKind.body;
@@ -111,6 +111,15 @@ class HarborParentData extends ContainerBoxParentData<RenderBox> {
 class HarborSlot extends ParentDataWidget<HarborParentData> {
   const HarborSlot.body({super.key, required super.child})
     : kind = HarborSlotKind.body,
+      edge = HarborEdge.top,
+      fromEdge = 0,
+      dock = null,
+      state = HarborDockState.open;
+
+  /// The status bar's band at the top of the frame, over the docks and under the buoys, as
+  /// `Scaffold` has it: what a status bar tap is hit-tested against.
+  const HarborSlot.statusBar({super.key, required super.child})
+    : kind = HarborSlotKind.statusBar,
       edge = HarborEdge.top,
       fromEdge = 0,
       dock = null,
@@ -305,7 +314,7 @@ class _Placed {
 class RenderHarbor extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, HarborParentData>, RenderBoxContainerDefaultsMixin<RenderBox, HarborParentData> {
   RenderHarbor({required this._geometry, required this._controller}) {
-    _controller.renderBox = this;
+    _controller.layoutBox = this;
   }
 
   HarborGeometry _geometry;
@@ -326,7 +335,7 @@ class RenderHarbor extends RenderBox
       value.breakwaterChanges.addListener(_breakwaterMoved);
     }
     _controller = value;
-    value.renderBox = this;
+    value.layoutBox = this;
     markNeedsLayout();
   }
 
@@ -440,19 +449,64 @@ class RenderHarbor extends RenderBox
     }
   }
 
+  bool _debugCheckHasBoundedConstraints({required final bool hug}) {
+    assert(() {
+      if (constraints.hasBoundedWidth && (hug || constraints.hasBoundedHeight)) {
+        return true;
+      }
+      final String axis = constraints.hasBoundedWidth ? 'height' : 'width';
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('${_debugName()} was given unbounded $axis.'),
+        ErrorDescription(
+          'A Harbor fills the space it is given, as a Scaffold does, so it needs bounded constraints. '
+          'This usually happens when a Harbor is placed in a scroll view, a Column or a Row.',
+        ),
+        DiagnosticsProperty<BoxConstraints>('The constraints were', constraints, style: DiagnosticsTreeStyle.errorProperty),
+        ErrorHint(
+          constraints.hasBoundedWidth
+              ? 'Give the Harbor a height (a SizedBox, or Expanded in a Column), or use '
+                  'Harbor(sizing: HarborSizing.hugBody) to make it as tall as its body.'
+              : 'Give the Harbor a width, for example with a SizedBox, or Expanded in a Row. '
+                  'HarborSizing.hugBody hugs the height only; a Harbor always fills its width.',
+        ),
+      ]);
+    }());
+    return true;
+  }
+
+  bool _debugCheckQuayOutsidePiers(final HarborEdge edge, {required final bool seenPier}) {
+    assert(() {
+      if (!seenPier) {
+        return true;
+      }
+      throw FlutterError.fromParts(<DiagnosticsNode>[
+        ErrorSummary('${_debugName()} lists a quay inside a pier on its ${edge.name} edge.'),
+        ErrorDescription(
+          'Quays are built on the shore and piers out over the water, so the docks on an edge are '
+          'its quays first, nearest the edge, then its piers.',
+        ),
+        ErrorHint(
+          'List every quay nearer the ${edge.name} edge than the piers: '
+          '${edge == HarborEdge.bottom || edge == HarborEdge.end ? 'after' : 'before'} them in Harbor.${edge.name}.',
+        ),
+      ]);
+    }());
+    return true;
+  }
+
+  String _debugName() => _controller.debugLabel == null ? 'A Harbor' : 'The Harbor "${_controller.debugLabel}"';
+
   @override
   void performLayout() {
     final HarborGeometry g = _geometry;
     final bool hug = g.sizing == HarborSizing.hugBody;
-    assert(
-      constraints.hasBoundedWidth && (hug || constraints.hasBoundedHeight),
-      'A Harbor needs bounded constraints to fill, as a Scaffold does. Give it a size, or use HarborSizing.hugBody.',
-    );
+    assert(_debugCheckHasBoundedConstraints(hug: hug));
     final double width = constraints.maxWidth;
     final double maxHeight = constraints.hasBoundedHeight ? constraints.maxHeight : double.infinity;
     final double dockMaxHeight = maxHeight.isFinite ? maxHeight : 100000.0;
 
     RenderBox? body;
+    RenderBox? statusBar;
     RenderBox? buoys;
     final Map<HarborEdge, List<_Placed>> byEdge = <HarborEdge, List<_Placed>>{
       for (final HarborEdge e in HarborEdge.values) e: <_Placed>[],
@@ -465,6 +519,8 @@ class RenderHarbor extends RenderBox
       switch (data.kind) {
         case HarborSlotKind.body:
           body = child;
+        case HarborSlotKind.statusBar:
+          statusBar = child;
         case HarborSlotKind.buoys:
           buoys = child;
         case HarborSlotKind.dock:
@@ -518,7 +574,7 @@ class RenderHarbor extends RenderBox
         restingOffset += dock.resting;
         steadyOffset += dock.extent;
         if (config.kind == HarborDockKind.quay) {
-          assert(!seenPier, 'A quay on the ${edge.name} edge is listed inside a pier. Quays are built on the shore: list them nearer the edge than piers.');
+          assert(_debugCheckQuayOutsidePiers(edge, seenPier: seenPier));
           quays = offset;
           quaysSteady = steadyOffset;
         } else {
@@ -712,6 +768,10 @@ class RenderHarbor extends RenderBox
       math.max(physicalObstruction.left, width - physicalObstruction.right),
       math.max(physicalObstruction.top, height - physicalObstruction.bottom),
     );
+    if (statusBar != null) {
+      statusBar.layout(BoxConstraints(minWidth: width, maxWidth: width, maxHeight: height));
+      (statusBar.parentData! as HarborParentData).offset = Offset.zero;
+    }
     if (buoys != null) {
       buoys.layout(HarborBuoyConstraints(frame: size, clearWater: clearWater));
       (buoys.parentData! as HarborParentData).offset = Offset.zero;

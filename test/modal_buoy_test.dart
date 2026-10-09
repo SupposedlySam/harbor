@@ -193,6 +193,24 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('a modal buoy\'s barrier is announced with its barrierLabel', (final tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await tester.pumpSeaTrial(
+      MaterialApp(
+        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+        home: Harbor(
+          buoys: <HarborBuoy>[
+            HarborBuoy(modal: true, onDismiss: () {}, barrierLabel: 'Fermer', child: const SizedBox(width: 100, height: 100)),
+          ],
+          body: const SizedBox.expand(),
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel('Fermer'), findsOneWidget);
+    expect(find.bySemanticsLabel('Dismiss'), findsNothing);
+    semantics.dispose();
+  });
+
   test('a modal buoy without onDismiss is refused', () {
     expect(() => HarborBuoy(modal: true, child: const SizedBox()), throwsAssertionError);
   });

@@ -7,14 +7,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-/// Puts the view in [device]'s shape, with its keyboard up or down, as a turn would.
+/// Puts the view in [device]'s shape, with its keyboard up or down, as a turn would. The view takes
+/// physical pixels, at the pixel ratio the trial put on it.
 void _turnTo(final WidgetTester tester, final HarborTrialDevice device, {required final bool tideIn}) {
-  final EdgeInsets coast = device.coastWhen(tideIn: tideIn);
+  final double ratio = tester.view.devicePixelRatio;
+  final EdgeInsets coast = device.coastWhen(tideIn: tideIn) * ratio;
+  final EdgeInsets viewPadding = device.coast * ratio;
   tester.view
-    ..physicalSize = device.size
+    ..physicalSize = device.size * ratio
     ..padding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
-    ..viewPadding = FakeViewPadding(left: device.coast.left, top: device.coast.top, right: device.coast.right, bottom: device.coast.bottom)
-    ..viewInsets = FakeViewPadding(bottom: tideIn ? device.tideHeight : 0.0);
+    ..viewPadding = FakeViewPadding(left: viewPadding.left, top: viewPadding.top, right: viewPadding.right, bottom: viewPadding.bottom)
+    ..viewInsets = FakeViewPadding(bottom: (tideIn ? device.tideHeight : 0.0) * ratio);
 }
 
 void main() {
