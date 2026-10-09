@@ -1,3 +1,7 @@
+## 0.2.2
+
+Needs harbor 0.4.0, whose side docks own the corners. Nothing in harbor_test changes.
+
 ## 0.2.1
 
 Needs harbor 0.3.2.

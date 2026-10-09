@@ -379,6 +379,24 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         if (e.value.isNotEmpty) e.key,
     };
 
+    // The sides a side dock holds. A top or bottom dock runs between the side docks, which take
+    // the coast on those sides, so it is not handed that coast again.
+    HarborDockState stateOf(final HarborDock dock, final HarborEdge edge) {
+      final HarborDockState? claimed = controller.claimedStateOf(edge);
+      if (claimed == HarborDockState.withdrawn || (dock.withdrawsAtHighTide && tide > 0)) {
+        return HarborDockState.withdrawn;
+      }
+      if (claimed == HarborDockState.dark && dock.state == HarborDockState.open) {
+        return HarborDockState.dark;
+      }
+      return dock.state;
+    }
+
+    final Set<HarborEdge> sidesHeld = <HarborEdge>{
+      for (final HarborEdge side in HarborEdge.horizontal)
+        if (docks[side]!.any((final HarborDock dock) => stateOf(dock, side) != HarborDockState.withdrawn)) side,
+    };
+
     final List<Widget> children = <Widget>[];
     final MediaQueryData bodyBase = ambient;
     children.add(
@@ -414,18 +432,12 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
       // Listed in reading order; counted from the edge inward.
       final bool reversed = edge == HarborEdge.bottom || edge == HarborEdge.end;
       final List<HarborDock> fromEdge = reversed ? list.reversed.toList() : list;
-      final HarborDockState? claimed = controller.claimedStateOf(edge);
       int absorbing = -1;
       int innermost = -1;
       final List<HarborDockState> states = <HarborDockState>[];
       for (int i = 0; i < fromEdge.length; i++) {
         final HarborDock dock = fromEdge[i];
-        HarborDockState state = dock.state;
-        if (claimed == HarborDockState.withdrawn || (dock.withdrawsAtHighTide && tide > 0)) {
-          state = HarborDockState.withdrawn;
-        } else if (claimed == HarborDockState.dark && state == HarborDockState.open) {
-          state = HarborDockState.dark;
-        }
+        final HarborDockState state = stateOf(dock, edge);
         states.add(state);
         if (state != HarborDockState.withdrawn) {
           if (absorbing < 0) {
@@ -453,7 +465,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
               edge: edge,
               state: states[i],
               coastPadding: HarborEdges.only(edge, coastHere),
-              mediaQuery: _dockMediaQuery(ambient, edge, direction),
+              mediaQuery: _dockMediaQuery(ambient, edge, direction, sidesHeld: edge.isVertical ? sidesHeld : const <HarborEdge>{}),
               leavesWake: i == innermost,
               onSettled: _rebuild,
             ),
@@ -547,8 +559,13 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
     return value > floor ? value : floor;
   }
 
-  static MediaQueryData _dockMediaQuery(final MediaQueryData ambient, final HarborEdge edge, final TextDirection direction) {
-    final Set<HarborEdge> absorbed = <HarborEdge>{edge, edge.opposite};
+  static MediaQueryData _dockMediaQuery(
+    final MediaQueryData ambient,
+    final HarborEdge edge,
+    final TextDirection direction, {
+    required final Set<HarborEdge> sidesHeld,
+  }) {
+    final Set<HarborEdge> absorbed = <HarborEdge>{edge, edge.opposite, ...sidesHeld};
     final ({bool left, bool top, bool right, bool bottom}) sides = HarborEdges.physical(absorbed, direction);
     return ambient
         .removePadding(removeLeft: sides.left, removeTop: sides.top, removeRight: sides.right, removeBottom: sides.bottom)

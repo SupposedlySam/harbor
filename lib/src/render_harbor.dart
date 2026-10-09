@@ -512,7 +512,24 @@ class RenderHarbor extends RenderBox
       for (final HarborEdge e in HarborEdge.values) e: <_Placed>[],
     };
 
-    // 1. Measure the docks.
+    // 1. Measure the docks: the side docks first, since they own the corners. A rail runs the
+    // frame's full height and a header or a tab bar runs between the rails, as a tablet's
+    // navigation rail sits beside its app bar. A header used to run the full width, under the
+    // rail, and its title had no way to know the rail was there.
+    final List<RenderBox> verticalDocks = <RenderBox>[];
+    void measure(final RenderBox child, final BoxConstraints dockConstraints) {
+      final HarborParentData data = child.parentData! as HarborParentData;
+      child.layout(dockConstraints, parentUsesSize: true);
+      double extent = data.edge.isVertical ? child.size.height : child.size.width;
+      double resting = extent;
+      if (child is RenderHarborDockFrame) {
+        extent = child.extent;
+        resting = child.restingExtent;
+      }
+      final double visual = data.edge.isVertical ? child.size.height : child.size.width;
+      byEdge[data.edge]!.add(_Placed(child, data, extent, resting, visual));
+    }
+
     RenderBox? child = firstChild;
     while (child != null) {
       final HarborParentData data = child.parentData! as HarborParentData;
@@ -529,20 +546,22 @@ class RenderHarbor extends RenderBox
           // an empty Container) take the whole frame and leave the body nothing, with no error.
           // Unbounded, those size as they do in a Row or Column, and one that truly wants to fill
           // (a ListView) fails loudly, which is the failure Flutter developers already know.
-          final BoxConstraints dockConstraints = data.edge.isVertical
-              ? BoxConstraints(minWidth: width, maxWidth: width)
-              : BoxConstraints(minHeight: dockMaxHeight, maxHeight: dockMaxHeight);
-          child.layout(dockConstraints, parentUsesSize: true);
-          double extent = data.edge.isVertical ? child.size.height : child.size.width;
-          double resting = extent;
-          if (child is RenderHarborDockFrame) {
-            extent = child.extent;
-            resting = child.restingExtent;
+          if (data.edge.isVertical) {
+            verticalDocks.add(child);
+          } else {
+            measure(child, BoxConstraints(minHeight: dockMaxHeight, maxHeight: dockMaxHeight));
           }
-          final double visual = data.edge.isVertical ? child.size.height : child.size.width;
-          byEdge[data.edge]!.add(_Placed(child, data, extent, resting, visual));
       }
       child = data.nextSibling;
+    }
+    // The ground the side docks hold at rest: a rail that widens over the page while it has focus
+    // does not squeeze the header, and one that withdraws gives its corners back as it goes.
+    double sideAtRest(final HarborEdge edge) => byEdge[edge]!.fold(0.0, (final double sum, final _Placed p) => sum + p.resting);
+    final double cornerStart = math.min(sideAtRest(HarborEdge.start), width);
+    final double cornerEnd = math.min(sideAtRest(HarborEdge.end), width - cornerStart);
+    final double between = width - cornerStart - cornerEnd;
+    for (final RenderBox dock in verticalDocks) {
+      measure(dock, BoxConstraints(minWidth: between, maxWidth: between));
     }
     for (final List<_Placed> docks in byEdge.values) {
       docks.sort((final _Placed a, final _Placed b) => a.data.fromEdge.compareTo(b.data.fromEdge));
@@ -742,8 +761,8 @@ class RenderHarbor extends RenderBox
       for (final _Placed dock in byEdge[edge]!) {
         final Size s = dock.box.size;
         final Offset offset = switch (edge) {
-          HarborEdge.top => Offset(0.0, dock.start),
-          HarborEdge.bottom => Offset(0.0, height - dock.start - s.height),
+          HarborEdge.top => Offset(ltr ? cornerStart : cornerEnd, dock.start),
+          HarborEdge.bottom => Offset(ltr ? cornerStart : cornerEnd, height - dock.start - s.height),
           HarborEdge.start => Offset(ltr ? dock.start : width - dock.start - s.width, 0.0),
           HarborEdge.end => Offset(ltr ? width - dock.start - s.width : dock.start, 0.0),
         };

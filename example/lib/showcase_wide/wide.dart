@@ -194,16 +194,15 @@ class _Screen extends StatelessWidget {
   );
 }
 
-/// A header pier. Docks span the whole frame, so a header's corner sits under a rail at the start
-/// edge; [besideRail] keeps its title clear of that rail.
-HarborDock _header(final String title, {final double besideRail = 0}) => HarborDock.pier(
+/// A header pier. Beside a rail it runs between the rail and the far edge, so its title lines up
+/// with the rows below without help.
+HarborDock _header(final String title) => HarborDock.pier(
   wake: const HarborWake.fade(length: 18, blurSigma: 14),
   backdrop: ColoredBox(color: Colors.white.withValues(alpha: 0.78)),
   child: SizedBox(
     height: 60,
     child: HarborMooringLine(
       child: Container(
-        padding: EdgeInsetsDirectional.only(start: besideRail),
         alignment: AlignmentDirectional.centerStart,
         child: Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea)),
       ),
@@ -237,7 +236,7 @@ class _RailPage extends StatelessWidget {
           child: _Rail(),
         ),
       ],
-      top: <HarborDock>[_header('Harbor Master', besideRail: _Rail.width)],
+      top: <HarborDock>[_header('Harbor Master')],
       body: _rows(16),
     ),
   );
