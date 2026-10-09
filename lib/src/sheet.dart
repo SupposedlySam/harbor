@@ -328,8 +328,15 @@ class HarborSheet extends StatelessWidget {
     );
     if (!clearsTopCoast) {
       // The coast alone: the sheet keeps the height keepsTopCoast gave it, and its new port is
-      // handed no status bar to clear. The mooring line stays.
-      port = HarborCastOff(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: port);
+      // handed no status bar to clear. The mooring line stays. The sheet still reaches under the
+      // status bar, so its port keeps it out of its clear water, where flares and buoys go.
+      final Widget content = port;
+      port = Builder(
+        builder: (final BuildContext context) => HarborClearWaterFloor(
+          floor: EdgeInsetsDirectional.only(top: MediaQuery.paddingOf(context).top),
+          child: HarborCastOff(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: content),
+        ),
+      );
     }
     if (clearsSides) {
       // Moored to the side coast alone, inside the surface, so the surface still runs edge to edge

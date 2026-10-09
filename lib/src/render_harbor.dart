@@ -199,7 +199,12 @@ class HarborGeometry {
     required this.viewHeight,
     required this.maxExtentFraction,
     this.frameSize,
+    this.clearWaterFloor = EdgeInsetsDirectional.zero,
   });
+
+  /// Coast cast off above this harbor that still covers its frame: kept out of the clear water,
+  /// though the docks and the body read zero there.
+  final EdgeInsetsDirectional clearWaterFloor;
 
   /// The frame size to report, for a component harbor: its port's, which the
   /// keyboard never shrinks. Null reports this harbor's own size.
@@ -258,7 +263,8 @@ class HarborGeometry {
       other.sizing == sizing &&
       other.viewHeight == viewHeight &&
       other.maxExtentFraction == maxExtentFraction &&
-      other.frameSize == frameSize;
+      other.frameSize == frameSize &&
+      other.clearWaterFloor == clearWaterFloor;
 
   @override
   int get hashCode => Object.hash(
@@ -275,6 +281,7 @@ class HarborGeometry {
     sizing,
     viewHeight,
     maxExtentFraction,
+    clearWaterFloor,
   );
 }
 
@@ -787,7 +794,7 @@ class RenderHarbor extends RenderBox
     }
 
     // 7. The water nothing covers, and the buoys in it.
-    final EdgeInsets physicalObstruction = obstructionWithTide.resolve(g.textDirection);
+    final EdgeInsets physicalObstruction = HarborEdges.max(obstructionWithTide, g.clearWaterFloor).resolve(g.textDirection);
     final Rect clearWater = Rect.fromLTRB(
       math.min(physicalObstruction.left, width),
       math.min(physicalObstruction.top, height),
