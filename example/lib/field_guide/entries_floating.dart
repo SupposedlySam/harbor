@@ -1051,7 +1051,8 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSheet',
-    focus: const StageFocus.bottom(520),
+    // The whole phone: at a high maxExtent with many rows the sheet reaches up near the status bar,
+    // and the button that hoists it is mid-page.
     realWorld:
         'On a sailboat the sheet is the line that trims a sail, run from the sail’s corner back to a winch in the '
         'cockpit. Hoisting and trimming the sail is how you make sail.',
@@ -1276,7 +1277,8 @@ class _BreakwaterEntryState extends State<BreakwaterEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'showHarborSheet(breakwater: true)',
-    focus: const StageFocus.bottom(560),
+    // The whole phone: the button that opens the sheet is in the header, the list it shelters at the
+    // bottom.
     realWorld:
         'A breakwater is a long wall of rock built out from the shore. The swell breaks on its far side, and the water '
         'behind it stays calm, so boats can lie there in shelter.',
@@ -1482,7 +1484,7 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBeacon(keepInSight:)',
-    focus: const StageFocus.bottom(500),
+    // The whole phone: the reveal button is in the header, the field and the keyboard at the bottom.
     realWorld:
         'A lighthouse sweeps its beam out over the water, and when it falls on a boat the boat stands out in the dark. '
         'Its keeper’s job is to keep ships in sight of the light.',
@@ -1642,7 +1644,8 @@ class _ObscuredBeaconEntryState extends State<ObscuredBeaconEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborBeacon(onObscured:)',
-    focus: const StageFocus.bottom(500),
+    // The top of the phone: the hero slides under the header, whose title and readout answer it.
+    focus: const StageFocus.top(500),
     realWorld:
         'Sailing along a coast, you watch a harbor light slide behind a headland: first its foot goes, then half the '
         'tower, then the light itself. How much is hidden tells you where you are.',
@@ -1780,7 +1783,8 @@ class _LiftEntryState extends State<LiftEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborLighthouseRegion',
-    focus: const StageFocus.bottom(520),
+    // The whole phone: the button that opens the sheet is in the header, the boat it lifts at the
+    // bottom.
     realWorld:
         'A boat lift is a tall gantry on wheels that straddles a slip. Slings go under the hull, and the boat is raised '
         'clear of the water, just as high as it needs to be.',

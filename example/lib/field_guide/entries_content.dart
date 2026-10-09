@@ -491,6 +491,13 @@ class _FairwayEntryState extends State<FairwayEntry> {
         max: 48,
         onChanged: (final double v) => setState(() => _revealMargin = v),
       ),
+      // In an app the reveal comes from a focused field or a jump-to; here a button in the controls
+      // stands in for it, so the rows and the quay they land on stay in view while you press it.
+      _ActionControl(
+        key: const ValueKey<String>('reveal button'),
+        label: 'ensureVisible(${_vertical ? 'row' : 'card'} ${_target + 1})',
+        onPressed: _reveal,
+      ),
     ],
     code:
         'Harbor(\n'
@@ -504,35 +511,12 @@ class _FairwayEntryState extends State<FairwayEntry> {
         '    slivers: [SliverList.list(children: rows)],\n'
         '  ),\n'
         ')\n'
-        '// The bar\'s button:\n'
+        '// The reveal:\n'
         'Scrollable.ensureVisible(row$_target.currentContext!,\n'
         '    alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);',
     stage: (final BuildContext context) => Harbor(
       top: <HarborDock>[_pierHeader(wake: const HarborWake.fade(length: 12))],
-      bottom: <HarborDock>[
-        _quayBar(
-          child: SizedBox(
-            height: 56,
-            child: HarborMooringLine(
-              child: Row(
-                children: <Widget>[
-                  const Expanded(
-                    child: Text(
-                      'HarborDock.quay',
-                      style: TextStyle(fontFamily: 'Menlo', fontSize: 13, fontWeight: FontWeight.w700, color: Palette.foam),
-                    ),
-                  ),
-                  TextButton(
-                    key: const ValueKey<String>('reveal button'),
-                    onPressed: _reveal,
-                    child: Text('ensureVisible(${_vertical ? 'row' : 'card'} ${_target + 1})'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+      bottom: <HarborDock>[_quayBar()],
       body: StageProbe(
         label: 'Harbor body (the fairway runs under the pier)',
         child: HarborFairway(
@@ -561,6 +545,30 @@ class _FairwayEntryState extends State<FairwayEntry> {
               ),
           ],
         ),
+      ),
+    ),
+  );
+}
+
+/// A button in the controls, for an option that is an action rather than a setting.
+class _ActionControl extends StatelessWidget {
+  const _ActionControl({super.key, required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(final BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Palette.brass,
+          side: const BorderSide(color: Palette.brass),
+        ),
+        onPressed: onPressed,
+        child: Text(label, style: const TextStyle(fontFamily: 'Menlo', fontSize: 12)),
       ),
     ),
   );
@@ -1156,7 +1164,6 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborMakeWay',
-    focus: const StageFocus.bottom(500),
     realWorld:
         'In a narrow channel a small sailboat gives way to a big ship that can only steer in the channel: it bears away '
         'to the edge, or heaves to, and comes back once the ship has passed.',
@@ -1173,6 +1180,10 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         labelOf: (final HarborYield m) => m.name,
         onChanged: (final HarborYield m) => setState(() => _mode = m),
       ),
+      // In an app the claim comes from content (a panel, a search field); here the switches stand in
+      // for it, so the whole phone stays in view while you flip them.
+      ToggleControl(label: 'make way: top', value: _top, onChanged: (final bool v) => setState(() => _top = v)),
+      ToggleControl(label: 'make way: bottom', value: _bottom, onChanged: (final bool v) => setState(() => _bottom = v)),
     ],
     code:
         '// Declarative: while it is in the tree.\n'
@@ -1199,34 +1210,6 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
             child: HarborFairway(
               key: const ValueKey<String>('make way fairway'),
               slivers: <Widget>[
-                SliverToBoxAdapter(
-                  child: HarborMooringLine(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: _MakeWayButton(
-                              key: const ValueKey<String>('make way top'),
-                              label: 'top',
-                              on: _top,
-                              onPressed: () => setState(() => _top = !_top),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _MakeWayButton(
-                              key: const ValueKey<String>('make way bottom'),
-                              label: 'bottom',
-                              on: _bottom,
-                              onPressed: () => setState(() => _bottom = !_bottom),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
                 SliverList.list(children: _rows(0, 16)),
               ],
             ),
@@ -1234,25 +1217,6 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         ),
       ),
     ),
-  );
-}
-
-class _MakeWayButton extends StatelessWidget {
-  const _MakeWayButton({super.key, required this.label, required this.on, required this.onPressed});
-
-  final String label;
-  final bool on;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(final BuildContext context) => FilledButton(
-    style: FilledButton.styleFrom(
-      backgroundColor: on ? Palette.buoyRed : Palette.brass,
-      foregroundColor: on ? Colors.white : Palette.night,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-    ),
-    onPressed: onPressed,
-    child: Text(on ? 'Release $label' : 'Make way: $label', style: const TextStyle(fontFamily: 'Menlo', fontSize: 12)),
   );
 }
 
@@ -1268,18 +1232,22 @@ class PontoonEntry extends StatefulWidget {
 
 class _PontoonEntryState extends State<PontoonEntry> {
   HarborDockKind _kind = HarborDockKind.pier;
+  bool _dirty = false;
+
+  void _setDirty(final bool dirty) => setState(() => _dirty = dirty);
 
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborPontoon',
-    focus: const StageFocus.bottom(500),
+    // The whole phone: the form that moors the pontoon sits near the top, the pontoon lands at the
+    // bottom, above the tab bar.
     realWorld:
         'A pontoon is a floating deck on cylindrical floats, tied to the quay and held by guide piles. It is put in '
         'where a berth is needed, and towed away when it is not.',
     inYourApp:
         'A bar that belongs to the content, not the page (an unsaved-changes bar, a hint), moored to the nearest harbor '
         'from deep in the tree. It joins the docks on its edge, innermost, measured like any other: here, above the '
-        'tab bar. Tap Edit in the manifest.',
+        'tab bar. Tap Edit in the manifest, or flip dirty.',
     art: const PontoonArt(),
     controls: <Widget>[
       ChoiceControl<HarborDockKind>(
@@ -1289,9 +1257,12 @@ class _PontoonEntryState extends State<PontoonEntry> {
         labelOf: (final HarborDockKind k) => k.name,
         onChanged: (final HarborDockKind k) => setState(() => _kind = k),
       ),
+      // The form's Edit and Save drive the same flag; the switch is here so it can be flipped while
+      // you watch the bottom of the phone.
+      ToggleControl(label: 'dirty', value: _dirty, onChanged: _setDirty),
     ],
     code:
-        '// Deep in the body, in the form\'s own state:\n'
+        '// Deep in the body, in the form:\n'
         'HarborPontoon(\n'
         '  edge: HarborEdge.bottom,\n'
         '  active: dirty,\n'
@@ -1312,7 +1283,7 @@ class _PontoonEntryState extends State<PontoonEntry> {
               child: HarborMooringLine(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: _ManifestForm(kind: _kind),
+                  child: _ManifestForm(kind: _kind, dirty: _dirty, onDirty: _setDirty),
                 ),
               ),
             ),
@@ -1324,19 +1295,15 @@ class _PontoonEntryState extends State<PontoonEntry> {
   );
 }
 
-/// A form deep in the body that owns its own unsaved state and moors a
-/// pontoon while it has changes.
-class _ManifestForm extends StatefulWidget {
-  const _ManifestForm({required this.kind});
+/// A form deep in the body that moors a pontoon while it has unsaved changes.
+///
+/// The flag is the entry's, so the `dirty` switch in the controls drives it too.
+class _ManifestForm extends StatelessWidget {
+  const _ManifestForm({required this.kind, required this.dirty, required this.onDirty});
 
   final HarborDockKind kind;
-
-  @override
-  State<_ManifestForm> createState() => _ManifestFormState();
-}
-
-class _ManifestFormState extends State<_ManifestForm> {
-  bool _dirty = false;
+  final bool dirty;
+  final ValueChanged<bool> onDirty;
 
   @override
   Widget build(final BuildContext context) {
@@ -1350,15 +1317,15 @@ class _ManifestFormState extends State<_ManifestForm> {
         trailing: TextButton(
           key: const ValueKey<String>('save button'),
           style: TextButton.styleFrom(foregroundColor: Colors.white),
-          onPressed: () => setState(() => _dirty = false),
+          onPressed: () => onDirty(false),
           child: const Text('Save'),
         ),
       ),
     );
     return HarborPontoon(
       edge: HarborEdge.bottom,
-      active: _dirty,
-      dock: widget.kind == HarborDockKind.pier
+      active: dirty,
+      dock: kind == HarborDockKind.pier
           ? HarborDock.pier(debugLabel: 'pontoon', child: bar)
           : HarborDock.quay(debugLabel: 'pontoon', child: bar),
       child: Container(
@@ -1374,15 +1341,15 @@ class _ManifestFormState extends State<_ManifestForm> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                _dirty ? 'Cargo manifest (edited)' : 'Cargo manifest',
+                dirty ? 'Cargo manifest (edited)' : 'Cargo manifest',
                 style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.foam),
               ),
             ),
             FilledButton(
               key: const ValueKey<String>('deep edit button'),
               style: FilledButton.styleFrom(backgroundColor: Palette.brass, foregroundColor: Palette.night),
-              onPressed: () => setState(() => _dirty = !_dirty),
-              child: Text(_dirty ? 'Undo' : 'Edit'),
+              onPressed: () => onDirty(!dirty),
+              child: Text(dirty ? 'Undo' : 'Edit'),
             ),
           ],
         ),

@@ -190,7 +190,8 @@ class _TideOfEntryState extends State<TideOfEntry> {
   Widget build(final BuildContext context) => GuidePage(
     settings: _settings,
     className: 'HarborTide.of',
-    focus: const StageFocus.bottom(520),
+    // The whole phone: the readout sits at the top of the body and the keyboard it reads comes up
+    // from the bottom; a bottom crop cut the readout off until the tide was in.
     realWorld:
         'A harbor posts its tide on a clock at the quay, its hand pointing from low water to high, and a tide staff '
         'stands in the water so anyone can read the height off its bands.',
