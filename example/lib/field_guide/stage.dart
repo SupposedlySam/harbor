@@ -420,8 +420,23 @@ class _Screen extends StatelessWidget {
                 ),
               ),
               // The device's own furniture, over everything and never in the way of touches.
-              if (settings.statusBar && !device.tv)
+              // A phone on its side has no status bar: its top inset is 0, so none is drawn (one
+              // squeezed into a 0-high strip spilled over the page). Its island sits in the left inset.
+              if (settings.statusBar && !device.tv && device.coast.top > 0)
                 Positioned(top: 0, left: 0, right: 0, height: device.coast.top, child: IgnorePointer(child: StatusBarArt(island: device.island))),
+              if (device.island && device.coast.top <= 0 && device.coast.left > 0)
+                Positioned(
+                  left: (device.coast.left - 30) / 2,
+                  top: device.size.height / 2 - 60,
+                  width: 30,
+                  height: 120,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      key: const ValueKey<String>('side island'),
+                      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(15)),
+                    ),
+                  ),
+                ),
               if (settings.homeIndicator && device.coast.bottom > 0 && settings.tideHeight <= 0)
                 Positioned(
                   bottom: 0,

@@ -7,6 +7,7 @@ import 'package:harbor_example/art/palette.dart';
 import 'package:harbor_example/field_guide/entries_content.dart';
 import 'package:harbor_example/field_guide/entries_docks.dart';
 import 'package:harbor_example/field_guide/entries_frames.dart';
+import 'package:harbor_example/field_guide/stage.dart' show StatusBarArt;
 
 const double _deviceWidth = 402;
 const double _statusBar = 62;
@@ -281,6 +282,27 @@ void main() {
       expect(find.text('coast T 62'), findsOneWidget);
       expect(find.text('coast B 34'), findsOneWidget);
       expect(_code(tester), startsWith('MaterialApp('));
+    });
+
+    // Breaks if: the stage draws a portrait status bar on a phone on its side (it spilled over the
+    // marker), or the coast readings sit in a corner where the screen's curve and the side coast cut
+    // them off, or vanish with a 0 band. Jonah saw all three on the web build.
+    testWidgets('on a phone on its side there is no status bar, and the coast readings stay in view', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const HarborSeaEntry());
+      await _stageSetting(tester, 'Device: iPhone 17 landscape');
+      await _showStage(tester);
+      expect(find.byType(StatusBarArt), findsNothing, reason: 'no top coast, no status bar');
+      expect(find.byKey(const ValueKey<String>('side island')), findsOneWidget, reason: 'the island sits in the left coast');
+      final (:Rect screen, scale: _) = _screen(tester);
+      // The landscape screen's own scale: 874 points across.
+      final double scale = screen.width / 874;
+      final Rect labels = _rect(tester, 'coast labels');
+      expect(screen.right - labels.right, greaterThanOrEqualTo(62 * scale), reason: 'clear of the right coast');
+      expect(labels.bottom, lessThanOrEqualTo(screen.bottom - 21 * scale), reason: 'above the bottom coast');
+      expect(find.text('coast T 0'), findsOneWidget);
+      expect(find.text('coast B 21'), findsOneWidget);
+      await _tapKey(tester, 'toggle Home indicator');
+      expect(find.text('coast B 0'), findsOneWidget, reason: 'a 0 coast still reads 0');
     });
 
     testWidgets('nested HarborSea: the outer pier reads as coast', (final WidgetTester tester) async {

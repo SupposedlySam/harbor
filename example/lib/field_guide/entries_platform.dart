@@ -239,52 +239,47 @@ class _CoastBandsPainter extends CustomPainter {
     final Paint edge = Paint()
       ..color = const Color(0xCCE3CF9A)
       ..strokeWidth = 2;
-    void band(final Rect r, final Offset a, final Offset b, final String label) {
+    void band(final Rect r, final Offset a, final Offset b) {
       if (r.isEmpty) {
         return;
       }
       canvas
         ..drawRect(r, sand)
         ..drawLine(a, b, edge);
+    }
+
+    // Each reading is drawn inside the side coast, so a landscape phone's rounded corner and its
+    // notch side cannot clip it, and it is drawn even when its band is empty: a reading of 0 (the
+    // home indicator off) is the answer the page is there to show, not a reason to hide it.
+    void reading(final String label, {required final bool top}) {
       final TextPainter text = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(
-            fontFamily: 'Menlo',
-            fontSize: 11,
-            color: Color(0xFF3E2A18),
-            backgroundColor: Color(0xCCE3CF9A),
-          ),
+          style: const TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Color(0xFF3E2A18), backgroundColor: Color(0xCCE3CF9A)),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      text.paint(canvas, Offset(r.right - text.width - 8, r.center.dy - text.height / 2));
+      final double band = top ? padding.top : padding.bottom;
+      final double y = band >= text.height
+          ? (top ? band / 2 : size.height - band / 2) - text.height / 2
+          : (top ? band + 2 : size.height - band - text.height - 2);
+      text.paint(canvas, Offset(size.width - padding.right - text.width - 8, y));
     }
 
-    band(
-      Rect.fromLTWH(0, 0, size.width, padding.top),
-      Offset(0, padding.top),
-      Offset(size.width, padding.top),
-      'coast ${_n(padding.top)}',
-    );
+    band(Rect.fromLTWH(0, 0, size.width, padding.top), Offset(0, padding.top), Offset(size.width, padding.top));
     band(
       Rect.fromLTWH(0, size.height - padding.bottom, size.width, padding.bottom),
       Offset(0, size.height - padding.bottom),
       Offset(size.width, size.height - padding.bottom),
-      'coast ${_n(padding.bottom)}',
     );
-    band(
-      Rect.fromLTWH(0, 0, padding.left, size.height),
-      Offset(padding.left, 0),
-      Offset(padding.left, size.height),
-      '',
-    );
+    band(Rect.fromLTWH(0, 0, padding.left, size.height), Offset(padding.left, 0), Offset(padding.left, size.height));
     band(
       Rect.fromLTWH(size.width - padding.right, 0, padding.right, size.height),
       Offset(size.width - padding.right, 0),
       Offset(size.width - padding.right, size.height),
-      '',
     );
+    reading('coast ${_n(padding.top)}', top: true);
+    reading('coast ${_n(padding.bottom)}', top: false);
     // The postcard's own deckle edge.
     canvas.drawRect(
       (Offset.zero & size).deflate(3),

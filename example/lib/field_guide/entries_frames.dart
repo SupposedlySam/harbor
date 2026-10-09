@@ -189,26 +189,23 @@ class _SeaView extends StatelessWidget {
     child: HarborOpenWater(
       builder: (final BuildContext context, final HarborWatersData waters) {
         final EdgeInsets coast = waters.coast.resolve(Directionality.of(context));
-        Widget band(final String text) => ColoredBox(
-          color: Palette.brass.withValues(alpha: 0.35),
-          child: Align(
-            alignment: AlignmentDirectional.bottomEnd,
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Text(text, style: const TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Palette.foam)),
-            ),
-          ),
-        );
+        Widget band() => ColoredBox(color: Palette.brass.withValues(alpha: 0.35));
+        // The readings sit inside the side insets and are always drawn, so a corner or a notch never
+        // cuts them off, and a 0 inset reads 0 rather than vanishing with its band.
+        Widget label(final String text) => Text(text, style: const TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Palette.foam));
         return Stack(
           children: <Widget>[
             const Positioned.fill(child: HarborSeaArt()),
-            Positioned(top: 0, left: 0, right: 0, height: coast.top, child: band('coast T ${coast.top.toStringAsFixed(0)}')),
+            Positioned(top: 0, left: 0, right: 0, height: coast.top, child: band()),
+            Positioned(bottom: 0, left: 0, right: 0, height: coast.bottom, child: band()),
             Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: coast.bottom,
-              child: band('coast B ${coast.bottom.toStringAsFixed(0)}'),
+              key: const ValueKey<String>('coast labels'),
+              bottom: coast.bottom + 4,
+              right: coast.right + 8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[label('coast T ${coast.top.toStringAsFixed(0)}'), label('coast B ${coast.bottom.toStringAsFixed(0)}')],
+              ),
             ),
             Positioned.fill(
               child: HarborMoored(

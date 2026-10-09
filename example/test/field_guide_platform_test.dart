@@ -167,6 +167,29 @@ void main() {
       expect(_onDevice(tester, _key('coast bar'), 874).bottom, moreOrLessEquals(402 - 21, epsilon: 0.5));
     });
 
+    testWidgets('on a phone on its side the readings sit clear of the side coast, and an empty band still reads', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, const CoastEntry());
+      await _tap(tester, _key('Device: iPhone 17 landscape'));
+      // The test font is 11 wide a glyph: "coast 0" is 77, "coast 21" is 88, and each ends 8 short
+      // of the 62 right coast, where the rounded corner cannot reach it. The top band is empty, so
+      // its reading sits just inside the top edge rather than vanishing with it.
+      expect(
+        _key('coast bands'),
+        paints
+          ..paragraph(offset: const Offset(874 - 62 - 77 - 8, 2))
+          ..paragraph(offset: const Offset(874 - 62 - 88 - 8, 402 - 21 / 2 - 11 / 2)),
+      );
+      await _tap(tester, _key('toggle Home indicator'));
+      expect(
+        _key('coast bands'),
+        paints
+          ..paragraph(offset: const Offset(874 - 62 - 77 - 8, 2))
+          ..paragraph(offset: const Offset(874 - 62 - 77 - 8, 402 - 11 - 2)),
+      );
+    });
+
     testWidgets('fixed(...) is 24 top and bottom whatever the device says', (final WidgetTester tester) async {
       await _pumpEntry(tester, const CoastEntry());
       await _tap(tester, _key('coast: HarborCoast.fixed(...)'));
