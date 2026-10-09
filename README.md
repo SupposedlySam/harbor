@@ -638,7 +638,7 @@ rest and its ceiling). A fling down on its header from its lowest height goes
 to the floor and closes it when it is faster than 700 logical px/s, the speed
 at which a Material `BottomSheet` closes; a slower one goes back to that height.
 `closeFlingVelocity:` sets that speed, on either kind of sheet
-(`closeFlingVelocity: 400` is the speed harbor 0.3 used). A fling on its list is
+(`closeFlingVelocity: 400` is the speed harbor used before 0.3.1). A fling on its list is
 `DraggableScrollableSheet`'s own, as in a modal bottom sheet: from the lowest
 height it closes the sheet at any speed. `HarborSheetExtent(shouldCloseOnMinExtent: false)` rests at the floor
 instead. A draggable sheet opened some other way, by `showModalBottomSheet` or
