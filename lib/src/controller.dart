@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'buoy.dart' show HarborAnchor, HarborBuoy, HarborBuoyCrossAlignment, HarborBuoySide;
 import 'dock.dart';
 import 'edge.dart';
 import 'tide.dart';
@@ -86,7 +87,8 @@ enum HarborFlareClosedReason {
 ///
 /// Flares raised at the same alignment in one harbor take turns, as a
 /// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
-/// it has been lowered and has run its exit.
+/// it has been lowered and has run its exit. Flares raised by an [anchor] take
+/// turns per anchor and [side].
 class HarborFlareEntry {
   /// Flares are raised with `HarborFlares.raise`.
   @internal
@@ -100,13 +102,35 @@ class HarborFlareEntry {
     this.animationStyle,
     this.transitionBuilder,
     this.liveRegion = true,
+    this.anchor,
+    this.side = HarborBuoySide.below,
+    this.gap = 8.0,
+    this.crossAlignment = HarborBuoyCrossAlignment.center,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
   static const Duration _minimumLinger = Duration(milliseconds: 300);
 
   final WidgetBuilder builder;
+
+  /// Where the flare sits in the clear water. Not read for a flare with an [anchor].
   final Alignment alignment;
+
+  /// What the flare sits by, as a [HarborBuoy.anchored] does, in place of an [alignment]; null
+  /// for a flare at a slot or an alignment.
+  final HarborAnchor? anchor;
+
+  /// Which side of its [anchor] the flare sits on.
+  final HarborBuoySide side;
+
+  /// How far the flare sits from its [anchor].
+  final double gap;
+
+  /// How the flare lines up with its [anchor] across its [side].
+  final HarborBuoyCrossAlignment crossAlignment;
+
+  /// Where the flare takes its turn: flares at one place are shown one at a time.
+  Object get _place => anchor == null ? alignment : (anchor, side);
 
   /// How long the flare stays once it is in sight: its entrance has run and
   /// no other route covers its harbor. Counted again from the start each time
@@ -186,13 +210,13 @@ class HarborFlareEntry {
 /// Completes [flare]'s [HarborFlareEntry.closed]: it has left the screen.
 void flareLeft(final HarborFlareEntry flare) => flare._left();
 
-/// The flares of [flares] that are in sight: the first at each alignment.
-/// The others wait their turn behind it.
+/// The flares of [flares] that are in sight: the first at each alignment, or at each anchor and
+/// side. The others wait their turn behind it.
 List<HarborFlareEntry> flaresInSight(final Iterable<HarborFlareEntry> flares) {
-  final Set<Alignment> taken = <Alignment>{};
+  final Set<Object> taken = <Object>{};
   return <HarborFlareEntry>[
     for (final HarborFlareEntry flare in flares)
-      if (taken.add(flare.alignment)) flare,
+      if (taken.add(flare._place)) flare,
   ];
 }
 
@@ -240,6 +264,38 @@ class HarborDockRecord {
   final HarborTideStance tide;
 }
 
+/// Hears harbors join and leave a [HarborFleet], as a `NavigatorObserver`
+/// hears routes come and go.
+///
+/// Register one with `HarborSea(observers:)`, or with
+/// [HarborFleet.addObserver] on a fleet you already have
+/// (`Harbor.of(context).fleet`). Both methods do nothing unless overridden.
+///
+/// A harbor joins as it is first built, in the middle of a frame, so both
+/// events are delivered after that frame, in the order they happened: by
+/// then a harbor that joined has laid out, and `HarborChart.nearest` or
+/// `HarborChart.snapshotOf(harbor.fleet)` can read where it is. A harbor that
+/// joins and leaves within one frame is reported to nobody. Harbors already
+/// in the fleet when an observer is added are not replayed: read
+/// [HarborFleet.harbors] for those.
+///
+/// See also:
+///
+///  * `NavigatorObserver`, the model for this one.
+///  * `HarborChart.snapshotAll`, every live harbor of every sea at once.
+abstract class HarborFleetObserver {
+  /// Const so that subclasses can be const.
+  const HarborFleetObserver();
+
+  /// [harbor] has joined the fleet: a page, a sheet, a dialog or a harbor
+  /// inside one has been built.
+  void didJoin(final HarborController harbor) {}
+
+  /// [harbor] has left the fleet: it was removed from the tree. Its handle
+  /// no longer changes anything.
+  void didLeave(final HarborController harbor) {}
+}
+
 /// Everything harbors in one view know about each other: which is on top
 /// (where a flare goes) and the list a chart reads.
 class HarborFleet {
@@ -248,16 +304,71 @@ class HarborFleet {
   /// Every harbor mounted in this view, outermost first.
   List<HarborController> get harbors => List<HarborController>.unmodifiable(_harbors);
 
-  void _join(final HarborController controller) => _harbors.add(controller);
+  final List<HarborFleetObserver> _observers = <HarborFleetObserver>[];
+
+  /// Events not yet delivered: a harbor and whether it joined.
+  final List<(HarborController, bool)> _pending = <(HarborController, bool)>[];
+
+  /// Tells [observer] of every harbor that joins or leaves from now on, after
+  /// the frame it happens in. Adding one observer twice reports to it twice,
+  /// as a listener added twice to a `ChangeNotifier` is called twice.
+  void addObserver(final HarborFleetObserver observer) => _observers.add(observer);
+
+  /// Stops telling [observer]; one registration is removed. Events still
+  /// waiting for the end of the frame are not delivered to it.
+  void removeObserver(final HarborFleetObserver observer) => _observers.remove(observer);
+
+  void _join(final HarborController controller) {
+    _harbors.add(controller);
+    _queue(controller, joined: true);
+  }
+
+  void _queue(final HarborController controller, {required final bool joined}) {
+    if (!joined) {
+      // A harbor that leaves before its join was delivered was never seen.
+      final int index = _pending.indexWhere(
+        (final (HarborController, bool) event) => identical(event.$1, controller) && event.$2,
+      );
+      if (index >= 0) {
+        _pending.removeAt(index);
+        return;
+      }
+    }
+    if (_observers.isEmpty && _pending.isEmpty) {
+      return;
+    }
+    final bool first = _pending.isEmpty;
+    _pending.add((controller, joined));
+    if (first) {
+      SchedulerBinding.instance.addPostFrameCallback((final Duration _) => _deliver(), debugLabel: 'HarborFleet.observers');
+      SchedulerBinding.instance.ensureVisualUpdate();
+    }
+  }
+
+  void _deliver() {
+    final List<(HarborController, bool)> events = List<(HarborController, bool)>.of(_pending);
+    _pending.clear();
+    for (final (HarborController harbor, bool joined) in events) {
+      for (final HarborFleetObserver observer in List<HarborFleetObserver>.of(_observers)) {
+        if (joined) {
+          observer.didJoin(harbor);
+        } else {
+          observer.didLeave(harbor);
+        }
+      }
+    }
+  }
 
   void _leave(final HarborController controller) {
     _harbors.remove(controller);
+    _queue(controller, joined: false);
     // Flares on a harbor that is leaving move to the one now on top. With no
-    // harbor left to show them, they are lowered, which stops their timers.
+    // harbor left to show them, they are lowered, which stops their timers. An
+    // anchored flare's anchor left with its page, so it is lowered too.
     final List<HarborFlareEntry> orphans = controller._releaseFlares();
     final HarborController? top = topmost;
     for (final HarborFlareEntry flare in orphans) {
-      if (top != null) {
+      if (top != null && flare.anchor == null) {
         top._raiseFlare(flare);
       } else {
         flare

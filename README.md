@@ -197,6 +197,7 @@ as it would in a `Row`.
 | Option | Use it for |
 |---|---|
 | `wake: HarborWake.fade(length:, blurSigma:, restsAt:)` | Content fades as it passes under; it rests past the fade (`HarborRest.wakeEnd`) or at the dock (`.dockEdge`) |
+| `wake: HarborWake.fade(dockOpacity:, curve:)` | The fade's ramp: how opaque content is at the dock's face (a quarter by default) and the curve out to the wake's end (a straight line). `dockOpacity: 1` is a band that counts toward where content rests but fades nothing past the dock. A fade is an alpha mask, so it takes no colour: tint the background or the dock's `backdrop`, or paint a scrim with `Harbor(wakePainter:)` |
 | `wake: HarborWake.hairline()` | A line on the dock's inner face, for a bar content scrolls up to |
 | `tide: HarborTideStance.float` | Rides up on the keyboard, staying on top of it: a composer, a sheet's footer. It sits on the home indicator until the keyboard is taller than it, so it never dips |
 | `tide: HarborTideStance.pilings` | Stays put; the keyboard covers it: a tab bar (the default) |
@@ -207,7 +208,7 @@ as it would in a `Row`.
 | `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
-| `minimum: 16` | At least this much room on the edge, coast or not |
+| `minimum: 16` | At least this much room on the edge, coast or not. With an empty child (`SizedBox.shrink()`), a dock that reaches the larger of the coast and the minimum; `coast: HarborCoastStance.none` and a sized child reach exactly that size |
 | `hitTestBehavior:` | Opaque by default, so taps on the header never reach rows under it |
 
 ## Content
@@ -345,6 +346,46 @@ as `MediaQuery.viewPaddingOf` does, but not on every frame of the keyboard. It
 is zero below a quay that absorbed the coast, and below anything that cast the
 edge off.
 
+### A keyboard the platform does not report
+
+harbor reads the keyboard from `MediaQuery.viewInsets.bottom`, as `Scaffold` and
+`EditableText` do, so that is the one place to feed it a keyboard the platform
+does not report: one drawn by a plugin or a platform view, a TV's on-screen
+keyboard reported over a channel. Rebuild `MediaQuery` above the sea with the
+larger of the two:
+
+```dart
+MaterialApp(
+  builder: (context, child) {
+    final MediaQueryData data = MediaQuery.of(context);
+    final double keyboard = math.max(data.viewInsets.bottom, imeHeight); // logical px
+    return MediaQuery(
+      data: data.copyWith(viewInsets: data.viewInsets.copyWith(bottom: keyboard)),
+      child: HarborSea(child: child!),
+    );
+  },
+);
+```
+
+`HarborTideSource` does the same from a `ValueListenable<double>`, rebuilding
+only its `MediaQuery` when the height changes:
+
+```dart
+HarborTideSource(height: imeHeight, child: HarborSea(child: child!)) // imeHeight: a ValueNotifier<double>
+```
+
+Docks, the tide gauge, fairways and Flutter's own widgets then all see the same
+keyboard: a floating composer rides it, a tab bar on pilings is covered. Mind:
+
+- **Logical pixels.** A channel usually reports physical ones; divide by
+  `MediaQuery.devicePixelRatioOf(context)`.
+- **The larger value, not the sum,** so a keyboard the platform does report is
+  not counted twice.
+- **A floating keyboard** (an iPad's, a split one) covers no edge and should not
+  raise the tide: report zero for it, as the platform does.
+- **Above a scale model.** Put it outside `HarborScaleModel`, so the height is
+  re-based into the model's coordinates with the rest of the insets.
+
 ## Harbor and Scaffold
 
 A harbor does what a `Scaffold` does for the edges, so a page built from a harbor does not need
@@ -415,6 +456,7 @@ Harbor(
 
 HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (_) => Toast('Saved'));
 HarborFlares.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
+HarborFlares.raise(context, anchor: copyAnchor, side: HarborBuoySide.above, builder: (_) => Toast('Copied'));
 final undo = HarborFlares.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
 final HarborFlareClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
 HarborFlares.raise(
@@ -467,6 +509,16 @@ A flare goes to the port on top (a sheet over a page over the sea), so a `low`
 flare clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 flare moves to the one now on top.
+
+A flare raised with an `anchor` sits by a `HarborAnchorPoint` instead, as an
+anchored buoy does: on its `side` (`below` by default), `gap` away (8), lined up
+by its `crossAlignment` (centred), and kept in the clear water: "Copied" by the
+button that copied. Give it the anchor alone, without a slot or an alignment,
+and raise it from the page that holds the anchor: it is shown by that page's
+port, not the one on top. Flares at one anchor and side take turns. While the
+anchor is out of the tree the flare is not shown, takes no taps and is not read
+out, and its time stops. If its page is popped, it does not move to the port now
+on top: it is lowered, and `closed` reports `remove`.
 
 Flares raised at the same slot or alignment of one port take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before
@@ -531,6 +583,16 @@ a modal buoy, a tap on the barrier while the portal buoy is open calls both
 `onDismiss`es, and in a dialog it calls the portal buoy's and closes the
 dialog, as it does with a `MenuAnchor` open in a dialog.
 
+A portal buoy leaves focus where it was when it opens, as a `MenuAnchor` does.
+`requestFocus: true` makes it take focus as a sheet with no barrier does: the buoy
+is a focus scope of its own that becomes the first focus of the scope around its
+`child` (the page's, or a modal buoy's or a dialog's), so a control in it with
+`autofocus: true` takes it from there. It is not modal, so Tab past its last control
+does what it does at a route's edge rather than going round inside it. When it
+closes, focus goes back to where it was, if focus is still in the buoy. It needs an
+`onDismiss`, so Escape from inside it can close it; that Escape closes the portal buoy
+before a modal buoy it was opened from.
+
 ## Sheets and dialogs
 
 ```dart
@@ -572,6 +634,32 @@ was when it opens unless you pass `requestFocus: true`. Then focus goes back to
 the page when it closes. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
+
+A page that handles back itself with `PopScope(canPop: false)` (a tab bar that
+goes back a tab) keeps back from a modal buoy, a portal buoy and a sheet with no
+barrier, as it does from a `Drawer` or a persistent bottom sheet:
+`Navigator.maybePop` sees `canPop: false` before it looks at the page's local
+history, which is where harbor ties them, so only your handler hears back. Close
+them from that handler first, with `Navigator.pop`, which removes the newest
+entry of that history:
+
+```dart
+PopScope(
+  canPop: false,
+  onPopInvokedWithResult: (didPop, _) {
+    if (didPop) return;
+    if (ModalRoute.of(context)!.willHandlePopInternally) {
+      Navigator.of(context).pop(); // closes the top buoy, portal buoy or barrier-less sheet
+      return;
+    }
+    tabs.back();
+  },
+  child: Harbor(...),
+)
+```
+
+Each back press then closes one of them, the newest first, and only once they are
+all closed does it reach `tabs.back()`.
 
 ```dart
 final HarborSheetController nowPlaying = HarborSheetController();
@@ -623,7 +711,22 @@ inside it closes it, and its content is a route of its own for screen readers, n
 takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Dismiss'
 when none is given), `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
-`animationStyle:` (its fade, 180 ms by default).
+`animationStyle:` (its fade, 180 ms by default). `transitionBuilder:` brings your own
+entrance and exit in place of the fade, as `showGeneralDialog`'s does: it is handed the
+route's animation curved by `animationStyle`, and under reduced motion an animation that
+is already complete, so the dialog is simply there.
+
+`showHarborDialog` pushes a `HarborDialogRoute`, as `showDialog` pushes a `DialogRoute`.
+Push one yourself to keep the route or to choose the navigator:
+
+```dart
+final HarborDialogRoute<bool> confirm = HarborDialogRoute<bool>(context: context, builder: (_) => const ConfirmDelete());
+final bool? delete = await Navigator.of(context).push(confirm);
+```
+
+It takes the same options. The page at `context` lends it its themes and, with
+`inheritClearWater: true`, its clear water, both read as the route is pushed rather than
+when it is made.
 
 Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
 makes a sheet the user has to answer: a tap on the barrier does nothing, and
@@ -756,6 +859,34 @@ clear water and docks in global coordinates, the way a test or a tool reads a
 harbor without reaching into it.
 In debug and profile builds the `ext.harbor.chart` VM-service extension serves
 it as JSON, for tools that drive the app.
+
+Tooling that runs outside the widget tree (a debug panel, a logger, an
+automation driver) reads `HarborChart.snapshotAll()`: every harbor of every live
+sea, with no context. A sea mounted inside another harbor (a phone drawn in a
+page, a preview) is listed too, and each of its entries says `isolated: true`;
+`ext.harbor.chart` leaves those out unless it is called with `isolated=true`. A
+sea is taken off the chart when it is disposed.
+
+To hear harbors come and go, as a `NavigatorObserver` hears routes, give the sea
+a `HarborFleetObserver`:
+
+```dart
+class HarborLog extends HarborFleetObserver {
+  @override
+  void didJoin(HarborController harbor) => debugPrint('joined ${harbor.debugLabel}');
+  @override
+  void didLeave(HarborController harbor) => debugPrint('left ${harbor.debugLabel}');
+}
+
+HarborSea(observers: [HarborLog()], child: child!)
+Harbor.of(context).fleet.addObserver(log); // or on a fleet you already have; removeObserver(log)
+```
+
+A harbor joins as it is built, in the middle of a frame, so both events arrive
+after that frame, in order: by then the harbor has laid out and the chart can
+read it. A harbor that joins and leaves within one frame is reported to no one.
+The layout records behind the chart stay internal; read a harbor through
+`HarborChart.snapshotOf(harbor.fleet)` or `HarborChart.nearest`.
 
 The widget inspector and `debugDumpApp` show each harbor widget's settings, as
 they do a `SafeArea`'s or a `ListView`'s, leaving out the ones at their

@@ -12,7 +12,7 @@ enum HarborWatersAspect { coast, docks, margin, frame }
 /// One edge's wake: the band where content passing under a dock fades out.
 @immutable
 class HarborWakeBand {
-  const HarborWakeBand({required this.dockEdge, required this.wakeEnd});
+  const HarborWakeBand({required this.dockEdge, required this.wakeEnd, this.dockOpacity, this.curve});
 
   static const HarborWakeBand none = HarborWakeBand(dockEdge: 0.0, wakeEnd: 0.0);
 
@@ -22,17 +22,44 @@ class HarborWakeBand {
   /// Distance from the body's edge to where the wake has fully faded out.
   final double wakeEnd;
 
+  /// How opaque content is at the docks' inner face: the wake's
+  /// `HarborWake.fade(dockOpacity:)`. Null for a fade at its default, so the
+  /// painter's own (`HarborWakeMask.dockOpacity`) applies.
+  final double? dockOpacity;
+
+  /// The shape of the ramp from [dockEdge] to [wakeEnd]: the wake's
+  /// `HarborWake.fade(curve:)`. Null for a fade at its default, a straight line.
+  final Curve? curve;
+
   double get length => wakeEnd - dockEdge;
+
+  /// This band measured from [distance] further in, keeping its ramp.
+  @internal
+  HarborWakeBand measuredFrom(final double distance) => HarborWakeBand(
+    dockEdge: math.max(0.0, dockEdge - distance),
+    wakeEnd: wakeEnd - distance,
+    dockOpacity: dockOpacity,
+    curve: curve,
+  );
 
   @override
   bool operator ==(final Object other) =>
-      other is HarborWakeBand && other.dockEdge == dockEdge && other.wakeEnd == wakeEnd;
+      other is HarborWakeBand &&
+      other.dockEdge == dockEdge &&
+      other.wakeEnd == wakeEnd &&
+      other.dockOpacity == dockOpacity &&
+      other.curve == curve;
 
   @override
-  int get hashCode => Object.hash(dockEdge, wakeEnd);
+  int get hashCode => Object.hash(dockEdge, wakeEnd, dockOpacity, curve);
 
   @override
-  String toString() => 'HarborWakeBand($dockEdge → $wakeEnd)';
+  String toString() => <String>[
+    'HarborWakeBand($dockEdge → $wakeEnd',
+    if (dockOpacity != null) ', dockOpacity: $dockOpacity',
+    if (curve != null) ', curve: $curve',
+    ')',
+  ].join();
 }
 
 /// The waters at a point in the tree: why `MediaQuery.padding` is what it is.
@@ -167,10 +194,7 @@ class HarborWatersData {
           if (!edges.contains(entry.key))
             entry.key: entry.value
           else if (entry.value.wakeEnd > HarborEdges.of(cleared, entry.key))
-            entry.key: HarborWakeBand(
-              dockEdge: math.max(0.0, entry.value.dockEdge - HarborEdges.of(cleared, entry.key)),
-              wakeEnd: entry.value.wakeEnd - HarborEdges.of(cleared, entry.key),
-            ),
+            entry.key: entry.value.measuredFrom(HarborEdges.of(cleared, entry.key)),
       },
       margin: margin ? HarborEdges.without(this.margin, edges) : this.margin,
     );

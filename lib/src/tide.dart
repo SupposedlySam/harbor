@@ -359,3 +359,72 @@ class HarborDryDock extends StatelessWidget {
     );
   }
 }
+
+/// Feeds a keyboard height the platform does not report into the tide: a
+/// keyboard drawn by a plugin or a platform view, a TV's on-screen keyboard
+/// reported over a channel, or a panel of your own that should push content
+/// up as a keyboard does.
+///
+/// harbor reads the keyboard from `MediaQuery.viewInsets.bottom` alone, as
+/// `Scaffold` and `EditableText` do, so this rebuilds the `MediaQuery` below it
+/// with that inset raised to [height] while [height] is the larger. Every
+/// harbor, tide gauge and Flutter widget below then sees the same keyboard. It
+/// rebuilds only its `MediaQuery` when [height] changes, not [child].
+///
+/// Mount it above the `HarborSea` (in `MaterialApp.builder`, around the sea):
+///
+/// ```dart
+/// MaterialApp(
+///   builder: (context, child) => HarborTideSource(
+///     height: imeHeight, // a ValueNotifier<double> your channel sets
+///     child: HarborSea(child: child!),
+///   ),
+/// );
+/// ```
+///
+/// Things to know:
+///
+///  * [height] is in **logical pixels**. A platform channel usually reports
+///    physical pixels: divide by `MediaQuery.devicePixelRatioOf(context)` first.
+///  * The inset is the **larger** of the platform's and [height], never their
+///    sum, so a keyboard the platform does report is not counted twice.
+///  * A **floating** keyboard (an iPad's, a split one) covers no edge: leave
+///    [height] at zero for it, as the platform reports no inset for one.
+///  * Above a `HarborScaleModel`, the height is re-based into the model's
+///    coordinates with the rest of the insets. Below one it would be read as
+///    the model's coordinates, so mount it above.
+///
+/// See also:
+///
+///  * `MediaQueryData.viewInsets`, which this rewrites.
+class HarborTideSource extends StatelessWidget {
+  const HarborTideSource({super.key, required this.height, required this.child});
+
+  /// The keyboard's height from the source, in logical pixels. Zero, a
+  /// negative value or a non-finite one adds nothing.
+  final ValueListenable<double> height;
+
+  final Widget child;
+
+  @override
+  Widget build(final BuildContext context) => ValueListenableBuilder<double>(
+    valueListenable: height,
+    builder: (final BuildContext context, final double value, final Widget? child) {
+      final MediaQueryData data = MediaQuery.of(context);
+      final double source = value.isFinite && value > 0.0 ? value : 0.0;
+      return MediaQuery(
+        data: source > data.viewInsets.bottom
+            ? data.copyWith(viewInsets: data.viewInsets.copyWith(bottom: source))
+            : data,
+        child: child!,
+      );
+    },
+    child: child,
+  );
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ValueListenable<double>>('height', height));
+  }
+}

@@ -25,6 +25,7 @@ export 'src/controller.dart'
         HarborController,
         HarborDockRecord,
         HarborFleet,
+        HarborFleetObserver,
         HarborLayoutRecord,
         HarborPontoonHandle,
         HarborFlareClosedReason,
@@ -45,6 +46,6 @@ export 'src/render_harbor.dart' show HarborSizing;
 export 'src/scale_model.dart';
 export 'src/sheet.dart' hide HarborNonModalSheetActions;
 export 'src/sticky.dart';
-export 'src/tide.dart' show HarborDryDock, HarborTide, HarborTidePhase, HarborTideStance, HarborTideState;
+export 'src/tide.dart' show HarborDryDock, HarborTide, HarborTidePhase, HarborTideSource, HarborTideStance, HarborTideState;
 export 'src/wake.dart' show HarborRest, HarborWake, HarborWakeKind, HarborWakeMask, HarborWakePainter, harborAlphaWake;
 export 'src/waters.dart' show HarborCastOff, HarborWakeBand, HarborWaters, HarborWatersAspect, HarborWatersData;
