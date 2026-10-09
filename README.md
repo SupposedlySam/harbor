@@ -554,6 +554,32 @@ the page when it closes. A
 `PopScope` inside such a sheet has no route to register with; put it around
 the page instead.
 
+A page that handles back itself with `PopScope(canPop: false)` (a tab bar that
+goes back a tab) keeps back from a modal buoy, a portal buoy and a sheet with no
+barrier, as it does from a `Drawer` or a persistent bottom sheet:
+`Navigator.maybePop` sees `canPop: false` before it looks at the page's local
+history, which is where harbor ties them, so only your handler hears back. Close
+them from that handler first, with `Navigator.pop`, which removes the newest
+entry of that history:
+
+```dart
+PopScope(
+  canPop: false,
+  onPopInvokedWithResult: (didPop, _) {
+    if (didPop) return;
+    if (ModalRoute.of(context)!.willHandlePopInternally) {
+      Navigator.of(context).pop(); // closes the top buoy, portal buoy or barrier-less sheet
+      return;
+    }
+    tabs.back();
+  },
+  child: Harbor(...),
+)
+```
+
+Each back press then closes one of them, the newest first, and only once they are
+all closed does it reach `tabs.back()`.
+
 ```dart
 final HarborSheetController nowPlaying = HarborSheetController();
 
