@@ -1,3 +1,7 @@
+## 0.3.2+1
+
+* Docs: the README links to the Harbor Field Guide in a browser (https://supposedlysam.github.io/harbor/), a pretend phone for every class with its options and a tide gauge. The example's field guide pages each say what to try, and keep their readings in view on a phone on its side. No code changes.
+
 ## 0.3.2
 
 * `HarborSheet(clearsSides: true)`, and on `HarborSheet.draggable`, keeps the header, body and footer clear of the left and right coast (a phone's notch in landscape, a cutout on a side edge) and casts it off, so content beneath reads zero there and does not clear it again. The surface still runs edge to edge. **Off by default:** today a sheet's header and footer run its full width and are handed the side coast in `MediaQuery.padding` (measured on an iPhone 17 on its side, 62 each side: header and footer at x 0 to 874, padding 62 left and right), so turning it on by default would move existing sheets. Pass `clearsSides: true` to turn it on. `showModalBottomSheet`'s `useSafeArea` is off by default too. ([#76](https://github.com/SupposedlySam/harbor/issues/76))
