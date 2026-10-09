@@ -1328,8 +1328,8 @@ class _BreakwaterEntryState extends State<BreakwaterEntry> {
     tryThis: const <TryStep>[
       TryStep('Tap Open sheet in the header', 'The sheet slides up over the list, and the list is not dimmed: with barrier none the page stays live.'),
       TryStep('Scroll the list to the end', 'Its last row comes to rest on the sheet\'s top edge instead of under it: the page keeps clear of the breakwater.'),
-      TryStep('Reopen this page, switch off breakwater, open the sheet', 'Scroll to the end: the last rows now stay under the sheet. Without breakwater the page is never told it is there.'),
-      TryStep('Reopen, pick barrier: dismissible, open the sheet', 'The page dims, and a tap on it closes the sheet instead of scrolling the list.'),
+      TryStep('Close the sheet with its ×, switch off breakwater, open it again', 'Scroll to the end: the last rows now stay under the sheet. Without breakwater the page is never told it is there.'),
+      TryStep('Close it, pick barrier: dismissible, open it again', 'The page dims, and a tap on it closes the sheet instead of scrolling the list.'),
     ],
     // The whole phone: the button that opens the sheet is in the header, the list it shelters at the
     // bottom.
