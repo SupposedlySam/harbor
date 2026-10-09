@@ -306,6 +306,46 @@ as `MediaQuery.viewPaddingOf` does, but not on every frame of the keyboard. It
 is zero below a quay that absorbed the coast, and below anything that cast the
 edge off.
 
+### A keyboard the platform does not report
+
+harbor reads the keyboard from `MediaQuery.viewInsets.bottom`, as `Scaffold` and
+`EditableText` do, so that is the one place to feed it a keyboard the platform
+does not report: one drawn by a plugin or a platform view, a TV's on-screen
+keyboard reported over a channel. Rebuild `MediaQuery` above the sea with the
+larger of the two:
+
+```dart
+MaterialApp(
+  builder: (context, child) {
+    final MediaQueryData data = MediaQuery.of(context);
+    final double keyboard = math.max(data.viewInsets.bottom, imeHeight); // logical px
+    return MediaQuery(
+      data: data.copyWith(viewInsets: data.viewInsets.copyWith(bottom: keyboard)),
+      child: HarborSea(child: child!),
+    );
+  },
+);
+```
+
+`HarborTideSource` does the same from a `ValueListenable<double>`, rebuilding
+only its `MediaQuery` when the height changes:
+
+```dart
+HarborTideSource(height: imeHeight, child: HarborSea(child: child!)) // imeHeight: a ValueNotifier<double>
+```
+
+Docks, the tide gauge, fairways and Flutter's own widgets then all see the same
+keyboard: a floating composer rides it, a tab bar on pilings is covered. Mind:
+
+- **Logical pixels.** A channel usually reports physical ones; divide by
+  `MediaQuery.devicePixelRatioOf(context)`.
+- **The larger value, not the sum,** so a keyboard the platform does report is
+  not counted twice.
+- **A floating keyboard** (an iPad's, a split one) covers no edge and should not
+  raise the tide: report zero for it, as the platform does.
+- **Above a scale model.** Put it outside `HarborScaleModel`, so the height is
+  re-based into the model's coordinates with the rest of the insets.
+
 ## Harbor and Scaffold
 
 A harbor does what a `Scaffold` does for the edges, so a page built from a harbor does not need
