@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.3
 
 * `HarborFlares.raise(margin:)` sets how far a flare keeps in from the clear water's edges: 16 at a slot or an alignment and 8 by an anchor when null, as before. `EdgeInsets.zero` gives a bar the width of the screen (a fixed `SnackBar`'s look), still above the docks and off the coast; an `EdgeInsetsDirectional` is resolved in the reading direction of the page that raised it. A bar that paints under the home indicator is a dock: moor it with a `HarborPontoon`. ([#83](https://github.com/SupposedlySam/harbor/issues/83))
 * `HarborFlareEntry.hold()` stops a flare's time until the returned `HarborFlareHold` is released, for a toast under a finger or with focus in it. Holds are counted, as make-way claims are; time starts over once the last is released, as it does when a flare comes back into sight. `HarborFlareEntry.held` says whether one is on. ([#84](https://github.com/SupposedlySam/harbor/issues/84))
