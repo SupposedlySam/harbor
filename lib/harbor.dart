@@ -42,6 +42,7 @@ export 'src/edge.dart';
 export 'src/fairway.dart';
 export 'src/harbor.dart';
 export 'src/hinge.dart' show HarborHinge;
+export 'src/panes.dart';
 export 'src/lighthouse.dart';
 export 'src/make_way.dart';
 export 'src/moored.dart';
