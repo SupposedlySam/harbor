@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show DisplayFeature;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -520,6 +521,12 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         frameSize: widget.newPort || outer == null || outer.frameSize.isEmpty ? null : outer.frameSize,
         maxExtentFraction: widget.maxExtentFraction,
         clearWaterFloor: HarborClearWaterFloor.of(context),
+        hinges: <Rect>[
+          for (final DisplayFeature feature
+              in (widget.hinge ?? HarborHinge.of(context)).keptOff(MediaQuery.displayFeaturesOf(context)))
+            feature.bounds,
+        ],
+        screenSize: ambient.size,
       ),
       children: children,
     );
