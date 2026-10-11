@@ -528,6 +528,11 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
     if (widget.coast != null) {
       result = MediaQuery(data: ambient, child: result);
     }
+    // The page's first harbor draws the sheets with no barrier that the page opens, outermost, so
+    // they see what this harbor sees from above.
+    if (controller.route case final ModalRoute<Object?> route when controller.isRouteLevel && !widget._isSea) {
+      result = HarborPageSheetHost(route: route, child: result);
+    }
     return result;
   }
 

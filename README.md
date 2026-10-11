@@ -711,8 +711,12 @@ A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
 page is on top (from the first frame of that page's push until its pop has
-finished, since the sheet is drawn above every page rather than inside its
-own), and it leaves when its page is replaced or removed. Escape closes it as
+finished), and it leaves when its page is replaced or removed. In a page built
+from a harbor, the page draws it, just above itself: a dialog, a modal sheet or
+a menu opened over the page sits over the sheet too, which stays in view behind
+its barrier and out of reach, as a `Scaffold`'s persistent bottom sheet does. In
+a page with no harbor it has nothing to be drawn by, so it hides while anything
+is over the page. Escape closes it as
 back does, from focus in the sheet or in a harbor on its page, and is left to
 the widgets above while no such sheet is up. It is not modal, as a persistent
 bottom sheet is not: it is a focus scope of its own, as a route is, so Tab goes
