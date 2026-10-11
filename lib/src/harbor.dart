@@ -10,6 +10,7 @@ import 'chart.dart';
 import 'coast.dart';
 import 'controller.dart';
 import 'dock.dart';
+import 'hinge.dart';
 import 'dock_slot.dart';
 import 'edge.dart';
 import 'render_harbor.dart';
@@ -64,6 +65,7 @@ class Harbor extends StatefulWidget {
     this.maxExtentFraction,
     this.wakePainter,
     this.debugLabel,
+    this.hinge,
   }) : _isSea = false,
        _observers = const <HarborFleetObserver>[];
 
@@ -73,6 +75,7 @@ class Harbor extends StatefulWidget {
     this.margin,
     required this.body,
     required this._observers,
+    required this.hinge,
   }) : top = const <HarborDock>[],
        bottom = const <HarborDock>[],
        start = const <HarborDock>[],
@@ -86,6 +89,10 @@ class Harbor extends StatefulWidget {
        wakePainter = null,
        debugLabel = 'sea',
        _isSea = true;
+
+  /// Which hinges and folds this harbor's overlays keep off, for the page and what it opens; the
+  /// sea's, or [HarborHinge.avoidSeparating], when null. See [HarborHinge].
+  final HarborHinge? hinge;
 
   /// Whether this is the outermost harbor of a [HarborSea].
   final bool _isSea;
@@ -528,6 +535,9 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
     if (widget.coast != null) {
       result = MediaQuery(data: ambient, child: result);
     }
+    if (widget.hinge case final HarborHinge hinge) {
+      result = HarborHingeScope(hinge: hinge, child: result);
+    }
     // The page's first harbor draws the sheets with no barrier that the page opens, outermost, so
     // they see what this harbor sees from above.
     if (controller.route case final ModalRoute<Object?> route when controller.isRouteLevel && !widget._isSea) {
@@ -599,10 +609,16 @@ class HarborSea extends StatelessWidget {
     this.coast = HarborCoast.ambient,
     this.margin,
     this.observers = const <HarborFleetObserver>[],
+    this.hinge = HarborHinge.avoidSeparating,
     required this.child,
   });
 
   final HarborCoast coast;
+
+  /// The app's default [HarborHinge]: which hinges and folds sheets, dialogs, flares and buoys
+  /// keep off. A `Harbor(hinge:)` overrides it for a page, and an overlay's own `hinge:` for that
+  /// overlay. [HarborHinge.never] treats a foldable's inner screen as one unbroken screen.
+  final HarborHinge hinge;
 
   /// Told of every harbor that joins or leaves this sea's fleet, the sea
   /// included, after the frame it happens in, as `Navigator.observers` are
@@ -617,13 +633,14 @@ class HarborSea extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) =>
-      Harbor._sea(coast: coast, margin: margin, observers: observers, body: child);
+      Harbor._sea(coast: coast, margin: margin, observers: observers, hinge: hinge, body: child);
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
+    properties.add(EnumProperty<HarborHinge>('hinge', hinge, defaultValue: HarborHinge.avoidSeparating));
     properties.add(
       IterableProperty<HarborFleetObserver>(
         'observers',

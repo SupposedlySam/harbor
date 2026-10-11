@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'barrier_label.dart';
 import 'controller.dart';
+import 'hinge.dart';
 
 /// Opens [builder]'s dialog over [context].
 ///
@@ -53,6 +54,7 @@ Future<T?> showHarborDialog<T>(
   final bool? requestFocus,
   final AnimationStyle? animationStyle,
   final RouteTransitionsBuilder? transitionBuilder,
+  final HarborHinge? hinge,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   return navigator.push<T>(
@@ -71,6 +73,7 @@ Future<T?> showHarborDialog<T>(
       requestFocus: requestFocus,
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
+      hinge: hinge,
     ),
   );
 }
@@ -116,6 +119,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final bool? requestFocus,
     final AnimationStyle? animationStyle,
     final RouteTransitionsBuilder? transitionBuilder,
+    final HarborHinge? hinge,
   }) : this._(
          builder: builder,
          inheritClearWater: inheritClearWater,
@@ -129,6 +133,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
          requestFocus: requestFocus,
          animationStyle: animationStyle,
          transitionBuilder: transitionBuilder,
+         hinge: hinge ?? HarborHinge.of(context),
          page: _HarborDialogPage(context, themes),
        );
 
@@ -145,6 +150,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required super.requestFocus,
     required final AnimationStyle? animationStyle,
     required this.transitionBuilder,
+    required this.hinge,
     required final _HarborDialogPage page,
   }) : _animationStyle = animationStyle,
        _page = page,
@@ -156,6 +162,16 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
        );
 
   static const Duration _duration = Duration(milliseconds: 180);
+
+  /// Which hinges and folds the dialog keeps off: the one given, or the opening page's
+  /// [HarborHinge.of], read as the route is made. [anchorPoint] picks the side.
+  final HarborHinge hinge;
+
+  // The side of the screen is chosen by the DisplayFeatureSubScreen RawDialogRoute puts around
+  // the page, from the display features it reads here: only those the policy keeps off.
+  @override
+  Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
+      MediaQuery(data: hinge.splitting(MediaQuery.of(context)), child: super.buildPage(context, animation, secondaryAnimation));
 
   /// Whether the dialog sees the opening harbor's docks as coast, as
   /// [showHarborDialog]'s `inheritClearWater` does. Measured when the route is

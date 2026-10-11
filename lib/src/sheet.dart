@@ -11,6 +11,7 @@ import 'controller.dart';
 import 'dock.dart';
 import 'edge.dart';
 import 'harbor.dart';
+import 'hinge.dart';
 import 'moored.dart';
 import 'render_harbor.dart';
 import 'tide.dart';
@@ -751,6 +752,7 @@ Future<T?> showHarborSheet<T>(
   final AnimationController? transitionAnimationController,
   final String? barrierOnTapHint,
   final String? semanticLabel,
+  final HarborHinge? hinge,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -769,6 +771,7 @@ Future<T?> showHarborSheet<T>(
     controller: controller,
     scopesRoute: barrier != HarborSheetBarrier.none,
     semanticLabel: semanticLabel,
+    hinge: hinge ?? HarborHinge.of(context),
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
@@ -813,9 +816,13 @@ class _SheetHost {
     required this.controller,
     required this.scopesRoute,
     required this.semanticLabel,
+    required this.hinge,
   }) {
     _shown.addListener(_moveTop);
   }
+
+  /// Which hinges and folds the sheet keeps off; [anchorPoint] picks the side.
+  final HarborHinge hinge;
 
   final WidgetBuilder builder;
   final double? maxWidth;
@@ -985,8 +992,10 @@ class _SheetHost {
   }
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
-  Widget build(final BuildContext context) =>
-      DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: _build));
+  Widget build(final BuildContext context) => MediaQuery(
+    data: hinge.splitting(MediaQuery.of(context)),
+    child: DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: _build)),
+  );
 
   Widget _build(final BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
