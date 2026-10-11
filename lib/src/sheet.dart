@@ -1258,6 +1258,12 @@ class _NonModalSheet<T> {
   OverlayEntry? _entry;
   final Completer<T?> _done = Completer<T?>();
 
+  /// The page hosting the sheet, when it is drawn by its page rather than by an entry of its own.
+  _HarborPageSheetHostState? _pageHost;
+
+  /// From [open] until the sheet is taken out of the tree.
+  bool _live = false;
+
   // A scope of its own beside the page's, with its navigator's edge behaviour, as a route's
   // scope is: at the sheet's last control, Tab does what it does at a route's. Without it the
   // sheet's controls sat in the navigator's own scope, and under a navigator that keeps Tab inside
@@ -1272,42 +1278,23 @@ class _NonModalSheet<T> {
         unawaited(_close(result as T?));
       }
       ..remove = closeNow
-      ..rebuild = () {
-        _entry?.markNeedsBuild();
-      }
+      ..rebuild = _markNeedsBuild
       ..slide = _animation
       ..attach();
     final ModalRoute<Object?>? route = this.route;
-    _entry = OverlayEntry(
-      builder: (final BuildContext context) {
-        final Widget sheet = Actions(
-          actions: <Type, Action<Intent>>{
-            // Only while open, so a closing sheet leaves Escape to the widgets above.
-            if (!_closing) DismissIntent: _CloseSheetAction(_close),
-          },
-          child: _NonModalSheetFocus(scope: _focus, requestFocus: requestFocus, child: host.build(context)),
-        );
-        if (route == null) {
-          return sheet;
-        }
-        // Hidden, and out of reach, while another page is on top of the one that opened it. The
-        // navigator keeps this entry above every page, so it cannot sit under a leaving page as a
-        // persistent bottom sheet does; it waits for that page to finish leaving instead, where
-        // isCurrent alone shows it as soon as the pop starts.
-        return ListenableBuilder(
-          listenable: Listenable.merge(<Listenable?>[route.animation, route.secondaryAnimation]),
-          builder: (final BuildContext context, final Widget? child) {
-            if (!route.isActive) {
-              WidgetsBinding.instance.addPostFrameCallback((final Duration _) => closeNow());
-            }
-            final bool uncovered = route.isCurrent && (route.secondaryAnimation?.isDismissed ?? true);
-            return Visibility(visible: uncovered, maintainState: true, child: child!);
-          },
-          child: sheet,
-        );
-      },
-    );
-    overlay.insert(_entry!);
+    // In a page with a harbor, the page hosts the sheet through an OverlayPortal, which paints it
+    // just above the page and below every route pushed after it: a dialog, a modal sheet or a menu
+    // over the page sits over the sheet too, as over a Scaffold's persistent bottom sheet. A free
+    // overlay entry could not: the navigator rearranges its overlay on every history change and
+    // keeps entries that are not its routes' on top of all of them, dialogs included (#104).
+    _live = true;
+    _pageHost = route == null ? null : _HarborPageSheets.of(route).host;
+    if (_pageHost case final _HarborPageSheetHostState pageHost) {
+      pageHost.draw(this);
+    } else {
+      _entry = OverlayEntry(builder: (final BuildContext context) => build(context, hosted: false));
+      overlay.insert(_entry!);
+    }
     if (route != null) {
       _HarborPageSheets.of(route).add(this);
       _history = LocalHistoryEntry(
@@ -1322,6 +1309,59 @@ class _NonModalSheet<T> {
     }
     _animation.forward();
     return _done.future;
+  }
+
+  /// The sheet as it is drawn, by its page ([hosted]) or by an overlay entry of its own.
+  Widget build(final BuildContext context, {required final bool hosted}) {
+    final Widget sheet = Actions(
+      actions: <Type, Action<Intent>>{
+        // Only while open, so a closing sheet leaves Escape to the widgets above.
+        if (!_closing) DismissIntent: _CloseSheetAction(_close),
+      },
+      child: _NonModalSheetFocus(scope: _focus, requestFocus: requestFocus, child: host.build(context)),
+    );
+    final ModalRoute<Object?>? route = this.route;
+    if (route == null) {
+      return sheet;
+    }
+    // Hidden, and out of reach, while another page is on top of the one that opened it. Drawn by
+    // an entry of its own, which the navigator keeps above every page, it cannot sit under a
+    // leaving page as a persistent bottom sheet does; it waits for that page to finish leaving
+    // instead, where isCurrent alone shows it as soon as the pop starts. That entry is above any
+    // dialog too, so it also hides while the page is not current. Drawn by its page, a popup
+    // route is painted over it, so only a page on top hides it.
+    return ListenableBuilder(
+      listenable: Listenable.merge(<Listenable?>[route.animation, route.secondaryAnimation]),
+      builder: (final BuildContext context, final Widget? child) {
+        if (!route.isActive) {
+          WidgetsBinding.instance.addPostFrameCallback((final Duration _) => closeNow());
+        }
+        final bool uncovered = (hosted ? route.isActive : route.isCurrent) && (route.secondaryAnimation?.isDismissed ?? true);
+        return Visibility(visible: uncovered, maintainState: true, child: child!);
+      },
+      child: sheet,
+    );
+  }
+
+  void _markNeedsBuild() {
+    _entry?.markNeedsBuild();
+    _pageHost?.rebuild();
+  }
+
+  /// Takes the sheet out of the tree, from its entry or its page.
+  void _takeOut() {
+    _live = false;
+    final OverlayEntry? entry = _entry;
+    _entry = null;
+    if (entry != null) {
+      try {
+        entry.remove();
+      } on Object {
+        // The overlay is already going.
+      }
+    }
+    _pageHost?.erase(this);
+    _pageHost = null;
   }
 
   /// Takes the sheet's entry out of its page's history, when it closes some other way.
@@ -1351,20 +1391,14 @@ class _NonModalSheet<T> {
 
   /// Removes the sheet at once, with no animation: its page is leaving.
   void closeNow() {
-    final OverlayEntry? entry = _entry;
-    if (entry == null) {
+    if (!_live) {
       return;
     }
-    _entry = null;
     _closing = true;
     _leaveHistory();
     host.detach();
     _animation.stop();
-    try {
-      entry.remove();
-    } on Object {
-      // The overlay is already going.
-    }
+    _takeOut();
     host.dispose();
     _disposeFocus();
     _leave();
@@ -1386,19 +1420,18 @@ class _NonModalSheet<T> {
   }
 
   Future<void> _close([final T? result]) async {
-    if (_entry == null || _closing) {
+    if (!_live || _closing) {
       return;
     }
     _closing = true;
-    _entry!.markNeedsBuild();
+    _markNeedsBuild();
     _leaveHistory();
     if (overlay.mounted) {
       await _animation.reverse();
     }
     // The page keeps clear of the sheet until it has slid away, as it does under a sheet that is a route.
     host.detach();
-    _entry?.remove();
-    _entry = null;
+    _takeOut();
     host.dispose();
     _disposeFocus();
     // The result first: _leave completes with null when nothing has.
@@ -1447,6 +1480,9 @@ class _HarborPageSheets extends ChangeNotifier {
   static _HarborPageSheets of(final ModalRoute<Object?> route) => _pages[route] ??= _HarborPageSheets();
 
   final List<_NonModalSheet<Object?>> _open = <_NonModalSheet<Object?>>[];
+
+  /// The page's route-level harbor, which draws its sheets; null in a page with no harbor.
+  _HarborPageSheetHostState? host;
 
   _NonModalSheet<Object?>? get top => _open.isEmpty ? null : _open.last;
 
@@ -1515,3 +1551,106 @@ class _CloseSheetAction extends DismissAction {
 /// Closes the sheet [context] is in, whichever way it was opened.
 @Deprecated('Use HarborSheet.close instead, which also takes a result. Deprecated after 0.2.0.')
 void closeHarborSheet(final BuildContext context) => HarborSheet.close<Object?>(context);
+
+/// Draws the sheets with no barrier that its page opened, through an [OverlayPortal], so they
+/// paint just above the page and below every route pushed after it. Mounted by each page's
+/// route-level harbor, outermost, so a sheet sees what that harbor sees: the sea, and the
+/// screen's `MediaQuery`, as it did from an overlay entry of its own.
+@internal
+class HarborPageSheetHost extends StatefulWidget {
+  const HarborPageSheetHost({super.key, required this.route, required this.child});
+
+  final ModalRoute<Object?> route;
+  final Widget child;
+
+  @override
+  State<HarborPageSheetHost> createState() => _HarborPageSheetHostState();
+}
+
+class _HarborPageSheetHostState extends State<HarborPageSheetHost> {
+  final OverlayPortalController _portal = OverlayPortalController(debugLabel: 'HarborSheet (no barrier)');
+  final List<_NonModalSheet<Object?>> _drawn = <_NonModalSheet<Object?>>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _HarborPageSheets.of(widget.route).host ??= this;
+  }
+
+  @override
+  void didUpdateWidget(final HarborPageSheetHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.route, widget.route)) {
+      _leave(oldWidget.route);
+      _HarborPageSheets.of(widget.route).host ??= this;
+    }
+  }
+
+  void _leave(final ModalRoute<Object?> route) {
+    final _HarborPageSheets sheets = _HarborPageSheets.of(route);
+    if (identical(sheets.host, this)) {
+      sheets.host = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _leave(widget.route);
+    super.dispose();
+  }
+
+  void draw(final _NonModalSheet<Object?> sheet) {
+    _drawn.add(sheet);
+    _portal.show();
+    rebuild();
+  }
+
+  void erase(final _NonModalSheet<Object?> sheet) {
+    if (_drawn.remove(sheet)) {
+      rebuild();
+    }
+  }
+
+  void rebuild() {
+    if (!mounted) {
+      return;
+    }
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((final Duration _) => rebuild());
+      return;
+    }
+    setState(() {
+      if (_drawn.isEmpty) {
+        _portal.hide();
+      }
+    });
+  }
+
+  // The portal sits beside the page, not around it: wrapped around the page, it hid every portal
+  // buoy in the page from screen readers (measured: the buoy's node left the semantics tree).
+  // Where it sits in the page does not matter to its paint order, only which overlay entry it is
+  // in. StackFit.passthrough hands the page its constraints unchanged.
+  @override
+  Widget build(final BuildContext context) => Stack(
+    fit: StackFit.passthrough,
+    children: <Widget>[
+      widget.child,
+      // Filling the page, though empty and passing every tap through: a portal's semantics are its
+      // overlay child's, and Flutter drops them for a portal of no size, which hid the sheet from
+      // screen readers.
+      Positioned.fill(
+        child: OverlayPortal(
+          controller: _portal,
+          overlayChildBuilder: (final BuildContext context) => Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              for (final _NonModalSheet<Object?> sheet in _drawn)
+                KeyedSubtree(key: ObjectKey(sheet), child: sheet.build(context, hosted: true)),
+            ],
+          ),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    ],
+  );
+}

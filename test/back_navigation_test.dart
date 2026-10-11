@@ -180,6 +180,56 @@ void main() {
     expect(find.text('sheet').hitTestable(), findsOneWidget, reason: 'back with its page');
   });
 
+  // #104. Failed before: a dialog over the page hid its sheet, as no Scaffold's persistent sheet
+  // is hidden by one.
+  testWidgets('a sheet with no barrier stays drawn under a dialog over its page, out of reach', (final tester) async {
+    await tester.pumpSeaTrial(_app(), device: HarborTrialDevice.androidGesture);
+    final BuildContext page = await _pushPage(tester);
+    _openSheet(page);
+    await tester.pumpAndSettle();
+    unawaited(showDialog<void>(context: page, builder: (final BuildContext _) => const Center(child: Text('dialog'))));
+    await tester.pumpAndSettle();
+    expect(find.text('dialog').hitTestable(), findsOneWidget);
+    expect(find.text('sheet'), findsOneWidget, reason: 'still drawn under the dialog');
+    expect(find.text('sheet').hitTestable(), findsNothing, reason: "behind the dialog's barrier");
+
+    _navigator.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('sheet').hitTestable(), findsOneWidget, reason: 'in reach again once the dialog leaves');
+  });
+
+  testWidgets('a sheet with no barrier stays drawn under a modal sheet over its page', (final tester) async {
+    await tester.pumpSeaTrial(_app(), device: HarborTrialDevice.androidGesture);
+    final BuildContext page = await _pushPage(tester);
+    _openSheet(page);
+    await tester.pumpAndSettle();
+    unawaited(showHarborSheet<void>(page, builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100, child: Text('modal')))));
+    await tester.pumpAndSettle();
+    expect(find.text('modal').hitTestable(), findsOneWidget);
+    expect(find.text('sheet'), findsOneWidget);
+    expect(find.text('sheet').hitTestable(), findsNothing);
+  });
+
+  // #104: a page with no harbor has nothing to draw its sheet, so the sheet keeps an overlay entry
+  // of its own, which the navigator keeps above every route: it still hides while a dialog is up,
+  // rather than being drawn over it.
+  testWidgets('in a page with no harbor, a sheet with no barrier still hides under a dialog, never over it', (final tester) async {
+    await tester.pumpSeaTrial(_app(), device: HarborTrialDevice.androidGesture);
+    late BuildContext page;
+    unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext context) {
+      page = context;
+      return const Center(child: Text('bare page'));
+    })));
+    await tester.pumpAndSettle();
+    _openSheet(page);
+    await tester.pumpAndSettle();
+    expect(find.text('sheet').hitTestable(), findsOneWidget, reason: 'positive control: shown on its page');
+    unawaited(showDialog<void>(context: page, builder: (final BuildContext _) => const Center(child: Text('dialog'))));
+    await tester.pumpAndSettle();
+    expect(find.text('dialog').hitTestable(), findsOneWidget);
+    expect(find.text('sheet').hitTestable(), findsNothing, reason: 'never over the dialog');
+  });
+
   // Failed before: the sheet came back as the page on top started to leave, painted and tappable
   // over it for the whole pop transition (its entry sits above every page in the overlay).
   testWidgets('a sheet with no barrier waits for the page on top to finish leaving', (final tester) async {
