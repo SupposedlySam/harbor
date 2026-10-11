@@ -79,17 +79,23 @@ class HarborBodyConstraints extends BoxConstraints {
 
 /// The buoy layer's constraints: the whole frame, and the water nothing covers.
 class HarborBuoyConstraints extends BoxConstraints {
-  HarborBuoyConstraints({required final Size frame, required this.clearWater}) : super.tight(frame);
+  HarborBuoyConstraints({required final Size frame, required this.clearWater, final Rect? openWater})
+    : openWater = openWater ?? clearWater,
+      super.tight(frame);
 
   /// The rectangle, in the frame's coordinates, that no dock, coast or tide covers.
   final Rect clearWater;
 
-  @override
-  bool operator ==(final Object other) =>
-      super == other && other is HarborBuoyConstraints && other.clearWater == clearWater;
+  /// The rectangle no dock or tide covers, coast included: where a flare that reaches the coast
+  /// may go.
+  final Rect openWater;
 
   @override
-  int get hashCode => Object.hash(super.hashCode, clearWater);
+  bool operator ==(final Object other) =>
+      super == other && other is HarborBuoyConstraints && other.clearWater == clearWater && other.openWater == openWater;
+
+  @override
+  int get hashCode => Object.hash(super.hashCode, clearWater, openWater);
 }
 
 enum HarborSlotKind { body, dock, statusBar, buoys }
@@ -806,7 +812,17 @@ class RenderHarbor extends RenderBox
       (statusBar.parentData! as HarborParentData).offset = Offset.zero;
     }
     if (buoys != null) {
-      buoys.layout(HarborBuoyConstraints(frame: size, clearWater: clearWater));
+      // The same water with the coast left in: only the docks and the keyboard keep out of it.
+      final EdgeInsets physicalDocks = HarborEdges.build(
+        (final HarborEdge e) => e == HarborEdge.bottom ? math.max(HarborEdges.of(docksLive, e), tide) : HarborEdges.of(docksLive, e),
+      ).resolve(g.textDirection);
+      final Rect openWater = Rect.fromLTRB(
+        math.min(physicalDocks.left, width),
+        math.min(physicalDocks.top, height),
+        math.max(physicalDocks.left, width - physicalDocks.right),
+        math.max(physicalDocks.top, height - physicalDocks.bottom),
+      );
+      buoys.layout(HarborBuoyConstraints(frame: size, clearWater: clearWater, openWater: openWater));
       (buoys.parentData! as HarborParentData).offset = Offset.zero;
     }
 

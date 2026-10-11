@@ -8,6 +8,7 @@ library;
 export 'src/buoy.dart'
     show
         HarborAnchor,
+        HarborAnchorClip,
         HarborAnchorPoint,
         HarborBuoy,
         HarborBuoyCrossAlignment,

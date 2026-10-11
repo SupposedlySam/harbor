@@ -553,6 +553,10 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     ];
     return _BuoyLayout(
       buoys: all,
+      reaching: <int>{
+        for (int i = 0; i < all.length; i++)
+          if (all[i].child case _Flare(entry: final HarborFlareEntry entry) when entry.reachesCoast) i,
+      },
       children: <Widget>[
         for (int i = 0; i < all.length; i++)
           KeyedSubtree(
@@ -673,18 +677,24 @@ Rect? _local(final BuildContext context, final Rect? global) {
 }
 
 class _BuoyLayout extends MultiChildRenderObjectWidget {
-  const _BuoyLayout({required this.buoys, required super.children});
+  const _BuoyLayout({required this.buoys, this.reaching = const <int>{}, required super.children});
 
   final List<HarborBuoy> buoys;
 
+  /// The buoys (flares) that may reach over the coast, by index.
+  final Set<int> reaching;
+
   @override
   RenderObject createRenderObject(final BuildContext context) =>
-      _RenderBuoyLayer(buoys, Directionality.maybeOf(context) ?? TextDirection.ltr).._avoid = _hinges(context);
+      _RenderBuoyLayer(buoys, Directionality.maybeOf(context) ?? TextDirection.ltr)
+        .._avoid = _hinges(context)
+        .._reaching = reaching;
 
   @override
   void updateRenderObject(final BuildContext context, final _RenderBuoyLayer renderObject) {
     renderObject
       ..buoys = buoys
+      ..reaching = reaching
       ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr
       ..avoid = _hinges(context);
   }
@@ -709,6 +719,15 @@ class _RenderBuoyLayer extends RenderBox
   _RenderBuoyLayer(this._buoys, this._textDirection);
 
   List<HarborBuoy> _buoys;
+
+  Set<int> _reaching = const <int>{};
+  set reaching(final Set<int> value) {
+    if (setEquals(value, _reaching)) {
+      return;
+    }
+    _reaching = value;
+    markNeedsLayout();
+  }
 
   List<Rect> _avoid = const <Rect>[];
   set avoid(final List<Rect> value) {
@@ -778,21 +797,47 @@ class _RenderBuoyLayer extends RenderBox
 
   Rect _clear = Rect.zero;
 
+  /// The coast a flare's [water] reaches into: the sides always, and the top or bottom when the
+  /// flare is placed against that edge.
+  EdgeInsets _coastCovered(final Rect water, final Alignment alignment) => EdgeInsets.fromLTRB(
+    math.max(0.0, _clear.left - water.left),
+    alignment.y <= -1.0 ? math.max(0.0, _clear.top - water.top) : 0.0,
+    math.max(0.0, water.right - _clear.right),
+    alignment.y >= 1.0 ? math.max(0.0, water.bottom - _clear.bottom) : 0.0,
+  );
+
   @override
   void performLayout() {
     size = constraints.biggest;
     _clear = constraints is HarborBuoyConstraints ? (constraints as HarborBuoyConstraints).clearWater : Offset.zero & size;
+    final Rect open = constraints is HarborBuoyConstraints ? (constraints as HarborBuoyConstraints).openWater : _clear;
     RenderBox? child = firstChild;
     int i = 0;
     while (child != null) {
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
-      final Rect? within = buoy.within;
-      final Rect bounded = within == null || !within.overlaps(_clear) ? _clear : _clear.intersect(within);
+      final bool reaches = _reaching.contains(i);
+      final Rect base = reaches ? open : _clear;
+      // The harbor that raised a flare keeps it inside its own clear water. Reaching the coast, an
+      // edge of that which is the coast's edge opens out to the coast; one its own docks set holds.
+      final Rect? raised = buoy.within;
+      final Rect? within = raised == null || !reaches
+          ? raised
+          : Rect.fromLTRB(
+              raised.left <= _clear.left + 0.5 ? open.left : raised.left,
+              raised.top <= _clear.top + 0.5 ? open.top : raised.top,
+              raised.right >= _clear.right - 0.5 ? open.right : raised.right,
+              raised.bottom >= _clear.bottom - 0.5 ? open.bottom : raised.bottom,
+            );
+      final Rect bounded = within == null || !within.overlaps(base) ? base : base.intersect(within);
       final Rect water = buoy.anchor == null
           ? _screenFor(buoy, buoy.margin.resolve(_textDirection).deflateRect(bounded))
           : buoy.margin.resolve(_textDirection).deflateRect(bounded);
-      child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
+      final Size room = Size(math.max(0.0, water.width), math.max(0.0, water.height));
+      child.layout(
+        reaches ? _CoastConstraints(room, _coastCovered(water, buoy.alignment.resolve(_textDirection))) : BoxConstraints.loose(room),
+        parentUsesSize: true,
+      );
       // Anchored buoys are placed when they paint, once their anchors have a size.
       data.offset = buoy.anchor == null ? buoy.alignment.resolve(_textDirection).inscribe(child.size, water).topLeft : data.offset;
       child = data.nextSibling;
@@ -892,6 +937,11 @@ class _RenderBuoyLayer extends RenderBox
 ///
 /// It leaves focus where it was when it opens, as a `MenuAnchor` does, unless
 /// [requestFocus] is true.
+///
+/// To show it in the frame it is built, call `controller.show()` before then,
+/// in `initState`: an [OverlayPortalController] keeps a `show()` made before
+/// its portal is attached, and the portal shows as it attaches, with no
+/// post-frame callback.
 ///
 /// See also:
 ///
@@ -1538,8 +1588,10 @@ abstract final class HarborFlares {
   /// [HarborFlareEntry.closed] completes once a flare has left, with why.
   ///
   /// [duration] (4 s, a `SnackBar`'s) counts only while the flare is in
-  /// sight: from the end of its entrance, and not while another route covers
-  /// its page. With [persist] the flare stays until it is lowered, as a
+  /// sight: from the end of its entrance (from its start with
+  /// [countsEntrance], so the flare is on screen that long, entrance
+  /// included), and not while another route covers its page. Set
+  /// [HarborFlareEntry.duration] to change it once the flare is up. With [persist] the flare stays until it is lowered, as a
   /// `SnackBar` with `persist` does; give it to a flare with a button, so a
   /// screen-reader user has time to reach it.
   ///
@@ -1568,6 +1620,15 @@ abstract final class HarborFlares {
   /// entrance and exit from harbor's animation instead. Either way a lowered
   /// flare stays at least 300 ms, so the widget's own exit can run. With
   /// reduced motion it appears and leaves at once.
+  ///
+  /// With [reachesCoast], the flare may reach over the coast on the edges it is
+  /// against, as a fixed `SnackBar` runs under the home indicator: its water is
+  /// the frame less the docks and the keyboard, not less the coast too, and its
+  /// content is handed the coast it covers as `MediaQuery.padding` to keep its
+  /// text clear. It is against the sides always, and against the top or bottom
+  /// when it is placed there ([HarborFlareSlot.top], [HarborFlareSlot.low], or
+  /// an alignment at that edge). Give it `margin: EdgeInsets.zero` to run edge
+  /// to edge.
   ///
   /// [margin] is how far the flare keeps in from the clear water's edges: 16
   /// at a slot or an alignment and 8 by an anchor when null, as for a buoy. An
@@ -1604,6 +1665,8 @@ abstract final class HarborFlares {
     final double gap = 8.0,
     final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
     final EdgeInsetsGeometry? margin,
+    final bool countsEntrance = false,
+    final bool reachesCoast = false,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
@@ -1629,6 +1692,8 @@ abstract final class HarborFlares {
       gap: gap,
       crossAlignment: crossAlignment,
       margin: margin?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr),
+      countsEntrance: countsEntrance,
+      reachesCoast: reachesCoast,
     );
     final HarborController? controller = anchor != null
         ? _portOf(HarborController.maybeOf(context))
@@ -1815,6 +1880,27 @@ class _OverlayFlareState extends State<_OverlayFlare> {
       math.max(padding.bottom, keyboard.bottom),
     );
     final HarborFlareEntry entry = widget.entry;
+    if (entry.reachesCoast && entry.anchor == null) {
+      // Over the coast on the edges it is against, still off the keyboard; its content keeps the
+      // coast there as its padding, and only there.
+      final Alignment alignment = entry.alignment;
+      final EdgeInsets coast = EdgeInsets.fromLTRB(
+        padding.left,
+        alignment.y <= -1.0 ? padding.top : 0.0,
+        padding.right,
+        alignment.y >= 1.0 ? padding.bottom : 0.0,
+      );
+      return Padding(
+        padding: keyboard + (entry.margin ?? _margin),
+        child: Align(
+          alignment: alignment,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(padding: coast, viewPadding: coast),
+            child: _Flare(entry: entry),
+          ),
+        ),
+      );
+    }
     if (entry.anchor case final HarborAnchor anchor) {
       // Placed as a portal buoy with no harbor around it is: by its anchor, as it paints.
       return _PortalBuoyLayout(
@@ -1892,6 +1978,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     super.initState();
     widget.entry.showing.addListener(_changed);
     widget.entry.held.addListener(_syncTimeout);
+    widget.entry.timing.addListener(_restartTimeout);
     _controller.addStatusListener(_statusChanged);
     if (widget.entry.anchor case final HarborAnchor anchor) {
       anchor.addListener(_anchorMoved);
@@ -1908,6 +1995,13 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 
   void _statusChanged(final AnimationStatus _) => _syncTimeout();
 
+  /// The duration was set: the time starts over with it.
+  void _restartTimeout() {
+    _timeout?.cancel();
+    _timeout = null;
+    _syncTimeout();
+  }
+
   /// Runs the flare's time while it is fully in and in sight, and starts it over when it comes back.
   void _syncTimeout() {
     final HarborFlareEntry entry = widget.entry;
@@ -1917,7 +2011,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
         !entry.persist &&
         !entry.held.value &&
         entry.showing.value &&
-        _controller.isCompleted &&
+        (entry.countsEntrance ? !_controller.isDismissed : _controller.isCompleted) &&
         _inSight &&
         _anchored;
     if (running && _timeout == null) {
@@ -1933,6 +2027,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     _timeout?.cancel();
     widget.entry.showing.removeListener(_changed);
     widget.entry.held.removeListener(_syncTimeout);
+    widget.entry.timing.removeListener(_restartTimeout);
     widget.entry.anchor?.removeListener(_anchorMoved);
     _controller.removeStatusListener(_statusChanged);
     _animation.dispose();
@@ -1944,6 +2039,30 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(final BuildContext context) {
+    final HarborFlareEntry entry = widget.entry;
+    if (!entry.reachesCoast) {
+      return _build(context);
+    }
+    // The coast the flare covers is known only once its layer has placed it, so it is read from
+    // the constraints that layer hands it, and given to the content as its padding.
+    return LayoutBuilder(
+      builder: (final BuildContext context, final BoxConstraints constraints) {
+        if (constraints is! _CoastConstraints) {
+          return _build(context);
+        }
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(padding: constraints.coast, viewPadding: constraints.coast),
+          child: Builder(builder: _build),
+        );
+      },
+    );
+  }
+
+  // The flare's entry is in scope for its builder and its transition, so either can read where
+  // it hangs (HarborFlareEntry.maybeOf) or take a hold on it.
+  Widget _build(final BuildContext context) => HarborFlareScope(entry: widget.entry, child: Builder(builder: _buildInScope));
+
+  Widget _buildInScope(final BuildContext context) {
     final HarborFlareEntry entry = widget.entry;
     final Widget child = entry.builder(context);
     final Widget shown = switch (entry.transitionBuilder) {
@@ -1963,5 +2082,134 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
       onDismiss: () => entry.lower(reason: HarborFlareClosedReason.dismiss),
       child: shown,
     );
+  }
+}
+
+/// A flare's constraints when it reaches the coast: loose, carrying the coast it covers, which
+/// the flare hands its content as `MediaQuery.padding`.
+class _CoastConstraints extends BoxConstraints {
+  _CoastConstraints(final Size room, this.coast) : super(maxWidth: room.width, maxHeight: room.height);
+
+  final EdgeInsets coast;
+
+  @override
+  bool operator ==(final Object other) => super == other && other is _CoastConstraints && other.coast == coast;
+
+  @override
+  int get hashCode => Object.hash(super.hashCode, coast);
+}
+
+/// Puts a flare's [HarborFlareEntry] in scope for its builder and transition: read it with
+/// [HarborFlareEntry.maybeOf].
+@internal
+class HarborFlareScope extends InheritedWidget {
+  const HarborFlareScope({super.key, required this.entry, required super.child});
+
+  final HarborFlareEntry entry;
+
+  @override
+  bool updateShouldNotify(final HarborFlareScope oldWidget) => !identical(entry, oldWidget.entry);
+}
+
+/// Clips its child at the edge of [anchor] facing [side]: below an anchor, nothing above the
+/// anchor's bottom edge is drawn. For a flare or buoy that emerges from under the field it hangs
+/// from, slid in from that edge while this keeps it hidden until it clears it.
+///
+/// The anchor is measured each time this paints, so the clip follows an anchor that scrolls. An
+/// anchored flare never flips, so its [HarborFlareEntry.side] is the side to give; read it in the
+/// flare's transition with [HarborFlareEntry.maybeOf]:
+///
+/// ```dart
+/// HarborFlares.raise(
+///   context,
+///   anchor: searchField,
+///   transitionBuilder: (context, animation, child) {
+///     final HarborFlareEntry entry = HarborFlareEntry.maybeOf(context)!;
+///     return HarborAnchorClip(
+///       anchor: entry.anchor!,
+///       side: entry.side,
+///       child: SlideTransition(
+///         position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(animation),
+///         child: child,
+///       ),
+///     );
+///   },
+///   builder: (context) => const Text('No results'),
+/// );
+/// ```
+///
+/// With no box for its anchor (the anchor is out of the tree), it draws its child unclipped.
+class HarborAnchorClip extends SingleChildRenderObjectWidget {
+  const HarborAnchorClip({super.key, required this.anchor, required this.side, super.child});
+
+  final HarborAnchor anchor;
+  final HarborBuoySide side;
+
+  @override
+  RenderObject createRenderObject(final BuildContext context) =>
+      _RenderAnchorClip(anchor, side, Directionality.maybeOf(context) ?? TextDirection.ltr);
+
+  @override
+  void updateRenderObject(final BuildContext context, final RenderObject renderObject) {
+    (renderObject as _RenderAnchorClip)
+      ..anchor = anchor
+      ..side = side
+      ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
+  }
+}
+
+class _RenderAnchorClip extends RenderProxyBox {
+  _RenderAnchorClip(this._anchor, this._side, this._textDirection);
+
+  HarborAnchor _anchor;
+  set anchor(final HarborAnchor value) {
+    if (!identical(value, _anchor)) {
+      _anchor = value;
+      markNeedsPaint();
+    }
+  }
+
+  HarborBuoySide _side;
+  set side(final HarborBuoySide value) {
+    if (value != _side) {
+      _side = value;
+      markNeedsPaint();
+    }
+  }
+
+  TextDirection _textDirection;
+  set textDirection(final TextDirection value) {
+    if (value != _textDirection) {
+      _textDirection = value;
+      markNeedsPaint();
+    }
+  }
+
+  final LayerHandle<ClipRectLayer> _clip = LayerHandle<ClipRectLayer>();
+
+  @override
+  void paint(final PaintingContext context, final Offset offset) {
+    final RenderBox? anchorBox = _anchor.box;
+    if (child == null || anchorBox == null || !anchorBox.attached || !anchorBox.hasSize) {
+      _clip.layer = null;
+      super.paint(context, offset);
+      return;
+    }
+    final Rect at = MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size);
+    const double far = 1e6;
+    final bool ltr = _textDirection == TextDirection.ltr;
+    final Rect beyond = switch (_side) {
+      HarborBuoySide.below => Rect.fromLTRB(-far, at.bottom, far, far),
+      HarborBuoySide.above => Rect.fromLTRB(-far, -far, far, at.top),
+      HarborBuoySide.start => ltr ? Rect.fromLTRB(-far, -far, at.left, far) : Rect.fromLTRB(at.right, -far, far, far),
+      HarborBuoySide.end => ltr ? Rect.fromLTRB(at.right, -far, far, far) : Rect.fromLTRB(-far, -far, at.left, far),
+    };
+    _clip.layer = context.pushClipRect(needsCompositing, offset, beyond, super.paint, oldLayer: _clip.layer);
+  }
+
+  @override
+  void dispose() {
+    _clip.layer = null;
+    super.dispose();
   }
 }

@@ -563,16 +563,28 @@ up until it is lowered, as `SnackBar(persist:)` does. Give it to a flare with a
 button, an Undo: a screen-reader user moving through the page needs longer than
 4 s to reach it. `entry.hold()` stops the time until you `release()` the
 `HarborFlareHold` it returns: call it from the flare's own `Listener` when a
-finger goes down, or when focus moves in. harbor never holds a flare by itself.
-Holds are counted, the time starts over at the last release, and `entry.held`
-says whether one is on. A flare with neither a slot nor an alignment goes to
+finger goes down, or when focus moves in; `HarborFlareEntry.maybeOf(context)`
+inside the flare's builder is its own entry. harbor never holds a flare by
+itself. Holds are counted, the time starts over at the last release, and
+`entry.held` says whether one is on. `countsEntrance: true` counts the duration
+from the start of the entrance, so a 4 s toast is on screen 4 s, and setting
+`entry.duration` after the raise starts the time over with the new one (longer
+once a screen reader turns on, say). A flare with neither a slot nor an alignment goes to
 `HarborFlareSlot.high`, and `target: HarborFlareTarget.sea` sends it to the
 outermost harbor, clear of the coast alone.
 
 A flare keeps 16 in from the clear water's edges (8 by an anchor). `margin:`
 sets that, and `EdgeInsets.zero` gives a bar the width of the screen, a fixed
-`SnackBar`'s look, still above the docks and off the coast. A bar that paints
-under the home indicator is a dock, not a flare: moor it with a `HarborPontoon`.
+`SnackBar`'s look, still above the docks and off the coast. `reachesCoast: true`
+lets it run over the coast on the edges it is against (under the home
+indicator at the bottom, the status bar at the top, the side insets always),
+still off the docks and the keyboard, and hands its content the coast it covers
+as `MediaQuery.padding` to keep its text clear: `SnackBarBehavior.fixed`'s look.
+
+An anchored flare never flips, so its transition knows its side:
+`HarborFlareEntry.maybeOf(context)` in a `transitionBuilder` gives its `anchor`
+and `side`, and `HarborAnchorClip(anchor:, side:, child:)` clips at the anchor's
+edge, for a toast that slides out from under the field it hangs from.
 
 A flare raised with no harbor above it (a widget test that pumps a bare
 `MaterialApp`, a preview, a screen not yet built from a harbor) still shows: it
@@ -613,7 +625,10 @@ above the tab bar or the keyboard opens above the row; when neither side has
 room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
 the buoy is the side it landed on, so a popover can point its arrow at the
 anchor after a flip. The buoy is placed as it paints, so it hears of a flip on
-the next frame.
+the next frame. To have it afloat in the frame it is built (a menu opened by
+building it), call `controller.show()` in your widget's `initState`: an
+`OverlayPortalController` keeps a `show()` made before its portal is attached,
+and the portal shows as it attaches.
 
 With an `onDismiss`, a portal buoy closes as a `MenuAnchor` does: its buoy and
 its `child` are one `TapRegion` group, so a tap outside both calls `onDismiss`
