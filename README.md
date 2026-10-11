@@ -732,6 +732,25 @@ horizontal hinge keeps to the top screen. The body still runs across, so a page
 is one canvas; split it into panes for two. Only a harbor as big as the screen
 reads the hinge. `Harbor(hinge: HarborHinge.never)` lays docks across it.
 
+`HarborPanes(start:, end:)` is two panes, modelled on Windows' `TwoPaneView`:
+either side of a hinge the policy keeps off (side by side for a vertical one,
+start on top for a horizontal one), side by side when the width reaches
+`minWideWidth` (840 by default, Material's expanded width), one above the other
+when the height reaches `minTallHeight` (off by default), and otherwise
+`priority`'s pane alone. Each pane is built as a screen of its own, with its size,
+the coast only on its outer edges and only the display features inside it, so
+each can be a `Harbor` with docks of its own: list and detail, two pages of a
+book, a canvas and its tools. `HarborPanes.modeOf(context)` tells a list whether
+its detail is on screen, so a tap can fill the end pane or open a page.
+
+```dart
+HarborPanes(
+  start: Harbor(top: [HarborDock.pier(child: header)], body: list),
+  end: Harbor(body: detail),
+  priority: HarborPanePriority.start, // the list, on a phone
+)
+```
+
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
