@@ -60,6 +60,36 @@ enum HarborHinge {
   MediaQueryData splitting(final MediaQueryData mediaQuery) => mediaQuery.copyWith(displayFeatures: keptOff(mediaQuery.displayFeatures));
 }
 
+/// How a foldable is held, from its fold: open flat, half open on a table, or half open like a
+/// book. Android's tabletop and book postures, read from `MediaQuery.displayFeatures`.
+enum HarborPosture {
+  /// Open flat, or with no fold: one screen to lay out, the hinge policy aside.
+  flat,
+
+  /// Half open with the fold across the screen, the lower half on a table: content above the
+  /// fold, controls below it, as Android's guidance has a video above its playback controls.
+  /// A [HarborPanes] puts its start pane above the fold and its end pane below.
+  tabletop,
+
+  /// Half open with the fold down the middle, held like a book: two pages, one either side.
+  book;
+
+  /// The posture at [context], from the half-open fold or hinge in its `MediaQuery`, if any.
+  static HarborPosture of(final BuildContext context) => from(MediaQuery.displayFeaturesOf(context));
+
+  /// The posture [features] describe.
+  static HarborPosture from(final Iterable<DisplayFeature> features) {
+    for (final DisplayFeature feature in features) {
+      if ((feature.type == DisplayFeatureType.fold || feature.type == DisplayFeatureType.hinge) &&
+          feature.state == DisplayFeatureState.postureHalfOpened) {
+        // A fold has no width, so its long side says which way it runs.
+        return feature.bounds.width >= feature.bounds.height ? HarborPosture.tabletop : HarborPosture.book;
+      }
+    }
+    return HarborPosture.flat;
+  }
+}
+
 /// Hands a [HarborHinge] to everything beneath, read with [HarborHinge.of].
 @internal
 class HarborHingeScope extends InheritedWidget {

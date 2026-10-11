@@ -41,7 +41,7 @@ export 'src/dock_slot.dart' show HarborDockSlot;
 export 'src/edge.dart';
 export 'src/fairway.dart';
 export 'src/harbor.dart';
-export 'src/hinge.dart' show HarborHinge;
+export 'src/hinge.dart' show HarborHinge, HarborPosture;
 export 'src/panes.dart';
 export 'src/lighthouse.dart';
 export 'src/make_way.dart';
