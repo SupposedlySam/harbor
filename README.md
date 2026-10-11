@@ -707,6 +707,24 @@ On a dual-screen device, sheets and dialogs keep to one screen, as Material's do
 and flares and buoys keep to the screen that holds them, never across the hinge.
 A flat fold, which has no width, may still be spanned.
 
+Which hinges and folds they keep off is a policy, `HarborHinge`, modelled on
+Material 3's `HingePolicy`:
+
+| `HarborHinge` | Keeps off |
+|---|---|
+| `avoidSeparating` (default) | A hinge with width, and a fold that is half open: what separates the screen |
+| `avoidOccluding` | Only a hinge with width, which hides content; a half-open fold is still one screen |
+| `always` | Every hinge and fold, a flat one too |
+| `never` | Nothing: the inner screen is one wide, unbroken screen, for a canvas or a map |
+
+Set the app's default on `HarborSea(hinge:)`, a page's on `Harbor(hinge:)`, and
+one overlay's on `showHarborSheet(hinge:)`, `showHarborDialog(hinge:)`,
+`HarborFlares.raise(hinge:)` or `HarborBuoy(hinge:)`; the nearest wins, and a flare
+takes the policy of the page that raised it. It changes only where harbor puts
+things: `MediaQuery.displayFeatures` stays as the platform reports it, so a
+two-pane layout or a video player beneath still sees the hinge. `anchorPoint:`
+picks the side.
+
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another

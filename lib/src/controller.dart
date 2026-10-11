@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'buoy.dart' show HarborAnchor, HarborBuoy, HarborBuoyCrossAlignment, HarborBuoySide, HarborFlareScope;
 import 'dock.dart';
 import 'edge.dart';
+import 'hinge.dart';
 import 'tide.dart';
 
 /// How a dock makes way when content asks it to.
@@ -109,6 +110,7 @@ class HarborFlareEntry {
     this.margin,
     this.countsEntrance = false,
     this.reachesCoast = false,
+    this.hinge,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
@@ -159,6 +161,9 @@ class HarborFlareEntry {
   /// cutout) on the edges it is against, still off the docks and the keyboard. Its content is
   /// handed the coast it covers as `MediaQuery.padding`.
   final bool reachesCoast;
+
+  /// Which hinges and folds the flare keeps to one side of; the raising page's when raised.
+  final HarborHinge? hinge;
 
   /// Whether [duration] counts from the start of the flare's entrance rather
   /// than its end, so a 4 s flare is on screen 4 s, entrance included. With

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show DisplayFeature, DisplayFeatureState;
+import 'dart:ui' show DisplayFeature;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 
 import 'barrier_label.dart';
 import 'controller.dart';
+import 'hinge.dart';
 import 'render_harbor.dart';
 
 /// A point a buoy can be anchored to: give it to a [HarborAnchorPoint] around
@@ -303,6 +304,7 @@ class HarborBuoy with Diagnosticable {
     this.requestFocus = true,
     this.barrierLabel = harborBarrierDismissLabel,
     this.within,
+    this.hinge,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        anchor = null,
        side = HarborBuoySide.above,
@@ -330,12 +332,19 @@ class HarborBuoy with Diagnosticable {
     this.barrierColor = const Color(0x00000000),
     this.requestFocus = true,
     this.barrierLabel = harborBarrierDismissLabel,
+    this.hinge,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
        alignment = Alignment.center,
        within = null;
 
   final Key? key;
   final Widget child;
+
+  /// Which hinges and folds the buoy keeps to one side of: the screen that holds its
+  /// [alignment] point. Null takes its harbor's [HarborHinge.of]. An anchored buoy sits by its
+  /// anchor wherever that is.
+  final HarborHinge? hinge;
+
   /// Where the buoy sits in the clear water. An [AlignmentDirectional] follows the reading
   /// direction, as a Material floating action button does.
   final AlignmentGeometry alignment;
@@ -545,6 +554,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
         else
           HarborBuoy(
             key: ObjectKey(flare),
+            hinge: flare.hinge,
             alignment: flare.alignment,
             within: _local(context, flare.avoidInGlobal),
             margin: flare.margin ?? const EdgeInsets.all(16.0),
@@ -687,7 +697,8 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(final BuildContext context) =>
       _RenderBuoyLayer(buoys, Directionality.maybeOf(context) ?? TextDirection.ltr)
-        .._avoid = _hinges(context)
+        .._features = MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[]
+        .._hinge = HarborHinge.of(context)
         .._reaching = reaching;
 
   @override
@@ -696,16 +707,11 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
       ..buoys = buoys
       ..reaching = reaching
       ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr
-      ..avoid = _hinges(context);
+      // Read through displayFeaturesOf alone, so the layer is not rebuilt for every other change
+      // to MediaQuery.
+      ..features = MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[]
+      ..hinge = HarborHinge.of(context);
   }
-
-  /// The hinges and half-open folds a buoy keeps off, chosen as `DisplayFeatureSubScreen` chooses
-  /// them: a flat fold has no width and content may span it. Read through `displayFeaturesOf`
-  /// alone, so the layer is not rebuilt for every other change to `MediaQuery`.
-  static List<Rect> _hinges(final BuildContext context) => <Rect>[
-    for (final DisplayFeature feature in MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[])
-      if (feature.bounds.shortestSide > 0 || feature.state == DisplayFeatureState.postureHalfOpened) feature.bounds,
-  ];
 }
 
 class _BuoyParentData extends ContainerBoxParentData<RenderBox> {
@@ -729,23 +735,36 @@ class _RenderBuoyLayer extends RenderBox
     markNeedsLayout();
   }
 
-  List<Rect> _avoid = const <Rect>[];
-  set avoid(final List<Rect> value) {
-    if (listEquals(value, _avoid)) {
+  /// The screen's hinges, folds and cutouts, as the platform reports them.
+  List<DisplayFeature> _features = const <DisplayFeature>[];
+  set features(final List<DisplayFeature> value) {
+    if (listEquals(value, _features)) {
       return;
     }
-    _avoid = value;
+    _features = value;
     markNeedsLayout();
+  }
+
+  /// The harbor's policy, for the buoys with none of their own.
+  HarborHinge _hinge = HarborHinge.avoidSeparating;
+  set hinge(final HarborHinge value) {
+    if (value != _hinge) {
+      _hinge = value;
+      markNeedsLayout();
+    }
   }
 
   /// [water], or the one screen of it that holds [buoy]'s alignment point when a hinge splits it.
   /// A point on the hinge itself goes to the screen where reading starts, as a dialog does. Laid
   /// out in the layer's own coordinates, taken to be the screen's, as `DisplayFeatureSubScreen` does.
   Rect _screenFor(final HarborBuoy buoy, final Rect water) {
-    if (_avoid.isEmpty) {
+    final List<Rect> avoid = <Rect>[
+      for (final DisplayFeature feature in (buoy.hinge ?? _hinge).keptOff(_features)) feature.bounds,
+    ];
+    if (avoid.isEmpty) {
       return water;
     }
-    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, _avoid).toList();
+    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, avoid).toList();
     if (screens.length < 2) {
       return screens.isEmpty ? water : screens.single;
     }
@@ -1667,6 +1686,7 @@ abstract final class HarborFlares {
     final EdgeInsetsGeometry? margin,
     final bool countsEntrance = false,
     final bool reachesCoast = false,
+    final HarborHinge? hinge,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
@@ -1694,6 +1714,8 @@ abstract final class HarborFlares {
       margin: margin?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr),
       countsEntrance: countsEntrance,
       reachesCoast: reachesCoast,
+      // Read where it is raised: the page that raised it decides, wherever it is shown.
+      hinge: hinge ?? HarborHinge.of(context),
     );
     final HarborController? controller = anchor != null
         ? _portOf(HarborController.maybeOf(context))
