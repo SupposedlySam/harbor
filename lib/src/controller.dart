@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborBuoy, HarborBuoyCrossAlignment, HarborBuoySide;
+import 'buoy.dart' show HarborAnchor, HarborBuoy, HarborBuoyCrossAlignment, HarborBuoySide, HarborFlareScope;
 import 'dock.dart';
 import 'edge.dart';
 import 'tide.dart';
@@ -95,7 +95,7 @@ class HarborFlareEntry {
   HarborFlareEntry({
     required this.builder,
     required this.alignment,
-    required this.duration,
+    required this._duration,
     this.persist = false,
     final Rect? avoidInGlobal,
     this.raisedIn,
@@ -107,6 +107,8 @@ class HarborFlareEntry {
     this.gap = 8.0,
     this.crossAlignment = HarborBuoyCrossAlignment.center,
     this.margin,
+    this.countsEntrance = false,
+    this.reachesCoast = false,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
@@ -138,10 +140,34 @@ class HarborFlareEntry {
   /// Where the flare takes its turn: flares at one place are shown one at a time.
   Object get _place => anchor == null ? alignment : (anchor, side);
 
-  /// How long the flare stays once it is in sight: its entrance has run and
-  /// no other route covers its harbor. Counted again from the start each time
-  /// it comes back into sight. Null never times out, the same as [persist].
-  final Duration? duration;
+  /// How long the flare stays once it is in sight: from the end of its
+  /// entrance (or its start, with [countsEntrance]), while no other route
+  /// covers its harbor. Counted again from the start each time it comes back
+  /// into sight. Null never times out, the same as [persist].
+  ///
+  /// Setting it starts the time over with the new duration, as coming back
+  /// into sight or releasing a [hold] does: give a toast longer once a screen
+  /// reader turns on, or less once it turns off. Null stops it timing out.
+  Duration? get duration => _duration;
+  Duration? _duration;
+  set duration(final Duration? value) {
+    _duration = value;
+    _timing.value++;
+  }
+
+  /// Whether the flare may reach over the coast (the home indicator, the status bar, a side
+  /// cutout) on the edges it is against, still off the docks and the keyboard. Its content is
+  /// handed the coast it covers as `MediaQuery.padding`.
+  final bool reachesCoast;
+
+  /// Whether [duration] counts from the start of the flare's entrance rather
+  /// than its end, so a 4 s flare is on screen 4 s, entrance included. With
+  /// reduced motion there is no entrance, and the two are the same.
+  final bool countsEntrance;
+
+  /// Ticks when [duration] is set, so a showing flare starts its time over.
+  ValueListenable<int> get timing => _timing;
+  final ValueNotifier<int> _timing = ValueNotifier<int>(0);
 
   /// Whether the flare stays up after [duration] until it is lowered, as a
   /// `SnackBar` with `persist` does. Give it to a flare with a button (an
@@ -198,6 +224,11 @@ class HarborFlareEntry {
   /// it was lowered; at once for a flare lowered before its turn came.
   Future<HarborFlareClosedReason> get closed => _closed.future;
 
+  /// The flare whose builder or transition [context] is in, or null outside one: for a flare
+  /// that takes a [hold] on itself, or a transition that reads its [anchor] and [side].
+  static HarborFlareEntry? maybeOf(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<HarborFlareScope>()?.entry;
+
   /// Whether the flare's time is stopped by a [hold].
   ValueListenable<bool> get held => _held;
   final ValueNotifier<bool> _held = ValueNotifier<bool>(false);
@@ -208,20 +239,20 @@ class HarborFlareEntry {
   /// claims are: time runs again once every hold is released, counted from the start, as it is
   /// when the flare comes back into sight. Lowering a held flare still lowers it.
   ///
-  /// The flare's builder can reach its own entry through the variable [HarborFlares.raise]'s
-  /// result is stored in, since the builder runs after the raise returns:
+  /// The flare's builder reaches its own entry with [maybeOf]:
   ///
   /// ```dart
-  /// late final HarborFlareEntry toast;
-  /// HarborFlareHold? hold;
-  /// toast = HarborFlares.raise(
+  /// HarborFlares.raise(
   ///   context,
-  ///   builder: (context) => Listener(
-  ///     onPointerDown: (_) => hold ??= toast.hold(),
-  ///     onPointerUp: (_) => hold = hold?.release(),
-  ///     onPointerCancel: (_) => hold = hold?.release(),
-  ///     child: const Text('Saved'),
-  ///   ),
+  ///   builder: (context) {
+  ///     HarborFlareHold? hold;
+  ///     return Listener(
+  ///       onPointerDown: (_) => hold ??= HarborFlareEntry.maybeOf(context)?.hold(),
+  ///       onPointerUp: (_) => hold = hold?.release(),
+  ///       onPointerCancel: (_) => hold = hold?.release(),
+  ///       child: const Text('Saved'),
+  ///     );
+  ///   },
   /// );
   /// ```
   HarborFlareHold hold() {
