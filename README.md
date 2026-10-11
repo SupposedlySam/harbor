@@ -47,7 +47,8 @@ the keyboard) above everything.
 padding for everything beneath it.**
 
 - A **quay** (pronounced "key"): the body stops at it, as at `Scaffold.appBar`. It is a dock
-  built on the shore. It takes its ground, and the body starts where it ends, like a `Column`.
+  built on the shore, beside the body rather than over it, so it takes its ground and the body
+  starts where it ends, like a `Column`.
 - A **pier**: the body runs under it, as under an app bar with `extendBodyBehindAppBar`. It is a
   dock built out over the water, and the body is told, through `MediaQuery.padding`, how far it
   reaches.
@@ -64,9 +65,12 @@ header your list starts below.
 | **New port** | A harbor that starts fresh: a route, a sheet, a dialog | `Harbor(newPort: true)` |
 | **Coast** | What the platform takes: status bar, home indicator, cutouts, TV title-safe | `HarborCoast` |
 | **Tide** | The keyboard | `HarborTide` |
-| **Dock** | Something built against an edge, measured, never declared | `HarborDock.pier` / `.quay` |
+| **Dock** | Something built against an edge and measured, not declared (`HarborDock.reserve` holds a stated extent for something drawn elsewhere) | `HarborDock.pier` / `.quay` / `.reserve` |
 | **Wake** | The fade where content passes under a dock | `HarborWake` |
+| **Clear water** | The rectangle no coast, dock or keyboard covers, where buoys and flares go | `HarborController.clearWater` |
+| **Waters** | What a widget learns about its harbor: the coast, the docks and their wakes, the margin, kept apart | `HarborWaters` |
 | **Moored** | Content kept clear of everything in its way | `HarborMoored` |
+| **Cast off** | A layer that has kept clear of an edge, so everything beneath reads zero there | `HarborCastOff` |
 | **Mooring line** | The page margin, applied by the content that asks for it | `Harbor(margin:)`, `HarborMooringLine` |
 | **Fairway** | A scroll view that runs under the docks and rests clear of them | `HarborFairway` |
 | **Open water** | Content that ignores the docks: backgrounds, maps, heroes | `HarborOpenWater` |
@@ -76,6 +80,8 @@ header your list starts below.
 | **Buoy** | Something afloat in the clear water: a menu, a bubble | `HarborBuoy` |
 | **Portal buoy** | A buoy opened from anywhere: a row's menu, a button's popover | `HarborPortalBuoy` |
 | **Flare** | A transient buoy: a toast | `HarborFlares.raise` |
+| **Port** | The harbor a flare or sheet belongs to: the first harbor of a route or a sheet | `Harbor(newPort: true)` |
+| **Sheet** | A bottom sheet whose header and footer are docks | `showHarborSheet`, `HarborSheet` |
 | **Breakwater** | A sheet reporting how much of the page it covers | `showHarborSheet(breakwater: true)` |
 | **Lighthouse** | Keeps things in sight: reveal, lift, coverage | `HarborLighthouse`, `HarborBeacon` |
 | **Scale model** | A fixed reference screen scaled to fit (TV) | `HarborScaleModel` |
@@ -93,7 +99,7 @@ If you know the Flutter widget, this is where to look in harbor, and what is dif
 | **New port** | A route, which reads the `MediaQuery` from above the `Navigator` | A harbor that is not a new port takes the docks of the harbor around it as part of its coast |
 | **Coast** | `MediaQuery.padding` and `viewPadding` | The same insets, read from `MediaQuery`, plus a TV's title-safe band (`HarborCoast.titleSafe`) or a fixed coast (`HarborCoast.fixed`, and `HarborCoast.none` for goldens) |
 | **Tide** | `MediaQuery.viewInsets.bottom`; `Scaffold.resizeToAvoidBottomInset` | It adds a phase, a high-water mark, and how much of it still reaches this point (`remaining`). A resizing `Scaffold` moves the whole body; here each dock decides. The keyboard stays in `viewInsets`, never in `padding` |
-| **Quay** (`HarborDock.quay`) | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured, never declared, and on any edge: a start dock holds a `NavigationRail` as a `Row` would. Several stack |
+| **Quay** (`HarborDock.quay`) | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured rather than declared, and on any edge: a start dock holds a `NavigationRail` as a `Row` would. Several stack |
 | **Pier** (`HarborDock.pier`) | An app bar under `Scaffold(extendBodyBehindAppBar: true)`, a bottom bar under `extendBody: true` | The same mechanism: the body runs under it and its `MediaQuery.padding` says how far. A pier does it on any edge, and for a stack of docks |
 | **Wake** | A `ShaderMask` fade, with a `BackdropFilter` frost under the bar | The fade's length counts toward where content rests, so the band and the first row's resting line never drift apart |
 | **Moored** | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. A moored widget keeps clear of it at the bottom too, can clear the coast alone (`clear:`) or the docks at rest (`follow:`), and takes directional edges. Both cast off what they cleared, and `minimum:` is a floor on both |
@@ -127,6 +133,8 @@ A **buoy** is pronounced "BOO-ee" in American English and "boy" in British; both
 Mount the sea once, above your `Navigator`:
 
 ```dart
+import 'package:harbor/harbor.dart';
+
 MaterialApp(
   builder: (context, child) => HarborSea(
     margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -136,9 +144,11 @@ MaterialApp(
 );
 ```
 
-Every inset harbor takes (a margin, a minimum, a fairway's padding, a fixed
-coast) is an `EdgeInsetsGeometry`, as `Padding`'s is: `EdgeInsets` keeps to the
-side it names, and `EdgeInsetsDirectional` follows the reading direction.
+Every inset harbor takes on more than one edge (a harbor's margin and minimum,
+a fairway's padding, a fixed coast, a flare's margin) is an `EdgeInsetsGeometry`,
+as `Padding`'s is: `EdgeInsets` keeps to the side it names, and
+`EdgeInsetsDirectional` follows the reading direction. A dock's `minimum`, for
+its one edge, is a number.
 
 Build a page from a harbor:
 
@@ -150,7 +160,7 @@ Harbor(
       child: const InboxHeader(),
     ),
   ],
-  bottom: [HarborDock.quay(child: const TabBar())],
+  bottom: [HarborDock.quay(child: const InboxTabs())],
   body: HarborFairway(
     slivers: [
       SliverList.builder(
@@ -183,17 +193,21 @@ HarborDock.quay(child: tabBar)          // the body stops at it (Scaffold.appBar
 ```
 
 Docks on one edge are listed in reading order (`top` and `bottom` top to
-bottom, `start` and `end` in reading order) and stack. Docks on the same
-layer add up; a pier over a quay reaches past it. Quays are always nearer the
-edge than piers.
+bottom, `start` and `end` in reading order) and stack, so the first top dock
+and the last bottom dock are the ones against the edge. Docks on the same
+layer add up; a pier over a quay reaches past it. List quays nearer the edge
+than piers: a quay listed inside a pier is reported as an error in debug
+builds.
 
 A dock **absorbs the coast** on its own edge: a top dock pads its child below the
 status bar, and a bottom dock pads it above the home indicator. Its `backdrop` is
 painted under the whole of its ground, coast included. The insets across it (a
-top dock's sides) stay in the child's `MediaQuery` for the child to handle.
+top dock's sides) stay in the child's `MediaQuery` for the child to handle,
+except on a side a `start` or `end` dock holds: that dock took the coast there.
 
-A dock sizes its child **the way a `Row` or `Column` does**: the child spans the
-edge and picks its own depth. A `NavigationRail` in a `start` dock is as wide as
+A dock sizes its child **the way a `Row` or `Column` does**: the child spans its
+edge (for a top or bottom dock, the part between any side docks) and picks its
+own depth. A `NavigationRail` in a `start` dock is as wide as
 it is in a `Row`, and an `AppBar` in a `top` dock is as tall as its toolbar.
 Something that fills whatever it is given, like a `ListView`, needs a size, just
 as it would in a `Row`.
@@ -203,6 +217,14 @@ as it would in a `Row`.
 edge, coast included, or 80 past the docks outside it, paints nothing and takes
 no taps. It is a pier by default (`kind: HarborDockKind.quay` stops the body
 at it) and takes a `tide:` like any dock.
+
+A `Harbor` fills the space it is given, as a page does. `sizing: HarborSizing.hugBody`
+makes it as tall as its body and docks, as a content-sized sheet is, and
+`maxExtentFraction:` caps that at a share of the space above the keyboard (of the
+whole height when `bodyClearsTide` is false). `coast:` replaces the coast a harbor
+reads from `MediaQuery` (`HarborCoast.fixed(...)`, `HarborCoast.none` for goldens,
+`HarborCoast.titleSafe(...)` on a TV), on a `HarborSea` or any `Harbor`, and
+`minimum:` is a floor under what its body keeps clear of on each edge.
 
 **The side docks own the corners.** A `start` or `end` dock runs the frame's
 full height, and a `top` or `bottom` dock runs between them, as a tablet's
@@ -227,6 +249,7 @@ focus (`restingExtent:`) holds the header at its resting width.
 | `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip |
 | `restingExtent:` | The size to hold at rest for a dock that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, coast or not, for the dock outermost on its edge (the one that takes the coast) |
+| `coast: HarborCoastStance.live` / `.steady` / `.none` | How it takes the coast on its edge: as it is now (gone at the bottom while the keyboard is up; the default for a floating dock), as it is with the keyboard down (the default on pilings), or not at all (the default for a dry dock) |
 | `hitTestBehavior:` | Opaque by default, so taps on the header never reach rows under it |
 
 ## Content
@@ -425,25 +448,6 @@ counted twice, but every dock then rides up above the keyboard: a tab bar on pil
 instead of covered, and `bodyClearsTide: false` has nothing to run under. Leave the Scaffold's
 `appBar`, `bottomNavigationBar` and `floatingActionButton` empty and use docks and buoys instead.
 
-## Accessibility
-
-What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
-by keyboard focus and by screen readers, not only by taps, and a buoy whose
-anchor is not in the tree is not read out. Flares are live
-regions, so screen readers announce them, with a dismiss action that lowers
-them, as a `SnackBar` is. A flare whose widget is already its own live region
-(a `SnackBar`-like widget from your design library) is raised with
-`liveRegion: false`, so harbor adds no second, unlabelled one around it. A
-flare with a button is raised with `persist: true`, as a `SnackBar` with an
-action persists, so it is still there when a screen reader reaches it. Sheets and flares keep the themes of
-the page they came from, and so do dialogs. With reduced motion
-(`MediaQuery.disableAnimations`) docks, flares, sheets and dialogs appear and
-leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
-status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
-as there only the page whose status bar band is on top at the screen's top left:
-a page under a route in an outer navigator, under an overlay, or in the
-right-hand pane of a split stays where it is.
-
 ## Talking to the harbor
 
 ```dart
@@ -475,7 +479,7 @@ Harbor(
     HarborBuoy.anchored(anchor: launchAnchor, side: HarborBuoySide.above, overlap: 6, child: bubble),
     HarborBuoy(modal: true, onDismiss: closeQuickActions, child: quickActions), // a barrier over the page
   ],
-  bottom: [HarborDock.quay(child: TabBar(launch: HarborAnchorPoint(anchor: launchAnchor, child: launchButton)))],
+  bottom: [HarborDock.quay(child: InboxTabs(launch: HarborAnchorPoint(anchor: launchAnchor, child: launchButton)))],
   body: ...,
 )
 
@@ -497,7 +501,7 @@ HarborFlares.raise(
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
 An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
-right-to-left. (`before` and `after`, their names until 0.2.0, still work and are
+right-to-left. (`before` and `after`, their names through 0.2.0, still work and are
 deprecated.) Across that side it is centred on its anchor unless its
 `crossAlignment` says `start` or `end`, the anchor's edges in reading order (or
 its top and bottom beside it), as a dropdown lines up under its button's leading
@@ -557,8 +561,13 @@ is in sight: from the end of its entrance, and not while another route covers
 its page (the time starts over when that route leaves). `persist: true` keeps it
 up until it is lowered, as `SnackBar(persist:)` does. Give it to a flare with a
 button, an Undo: a screen-reader user moving through the page needs longer than
-4 s to reach it. `entry.hold()` stops the time while a finger is on the flare or
-focus is in it, and `release()` on the hold starts it over; holds are counted.
+4 s to reach it. `entry.hold()` stops the time until you `release()` the
+`HarborFlareHold` it returns: call it from the flare's own `Listener` when a
+finger goes down, or when focus moves in. harbor never holds a flare by itself.
+Holds are counted, the time starts over at the last release, and `entry.held`
+says whether one is on. A flare with neither a slot nor an alignment goes to
+`HarborFlareSlot.high`, and `target: HarborFlareTarget.sea` sends it to the
+outermost harbor, clear of the coast alone.
 
 A flare keeps 16 in from the clear water's edges (8 by an anchor). `margin:`
 sets that, and `EdgeInsets.zero` gives a bar the width of the screen, a fixed
@@ -575,7 +584,7 @@ header. With no overlay either, it is reported through
 is lowered or when nothing is left to show it, so a test that ends with one up
 has no timer pending.
 
-Flares were called signals until 0.3.0. The old names (`HarborSignals`,
+Flares were called signals through 0.3.0 (renamed in 0.3.1). The old names (`HarborSignals`,
 `HarborSignalSlot`, `HarborSignalEntry` and the rest) still work and are
 deprecated; they go at 1.0.
 
@@ -632,6 +641,7 @@ before a modal buoy it was opened from.
 showHarborSheet(context, builder: (_) => HarborSheet(header: title, footer: actions, body: form));
 showHarborSheet(context, builder: (_) => HarborSheet.draggable(
   header: title,
+  extent: const HarborSheetExtent(rest: 0.5, max: 0.88, min: 0.25), // the defaults
   builder: (context, controller) => HarborFairway(controller: controller, slivers: [...]),
 ));
 showHarborSheet(context, breakwater: true, barrier: HarborSheetBarrier.none, builder: ...);
@@ -640,7 +650,7 @@ showHarborDialog(context, inheritClearWater: true, builder: ...);
 
 A sheet is a new port. It takes the themes and text style of the page that
 opened it, and stops short of the status bar. Its header is a pier with a wake
-(on a draggable sheet, also a drag handle), and its footer is a quay that
+(on a draggable sheet, dragging the header drags the sheet), and its footer is a quay that
 floats on the tide and keeps 16 off the edge. It keeps the home
 indicator in its coast, so its footer clears it exactly once. A draggable
 sheet's heights are fractions of the space between the status bar and the
@@ -655,7 +665,8 @@ are. A header that paints under the status bar and pads its own title would
 pad twice, so it passes `HarborSheet(clearsTopCoast: false)` (on
 `HarborSheet.draggable` too): the sheet keeps the height `keepsTopCoast` gave
 it, and the top coast is cast off for its content, which reads zero there.
-Without `keepsTopCoast` it changes nothing: the sheet stops short of the status
+Flares and buoys in the sheet still keep clear of the status bar. Without
+`keepsTopCoast` it changes nothing: the sheet stops short of the status
 bar and is handed no top coast to clear.
 
 On a phone on its side, or with a cutout on a side edge, `HarborSheet(clearsSides: true)`
@@ -673,8 +684,9 @@ above it. `HarborSheet(bodyClearsTide: false)` leaves the keyboard to the body,
 as `Harbor(bodyClearsTide: false)` does a page's: for an editing toolbar that
 holds a keyboard-sized space so nothing jumps when a field takes focus, or an
 inspector the keyboard may cover. The body runs under the keyboard and reads it
-in `MediaQuery.viewInsets`, a floating footer still rides up on it, and the
-height cap (or a draggable sheet's extents) is a share of the whole height.
+in `MediaQuery.viewInsets`, a floating footer still rides up on it, and
+`maxExtentFraction` (0.9 of the space above the keyboard by default), or a
+draggable sheet's extents, is a share of the whole height.
 
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and flares and buoys keep to the screen that holds them, never across the hinge.
@@ -786,7 +798,8 @@ final bool? delete = await Navigator.of(context).push(confirm);
 
 It takes the same options. The page at `context` lends it its themes and, with
 `inheritClearWater: true`, its clear water, both read as the route is pushed rather than
-when it is made.
+when it is made. Inheriting the clear water, the dialog treats the opening page's docks as
+coast, so a menu stays between that page's header and its composer.
 
 Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
 makes a sheet the user has to answer: a tap on the barrier does nothing, and
@@ -840,6 +853,8 @@ finger down by any part that doesn't scroll, and closes on a fling faster than
 rest and its ceiling). A fling down on its header from its lowest height goes
 to the floor and closes it when it is faster than 700 logical px/s, the speed
 at which a Material `BottomSheet` closes; a slower one goes back to that height.
+A fling down faster than 1200 (or `closeFlingVelocity`, if higher) closes it
+from any height.
 `closeFlingVelocity:` sets that speed, on either kind of sheet
 (`closeFlingVelocity: 400` is the speed harbor used before 0.3.1). A fling on its list is
 `DraggableScrollableSheet`'s own, as in a modal bottom sheet: from the lowest
@@ -872,7 +887,7 @@ reduced motion still wins.
 ## The lighthouse
 
 ```dart
-HarborBeacon(onObscured: (covered) => titleOpacity.value = covered, child: heroTitle);
+HarborBeacon(onObscured: (covered) => titleOpacity.value = covered, child: heroTitle); // covered: 0 to 1
 HarborBeacon(keepInSight: true, child: field);            // re-reveals as the keyboard rises or focus moves in
 HarborLighthouseRegion(child: canvas)                     // + HarborBeacon(lift: true, clearance: 80)
 HarborLighthouse.reveal(context, clearance: 24);
@@ -888,6 +903,25 @@ A region lifts over 280 ms and settles back the same way. Give it an
 `animationStyle:` to change that: its `duration` and `curve` are for the lift,
 its `reverseDuration` and `reverseCurve` for settling back, and
 `AnimationStyle.noAnimation` moves the content at once.
+
+## Accessibility
+
+What harbor hides is hidden from everyone: a dark or withdrawn dock is skipped
+by keyboard focus and by screen readers, not only by taps, and a buoy whose
+anchor is not in the tree is not read out. Flares are live
+regions, so screen readers announce them, with a dismiss action that lowers
+them, as a `SnackBar` is. A flare whose widget is already its own live region
+(a `SnackBar`-like widget from your design library) is raised with
+`liveRegion: false`, so harbor adds no second, unlabelled one around it. A
+flare with a button is raised with `persist: true`, as a `SnackBar` with an
+action persists, so it is still there when a screen reader reaches it. Sheets and flares keep the themes of
+the page they came from, and so do dialogs. With reduced motion
+(`MediaQuery.disableAnimations`) docks, flares, sheets and dialogs appear and
+leave without moving, and the lighthouse's reveals and lifts jump into place. On iOS a tap on the
+status bar scrolls a harbor page to the top, as it does under a `Scaffold`, and
+as there only the page whose status bar band is on top at the screen's top left:
+a page under a route in an outer navigator, under an overlay, or in the
+right-hand pane of a split stays where it is.
 
 ## TV
 
@@ -986,8 +1020,10 @@ Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 Each device goes on the view at its own `devicePixelRatio`, and
 `device.displayFeatures` puts its folds and hinges there.
 `pumpSeaTrial(textScaleFactor:)` grows the system text size, so docks are
-measured at the size their text grew to. `trial.clearWaterAround(finder)` and `isInClearWater`
-assert where something sits relative to everything in the way, not to a number.
+measured at the size their text grew to. `trial.clearWaterAround(finder)` returns the clear
+water around a widget, and `isInClearWater` asserts against it, so a test checks where
+something sits relative to everything in the way, not against a number:
+`expect(find.byType(Menu), isInClearWater(trial.clearWaterAround(find.byType(Menu))))`.
 `trial.docksAround(finder)` lists the docks of the harbor around a widget. Both
 read `HarborChart.nearest`, so a test of your own can too.
 
@@ -999,6 +1035,7 @@ deprecated: importing it points to `harbor_test`. It will be removed in a later 
 `example/` is a small harbor game that exercises every pattern above. Toggle
 the chart in its Harbor Office to see the layers.
 
+This repository pins Flutter with fvm, hence `fvm flutter` below; plain `flutter` works too.
 The videos at the top of this page are `example/lib/showcase/` (the phone tour,
 `fvm flutter run -t lib/showcase_main.dart`) and `example/lib/showcase_wide/` (the
 wide-format one, `fvm flutter run -t lib/showcase_wide_main.dart`; render it with

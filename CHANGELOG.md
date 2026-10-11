@@ -1,3 +1,7 @@
+## 0.4.3+1
+
+* Docs: the README, read again from start to finish. Sentences that still described the old corners now say a top or bottom dock spans only the part between the side docks. `entry.hold()` is described as what it is, a hold you take and release yourself. The glossary gains clear water, waters, cast off, port and sheet. Examples now use widgets that compile, the any-height fling close is documented, a dock's `coast:` and a harbor's `sizing:`, `coast:` and `minimum:` are documented, and Accessibility follows the sections it refers to. The README's phone video is rendered again from current sources. No code changes.
+
 ## 0.4.3
 
 * Fixed: `HarborSheet(clearsTopCoast: false)` cast the status bar out of the sheet's clear water along with its header and body, so a flare or buoy raised in a full-height sheet could sit under the status bar. The header and body still read no top coast; the sheet's clear water, where flares, buoys and `HarborChart` look, keeps the status bar out as it does with the option off. ([#97](https://github.com/SupposedlySam/harbor/issues/97))
