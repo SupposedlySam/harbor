@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -206,7 +207,16 @@ class HarborGeometry {
     required this.maxExtentFraction,
     this.frameSize,
     this.clearWaterFloor = EdgeInsetsDirectional.zero,
+    this.hinges = const <Rect>[],
+    this.screenSize = Size.zero,
   });
+
+  /// The hinges and folds this harbor's policy keeps docks off, in the screen's coordinates.
+  /// Read only by a harbor as big as the screen, whose coordinates are the screen's.
+  final List<Rect> hinges;
+
+  /// The screen's size, to tell whether this harbor fills it.
+  final Size screenSize;
 
   /// Coast cast off above this harbor that still covers its frame: kept out of the clear water,
   /// though the docks and the body read zero there.
@@ -270,7 +280,9 @@ class HarborGeometry {
       other.viewHeight == viewHeight &&
       other.maxExtentFraction == maxExtentFraction &&
       other.frameSize == frameSize &&
-      other.clearWaterFloor == clearWaterFloor;
+      other.clearWaterFloor == clearWaterFloor &&
+      listEquals(other.hinges, hinges) &&
+      other.screenSize == screenSize;
 
   @override
   int get hashCode => Object.hash(
@@ -288,6 +300,8 @@ class HarborGeometry {
     viewHeight,
     maxExtentFraction,
     clearWaterFloor,
+    Object.hashAll(hinges),
+    screenSize,
   );
 }
 
@@ -543,6 +557,24 @@ class RenderHarbor extends RenderBox
       byEdge[data.edge]!.add(_Placed(child, data, extent, resting, visual));
     }
 
+    // A hinge or fold the page's policy keeps docks off, as Microsoft and Google both ask: a bar is
+    // not laid across it, but moved to one side. Only a harbor that fills the screen reads them,
+    // since the display features are in the screen's coordinates.
+    final bool fillsScreen = maxHeight.isFinite &&
+        (width - g.screenSize.width).abs() < 0.5 &&
+        (maxHeight - g.screenSize.height).abs() < 0.5;
+    Rect? verticalHinge;
+    Rect? horizontalHinge;
+    if (fillsScreen) {
+      for (final Rect hinge in g.hinges) {
+        if (hinge.top <= 0.5 && hinge.bottom >= maxHeight - 0.5 && hinge.left > 0.5 && hinge.right < width - 0.5) {
+          verticalHinge ??= hinge;
+        } else if (hinge.left <= 0.5 && hinge.right >= width - 0.5 && hinge.top > 0.5 && hinge.bottom < maxHeight - 0.5) {
+          horizontalHinge ??= hinge;
+        }
+      }
+    }
+
     RenderBox? child = firstChild;
     while (child != null) {
       final HarborParentData data = child.parentData! as HarborParentData;
@@ -562,7 +594,8 @@ class RenderHarbor extends RenderBox
           if (data.edge.isVertical) {
             verticalDocks.add(child);
           } else {
-            measure(child, BoxConstraints(minHeight: dockMaxHeight, maxHeight: dockMaxHeight));
+            final double sideHeight = horizontalHinge == null ? dockMaxHeight : horizontalHinge.top;
+            measure(child, BoxConstraints(minHeight: sideHeight, maxHeight: sideHeight));
           }
       }
       child = data.nextSibling;
@@ -572,7 +605,19 @@ class RenderHarbor extends RenderBox
     double sideAtRest(final HarborEdge edge) => byEdge[edge]!.fold(0.0, (final double sum, final _Placed p) => sum + p.resting);
     final double cornerStart = math.min(sideAtRest(HarborEdge.start), width);
     final double cornerEnd = math.min(sideAtRest(HarborEdge.end), width - cornerStart);
-    final double between = width - cornerStart - cornerEnd;
+    final bool ltr = g.textDirection == TextDirection.ltr;
+    // Between the side docks, in physical coordinates; and kept to the screen where reading starts
+    // when a vertical hinge falls between them.
+    double runLeft = ltr ? cornerStart : cornerEnd;
+    double runRight = width - (ltr ? cornerEnd : cornerStart);
+    if (verticalHinge != null && verticalHinge.left > runLeft && verticalHinge.right < runRight) {
+      if (ltr) {
+        runRight = verticalHinge.left;
+      } else {
+        runLeft = verticalHinge.right;
+      }
+    }
+    final double between = math.max(0.0, runRight - runLeft);
     for (final RenderBox dock in verticalDocks) {
       measure(dock, BoxConstraints(minWidth: between, maxWidth: between));
     }
@@ -772,14 +817,13 @@ class RenderHarbor extends RenderBox
     }
 
     // 6. Place the docks.
-    final bool ltr = g.textDirection == TextDirection.ltr;
     final List<HarborDockRecord> records = <HarborDockRecord>[];
     for (final HarborEdge edge in HarborEdge.values) {
       for (final _Placed dock in byEdge[edge]!) {
         final Size s = dock.box.size;
         final Offset offset = switch (edge) {
-          HarborEdge.top => Offset(ltr ? cornerStart : cornerEnd, dock.start),
-          HarborEdge.bottom => Offset(ltr ? cornerStart : cornerEnd, height - dock.start - s.height),
+          HarborEdge.top => Offset(runLeft, dock.start),
+          HarborEdge.bottom => Offset(runLeft, height - dock.start - s.height),
           HarborEdge.start => Offset(ltr ? dock.start : width - dock.start - s.width, 0.0),
           HarborEdge.end => Offset(ltr ? width - dock.start - s.width : dock.start, 0.0),
         };

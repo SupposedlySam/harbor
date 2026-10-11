@@ -725,6 +725,13 @@ things: `MediaQuery.displayFeatures` stays as the platform reports it, so a
 two-pane layout or a video player beneath still sees the hinge. `anchorPoint:`
 picks the side.
 
+Docks keep off a hinge the page's policy keeps off, as both Microsoft and Google
+ask: a header or a tab bar across a vertical hinge keeps to the screen where
+reading starts (the left one, or the right one right to left), and a rail down a
+horizontal hinge keeps to the top screen. The body still runs across, so a page
+is one canvas; split it into panes for two. Only a harbor as big as the screen
+reads the hinge. `Harbor(hinge: HarborHinge.never)` lays docks across it.
+
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
