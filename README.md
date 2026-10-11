@@ -751,6 +751,12 @@ HarborPanes(
 )
 ```
 
+`HarborPosture.of(context)` is how a foldable is held: `flat`, `tabletop` (half
+open with the fold across the screen) or `book` (half open with the fold down the
+middle). On a table, a `HarborPanes` puts its start pane above the fold and its end
+pane below, so a video player sits above its controls, as Android's tabletop
+guidance has it; in a book, the two panes are its pages.
+
 A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another

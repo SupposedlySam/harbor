@@ -1,3 +1,7 @@
+## 0.5.2
+
+* `HarborPosture.of(context)` reads how a foldable is held from its fold: `flat`, `tabletop` (half open, the fold across the screen) or `book` (half open, the fold down the middle), as Android's postures are. A `HarborPanes` already splits at a half-open fold under the default `HarborHinge`, so on a table its start pane sits above the fold and its end pane below: measured on a 750 by 832 foldable half open at 416, the start pane is 0 to 416 and a quay in the end pane sits on the lower screen's bottom coast.
+
 ## 0.5.1
 
 * `HarborPanes(start:, end:)`, two panes modelled on Windows' and .NET MAUI's `TwoPaneView` and Microsoft's `dual_screen` `TwoPane`: either side of a hinge or fold its `HarborHinge` keeps off (side by side for a vertical one, start on top for a horizontal one), side by side when the width reaches `minWideWidth` (840 by default), one above the other when the height reaches `minTallHeight` (off by default), and otherwise `priority`'s pane alone. Each pane gets a `MediaQuery` of its own: its size, the coast only on its outer edges, and only the display features inside it, so each can be a `Harbor` with its own docks. `HarborPanes.modeOf(context)` reports `single`, `wide` or `tall`. Measured on the dual-screen trial device: panes at 0 to 540 and 574 to 1114, each 540 by 720 with the top and bottom coast and no hinge in it.
