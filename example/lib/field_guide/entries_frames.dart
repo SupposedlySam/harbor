@@ -246,7 +246,7 @@ class _HarborSeaEntryState extends State<HarborSeaEntry> {
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborSea',
     tryThis: const <TryStep>[
-      TryStep('Open The stage and switch off Status bar', 'The top coast band goes to 0 and the HarborMoored marker moves up: the sea reads its coast from MediaQuery.'),
+      TryStep('Open The stage, switch off Status bar, then pick Device: iPhone SE', 'On the iPhone 17 the top band stays 62, since the island is hardware and keeps its inset; on the SE it goes to 0 and the HarborMoored marker moves up: the sea reads its coast from MediaQuery.'),
       TryStep('Switch Status bar on, pick Device: iPhone 17 landscape', 'The marker steps in to 78, the 62-point side inset plus the sea\'s 16 margin, and the bottom band thins to 21.'),
       TryStep('Tap the keyboard button under the tide gauge', 'The bottom band drops to 0 under the keyboard, but nothing on the sea moves: HarborSea clears nothing out of its way itself.'),
       TryStep('Switch on nested HarborSea', 'The top band grows and the marker moors below the outer pier: a sea inside a harbor reads that pier as coast.'),
@@ -310,7 +310,7 @@ class _NewPortEntryState extends State<NewPortEntry> {
     tryThis: const <TryStep>[
       TryStep('Scroll the rows up under Harbor(newPort: false)', 'They slide under the brass header and fade at its edge: the inner harbor\'s rows sail under its own pier.'),
       TryStep('Switch on newPort', 'The inner header jumps up level with the outer one, under the status bar: a new port sees only the coast, not outer docks.'),
-      TryStep('Open The stage and switch off Status bar', 'Both headers move up to the top together: the coast is all a new port answers to.'),
+      TryStep('Open The stage, pick Device: iPhone SE, switch off Status bar', 'Both headers move up to the top together: the coast is all a new port answers to. (On the iPhone 17 the island keeps its inset, so they would stay.)'),
       TryStep('Switch off newPort', 'The inner header drops back below the outer one: a nested harbor counts the outer pier as part of its coast.'),
     ],
     realWorld:

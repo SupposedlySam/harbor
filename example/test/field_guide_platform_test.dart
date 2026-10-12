@@ -143,15 +143,25 @@ void main() {
       );
     });
 
-    testWidgets('ambient follows the status bar and home indicator switches', (final WidgetTester tester) async {
+    testWidgets('ambient follows the switches: hiding the status bar leaves the island its inset', (final WidgetTester tester) async {
       await _pumpEntry(tester, const CoastEntry());
       await _tap(tester, _key('toggle Status bar'));
-      expect(_onDevice(tester, _key('coast header'), width).top, moreOrLessEquals(0, epsilon: 0.5));
+      // The iPhone's top inset is the sensor housing's, not the status bar's: it stays.
+      expect(_onDevice(tester, _key('coast header'), width).top, moreOrLessEquals(62, epsilon: 0.5));
       expect(_onDevice(tester, _key('coast bar'), width).bottom, moreOrLessEquals(874 - 34, epsilon: 0.5));
       await _tap(tester, _key('toggle Home indicator'));
       expect(_onDevice(tester, _key('coast bar'), width).bottom, moreOrLessEquals(874, epsilon: 0.5));
+    });
+
+    testWidgets('on a phone with no cutout, hiding the status bar gives back the whole top', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const CoastEntry());
+      await _tap(tester, _key('Device: iPhone SE'));
+      expect(_onDevice(tester, _key('coast header'), 375).top, moreOrLessEquals(20, epsilon: 0.5));
+      await _tap(tester, _key('toggle Status bar'));
+      expect(_onDevice(tester, _key('coast header'), 375).top, moreOrLessEquals(0, epsilon: 0.5));
+      await _tap(tester, _key('toggle Home indicator'));
       // No coast left: the deckle edge is the first thing the bands draw.
-      expect(_key('coast bands'), paints..rect(rect: (Offset.zero & const Size(width, 874)).deflate(3)));
+      expect(_key('coast bands'), paints..rect(rect: (Offset.zero & const Size(375, 667)).deflate(3)));
     });
 
     testWidgets('ambient takes the landscape phone’s side insets', (final WidgetTester tester) async {

@@ -9,7 +9,16 @@ import '../art/palette.dart';
 /// keyboard comes in. Mirrors the sea-trial devices in `package:harbor_test`.
 @immutable
 class StageDevice {
-  const StageDevice({required this.name, required this.size, required this.coast, required this.tideHeight, this.island = false, this.tv = false});
+  const StageDevice({
+    required this.name,
+    required this.size,
+    required this.coast,
+    required this.tideHeight,
+    this.cutout = EdgeInsets.zero,
+    this.island = false,
+    this.camera = false,
+    this.tv = false,
+  });
 
   final String name;
   final Size size;
@@ -18,8 +27,18 @@ class StageDevice {
   final EdgeInsets coast;
   final double tideHeight;
 
+  /// The part of [coast] the hardware takes, which stays when the status bar is hidden: the
+  /// sensor housing of an iPhone with a Dynamic Island, a punch-hole camera. On an iPhone the top
+  /// safe area is there for the sensor housing, not the status bar, so hiding the status bar
+  /// leaves it; on Android a cutout stays an inset (or the window is letterboxed away from it) in
+  /// immersive mode. A phone with none gives the whole top edge back.
+  final EdgeInsets cutout;
+
   /// Whether it has a Dynamic Island to draw.
   final bool island;
+
+  /// Whether it has a punch-hole camera to draw.
+  final bool camera;
 
   /// Whether it's a television (no keyboard, title-safe band).
   final bool tv;
@@ -29,6 +48,7 @@ class StageDevice {
     size: Size(402, 874),
     coast: EdgeInsets.only(top: 62, bottom: 34),
     tideHeight: 336,
+    cutout: EdgeInsets.only(top: 62),
     island: true,
   );
   static const StageDevice iPhoneSE = StageDevice(
@@ -48,12 +68,15 @@ class StageDevice {
     size: Size(412, 915),
     coast: EdgeInsets.only(top: 24, bottom: 24),
     tideHeight: 300,
+    cutout: EdgeInsets.only(top: 24),
+    camera: true,
   );
   static const StageDevice iPhone17Landscape = StageDevice(
     name: 'iPhone 17 landscape',
     size: Size(874, 402),
     coast: EdgeInsets.only(left: 62, right: 62, bottom: 21),
     tideHeight: 200,
+    cutout: EdgeInsets.only(left: 62, right: 62),
     island: true,
   );
   static const StageDevice foldableOpen = StageDevice(
@@ -67,6 +90,7 @@ class StageDevice {
     size: Size(466, 678),
     coast: EdgeInsets.only(right: 84, bottom: 34),
     tideHeight: 300,
+    cutout: EdgeInsets.only(right: 84),
   );
   static const StageDevice television = StageDevice(
     name: 'Television',
@@ -230,7 +254,8 @@ class StageSettings extends ChangeNotifier {
   MediaQueryData mediaQuery(final MediaQueryData base) {
     final EdgeInsets coast = EdgeInsets.fromLTRB(
       _device.coast.left,
-      _statusBar ? _device.coast.top : 0.0,
+      // Hiding the status bar gives back only what the status bar took: the hardware's share stays.
+      _statusBar ? _device.coast.top : _device.cutout.top,
       _device.coast.right,
       _homeIndicator ? _device.coast.bottom : 0.0,
     );
@@ -422,8 +447,18 @@ class _Screen extends StatelessWidget {
               // The device's own furniture, over everything and never in the way of touches.
               // A phone on its side has no status bar: its top inset is 0, so none is drawn (one
               // squeezed into a 0-high strip spilled over the page). Its island sits in the left inset.
-              if (settings.statusBar && !device.tv && device.coast.top > 0)
-                Positioned(top: 0, left: 0, right: 0, height: device.coast.top, child: IgnorePointer(child: StatusBarArt(island: device.island))),
+              // With the status bar hidden its time and icons go, and the hardware stays: the island
+              // or the camera, in the inset it still takes.
+              if (!device.tv && device.coast.top > 0 && (settings.statusBar || device.cutout.top > 0))
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: settings.statusBar ? device.coast.top : device.cutout.top,
+                  child: IgnorePointer(
+                    child: StatusBarArt(island: device.island, camera: device.camera, icons: settings.statusBar),
+                  ),
+                ),
               if (device.island && device.coast.top <= 0 && device.coast.left > 0)
                 Positioned(
                   left: (device.coast.left - 30) / 2,
@@ -534,21 +569,38 @@ class _StageProbeState extends State<StageProbe> {
 
 /// The status bar: the time, signal, Wi-Fi and battery, and the island.
 class StatusBarArt extends StatelessWidget {
-  const StatusBarArt({super.key, this.island = false});
+  const StatusBarArt({super.key, this.island = false, this.camera = false, this.icons = true});
 
   final bool island;
+  final bool camera;
+
+  /// Whether the time and the icons are drawn; false for a status bar that is hidden, which
+  /// leaves only the hardware.
+  final bool icons;
 
   @override
-  Widget build(final BuildContext context) => CustomPaint(painter: _StatusBarPainter(island));
+  Widget build(final BuildContext context) => CustomPaint(painter: _StatusBarPainter(island, camera, icons));
 }
 
 class _StatusBarPainter extends CustomPainter {
-  _StatusBarPainter(this.island);
+  _StatusBarPainter(this.island, this.camera, this.icons);
 
   final bool island;
+  final bool camera;
+  final bool icons;
 
   @override
   void paint(final Canvas canvas, final Size size) {
+    if (camera) {
+      canvas.drawCircle(Offset(size.width / 2, size.height / 2), 6, Paint()..color = Colors.black);
+    }
+    if (island) {
+      final Rect pill = Rect.fromCenter(center: Offset(size.width / 2, size.height * 0.48), width: 124, height: 36);
+      canvas.drawRRect(RRect.fromRectAndRadius(pill, const Radius.circular(18)), Paint()..color = Colors.black);
+    }
+    if (!icons) {
+      return;
+    }
     final double mid = island ? size.height * 0.55 : size.height * 0.5;
     final TextPainter time = TextPainter(
       text: const TextSpan(
@@ -591,14 +643,11 @@ class _StatusBarPainter extends CustomPainter {
       )
       ..drawRRect(RRect.fromRectAndRadius(battery.deflate(2), const Radius.circular(2)), white)
       ..drawRect(Rect.fromLTWH(battery.right + 1, mid - 1.5, 1.5, 4), white);
-    if (island) {
-      final Rect pill = Rect.fromCenter(center: Offset(size.width / 2, size.height * 0.48), width: 124, height: 36);
-      canvas.drawRRect(RRect.fromRectAndRadius(pill, const Radius.circular(18)), Paint()..color = Colors.black);
-    }
   }
 
   @override
-  bool shouldRepaint(final _StatusBarPainter oldDelegate) => oldDelegate.island != island;
+  bool shouldRepaint(final _StatusBarPainter oldDelegate) =>
+      oldDelegate.island != island || oldDelegate.camera != camera || oldDelegate.icons != icons;
 }
 
 /// The home indicator: the short bar at the bottom of the screen.
