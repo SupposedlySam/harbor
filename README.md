@@ -569,7 +569,9 @@ itself. Holds are counted, the time starts over at the last release, and
 `entry.held` says whether one is on. `countsEntrance: true` counts the duration
 from the start of the entrance, so a 4 s toast is on screen 4 s, and setting
 `entry.duration` after the raise starts the time over with the new one (longer
-once a screen reader turns on, say). A flare with neither a slot nor an alignment goes to
+once a screen reader turns on, say). `countsWhileCovered: true` keeps the time
+running while another page covers the flare's, so a "Saved" toast is gone when
+the user comes back; a hold still stops it. A flare with neither a slot nor an alignment goes to
 `HarborFlareSlot.high`, and `target: HarborFlareTarget.sea` sends it to the
 outermost harbor, clear of the coast alone.
 
@@ -735,7 +737,9 @@ ask: a header or a tab bar across a vertical hinge keeps to the screen where
 reading starts (the left one, or the right one right to left), and a rail down a
 horizontal hinge keeps to the top screen. The body still runs across, so a page
 is one canvas; split it into panes for two. Only a harbor as big as the screen
-reads the hinge. `Harbor(hinge: HarborHinge.never)` lays docks across it.
+reads the hinge. `Harbor(hinge: HarborHinge.never)` lays docks across it, and the
+page's overlays too; `Harbor(dockHinge: HarborHinge.never)` lays only the docks
+across it, so its sheets, dialogs, flares and menus still keep off.
 
 `HarborPanes(start:, end:)` is two panes, modelled on Windows' `TwoPaneView`:
 either side of a hinge the policy keeps off (side by side for a vertical one,

@@ -67,6 +67,7 @@ class Harbor extends StatefulWidget {
     this.wakePainter,
     this.debugLabel,
     this.hinge,
+    this.dockHinge,
   }) : _isSea = false,
        _observers = const <HarborFleetObserver>[];
 
@@ -77,7 +78,8 @@ class Harbor extends StatefulWidget {
     required this.body,
     required this._observers,
     required this.hinge,
-  }) : top = const <HarborDock>[],
+  }) : dockHinge = null,
+       top = const <HarborDock>[],
        bottom = const <HarborDock>[],
        start = const <HarborDock>[],
        end = const <HarborDock>[],
@@ -94,6 +96,12 @@ class Harbor extends StatefulWidget {
   /// Which hinges and folds this harbor's overlays keep off, for the page and what it opens; the
   /// sea's, or [HarborHinge.avoidSeparating], when null. See [HarborHinge].
   final HarborHinge? hinge;
+
+  /// Which hinges and folds this harbor's own docks keep off, when they should differ from what
+  /// its overlays keep off: `dockHinge: HarborHinge.never` lays a tab bar across the hinge while
+  /// sheets, dialogs, flares and menus raised beneath still keep off it. Null takes [hinge], then
+  /// the policy above. Read by the docks alone; the overlays never see it.
+  final HarborHinge? dockHinge;
 
   /// Whether this is the outermost harbor of a [HarborSea].
   final bool _isSea;
@@ -523,7 +531,7 @@ class _HarborState extends State<Harbor> with WidgetsBindingObserver {
         clearWaterFloor: HarborClearWaterFloor.of(context),
         hinges: <Rect>[
           for (final DisplayFeature feature
-              in (widget.hinge ?? HarborHinge.of(context)).keptOff(MediaQuery.displayFeaturesOf(context)))
+              in (widget.dockHinge ?? widget.hinge ?? HarborHinge.of(context)).keptOff(MediaQuery.displayFeaturesOf(context)))
             feature.bounds,
         ],
         screenSize: ambient.size,
