@@ -137,7 +137,7 @@ class _CoastEntryState extends State<CoastEntry> {
     // switch changes only the bottom.
     className: 'HarborCoast',
     tryThis: const <TryStep>[
-      TryStep('Open The stage and switch off Status bar', 'The top sand band goes and the header moves up to the top: ambient takes the coast the platform reports.'),
+      TryStep('Open The stage, switch off Status bar, then pick Device: iPhone SE', 'On the iPhone 17 the top band stays, since the island keeps its inset with no status bar; on the SE it goes and the header moves up to the top: ambient takes the coast the platform reports.'),
       TryStep('Pick coast: HarborCoast.fixed(...)', 'The coast is 24 top and bottom though Status bar is still off: fixed says what the coast is, whatever the device reports.'),
       TryStep('Pick HarborCoast.ambient and iPhone 17 landscape', 'Sand bands appear down both sides and the bar sits 21 up: ambient follows the landscape phone\'s side insets.'),
       TryStep('Pick coast: HarborCoast.none', 'Every band goes and the header and bar sit on the glass: none has no coast, for a frame that must look the same anywhere.'),

@@ -99,6 +99,7 @@ class _PierEntryState extends State<PierEntry> {
       TryStep('Pick restsAt: dockEdge', 'The first row moves up to the pier\'s face and starts inside the fade: rows can rest under the wake, not past it.'),
       TryStep('Switch off backdrop, then slide blurSigma to 15', 'With the planks gone you see the rows under the pier frosted: the wake can blur the water as well as fade it.'),
       TryStep('Pick wake: hairline', 'The fade goes and a brass line marks the pier\'s face, with the first row resting right at it.'),
+      TryStep('Open The stage, switch off Status bar, then pick Device: iPhone SE', 'On the iPhone 17 the pier still pads its title clear of the island; on the SE its planks start at the very top: a dock absorbs whatever coast the hardware leaves.'),
     ],
     focus: const StageFocus.top(440),
     realWorld:

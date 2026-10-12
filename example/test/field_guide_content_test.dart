@@ -305,8 +305,18 @@ void main() {
       await _slide(tester, 'minimum', 48);
       // The status bar's 62 is more than 48, so the top stays.
       expect(box(tester).top, _near(_frameTop(tester) + 62 * _scale(tester)));
-      await _tap(tester, 'toggle Status bar');
-      expect(box(tester).top, _near(_frameTop(tester) + 48 * _scale(tester)));
+      // Hiding it on this iPhone leaves the island's 62; a phone whose status bar is 20 has less,
+      // so the 48 decides there: 28 below where the coast alone would put it. Measured against
+      // the coast alone rather than the frame, whose bezel and scale change with the device.
+      await _tap(tester, 'Device: iPhone SE');
+      final double at48 = box(tester).top;
+      await _slide(tester, 'minimum', 34);
+      final double at34 = box(tester).top;
+      await _slide(tester, 'minimum', 0);
+      final double coastAlone = box(tester).top;
+      // 48 and 34 sit 28 and 14 below the 20 of coast: twice as far, whatever the phone's scale.
+      expect(at48, greaterThan(coastAlone));
+      expect((at48 - coastAlone) / (at34 - coastAlone), closeTo(2, 0.05));
     });
   });
 

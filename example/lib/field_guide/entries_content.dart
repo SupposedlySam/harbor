@@ -257,6 +257,10 @@ class _MooredEntryState extends State<MooredEntry> {
         'Switch mooringLine on',
         'The sides pull in by the page margin, so the box lines up with rows that use HarborMooringLine.',
       ),
+      TryStep(
+        'Open The stage and pick Device: iPhone 17 landscape',
+        'The sides pull in by 62 more on each side: a phone on its side keeps its island in the left inset and mirrors it on the right, and moored content clears both.',
+      ),
     ],
     realWorld:
         'A moored boat is made fast with a bow line and a stern line to bollards on the quay, and fenders hang between '

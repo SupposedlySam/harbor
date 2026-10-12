@@ -287,6 +287,22 @@ void main() {
     // Breaks if: the stage draws a portrait status bar on a phone on its side (it spilled over the
     // marker), or the coast readings sit in a corner where the screen's curve and the side coast cut
     // them off, or vanish with a 0 band. Jonah saw all three on the web build.
+    // Hiding the status bar hides the bar, not the phone: the island and the camera are hardware.
+    testWidgets('a hidden status bar takes its time and icons, and leaves the island or camera', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const HarborSeaEntry());
+      expect(tester.widget<StatusBarArt>(find.byType(StatusBarArt)).icons, isTrue, reason: 'positive control: the bar is drawn');
+      await _stageSetting(tester, 'toggle Status bar');
+      final StatusBarArt island = tester.widget<StatusBarArt>(find.byType(StatusBarArt));
+      expect(island.icons, isFalse);
+      expect(island.island, isTrue);
+      await _stageSetting(tester, 'Device: Android gesture');
+      final StatusBarArt camera = tester.widget<StatusBarArt>(find.byType(StatusBarArt));
+      expect(camera.icons, isFalse);
+      expect(camera.camera, isTrue);
+      await _stageSetting(tester, 'Device: Android 3-button');
+      expect(find.byType(StatusBarArt), findsNothing, reason: 'no cutout: nothing is left at the top');
+    });
+
     testWidgets('on a phone on its side there is no status bar, and the coast readings stay in view', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HarborSeaEntry());
       await _stageSetting(tester, 'Device: iPhone 17 landscape');
