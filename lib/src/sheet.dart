@@ -705,7 +705,11 @@ class HarborSheetController extends ChangeNotifier {
 /// apply to one.
 ///
 /// [anchorPoint] picks the screen a sheet opens on, on a device with a hinge:
-/// the one nearest it, as for [DisplayFeatureSubScreen].
+/// the one nearest it, as for [DisplayFeatureSubScreen]. With
+/// [fillsScreenAtHinge], a sheet a hinge keeps to one screen fills that screen
+/// top to bottom, keeping the status bar as its top coast, as Microsoft
+/// suggests for a partial overlay on a dual-screen device; with no hinge it
+/// changes nothing. [hinge] is which hinges and folds it keeps off.
 ///
 /// With [keepsTopCoast], the sheet may reach the top of the screen rather than
 /// stopping short of the status bar, and its content is handed the status bar
@@ -753,6 +757,7 @@ Future<T?> showHarborSheet<T>(
   final String? barrierOnTapHint,
   final String? semanticLabel,
   final HarborHinge? hinge,
+  final bool fillsScreenAtHinge = false,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
@@ -772,6 +777,7 @@ Future<T?> showHarborSheet<T>(
     scopesRoute: barrier != HarborSheetBarrier.none,
     semanticLabel: semanticLabel,
     hinge: hinge ?? HarborHinge.of(context),
+    fillsScreenAtHinge: fillsScreenAtHinge,
   );
   if (barrier == HarborSheetBarrier.none) {
     final OverlayState overlay = navigator.overlay!;
@@ -817,12 +823,19 @@ class _SheetHost {
     required this.scopesRoute,
     required this.semanticLabel,
     required this.hinge,
+    this.fillsScreenAtHinge = false,
   }) {
     _shown.addListener(_moveTop);
   }
 
   /// Which hinges and folds the sheet keeps off; [anchorPoint] picks the side.
   final HarborHinge hinge;
+
+  /// Whether a sheet kept to one screen by a hinge fills that screen, top to bottom.
+  final bool fillsScreenAtHinge;
+
+  /// Whether a hinge the sheet keeps off splits the screen, so the sheet is on one side of it.
+  bool _split = false;
 
   final WidgetBuilder builder;
   final double? maxWidth;
@@ -992,10 +1005,14 @@ class _SheetHost {
   }
 
   // Kept to one screen of a foldable, never across its hinge, as a Material bottom sheet is.
-  Widget build(final BuildContext context) => MediaQuery(
-    data: hinge.splitting(MediaQuery.of(context)),
-    child: DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: _build)),
-  );
+  Widget build(final BuildContext context) {
+    final MediaQueryData whole = MediaQuery.of(context);
+    _split = hinge.keptOff(whole.displayFeatures).isNotEmpty;
+    return MediaQuery(
+      data: hinge.splitting(whole),
+      child: DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: _build)),
+    );
+  }
 
   Widget _build(final BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -1004,11 +1021,19 @@ class _SheetHost {
     _painted = animation;
     // Built inside the sheet, so its context can close the sheet.
     Widget sheet = Builder(builder: builder);
+    // Kept to one screen by a hinge, it may take that screen whole, as Microsoft suggests for a
+    // partial overlay on a dual-screen device: top to bottom, keeping the status bar as its coast.
+    // DisplayFeatureSubScreen places the sheet on one side with padding and leaves the size in
+    // MediaQuery the whole screen's, so the split is known from the hinge, not from the size.
+    final bool fills = fillsScreenAtHinge && _split;
+    final bool keepsTop = keepsTopCoast || fills;
     // A sheet stops short of the status bar unless it keeps the top coast.
-    final double top = keepsTopCoast ? 0.0 : mediaQuery.padding.top;
+    final double top = keepsTop ? 0.0 : mediaQuery.padding.top;
+    final double height = math.max(0.0, mediaQuery.size.height - top);
     sheet = ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity, maxHeight: math.max(0.0, mediaQuery.size.height - top)),
-      child: sheet,
+      constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity, maxHeight: height),
+      // Filling, it takes all the height its side of the hinge gives it.
+      child: fills ? SizedBox(height: double.infinity, child: sheet) : sheet,
     );
     if (scopesRoute) {
       // As a modal bottom sheet's: the route is the sheet, so the scope is the sheet's box, not the
@@ -1019,7 +1044,7 @@ class _SheetHost {
       host: this,
       child: MediaQuery.removePadding(
         context: context,
-        removeTop: !keepsTopCoast,
+        removeTop: !keepsTop,
         child: Align(
           alignment: Alignment.bottomCenter,
           child: AnimatedBuilder(

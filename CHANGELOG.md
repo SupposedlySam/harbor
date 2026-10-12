@@ -1,3 +1,8 @@
+## 0.5.3
+
+* A `HarborPortalBuoy` keeps to the screen that holds its anchor when a hinge or fold its `HarborHinge` keeps off splits the screen, as a Material menu keeps to its button's screen, and flips within that screen; before, a menu from a button by the hinge could hang across it. `HarborPortalBuoy(hinge:)` sets its own policy, the page's otherwise. Measured on the dual-screen trial device: a 200-wide menu from a button ending at 530 now ends at 532, 8 in from the hinge, where it was centred across it. An anchored flare with no harbor above it does the same.
+* `showHarborSheet(fillsScreenAtHinge: true)`: a sheet a hinge keeps to one screen fills that screen top to bottom, keeping the status bar as its top coast, as Microsoft suggests for a partial overlay on a dual-screen device; `anchorPoint` picks the screen. With no hinge it changes nothing.
+
 ## 0.5.2
 
 * `HarborPosture.of(context)` reads how a foldable is held from its fold: `flat`, `tabletop` (half open, the fold across the screen) or `book` (half open, the fold down the middle), as Android's postures are. A `HarborPanes` already splits at a half-open fold under the default `HarborHinge`, so on a table its start pane sits above the fold and its end pane below: measured on a 750 by 832 foldable half open at 416, the start pane is 0 to 416 and a quay in the end pane sits on the lower screen's bottom coast.

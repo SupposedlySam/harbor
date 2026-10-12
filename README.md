@@ -720,7 +720,12 @@ Material 3's `HingePolicy`:
 Set the app's default on `HarborSea(hinge:)`, a page's on `Harbor(hinge:)`, and
 one overlay's on `showHarborSheet(hinge:)`, `showHarborDialog(hinge:)`,
 `HarborFlares.raise(hinge:)` or `HarborBuoy(hinge:)`; the nearest wins, and a flare
-takes the policy of the page that raised it. It changes only where harbor puts
+takes the policy of the page that raised it. A portal buoy (a row's menu) keeps to
+the screen that holds its anchor, as a Material menu keeps to its button's, and
+flips within it; `HarborPortalBuoy(hinge:)` sets its own. A sheet a hinge keeps to
+one screen can fill that screen, top to bottom, with
+`showHarborSheet(fillsScreenAtHinge: true)`, as Microsoft suggests for a partial
+overlay on a dual-screen device. It changes only where harbor puts
 things: `MediaQuery.displayFeatures` stays as the platform reports it, so a
 two-pane layout or a video player beneath still sees the hinge. `anchorPoint:`
 picks the side.

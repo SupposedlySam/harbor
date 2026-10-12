@@ -983,6 +983,7 @@ class HarborPortalBuoy extends StatefulWidget {
     this.onDismiss,
     this.consumeOutsideTaps = false,
     this.requestFocus = false,
+    this.hinge,
   }) : assert(
          !requestFocus || onDismiss != null,
          'A HarborPortalBuoy that takes focus needs an onDismiss, so Escape can close it and a keyboard user is not left in it.',
@@ -1027,6 +1028,10 @@ class HarborPortalBuoy extends StatefulWidget {
   /// [RawMenuAnchor.consumeOutsideTaps]: true for a menu whose closing tap must not also press
   /// what is under it. By default the tap goes on, as it does for a `MenuAnchor`.
   final bool consumeOutsideTaps;
+
+  /// Which hinges and folds the buoy keeps to one side of: the screen that holds its anchor, as
+  /// a Material menu keeps to the screen of its button. Null takes the page's [HarborHinge.of].
+  final HarborHinge? hinge;
 
   /// Whether the buoy takes keyboard focus when it opens, as a sheet with no barrier does with
   /// `requestFocus: true`. False by default, which leaves focus where it was, as a `MenuAnchor`
@@ -1156,6 +1161,7 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
         );
         return _PortalBuoyLayout(
           harbor: HarborController.maybeOf(context),
+          hinges: _hingeBounds(widget.hinge ?? HarborHinge.of(this.context), context),
           anchor: _anchor,
           side: widget.side,
           gap: widget.gap,
@@ -1361,6 +1367,7 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
 class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
   const _PortalBuoyLayout({
     required this.harbor,
+    this.hinges = const <Rect>[],
     required this.anchor,
     required this.side,
     required this.gap,
@@ -1375,6 +1382,10 @@ class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
   });
 
   final HarborController? harbor;
+
+  /// The hinges and folds the buoy keeps off, in the overlay's coordinates: it stays on the screen
+  /// that holds its anchor, and flips within that screen.
+  final List<Rect> hinges;
   final HarborAnchor anchor;
   final HarborBuoySide side;
   final double gap;
@@ -1442,16 +1453,42 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     super.detach();
   }
 
-  /// The harbor's clear water in this box's coordinates, or the whole box
-  /// when there is no harbor around the buoy.
-  Rect _water() {
+  /// The harbor's clear water in this box's coordinates, or the whole box when there is no
+  /// harbor around the buoy; only the screen of it that holds [anchor] when a hinge splits it, and
+  /// [margin] in from its edges, the hinge's included.
+  Rect _water(final Offset anchor) {
     final HarborController? harbor = _config.harbor;
     final RenderBox? box = harbor?.layoutBox;
     final HarborLayoutRecord? layout = harbor?.layoutRecord;
     final Rect clear = box == null || layout == null || !box.attached || !box.hasSize
         ? Offset.zero & size
         : MatrixUtils.transformRect(box.getTransformTo(this), layout.clearWater);
-    return _config.margin.resolve(_config.textDirection).deflateRect(clear);
+    return _config.margin.resolve(_config.textDirection).deflateRect(_screenOf(clear, anchor));
+  }
+
+  /// The screen of [water] that holds [point] when a hinge the buoy keeps off splits it: the one
+  /// its anchor is on. A point on the hinge goes to the nearest screen.
+  Rect _screenOf(final Rect water, final Offset point) {
+    if (_config.hinges.isEmpty) {
+      return water;
+    }
+    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, _config.hinges).toList();
+    if (screens.length < 2) {
+      return screens.isEmpty ? water : screens.single;
+    }
+    Rect best = screens.first;
+    double nearest = double.infinity;
+    for (final Rect screen in screens) {
+      if (screen.contains(point)) {
+        return screen;
+      }
+      final double distance = (screen.center - point).distance;
+      if (distance < nearest) {
+        nearest = distance;
+        best = screen;
+      }
+    }
+    return best;
   }
 
   @override
@@ -1463,9 +1500,16 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     final RenderBox? child = this.child;
     if (child != null) {
       // Only the water's size is known while laying out: the harbor's last
-      // one. A change to it lays the buoy out again.
-      final Rect? clear = _config.harbor?.layoutRecord?.clearWater;
-      final Rect water = _config.margin.resolve(_config.textDirection).deflateRect(clear ?? Offset.zero & size);
+      // one. A change to it lays the buoy out again. Where a hinge splits it, the widest screen of
+      // it, since which screen holds the anchor is only known when it paints.
+      Rect water = _config.harbor?.layoutRecord?.clearWater ?? Offset.zero & size;
+      if (_config.hinges.isNotEmpty) {
+        final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, _config.hinges).toList();
+        if (screens.length > 1) {
+          water = screens.reduce((final Rect a, final Rect b) => a.width * a.height >= b.width * b.height ? a : b);
+        }
+      }
+      water = _config.margin.resolve(_config.textDirection).deflateRect(water);
       child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
     }
   }
@@ -1485,9 +1529,10 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     }
     final BoxParentData data = child.parentData! as BoxParentData;
     final Offset was = data.offset;
+    final Rect at = MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size);
     final ({Offset offset, HarborBuoySide side}) landed = _anchoredOffset(
-      water: _water(),
-      at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
+      water: _water(at.center),
+      at: at,
       size: child.size,
       side: _config.side,
       gap: _config.gap,
@@ -1927,6 +1972,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
       // Placed as a portal buoy with no harbor around it is: by its anchor, as it paints.
       return _PortalBuoyLayout(
         harbor: null,
+        hinges: _hingeBounds(entry.hinge ?? HarborHinge.of(context), context),
         anchor: anchor,
         side: entry.side,
         gap: entry.gap,
@@ -2235,3 +2281,9 @@ class _RenderAnchorClip extends RenderProxyBox {
     super.dispose();
   }
 }
+
+/// The bounds of the hinges and folds [hinge] keeps off, from the `MediaQuery` at [context].
+List<Rect> _hingeBounds(final HarborHinge hinge, final BuildContext context) => <Rect>[
+  for (final DisplayFeature feature in hinge.keptOff(MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[]))
+    feature.bounds,
+];
