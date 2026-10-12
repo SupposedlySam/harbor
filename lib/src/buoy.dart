@@ -1652,7 +1652,8 @@ abstract final class HarborFlares {
   /// [HarborFlareEntry.closed] completes once a flare has left, with why.
   ///
   /// [duration] (4 s, a `SnackBar`'s) counts only while the flare is in
-  /// sight: from the end of its entrance (from its start with
+  /// sight, unless [countsWhileCovered] keeps it running under a covering
+  /// route: from the end of its entrance (from its start with
   /// [countsEntrance], so the flare is on screen that long, entrance
   /// included), and not while another route covers its page. Set
   /// [HarborFlareEntry.duration] to change it once the flare is up. With [persist] the flare stays until it is lowered, as a
@@ -1732,6 +1733,7 @@ abstract final class HarborFlares {
     final bool countsEntrance = false,
     final bool reachesCoast = false,
     final HarborHinge? hinge,
+    final bool countsWhileCovered = false,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
@@ -1761,6 +1763,7 @@ abstract final class HarborFlares {
       reachesCoast: reachesCoast,
       // Read where it is raised: the page that raised it decides, wherever it is shown.
       hinge: hinge ?? HarborHinge.of(context),
+      countsWhileCovered: countsWhileCovered,
     );
     final HarborController? controller = anchor != null
         ? _portOf(HarborController.maybeOf(context))
@@ -2080,7 +2083,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
         !entry.held.value &&
         entry.showing.value &&
         (entry.countsEntrance ? !_controller.isDismissed : _controller.isCompleted) &&
-        _inSight &&
+        (_inSight || entry.countsWhileCovered) &&
         _anchored;
     if (running && _timeout == null) {
       _timeout = Timer(duration, () => entry.lower(reason: HarborFlareClosedReason.timeout));

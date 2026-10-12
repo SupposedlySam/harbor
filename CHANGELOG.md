@@ -1,3 +1,8 @@
+## 0.5.4
+
+* `HarborFlares.raise(countsWhileCovered: true)` keeps a flare's time running while another route covers its page, so a toast confirming an action goes on schedule even if a page is pushed over it; a hold still stops it. `false` stays the default. ([#113](https://github.com/SupposedlySam/harbor/issues/113))
+* `Harbor(dockHinge:)` sets the hinge policy for a harbor's own docks alone: `dockHinge: HarborHinge.never` lays a tab bar across a dual-screen hinge while the sheets, dialogs, flares and menus raised beneath it keep the policy above (keeping off the hinge by default). `hinge:` still sets both. Measured on the dual-screen trial device: with `dockHinge: never` the tab bar runs 0 to 1114 and a sheet from the page keeps to 0 to 540. ([#114](https://github.com/SupposedlySam/harbor/issues/114))
+
 ## 0.5.3
 
 * A `HarborPortalBuoy` keeps to the screen that holds its anchor when a hinge or fold its `HarborHinge` keeps off splits the screen, as a Material menu keeps to its button's screen, and flips within that screen; before, a menu from a button by the hinge could hang across it. `HarborPortalBuoy(hinge:)` sets its own policy, the page's otherwise. Measured on the dual-screen trial device: a 200-wide menu from a button ending at 530 now ends at 532, 8 in from the hinge, where it was centred across it. An anchored flare with no harbor above it does the same.

@@ -111,6 +111,7 @@ class HarborFlareEntry {
     this.countsEntrance = false,
     this.reachesCoast = false,
     this.hinge,
+    this.countsWhileCovered = false,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
@@ -164,6 +165,11 @@ class HarborFlareEntry {
 
   /// Which hinges and folds the flare keeps to one side of; the raising page's when raised.
   final HarborHinge? hinge;
+
+  /// Whether the flare's time keeps running while another route covers its page, so a toast
+  /// confirming an action goes on schedule even if a page is pushed over it. A [hold] still stops
+  /// it. Its time starts once its entrance has run, which it cannot while its page is covered.
+  final bool countsWhileCovered;
 
   /// Whether [duration] counts from the start of the flare's entrance rather
   /// than its end, so a 4 s flare is on screen 4 s, entrance included. With
