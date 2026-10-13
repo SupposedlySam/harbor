@@ -82,6 +82,22 @@ enum HarborFlareClosedReason {
 
   /// Nothing was left to show it: its harbor or overlay went away with no other to move to.
   remove,
+
+  /// A flare raised with [HarborFlareQueue.replace] at its place took its turn.
+  replaced,
+}
+
+/// What a flare does when one is already up at its slot, alignment or anchor.
+enum HarborFlareQueue {
+  /// Waits its turn, as a `ScaffoldMessenger`'s snack bars do: it comes in once the one up has
+  /// left. The default.
+  wait,
+
+  /// Takes the turn at once: it goes to the front, and the flare up is lowered with
+  /// [HarborFlareClosedReason.replaced] and leaves at once, so the new one shows in its place. For an Undo whose window is
+  /// tied to a pending action, or quick toggles on a remote-driven screen that read better
+  /// replaced than late.
+  replace,
 }
 
 /// A transient buoy raised by `HarborFlares.raise`, which returns it.
@@ -112,6 +128,7 @@ class HarborFlareEntry {
     this.reachesCoast = false,
     this.hinge,
     this.countsWhileCovered = false,
+    this.queue = HarborFlareQueue.wait,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
@@ -171,6 +188,9 @@ class HarborFlareEntry {
   /// it. Its time starts once its entrance has run, which it cannot while its page is covered.
   final bool countsWhileCovered;
 
+  /// Whether it waits its turn at its place or takes it at once. See [HarborFlareQueue].
+  final HarborFlareQueue queue;
+
   /// Whether [duration] counts from the start of the flare's entrance rather
   /// than its end, so a 4 s flare is on screen 4 s, entrance included. With
   /// reduced motion there is no entrance, and the two are the same.
@@ -204,7 +224,12 @@ class HarborFlareEntry {
 
   /// How long a lowered flare stays in the tree: its exit, and never less
   /// than 300 ms, so a child that runs an exit of its own has time to.
-  Duration get lingers => reverseTransitionDuration > _minimumLinger ? reverseTransitionDuration : _minimumLinger;
+  Duration get lingers => _reason == HarborFlareClosedReason.replaced
+      // Replaced, it leaves at once, so it is never drawn under the flare that took its place.
+      ? Duration.zero
+      : reverseTransitionDuration > _minimumLinger
+      ? reverseTransitionDuration
+      : _minimumLinger;
 
   /// The harbor the flare was raised from, whose clear water it also keeps inside.
   final HarborController? raisedIn;
@@ -311,6 +336,28 @@ class HarborFlareHold {
 
 /// Completes [flare]'s [HarborFlareEntry.closed]: it has left the screen.
 void flareLeft(final HarborFlareEntry flare) => flare._left();
+
+/// Adds [entry] to [flares] by its [HarborFlareEntry.queue]: at the end to wait its turn, or
+/// ahead of every flare still showing at its place, which are lowered as replaced.
+void queueFlare(final List<HarborFlareEntry> flares, final HarborFlareEntry entry) {
+  if (entry.queue == HarborFlareQueue.wait) {
+    flares.add(entry);
+    return;
+  }
+  final int first = flares.indexWhere((final HarborFlareEntry f) => f._place == entry._place && f.showing.value);
+  if (first < 0) {
+    flares.add(entry);
+    return;
+  }
+  final List<HarborFlareEntry> ahead = <HarborFlareEntry>[
+    for (final HarborFlareEntry f in flares)
+      if (f._place == entry._place && f.showing.value) f,
+  ];
+  flares.insert(first, entry);
+  for (final HarborFlareEntry f in ahead) {
+    f.lower(reason: HarborFlareClosedReason.replaced);
+  }
+}
 
 /// The flares of [flares] that are in sight: the first at each alignment, or at each anchor and
 /// side. The others wait their turn behind it.
@@ -755,7 +802,7 @@ class HarborController {
 
   void _raiseFlare(final HarborFlareEntry flare) {
     flare._owner = this;
-    _flares.add(flare);
+    queueFlare(_flares, flare);
     void lowered() {
       if (flare.showing.value) {
         return;

@@ -1695,6 +1695,11 @@ abstract final class HarborFlares {
   /// an alignment at that edge). Give it `margin: EdgeInsets.zero` to run edge
   /// to edge.
   ///
+  /// [queue] is what it does when a flare is already up at its place: wait its
+  /// turn ([HarborFlareQueue.wait]) or take it at once
+  /// ([HarborFlareQueue.replace]), lowering the one up. A [HarborFlarePolicy]
+  /// above [context] sets it for a subtree; [HarborFlareQueue.wait] with none.
+  ///
   /// [margin] is how far the flare keeps in from the clear water's edges: 16
   /// at a slot or an alignment and 8 by an anchor when null, as for a buoy. An
   /// [EdgeInsetsDirectional] is resolved in the reading direction of [context].
@@ -1734,6 +1739,7 @@ abstract final class HarborFlares {
     final bool reachesCoast = false,
     final HarborHinge? hinge,
     final bool countsWhileCovered = false,
+    final HarborFlareQueue? queue,
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
@@ -1764,6 +1770,7 @@ abstract final class HarborFlares {
       // Read where it is raised: the page that raised it decides, wherever it is shown.
       hinge: hinge ?? HarborHinge.of(context),
       countsWhileCovered: countsWhileCovered,
+      queue: queue ?? HarborFlarePolicy.queueOf(context),
     );
     final HarborController? controller = anchor != null
         ? _portOf(HarborController.maybeOf(context))
@@ -1815,7 +1822,7 @@ class _OverlayQueue {
   final Set<HarborFlareEntry> _built = <HarborFlareEntry>{};
 
   void raise(final HarborFlareEntry entry) {
-    _flares.add(entry);
+    queueFlare(_flares, entry);
     void lowered() {
       if (entry.showing.value) {
         return;
@@ -2290,3 +2297,20 @@ List<Rect> _hingeBounds(final HarborHinge hinge, final BuildContext context) => 
   for (final DisplayFeature feature in hinge.keptOff(MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[]))
     feature.bounds,
 ];
+
+/// Sets what flares raised beneath it do when one is already up at their place, for a subtree:
+/// on a remote-driven screen, `HarborFlarePolicy(queue: HarborFlareQueue.replace)` makes a
+/// newer "Saved" replace the one up rather than arrive seconds late. A flare's own
+/// `HarborFlares.raise(queue:)` overrides it.
+class HarborFlarePolicy extends InheritedWidget {
+  const HarborFlarePolicy({super.key, required this.queue, required super.child});
+
+  final HarborFlareQueue queue;
+
+  /// The queue at [context]: the nearest policy's, or [HarborFlareQueue.wait] with none.
+  static HarborFlareQueue queueOf(final BuildContext context) =>
+      context.getInheritedWidgetOfExactType<HarborFlarePolicy>()?.queue ?? HarborFlareQueue.wait;
+
+  @override
+  bool updateShouldNotify(final HarborFlarePolicy oldWidget) => queue != oldWidget.queue;
+}
