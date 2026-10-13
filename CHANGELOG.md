@@ -1,3 +1,7 @@
+## 0.6.3
+
+* Fixed: `HarborFlares.raise(reachesCoast: true)` has no effect on a flare raised with `anchor:` in a harbor, as it already had with no harbor above it; it reaches over the coast only from a slot or an alignment at an edge. Before, the harbor laid the anchored flare out in the water reaching over the coast but placed it by its anchor in the water clear of it, and handed its content the coast that wider water covered as its padding. Measured on the iPhone 17 on its side: a toast as wide as it may be by an anchor in the middle now runs 70 to 804 with the page's padding (62 at each side), as without `reachesCoast`, where it ran 70 to 928, over the right coast, with 54 at each side.
+
 ## 0.6.2
 
 * Fixed: a flare's hinge policy is honoured however it is placed. Two of the four paths ignored it: an anchored flare in a harbor ignored `HarborFlares.raise(hinge:)`, and an aligned flare with no harbor above it took the whole width of both screens whatever its policy. Measured on the dual-screen trial device: a 200-wide toast by an anchor ending 20 short of the hinge now ends at 532, 8 in from the hinge, where it was centred across it; a low-slot toast with no harbor keeps to one screen, and with `hinge: HarborHinge.never` is centred across both.

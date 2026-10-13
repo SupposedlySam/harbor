@@ -564,9 +564,10 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     ];
     return _BuoyLayout(
       buoys: all,
+      // An anchored flare sits by its anchor in the clear water, so it covers no coast to reach.
       reaching: <int>{
         for (int i = 0; i < all.length; i++)
-          if (all[i].child case _Flare(entry: final HarborFlareEntry entry) when entry.reachesCoast) i,
+          if (all[i].child case _Flare(entry: final HarborFlareEntry entry) when entry.reachesCoast && entry.anchor == null) i,
       },
       children: <Widget>[
         for (int i = 0; i < all.length; i++)
@@ -1702,7 +1703,8 @@ abstract final class HarborFlares {
   /// text clear. It is against the sides always, and against the top or bottom
   /// when it is placed there ([HarborFlareSlot.top], [HarborFlareSlot.low], or
   /// an alignment at that edge). Give it `margin: EdgeInsets.zero` to run edge
-  /// to edge.
+  /// to edge. With [anchor] it has no effect: an anchored flare sits by its
+  /// anchor, clear of the coast.
   ///
   /// [queue] is what it does when a flare is already up at its place: wait its
   /// turn ([HarborFlareQueue.wait]) or take it at once
