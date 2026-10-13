@@ -2054,6 +2054,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    flareShown(widget.entry);
     widget.entry.showing.addListener(_changed);
     widget.entry.held.addListener(_syncTimeout);
     widget.entry.timing.addListener(_restartTimeout);

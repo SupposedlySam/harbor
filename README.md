@@ -559,7 +559,11 @@ first and the one up leaves, closed with `HarborFlareClosedReason.replaced`, for
 an Undo whose window is tied to a pending action. `HarborFlarePolicy(queue:,
 child:)` sets that for a subtree, such as a remote-driven TV screen where a newer
 "Saved" should replace the one up rather than arrive late. `closed`
-completes once a flare has left, with why.
+completes once a flare has left, with why. `entry.phase` (`waiting`, `shown`,
+`closed`) and `entry.wasShown` say where it is synchronously, before `closed`
+completes: a flare lowered while it waits is `closed` by the time `lower()`
+returns, and `wasShown` is false, so an analytics count or an `onDismiss` can
+answer on the spot.
 
 A flare stays 4 s, as a `SnackBar` does, and its `duration` counts only while it
 is in sight: from the end of its entrance, and not while another route covers
@@ -829,8 +833,10 @@ A `HarborSheetController` closes a sheet from outside it, as a
 a `closed` future, `setState` to rebuild it, and its slide as `animation`.
 `remove()` takes it away with no slide, as `removeCurrentSnackBar` does a snack
 bar. It is attached while its sheet is up (`isAttached`) and tells its listeners
-when that changes, so a button can show whether it opens or closes. It works
-for a sheet with a barrier too. `transitionAnimationController:` slides the
+when that changes, so a button can show whether it opens or closes. `close()`
+and `remove()` do nothing once the sheet has left, however it went, so a widget
+can close the sheet it opened from its own `dispose` without asking first. It
+works for a sheet with a barrier too. `transitionAnimationController:` slides the
 sheet by a controller of your own in place of its 280 ms slide, as on
 `showModalBottomSheet`; you dispose it.
 

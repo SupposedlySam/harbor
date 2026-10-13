@@ -593,9 +593,10 @@ enum HarborSheetBarrier {
 ///
 /// Give it to [showHarborSheet]; it is attached while that sheet is up, and
 /// tells its listeners when a sheet attaches and when it has left. It holds one
-/// sheet at a time and can be given to the next once the last has left. As
-/// with a [DraggableScrollableController], nothing but [isAttached] may be used
-/// while no sheet is attached.
+/// sheet at a time and can be given to the next once the last has left.
+/// [close], [remove] and [closed] may be called whether or not a sheet is
+/// attached; [animation] and [setState] need one, as a
+/// [DraggableScrollableController] does.
 class HarborSheetController extends ChangeNotifier {
   _SheetHost? _host;
 
@@ -609,23 +610,18 @@ class HarborSheetController extends ChangeNotifier {
     return _host!.slide!;
   }
 
-  /// Completes when the sheet has left, however it closed.
-  Future<void> get closed {
-    _assertAttached();
-    return _host!.gone;
-  }
+  /// Completes when the sheet has left, however it closed; complete already when no sheet is
+  /// attached.
+  Future<void> get closed => _host?.gone ?? Future<void>.value();
 
-  /// Slides the sheet out, as back or a tap on its barrier would.
-  void close() {
-    _assertAttached();
-    _host!.close?.call();
-  }
+  /// Slides the sheet out, as back or a tap on its barrier would. Nothing once it has left,
+  /// however it went (closed here, its page popped, or torn down with its overlay, #118), so a
+  /// widget can close the sheet it opened from its own dispose without asking first; and nothing
+  /// more while it is already sliding out.
+  void close() => _host?.close?.call();
 
-  /// Takes the sheet away at once, with no slide.
-  void remove() {
-    _assertAttached();
-    _host!.remove?.call();
-  }
+  /// Takes the sheet away at once, with no slide; nothing once it has left.
+  void remove() => _host?.remove?.call();
 
   /// Calls [fn] and rebuilds the sheet, for a builder that reads state the page holds.
   void setState(final VoidCallback fn) {

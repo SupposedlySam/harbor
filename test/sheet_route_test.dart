@@ -827,7 +827,8 @@ void main() {
       testWidgets('rebuilds a sheet (${barrier.name}) with state the page holds', (final tester) async {
         final HarborSheetController controller = HarborSheetController();
         addTearDown(controller.dispose);
-        expect(controller.close, throwsAssertionError, reason: 'no sheet is attached yet');
+        expect(() => controller.setState(() {}), throwsAssertionError, reason: 'no sheet is attached yet');
+        controller.close(); // a no-op with no sheet attached, since #121
         String track = 'first';
         final BuildContext page = await _page(tester);
         unawaited(showHarborSheet<void>(
