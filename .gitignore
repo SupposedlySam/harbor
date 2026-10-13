@@ -40,6 +40,9 @@ migrate_working_dir/
 lamp.lock
 .llm_chat/
 .harbor_owner/
+# showrunner: the owner agent's crawler orchestration, and the worktrees it cuts.
+.showrunner/
+.worktrees/
 # Claude Code: the owner agent's hooks and settings, and agent worktrees. Machine-local tooling,
 # never part of the repository.
 .claude/

@@ -33,6 +33,9 @@ migrate_working_dir/
 lamp.lock
 .llm_chat/
 .harbor_owner/
+# showrunner: the owner agent's crawler orchestration, and the worktrees it cuts.
+.showrunner/
+.worktrees/
 .claude/
 CLAUDE.md
 

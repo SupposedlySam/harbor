@@ -49,7 +49,8 @@ This repo has an owner agent (see `/owner-agent`), reachable in llm_chat room `h
 under the identity `harbor-owner`.
 
 - **None of the agent's tooling is in the repository or the package.** `.claude/`, `.lamp/`,
-  `.game_loop/`, `.llm_chat/`, `.harbor_owner/` and `lamp.lock` are gitignored and pubignored, and
+  `.game_loop/`, `.llm_chat/`, `.showrunner/`, `.worktrees/`, `.harbor_owner/` and `lamp.lock` are
+  gitignored and pubignored, and
   every hook is registered in `.claude/`, which is gitignored: game_loop's in `settings.json`,
   where its installer writes them on every `lamp upgrade`, and llm_chat's and the GitHub
   watcher's in `settings.local.json`. Keep each hook in one file only, or it runs twice. A clone
@@ -60,6 +61,11 @@ under the identity `harbor-owner`.
   state lives in `.harbor_owner/`.
 - game_loop (through lamp) holds the owner's mandate, the stop gate and the doorbell:
   `./.game_loop/bin/game_loop status` first in every session.
+- showrunner (through lamp) sends work to crawlers, each a Claude Code session in its own
+  worktree under `.worktrees/`: `./.showrunner/bin/showrunner doctor` and `status` first in every
+  session. Its config keeps `./tool/check.sh` as the check and serializes leaves on the version
+  and changelog files rather than on `test/**`, since harbor's tests are one file per issue. Being
+  ignored, its hooks are provisioned into each worktree by `spawn` rather than carried by git.
 - **Sign every GitHub comment with the line `— 🤖 harbor owner agent`.** The agent posts under
   the maintainer's account, so this signature is the only way the waker can tell its own
   comments from the maintainer's. An unsigned comment wakes the session that wrote it.
