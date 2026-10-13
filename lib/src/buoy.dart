@@ -341,8 +341,8 @@ class HarborBuoy with Diagnosticable {
   final Widget child;
 
   /// Which hinges and folds the buoy keeps to one side of: the screen that holds its
-  /// [alignment] point. Null takes its harbor's [HarborHinge.of]. An anchored buoy sits by its
-  /// anchor wherever that is.
+  /// [alignment] point, or for an anchored buoy the screen its anchor is on. Null takes its
+  /// harbor's [HarborHinge.of].
   final HarborHinge? hinge;
 
   /// Where the buoy sits in the clear water. An [AlignmentDirectional] follows the reading
@@ -549,6 +549,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             gap: flare.gap,
             crossAlignment: flare.crossAlignment,
             margin: flare.margin ?? const EdgeInsets.all(8.0),
+            hinge: flare.hinge,
             child: _Flare(entry: flare),
           )
         else
@@ -757,7 +758,10 @@ class _RenderBuoyLayer extends RenderBox
   /// [water], or the one screen of it that holds [buoy]'s alignment point when a hinge splits it.
   /// A point on the hinge itself goes to the screen where reading starts, as a dialog does. Laid
   /// out in the layer's own coordinates, taken to be the screen's, as `DisplayFeatureSubScreen` does.
-  Rect _screenFor(final HarborBuoy buoy, final Rect water) {
+  /// The screen of [water] the buoy keeps to when a hinge it keeps off splits it: the one that
+  /// holds its alignment point or, given [anchor], the one its anchor is on, as a
+  /// [HarborPortalBuoy] keeps to; an anchor on the hinge goes to the nearest screen.
+  Rect _screenFor(final HarborBuoy buoy, final Rect water, {final Offset? anchor}) {
     final List<Rect> avoid = <Rect>[
       for (final DisplayFeature feature in (buoy.hinge ?? _hinge).keptOff(_features)) feature.bounds,
     ];
@@ -768,11 +772,14 @@ class _RenderBuoyLayer extends RenderBox
     if (screens.length < 2) {
       return screens.isEmpty ? water : screens.single;
     }
-    final Offset point = buoy.alignment.resolve(_textDirection).withinRect(water);
+    final Offset point = anchor ?? buoy.alignment.resolve(_textDirection).withinRect(water);
     for (final Rect screen in screens) {
       if (screen.contains(point)) {
         return screen;
       }
+    }
+    if (anchor != null) {
+      return screens.reduce((final Rect a, final Rect b) => (a.center - anchor).distance <= (b.center - anchor).distance ? a : b);
     }
     screens.sort((final Rect a, final Rect b) => a.left.compareTo(b.left));
     return _textDirection == TextDirection.rtl ? screens.last : screens.first;
@@ -886,9 +893,11 @@ class _RenderBuoyLayer extends RenderBox
           i++;
           continue;
         }
+        final Rect at = MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size);
         data.offset = _anchoredOffset(
-          water: buoy.margin.resolve(_textDirection).deflateRect(_clear),
-          at: MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size),
+          // Split before the margin, so it keeps the margin off the hinge as well as the edges.
+          water: buoy.margin.resolve(_textDirection).deflateRect(_screenFor(buoy, _clear, anchor: at.center)),
+          at: at,
           size: child.size,
           side: buoy.side,
           gap: buoy.gap,
@@ -1947,6 +1956,25 @@ class _OverlayFlareState extends State<_OverlayFlare> {
 
   @override
   Widget build(final BuildContext context) {
+    final HarborFlareEntry entry = widget.entry;
+    if (entry.anchor != null) {
+      // Placed as a portal buoy, which keeps to the screen its anchor is on itself.
+      return _place(context);
+    }
+    // At an alignment it keeps to the screen that holds that point of the overlay when a hinge
+    // its policy keeps off splits it, as a flare in a harbor does. Before 0.6.2 it took the whole
+    // width of both screens whatever its policy.
+    final MediaQueryData media = MediaQuery.of(context);
+    return MediaQuery(
+      data: (entry.hinge ?? HarborHinge.of(context)).splitting(media),
+      child: DisplayFeatureSubScreen(
+        anchorPoint: entry.alignment.withinRect(Offset.zero & media.size),
+        child: Builder(builder: _place),
+      ),
+    );
+  }
+
+  Widget _place(final BuildContext context) {
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final EdgeInsets keyboard = MediaQuery.viewInsetsOf(context);
     // Both are measured from the screen's edges, so the larger one on each edge is what is covered.

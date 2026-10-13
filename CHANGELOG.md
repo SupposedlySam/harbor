@@ -1,3 +1,8 @@
+## 0.6.2
+
+* Fixed: a flare's hinge policy is honoured however it is placed. Two of the four paths ignored it: an anchored flare in a harbor ignored `HarborFlares.raise(hinge:)`, and an aligned flare with no harbor above it took the whole width of both screens whatever its policy. Measured on the dual-screen trial device: a 200-wide toast by an anchor ending 20 short of the hinge now ends at 532, 8 in from the hinge, where it was centred across it; a low-slot toast with no harbor keeps to one screen, and with `hinge: HarborHinge.never` is centred across both.
+* Fixed: a `HarborBuoy.anchored` keeps to the screen its anchor is on when a hinge or fold its `HarborHinge` keeps off splits the screen, as a `HarborPortalBuoy` has since 0.5.3; before, it ignored `hinge:` and could hang across the hinge. `hinge: HarborHinge.never` keeps the old placement.
+
 ## 0.6.1
 
 * `HarborSheetController.close()` and `remove()` do nothing once the sheet has left, however it went (closed by the controller, its page popped, or torn down with its overlay since 0.6.0), and `closed` is complete then, where before they asserted. A widget can close the sheet it opened from its own `dispose` without keeping a flag of its own; `isAttached` still says whether a sheet is up. `animation` and `setState` still need one. ([#121](https://github.com/SupposedlySam/harbor/issues/121))
