@@ -1346,7 +1346,19 @@ class _NonModalSheet<T> {
   }
 
   /// The sheet as it is drawn, by its page ([hosted]) or by an overlay entry of its own.
-  Widget build(final BuildContext context, {required final bool hosted}) {
+  Widget build(final BuildContext context, {required final bool hosted}) => _SheetLifeline(onGone: _gone, child: _build(context, hosted: hosted));
+
+  // Torn down with the sheet still open (the navigator's whole subtree replaced, as an app does on
+  // sign-out, or a test swapping the tree): nothing closed it first, so its transition, made on the
+  // overlay, was never stopped. The overlay then failed its own dispose with an active ticker in
+  // debug and leaked it in release, and the sheet's future never completed (#118).
+  void _gone() {
+    if (_live) {
+      closeNow();
+    }
+  }
+
+  Widget _build(final BuildContext context, {required final bool hosted}) {
     final Widget sheet = Actions(
       actions: <Type, Action<Intent>>{
         // Only while open, so a closing sheet leaves Escape to the widgets above.
@@ -1687,4 +1699,26 @@ class _HarborPageSheetHostState extends State<HarborPageSheetHost> {
       ),
     ],
   );
+}
+
+/// Tells [onGone] when the sheet it wraps leaves the tree, whatever took it out.
+class _SheetLifeline extends StatefulWidget {
+  const _SheetLifeline({required this.onGone, required this.child});
+
+  final VoidCallback onGone;
+  final Widget child;
+
+  @override
+  State<_SheetLifeline> createState() => _SheetLifelineState();
+}
+
+class _SheetLifelineState extends State<_SheetLifeline> {
+  @override
+  void dispose() {
+    widget.onGone();
+    super.dispose();
+  }
+
+  @override
+  Widget build(final BuildContext context) => widget.child;
 }

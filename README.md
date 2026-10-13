@@ -553,7 +553,12 @@ Flares raised at the same slot or alignment of one port take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before
 it has run its exit, so "Copied" tapped twice is never drawn over itself. To
 replace the flare that is up, `lower()` it; one lowered while it waits leaves
-without being shown. Flares at different slots show together. `closed`
+without being shown. Flares at different slots show together.
+`queue: HarborFlareQueue.replace` takes the turn at once instead: the flare goes
+first and the one up leaves, closed with `HarborFlareClosedReason.replaced`, for
+an Undo whose window is tied to a pending action. `HarborFlarePolicy(queue:,
+child:)` sets that for a subtree, such as a remote-driven TV screen where a newer
+"Saved" should replace the one up rather than arrive late. `closed`
 completes once a flare has left, with why.
 
 A flare stays 4 s, as a `SnackBar` does, and its `duration` counts only while it

@@ -14,6 +14,7 @@ export 'src/buoy.dart'
         HarborBuoyCrossAlignment,
         HarborBuoySide,
         HarborPortalBuoy,
+        HarborFlarePolicy,
         HarborFlareSlot,
         HarborFlareTarget,
         HarborFlares;
@@ -32,6 +33,7 @@ export 'src/controller.dart'
         HarborFlareClosedReason,
         HarborFlareEntry,
         HarborFlareHold,
+        HarborFlareQueue,
         HarborFlareTransitionBuilder,
         HarborYield;
 export 'src/deprecated.dart';

@@ -1,3 +1,7 @@
+## 0.2.4
+
+Needs harbor 0.6.0. Nothing in harbor_test changes.
+
 ## 0.2.3
 
 Needs harbor 0.5.0, whose docks keep off a hinge. Nothing in harbor_test changes.

@@ -1,3 +1,9 @@
+## 0.6.0
+
+* **Breaking:** `HarborFlareClosedReason` has a new value, `replaced`, so an exhaustive `switch` over it needs a case for it. **Migrating:** add `case HarborFlareClosedReason.replaced:` (or a default) wherever you switch over a flare's reason.
+* `HarborFlares.raise(queue: HarborFlareQueue.replace)` takes its place's turn at once: the flare goes to the front and the one up is lowered with `HarborFlareClosedReason.replaced`, leaving at once so the new one shows in its place. `HarborFlarePolicy(queue:, child:)` sets it for a subtree, and a raise's own `queue:` overrides it. `HarborFlareQueue.wait`, the default, keeps today's turn-taking. Both still complete `closed` exactly once per flare. ([#117](https://github.com/SupposedlySam/harbor/issues/117))
+* Fixed: a sheet with no barrier torn down with its overlay while still open (a navigator's subtree replaced on sign-out, a test swapping the tree) left its transition running on the disposed overlay, which failed with an active ticker in debug and leaked it in release, and its future never completed. It is now closed at once, its transition stopped and disposed, and its future completed with null, as when its page pops. ([#118](https://github.com/SupposedlySam/harbor/issues/118))
+
 ## 0.5.4
 
 * `HarborFlares.raise(countsWhileCovered: true)` keeps a flare's time running while another route covers its page, so a toast confirming an action goes on schedule even if a page is pushed over it; a hold still stops it. `false` stays the default. ([#113](https://github.com/SupposedlySam/harbor/issues/113))
