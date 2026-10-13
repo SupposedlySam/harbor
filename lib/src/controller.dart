@@ -87,6 +87,18 @@ enum HarborFlareClosedReason {
   replaced,
 }
 
+/// Where a flare is in its life, read synchronously with [HarborFlareEntry.phase].
+enum HarborFlarePhase {
+  /// Raised, and waiting its turn or for the harbor to build it.
+  waiting,
+
+  /// Built and on screen, entrance included.
+  shown,
+
+  /// Gone: lowered and left, or lowered before it ever showed.
+  closed,
+}
+
 /// What a flare does when one is already up at its slot, alignment or anchor.
 enum HarborFlareQueue {
   /// Waits its turn, as a `ScaffoldMessenger`'s snack bars do: it comes in once the one up has
@@ -304,6 +316,24 @@ class HarborFlareEntry {
     }
   }
 
+  /// Where the flare is in its life, updated as it happens, before [closed] completes: a flare
+  /// lowered while it waits is [HarborFlarePhase.closed] by the time [lower] returns, and
+  /// [wasShown] says whether anyone saw it.
+  HarborFlarePhase get phase => _phase;
+  HarborFlarePhase _phase = HarborFlarePhase.waiting;
+
+  /// Whether the flare was ever built on screen; stays true once it has.
+  bool get wasShown => _wasShown;
+  bool _wasShown = false;
+
+  /// The flare was built on screen.
+  void _shownNow() {
+    _wasShown = true;
+    if (_phase == HarborFlarePhase.waiting) {
+      _phase = HarborFlarePhase.shown;
+    }
+  }
+
   /// Lowers the flare. The first [reason] given is the one [closed] reports.
   void lower({final HarborFlareClosedReason reason = HarborFlareClosedReason.lower}) {
     if (_showing.value) {
@@ -313,6 +343,7 @@ class HarborFlareEntry {
   }
 
   void _left() {
+    _phase = HarborFlarePhase.closed;
     if (!_closed.isCompleted) {
       _closed.complete(_reason ?? HarborFlareClosedReason.lower);
     }
@@ -333,6 +364,9 @@ class HarborFlareHold {
     return null;
   }
 }
+
+/// Marks [flare] built on screen, for [HarborFlareEntry.phase].
+void flareShown(final HarborFlareEntry flare) => flare._shownNow();
 
 /// Completes [flare]'s [HarborFlareEntry.closed]: it has left the screen.
 void flareLeft(final HarborFlareEntry flare) => flare._left();
@@ -811,6 +845,14 @@ class HarborController {
         // Lowered while it waited its turn: it has no exit to run.
         _forgetFlare(flare);
         flare._left();
+        return;
+      }
+      if (!flare.wasShown) {
+        // Lowered before the harbor ever built it (raised and cancelled in one frame): it has no
+        // exit to run either, so it goes now rather than being built once, unseen, to linger.
+        _forgetFlare(flare);
+        flare._left();
+        _changed();
         return;
       }
       // Leave time for the flare's own exit animation.

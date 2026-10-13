@@ -33,6 +33,7 @@ export 'src/controller.dart'
         HarborFlareClosedReason,
         HarborFlareEntry,
         HarborFlareHold,
+        HarborFlarePhase,
         HarborFlareQueue,
         HarborFlareTransitionBuilder,
         HarborYield;

@@ -1,3 +1,8 @@
+## 0.6.1
+
+* `HarborSheetController.close()` and `remove()` do nothing once the sheet has left, however it went (closed by the controller, its page popped, or torn down with its overlay since 0.6.0), and `closed` is complete then, where before they asserted. A widget can close the sheet it opened from its own `dispose` without keeping a flag of its own; `isAttached` still says whether a sheet is up. `animation` and `setState` still need one. ([#121](https://github.com/SupposedlySam/harbor/issues/121))
+* `HarborFlareEntry.phase` (`HarborFlarePhase.waiting`, `shown`, `closed`) and `wasShown` read a flare's life synchronously, updated before `closed` completes: a flare lowered while it waits is `closed` by the time `lower()` returns, with `wasShown` false. A flare raised into a harbor and lowered in the same frame now leaves at once instead of being built once, unseen, to linger. ([#122](https://github.com/SupposedlySam/harbor/issues/122))
+
 ## 0.6.0
 
 * **Breaking:** `HarborFlareClosedReason` has a new value, `replaced`, so an exhaustive `switch` over it needs a case for it. **Migrating:** add `case HarborFlareClosedReason.replaced:` (or a default) wherever you switch over a flare's reason.
