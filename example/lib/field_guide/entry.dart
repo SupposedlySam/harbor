@@ -10,6 +10,7 @@ enum GuideGroup {
   floating('Afloat', 'Buoys and flares in the clear water'),
   sheets('Sheets and dialogs', 'New ports that open over a page'),
   lighthouse('The lighthouse', 'Keeping things in sight'),
+  folds('Folds and hinges', 'Dual screens and foldables: what keeps off the crease'),
   platform('Coast and charts', 'Where insets come from, TV, and seeing it all');
 
   const GuideGroup(this.title, this.blurb);

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
 import 'package:flutter/material.dart';
 import 'package:harbor/harbor.dart';
@@ -19,6 +20,7 @@ class StageDevice {
     this.camera = false,
     this.sideNavigationBar = 0,
     this.tv = false,
+    this.displayFeatures = const <DisplayFeature>[],
   });
 
   final String name;
@@ -49,6 +51,41 @@ class StageDevice {
 
   /// Whether it's a television (no keyboard, title-safe band).
   final bool tv;
+
+  /// Its folds and hinges, open flat, as the platform reports them in `MediaQuery.displayFeatures`:
+  /// each runs top to bottom, as on the sea-trial devices. [held] folds them.
+  final List<DisplayFeature> displayFeatures;
+
+  /// This device as it is held in [posture]: half open like a book (the same screen, its fold half
+  /// open), or half open on a table, turned on its side so its fold runs across the screen. Flat,
+  /// or with no fold, it is this device as it is.
+  StageDevice held(final HarborPosture posture) {
+    if (displayFeatures.isEmpty || posture == HarborPosture.flat) {
+      return this;
+    }
+    final bool turned = posture == HarborPosture.tabletop;
+    final Size screen = turned ? size.flipped : size;
+    return StageDevice(
+      name: name,
+      size: screen,
+      coast: coast,
+      tideHeight: tideHeight,
+      cutout: cutout,
+      island: island,
+      camera: camera,
+      sideNavigationBar: sideNavigationBar,
+      tv: tv,
+      displayFeatures: <DisplayFeature>[
+        for (final DisplayFeature feature in displayFeatures)
+          DisplayFeature(
+            // Turned a quarter, a fold from top to bottom runs from side to side.
+            bounds: turned ? Rect.fromLTRB(0, feature.bounds.left, screen.width, feature.bounds.right) : feature.bounds,
+            type: feature.type,
+            state: DisplayFeatureState.postureHalfOpened,
+          ),
+      ],
+    );
+  }
 
   static const StageDevice iPhone17 = StageDevice(
     name: 'iPhone 17',
@@ -106,6 +143,20 @@ class StageDevice {
     size: Size(750, 832),
     coast: EdgeInsets.only(top: 24, bottom: 24),
     tideHeight: 330,
+    displayFeatures: <DisplayFeature>[
+      DisplayFeature(bounds: Rect.fromLTRB(375, 0, 375, 832), type: DisplayFeatureType.fold, state: DisplayFeatureState.postureFlat),
+    ],
+  );
+
+  /// Two 540-wide screens either side of a 34-wide hinge.
+  static const StageDevice dualScreenOpen = StageDevice(
+    name: 'dual screen open',
+    size: Size(1114, 720),
+    coast: EdgeInsets.only(top: 24, bottom: 24),
+    tideHeight: 300,
+    displayFeatures: <DisplayFeature>[
+      DisplayFeature(bounds: Rect.fromLTRB(540, 0, 574, 720), type: DisplayFeatureType.hinge, state: DisplayFeatureState.postureFlat),
+    ],
   );
   static const StageDevice dualScreenCover = StageDevice(
     name: 'dual screen cover',
@@ -132,6 +183,7 @@ class StageDevice {
     androidThreeButtonLandscape,
     androidGestureLandscape,
     foldableOpen,
+    dualScreenOpen,
     dualScreenCover,
   ];
 }
@@ -197,8 +249,16 @@ class StageSettings extends ChangeNotifier {
   bool _chart = false;
   bool _wholePhone = false;
   double _tide = 0.0;
+  HarborPosture _posture = HarborPosture.flat;
 
+  /// The device picked, as it is open flat.
   StageDevice get device => _device;
+
+  /// How a device with a fold or hinge is held; always flat for one without.
+  HarborPosture get posture => _posture;
+
+  /// The device as it is held: what the stage draws and reports.
+  StageDevice get held => _device.held(_posture);
   bool get statusBar => _statusBar;
   bool get homeIndicator => _homeIndicator;
   bool get rtl => _rtl;
@@ -218,7 +278,11 @@ class StageSettings extends ChangeNotifier {
     if (value.tv) {
       _tide = 0.0;
     }
+    if (value.displayFeatures.isEmpty) {
+      _posture = HarborPosture.flat;
+    }
   });
+  set posture(final HarborPosture value) => _set(() => _posture = _device.displayFeatures.isEmpty ? HarborPosture.flat : value);
   set statusBar(final bool value) => _set(() => _statusBar = value);
   set homeIndicator(final bool value) => _set(() => _homeIndicator = value);
   set rtl(final bool value) => _set(() => _rtl = value);
@@ -276,6 +340,7 @@ class StageSettings extends ChangeNotifier {
 
   /// The `MediaQuery` the stage's device would report.
   MediaQueryData mediaQuery(final MediaQueryData base) {
+    final StageDevice held = this.held;
     final EdgeInsets coast = EdgeInsets.fromLTRB(
       _device.coast.left,
       // Hiding the status bar gives back only what the status bar took: the hardware's share stays.
@@ -285,7 +350,8 @@ class StageSettings extends ChangeNotifier {
     );
     final double keyboard = tideHeight;
     return base.copyWith(
-      size: _device.size,
+      size: held.size,
+      displayFeatures: held.displayFeatures,
       devicePixelRatio: 3.0,
       // iOS and Android report no bottom padding while the keyboard covers it.
       padding: keyboard > 0 ? coast.copyWith(bottom: 0.0) : coast,
@@ -343,7 +409,7 @@ class Stage extends StatelessWidget {
     return ListenableBuilder(
       listenable: settings,
       builder: (final BuildContext context, final Widget? _) {
-        final StageDevice device = settings.device;
+        final StageDevice device = settings.held;
         final ({double top, double height}) target = (settings.wholePhone ? StageFocus.whole : focus).window(
           device,
           settings.tideHeight,
@@ -441,7 +507,7 @@ class _Screen extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final MediaQueryData mediaQuery = settings.mediaQuery(MediaQuery.of(context));
-    final StageDevice device = settings.device;
+    final StageDevice device = settings.held;
     return StageScope(
       settings: settings,
       builder: builder,
@@ -539,6 +605,21 @@ class _Screen extends StatelessWidget {
                 height: settings.tideHeight,
                 child: const IgnorePointer(child: KeyboardArt()),
               ),
+              // A hinge or fold is hardware: drawn over everything, the keyboard too.
+              for (final DisplayFeature feature in device.displayFeatures)
+                if (feature.type == DisplayFeatureType.hinge || feature.type == DisplayFeatureType.fold)
+                  Positioned.fromRect(
+                    rect: feature.bounds.shortestSide > 0 ? feature.bounds : feature.bounds.inflate(FoldArt.reach),
+                    child: IgnorePointer(
+                      child: feature.bounds.shortestSide > 0
+                          ? HingeArt(key: const ValueKey<String>('stage hinge'), vertical: feature.bounds.height >= feature.bounds.width)
+                          : FoldArt(
+                              key: const ValueKey<String>('stage fold'),
+                              vertical: feature.bounds.height >= feature.bounds.width,
+                              halfOpen: feature.state == DisplayFeatureState.postureHalfOpened,
+                            ),
+                    ),
+                  ),
               if (device.tv)
                 const Positioned.fill(child: IgnorePointer(child: TitleSafeGuideArt())),
             ],
@@ -803,4 +884,121 @@ class _TitleSafePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(final _TitleSafePainter oldDelegate) => false;
+}
+
+/// A dual-screen device's hinge: the dark gap between its two screens, with the knuckles of the
+/// hinge along it.
+class HingeArt extends StatelessWidget {
+  const HingeArt({super.key, this.vertical = true});
+
+  /// Whether it runs top to bottom; false for one across the screen.
+  final bool vertical;
+
+  @override
+  Widget build(final BuildContext context) => CustomPaint(painter: _HingePainter(vertical), child: const SizedBox.expand());
+}
+
+class _HingePainter extends CustomPainter {
+  const _HingePainter(this.vertical);
+
+  final bool vertical;
+
+  @override
+  void paint(final Canvas canvas, final Size size) {
+    final Rect all = Offset.zero & size;
+    canvas.drawRect(
+      all,
+      Paint()
+        ..shader = LinearGradient(
+          begin: vertical ? Alignment.centerLeft : Alignment.topCenter,
+          end: vertical ? Alignment.centerRight : Alignment.bottomCenter,
+          colors: const <Color>[Color(0xFF0B0D10), Color(0xFF3A3F46), Color(0xFF0B0D10)],
+        ).createShader(all),
+    );
+    // The knuckles: barrels of the hinge, evenly along it, with a pin line through them.
+    final double length = vertical ? size.height : size.width;
+    final double across = vertical ? size.width : size.height;
+    const double knuckle = 46;
+    final int count = math.max(1, (length / (knuckle * 2)).floor());
+    final double pitch = length / count;
+    final Paint barrel = Paint()..color = const Color(0xFF5B616A);
+    for (int i = 0; i < count; i++) {
+      final double start = pitch * i + (pitch - knuckle) / 2;
+      final Rect r = vertical
+          ? Rect.fromLTWH(across * 0.2, start, across * 0.6, knuckle)
+          : Rect.fromLTWH(start, across * 0.2, knuckle, across * 0.6);
+      canvas.drawRRect(RRect.fromRectAndRadius(r, Radius.circular(across * 0.3)), barrel);
+    }
+    canvas.drawLine(
+      vertical ? Offset(across / 2, 0) : Offset(0, across / 2),
+      vertical ? Offset(across / 2, length) : Offset(length, across / 2),
+      Paint()
+        ..color = const Color(0xFF1C1F23)
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(final _HingePainter oldDelegate) => oldDelegate.vertical != vertical;
+}
+
+/// A foldable's fold: a crease with no width. Half open, it is shaded either side, where the
+/// screen bends away.
+class FoldArt extends StatelessWidget {
+  const FoldArt({super.key, this.vertical = true, this.halfOpen = false});
+
+  /// How far either side of the crease the drawing reaches.
+  static const double reach = 14;
+
+  /// Whether it runs top to bottom; false for one across the screen.
+  final bool vertical;
+
+  /// Whether the fold is half open (a book, a laptop) rather than flat.
+  final bool halfOpen;
+
+  @override
+  Widget build(final BuildContext context) => CustomPaint(painter: _FoldPainter(vertical, halfOpen), child: const SizedBox.expand());
+}
+
+class _FoldPainter extends CustomPainter {
+  const _FoldPainter(this.vertical, this.halfOpen);
+
+  final bool vertical;
+  final bool halfOpen;
+
+  @override
+  void paint(final Canvas canvas, final Size size) {
+    final Rect all = Offset.zero & size;
+    if (halfOpen) {
+      canvas.drawRect(
+        all,
+        Paint()
+          ..shader = LinearGradient(
+            begin: vertical ? Alignment.centerLeft : Alignment.topCenter,
+            end: vertical ? Alignment.centerRight : Alignment.bottomCenter,
+            colors: const <Color>[Color(0x00000000), Color(0x88000000), Color(0x00000000)],
+          ).createShader(all),
+      );
+    }
+    final Offset from = vertical ? Offset(size.width / 2, 0) : Offset(0, size.height / 2);
+    final Offset to = vertical ? Offset(size.width / 2, size.height) : Offset(size.width, size.height / 2);
+    canvas
+      ..drawLine(
+        from,
+        to,
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.55)
+          ..strokeWidth = 2,
+      )
+      ..drawLine(
+        from + (vertical ? const Offset(1.5, 0) : const Offset(0, 1.5)),
+        to + (vertical ? const Offset(1.5, 0) : const Offset(0, 1.5)),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.22)
+          ..strokeWidth = 1,
+      );
+  }
+
+  @override
+  bool shouldRepaint(final _FoldPainter oldDelegate) => oldDelegate.vertical != vertical || oldDelegate.halfOpen != halfOpen;
 }
