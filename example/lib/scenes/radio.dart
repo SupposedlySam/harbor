@@ -420,9 +420,8 @@ class _ChannelPageState extends State<ChannelPage> {
       buoys: <HarborBuoy>[
         if (_noteUp)
           HarborBuoy(
+            placement: const HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.symmetric(horizontal: 16)),
             key: const ValueKey<String>('logbook'),
-            alignment: Alignment.topCenter,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
             child: GestureDetector(
               onTap: () => setState(() => _noteUp = false),
               // Scrolls rather than overflowing when the clear water is small:
@@ -439,9 +438,9 @@ class _ChannelPageState extends State<ChannelPage> {
             ),
           ),
         if (crew.isNotEmpty)
-          HarborBuoy.anchored(
+          HarborBuoy(
+            placement: HarborAnchored(_composerAnchor, side: HarborAnchorSide.above),
             key: const ValueKey<String>('mentions'),
-            anchor: _composerAnchor,
             child: _MentionList(crew: crew, onPick: _mention),
           ),
       ],

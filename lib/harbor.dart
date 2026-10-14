@@ -11,8 +11,6 @@ export 'src/buoy.dart'
         HarborAnchorClip,
         HarborAnchorPoint,
         HarborBuoy,
-        HarborBuoyCrossAlignment,
-        HarborBuoySide,
         HarborPortalBuoy,
         HarborFlarePolicy,
         HarborFlareSlot,
@@ -46,6 +44,7 @@ export 'src/fairway.dart';
 export 'src/harbor.dart';
 export 'src/hinge.dart' show HarborHinge, HarborPosture;
 export 'src/panes.dart';
+export 'src/placement.dart' show HarborAligned, HarborAnchorSide, HarborAnchored, HarborCrossAlignment, HarborPlacement;
 export 'src/lighthouse.dart';
 export 'src/make_way.dart';
 export 'src/moored.dart';

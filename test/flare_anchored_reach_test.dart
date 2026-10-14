@@ -66,7 +66,7 @@ void main() {
     EdgeInsets? plain;
     final HarborFlareEntry first = HarborFlares.raise(
       page,
-      anchor: anchor,
+      placement: HarborAnchored(anchor),
       duration: null,
       builder: (final BuildContext _) => _toast('plain', (final EdgeInsets p) => plain = p),
     );
@@ -76,8 +76,11 @@ void main() {
     await settle(tester);
 
     EdgeInsets? reaching;
+    // The deprecated spelling, on purpose: reachesCoast with an anchor stays a no-op there, as it was
+    // since 0.6.3. Spelled with a HarborAnchored placement it is an assert (placement_test.dart).
     HarborFlares.raise(
       page,
+      // ignore: deprecated_member_use_from_same_package
       anchor: anchor,
       reachesCoast: true,
       duration: null,
@@ -97,9 +100,8 @@ void main() {
     EdgeInsets? padding;
     HarborFlares.raise(
       page,
-      slot: HarborFlareSlot.low,
+      placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero),
       reachesCoast: true,
-      margin: EdgeInsets.zero,
       duration: null,
       builder: (final BuildContext _) => _toast('low', (final EdgeInsets p) => padding = p),
     );

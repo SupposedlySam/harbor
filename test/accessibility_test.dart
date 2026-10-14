@@ -550,8 +550,7 @@ void main() {
           const Harbor(
             buoys: <HarborBuoy>[
               HarborBuoy(
-                alignment: AlignmentDirectional.bottomEnd,
-                margin: EdgeInsetsDirectional.only(end: 40, bottom: 16),
+                placement: HarborAligned(alignment: AlignmentDirectional.bottomEnd, margin: EdgeInsetsDirectional.only(end: 40, bottom: 16)),
                 child: SizedBox(key: ValueKey<String>('fab'), width: 56, height: 56),
               ),
             ],
@@ -607,7 +606,7 @@ void main() {
     Widget bubble() => Semantics(label: 'bubble', container: true, child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30));
 
     Widget anchoredPage(final HarborAnchor anchor, final ValueNotifier<bool> anchored) => Harbor(
-      buoys: <HarborBuoy>[HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.below, child: bubble())],
+      buoys: <HarborBuoy>[HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.below), child: bubble())],
       body: Center(
         child: ValueListenableBuilder<bool>(
           valueListenable: anchored,
@@ -659,9 +658,8 @@ void main() {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   HarborPortalBuoy(
+                    placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
                     controller: menu,
-                    anchor: anchor,
-                    side: HarborBuoySide.below,
                     buoyBuilder: (final BuildContext context) => bubble(),
                     child: const SizedBox(width: 40, height: 40),
                   ),

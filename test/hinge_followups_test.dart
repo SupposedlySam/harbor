@@ -38,8 +38,8 @@ class _MenuState extends State<_Menu> {
         left: widget.left,
         top: 200,
         child: HarborPortalBuoy(
+          placement: const HarborAnchored(null, side: HarborAnchorSide.below),
           controller: _menu,
-          side: HarborBuoySide.below,
           hinge: widget.hinge,
           buoyBuilder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('menu'), width: 200, height: 120),
           child: const SizedBox(key: ValueKey<String>('row button'), width: 60, height: 40),

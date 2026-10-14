@@ -10,11 +10,12 @@ import 'package:flutter/widgets.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'hinge.dart';
+import 'placement.dart';
 import 'render_harbor.dart';
 
 /// A point a buoy can be anchored to: give it to a [HarborAnchorPoint] around
 /// the widget to anchor to (a button in a dock, a row in a list), and to the
-/// [HarborBuoy.anchored] that should sit by it.
+/// [HarborAnchored] placement that should sit by it.
 class HarborAnchor extends ChangeNotifier {
   HarborAnchor({this.debugLabel});
 
@@ -181,105 +182,6 @@ class _RenderAnchorPoint extends RenderProxyBox {
   }
 }
 
-/// Which side of its anchor an anchored buoy sits on. [start] and [end] are in
-/// reading order, as in `AlignmentDirectional.centerStart`: [start] is on the
-/// right under right-to-left.
-enum HarborBuoySide {
-  above,
-  below,
-  start,
-  end;
-
-  @Deprecated('Use HarborBuoySide.start, the reading-order name Flutter uses.')
-  static const HarborBuoySide before = start;
-
-  @Deprecated('Use HarborBuoySide.end, the reading-order name Flutter uses.')
-  static const HarborBuoySide after = end;
-
-  HarborBuoySide get _opposite => switch (this) {
-    above => below,
-    below => above,
-    start => end,
-    end => start,
-  };
-}
-
-/// How an anchored buoy lines up with its anchor across its side, as a `Row`'s or `Column`'s
-/// `CrossAxisAlignment` lines up its children: above or below the anchor, [start] and [end] are in
-/// reading order (a dropdown under its button's leading edge); at its start or end, they are its
-/// top and bottom.
-enum HarborBuoyCrossAlignment { start, center, end }
-
-/// Where a buoy of [size] sits by the anchor at [at], inside [water], and the
-/// side it landed on: on [side], [gap] away, overlapping it by [overlap], and
-/// lined up with it across that side by [crossAlignment], moved [crossOffset]
-/// in reading order. It is kept inside [water] across the side, and above or
-/// below its anchor, never past the far edge. With [flips], it goes to the
-/// opposite side when [side] has no room and that one has, and is never past
-/// the far edge at the start or end of its anchor either.
-({Offset offset, HarborBuoySide side}) _anchoredOffset({
-  required final Rect water,
-  required final Rect at,
-  required final Size size,
-  required final HarborBuoySide side,
-  required final double gap,
-  required final double overlap,
-  required final TextDirection textDirection,
-  final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
-  final double crossOffset = 0.0,
-  final bool flips = false,
-}) {
-  final bool rtl = textDirection == TextDirection.rtl;
-  final AxisDirection preferred = switch (side) {
-    HarborBuoySide.above => AxisDirection.up,
-    HarborBuoySide.below => AxisDirection.down,
-    HarborBuoySide.start => rtl ? AxisDirection.right : AxisDirection.left,
-    HarborBuoySide.end => rtl ? AxisDirection.left : AxisDirection.right,
-  };
-  double along(final AxisDirection d) => switch (d) {
-    AxisDirection.up => at.top - gap - size.height + overlap,
-    AxisDirection.down => at.bottom + gap - overlap,
-    AxisDirection.left => at.left - gap - size.width + overlap,
-    AxisDirection.right => at.right + gap - overlap,
-  };
-  bool fits(final AxisDirection d) => switch (d) {
-    AxisDirection.up => along(d) >= water.top,
-    AxisDirection.down => along(d) + size.height <= water.bottom,
-    AxisDirection.left => along(d) >= water.left,
-    AxisDirection.right => along(d) + size.width <= water.right,
-  };
-  final AxisDirection opposite = flipAxisDirection(preferred);
-  final AxisDirection direction = flips && !fits(preferred) && fits(opposite) ? opposite : preferred;
-  final bool vertical = axisDirectionToAxis(direction) == Axis.vertical;
-  // Across a vertical side the start is the reading start; across a horizontal one, the top.
-  final bool reversed = vertical && rtl;
-  final (double low, double high, double extent) = vertical ? (at.left, at.right, size.width) : (at.top, at.bottom, size.height);
-  final double cross = switch ((crossAlignment, reversed)) {
-        (HarborBuoyCrossAlignment.center, _) => (low + high - extent) / 2,
-        (HarborBuoyCrossAlignment.start, false) || (HarborBuoyCrossAlignment.end, true) => low,
-        (HarborBuoyCrossAlignment.end, false) || (HarborBuoyCrossAlignment.start, true) => high - extent,
-      } +
-      (reversed ? -crossOffset : crossOffset);
-  double left = vertical ? cross : 0.0;
-  double top = vertical ? 0.0 : cross;
-  switch (direction) {
-    case AxisDirection.up:
-      top = math.max(along(direction), water.top);
-    case AxisDirection.down:
-      top = math.min(along(direction), water.bottom - size.height);
-    case AxisDirection.left:
-      left = flips ? math.max(along(direction), water.left) : along(direction);
-    case AxisDirection.right:
-      left = flips ? math.min(along(direction), water.right - size.width) : along(direction);
-  }
-  if (vertical) {
-    left = left.clamp(water.left, math.max(water.left, water.right - size.width));
-  } else {
-    top = top.clamp(water.top, math.max(water.top, water.bottom - size.height));
-  }
-  return (offset: Offset(left, top), side: direction == preferred ? side : side._opposite);
-}
-
 /// Something afloat in a harbor: placed in the water nothing covers, so it
 /// clears the coast, every dock and the keyboard without knowing about them.
 ///
@@ -292,12 +194,22 @@ enum HarborBuoyCrossAlignment { start, center, end }
 ///    buoy's barrier is like.
 @immutable
 class HarborBuoy with Diagnosticable {
-  /// A buoy at [alignment] within the clear water, [margin] in from its edges.
+  /// A buoy placed by [placement] in the clear water: at a point of it ([HarborAligned], bottom
+  /// centre by default) or by an anchor ([HarborAnchored]).
   const HarborBuoy({
     this.key,
     required this.child,
-    this.alignment = Alignment.bottomCenter,
-    this.margin = const EdgeInsets.all(16.0),
+    final HarborPlacement? placement,
+    @Deprecated(
+      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final AlignmentGeometry? alignment,
+    @Deprecated(
+      'Use placement: HarborAligned(margin: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final EdgeInsetsGeometry? margin,
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
@@ -306,27 +218,46 @@ class HarborBuoy with Diagnosticable {
     this.within,
     this.hinge,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
-       anchor = null,
-       side = HarborBuoySide.above,
-       gap = 0.0,
-       overlap = 0.0,
-       crossAlignment = HarborBuoyCrossAlignment.center,
-       crossOffset = 0.0;
+       assert(
+         placement == null || (alignment == null && margin == null),
+         'Give a buoy a placement, or the deprecated alignment and margin, not both.',
+       ),
+       _placement = placement,
+       _alignment = alignment,
+       _margin = margin,
+       _anchor = null,
+       _side = HarborAnchorSide.above,
+       _gap = HarborAnchored.defaultGap,
+       _overlap = 0.0,
+       _crossAlignment = HarborCrossAlignment.center,
+       _crossOffset = 0.0;
 
   /// A buoy moored to [anchor], on its [side], [gap] away, overlapping it by
   /// [overlap] (a speech bubble whose tail sits over the button), and lined up
   /// with it across that side by [crossAlignment]. Kept inside the clear water
   /// across that side, and never past its far edge.
+  @Deprecated(
+    'Use HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
+    'by default. `dart fix` applies it to a call; a tear-off is yours to change. Deprecated after 0.6.3.',
+  )
   const HarborBuoy.anchored({
     this.key,
-    required HarborAnchor this.anchor,
+    // Optional and deprecated in itself, though every call gives it: `dart fix` can move a call's
+    // arguments only from a diagnostic on one of them, never from the one on the constructor's name,
+    // and a tear-off (which has no arguments to move) must keep compiling. So it is asserted, not typed.
+    // ignore: tighten_type_of_initializing_formals
+    @Deprecated(
+      'Use HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    this._anchor,
     required this.child,
-    this.side = HarborBuoySide.above,
-    this.gap = 8.0,
-    this.overlap = 0.0,
-    this.crossAlignment = HarborBuoyCrossAlignment.center,
-    this.crossOffset = 0.0,
-    this.margin = const EdgeInsets.all(8.0),
+    this._side = HarborAnchorSide.above,
+    this._gap = HarborAnchored.defaultGap,
+    this._overlap = 0.0,
+    this._crossAlignment = HarborCrossAlignment.center,
+    this._crossOffset = 0.0,
+    EdgeInsetsGeometry this._margin = HarborAnchored.defaultMargin,
     this.modal = false,
     this.onDismiss,
     this.barrierColor = const Color(0x00000000),
@@ -334,23 +265,64 @@ class HarborBuoy with Diagnosticable {
     this.barrierLabel = harborBarrierDismissLabel,
     this.hinge,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
-       alignment = Alignment.center,
+       assert(_anchor != null, 'HarborBuoy.anchored needs an anchor.'),
+       _placement = null,
+       _alignment = null,
        within = null;
 
   final Key? key;
   final Widget child;
 
-  /// Which hinges and folds the buoy keeps to one side of: the screen that holds its
-  /// [alignment] point, or for an anchored buoy the screen its anchor is on. Null takes its
-  /// harbor's [HarborHinge.of].
+  // The placement given, or null when the buoy was made with the deprecated parameters, which are
+  // kept below so it can be built in a const constructor.
+  final HarborPlacement? _placement;
+  final AlignmentGeometry? _alignment;
+  final EdgeInsetsGeometry? _margin;
+  final HarborAnchor? _anchor;
+  final HarborAnchorSide _side;
+  final double _gap;
+  final double _overlap;
+  final HarborCrossAlignment _crossAlignment;
+  final double _crossOffset;
+
+  /// Where the buoy sits in the clear water: at a point of it, or by an anchor. An aligned buoy at
+  /// bottom centre, 16 in from the water's edges, when none is given.
+  ///
+  /// An anchored buoy needs an anchor, and it keeps its side: [HarborAnchored.flips] null is false
+  /// here. While its anchor is not in the tree it is not shown, takes no taps and is not read out.
+  HarborPlacement get placement =>
+      _placement ??
+      switch (_anchor) {
+        final HarborAnchor anchor => HarborAnchored(
+          anchor,
+          side: _side,
+          gap: _gap,
+          overlap: _overlap,
+          crossAlignment: _crossAlignment,
+          crossOffset: _crossOffset,
+          margin: _margin ?? HarborAnchored.defaultMargin,
+        ),
+        null => HarborAligned(
+          alignment: _alignment ?? HarborAligned.defaultAlignment,
+          margin: _margin ?? HarborAligned.defaultMargin,
+        ),
+      };
+
+  /// Which hinges and folds the buoy keeps to one side of: the screen that holds its alignment
+  /// point, or for an anchored buoy the screen its anchor is on. Null takes its harbor's
+  /// [HarborHinge.of].
   final HarborHinge? hinge;
 
-  /// Where the buoy sits in the clear water. An [AlignmentDirectional] follows the reading
-  /// direction, as a Material floating action button does.
-  final AlignmentGeometry alignment;
+  /// Where an aligned buoy sits in the clear water; [Alignment.center] for an anchored one.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  AlignmentGeometry get alignment => switch (placement) {
+    HarborAligned(:final AlignmentGeometry alignment) => alignment,
+    HarborAnchored() => Alignment.center,
+  };
 
-  /// How far in from the clear water's edges; an [EdgeInsetsDirectional] follows the reading direction.
-  final EdgeInsetsGeometry margin;
+  /// How far in from the clear water's edges.
+  @Deprecated('Read placement.margin. Deprecated after 0.6.3.')
+  EdgeInsetsGeometry get margin => placement.margin;
 
   /// Whether this buoy is modal while it is up (quick actions, a menu): a barrier blocks taps to
   /// the page and its docks and tells screen readers to leave the page alone, a tap outside the
@@ -380,46 +352,77 @@ class HarborBuoy with Diagnosticable {
   /// What a screen reader announces for a modal buoy's barrier, as [ModalBarrier.semanticsLabel].
   /// A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
   final String barrierLabel;
-  final HarborAnchor? anchor;
-  final HarborBuoySide side;
-  final double gap;
-  final double overlap;
 
-  /// How an anchored buoy lines up with its anchor across its [side]; centred by default.
-  final HarborBuoyCrossAlignment crossAlignment;
+  /// What an anchored buoy sits by; null for an aligned one.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  HarborAnchor? get anchor => switch (placement) {
+    HarborAnchored(:final HarborAnchor? anchor) => anchor,
+    HarborAligned() => null,
+  };
 
-  /// How far an anchored buoy is moved across its [side] from where [crossAlignment] puts it:
-  /// toward the reading end above or below its anchor, down beside it. The horizontal part of
-  /// `MenuAnchor.alignmentOffset`; [gap] and [overlap] are the rest.
-  final double crossOffset;
+  /// Which side of its anchor an anchored buoy sits on.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  HarborAnchorSide get side => switch (placement) {
+    HarborAnchored(:final HarborAnchorSide side) => side,
+    HarborAligned() => HarborAnchorSide.above,
+  };
+
+  /// How far an anchored buoy sits from its anchor.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  double get gap => switch (placement) {
+    HarborAnchored(:final double gap) => gap,
+    HarborAligned() => 0.0,
+  };
+
+  /// How far an anchored buoy reaches back over its anchor.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  double get overlap => switch (placement) {
+    HarborAnchored(:final double overlap) => overlap,
+    HarborAligned() => 0.0,
+  };
+
+  /// How an anchored buoy lines up with its anchor across its side; centred by default.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  HarborCrossAlignment get crossAlignment => switch (placement) {
+    HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
+    HarborAligned() => HarborCrossAlignment.center,
+  };
+
+  /// How far an anchored buoy is moved across its side from where its cross alignment puts it.
+  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  double get crossOffset => switch (placement) {
+    HarborAnchored(:final double crossOffset) => crossOffset,
+    HarborAligned() => 0.0,
+  };
 
   /// Keeps the buoy inside this rectangle (in the harbor's own coordinates)
   /// as well as inside the clear water.
   final Rect? within;
 
   @override
-  String toStringShort() =>
-      anchor == null ? objectRuntimeType(this, 'HarborBuoy') : '${objectRuntimeType(this, 'HarborBuoy')}.anchored';
+  String toStringShort() => _placement == null && _anchor != null
+      ? '${objectRuntimeType(this, 'HarborBuoy')}.anchored'
+      : objectRuntimeType(this, 'HarborBuoy');
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
-    if (anchor == null) {
-      properties.add(
-        DiagnosticsProperty<AlignmentGeometry>('alignment', alignment, defaultValue: Alignment.bottomCenter),
-      );
-      properties.add(
-        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(16.0)),
-      );
+    if (_placement != null) {
+      properties.add(DiagnosticsProperty<HarborPlacement>('placement', _placement, defaultValue: const HarborAligned()));
+      properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
+    } else if (_anchor == null) {
+      // Made with the deprecated parameters: described as it was then.
+      properties.add(DiagnosticsProperty<AlignmentGeometry>('alignment', _alignment, defaultValue: null));
+      properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', _margin, defaultValue: null));
       properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
     } else {
-      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor));
-      properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
-      properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
-      properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
+      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', _anchor));
+      properties.add(EnumProperty<HarborAnchorSide>('side', _side, defaultValue: HarborAnchorSide.above));
+      properties.add(DoubleProperty('gap', _gap, defaultValue: HarborAnchored.defaultGap));
+      properties.add(DoubleProperty('overlap', _overlap, defaultValue: 0.0));
       properties.add(
-        DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)),
+        DiagnosticsProperty<EdgeInsetsGeometry>('margin', _margin, defaultValue: HarborAnchored.defaultMargin),
       );
     }
     properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
@@ -538,36 +541,29 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
 
   Widget _build(final BuildContext context) {
     final int lastModal = buoys.lastIndexWhere((final HarborBuoy b) => b.modal);
+    assert(
+      buoys.every((final HarborBuoy b) => b.placement is! HarborAnchored || (b.placement as HarborAnchored).anchor != null),
+      'A HarborBuoy placed by HarborAnchored needs an anchor; only a HarborPortalBuoy anchors to its child.',
+    );
     final List<HarborBuoy> all = <HarborBuoy>[
       ...buoys,
       for (final HarborFlareEntry flare in flaresInSight(flares))
-        if (flare.anchor case final HarborAnchor anchor)
-          HarborBuoy.anchored(
-            key: ObjectKey(flare),
-            anchor: anchor,
-            side: flare.side,
-            gap: flare.gap,
-            crossAlignment: flare.crossAlignment,
-            margin: flare.margin ?? const EdgeInsets.all(8.0),
-            hinge: flare.hinge,
-            child: _Flare(entry: flare),
-          )
-        else
-          HarborBuoy(
-            key: ObjectKey(flare),
-            hinge: flare.hinge,
-            alignment: flare.alignment,
-            within: _local(context, flare.avoidInGlobal),
-            margin: flare.margin ?? const EdgeInsets.all(16.0),
-            child: _Flare(entry: flare),
-          ),
+        HarborBuoy(
+          key: ObjectKey(flare),
+          placement: flare.placement,
+          hinge: flare.hinge,
+          // An anchored flare goes to the port of the page that holds its anchor, so only an aligned
+          // one is kept inside the clear water of the harbor that raised it.
+          within: flare.placement is HarborAligned ? _local(context, flare.avoidInGlobal) : null,
+          child: _Flare(entry: flare),
+        ),
     ];
     return _BuoyLayout(
       buoys: all,
       // An anchored flare sits by its anchor in the clear water, so it covers no coast to reach.
       reaching: <int>{
         for (int i = 0; i < all.length; i++)
-          if (all[i].child case _Flare(entry: final HarborFlareEntry entry) when entry.reachesCoast && entry.anchor == null) i,
+          if (all[i].child case _Flare(entry: final HarborFlareEntry entry) when entry.reachesCoast && entry.placement is HarborAligned) i,
       },
       children: <Widget>[
         for (int i = 0; i < all.length; i++)
@@ -756,35 +752,8 @@ class _RenderBuoyLayer extends RenderBox
     }
   }
 
-  /// [water], or the one screen of it that holds [buoy]'s alignment point when a hinge splits it.
-  /// A point on the hinge itself goes to the screen where reading starts, as a dialog does. Laid
-  /// out in the layer's own coordinates, taken to be the screen's, as `DisplayFeatureSubScreen` does.
-  /// The screen of [water] the buoy keeps to when a hinge it keeps off splits it: the one that
-  /// holds its alignment point or, given [anchor], the one its anchor is on, as a
-  /// [HarborPortalBuoy] keeps to; an anchor on the hinge goes to the nearest screen.
-  Rect _screenFor(final HarborBuoy buoy, final Rect water, {final Offset? anchor}) {
-    final List<Rect> avoid = <Rect>[
-      for (final DisplayFeature feature in (buoy.hinge ?? _hinge).keptOff(_features)) feature.bounds,
-    ];
-    if (avoid.isEmpty) {
-      return water;
-    }
-    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, avoid).toList();
-    if (screens.length < 2) {
-      return screens.isEmpty ? water : screens.single;
-    }
-    final Offset point = anchor ?? buoy.alignment.resolve(_textDirection).withinRect(water);
-    for (final Rect screen in screens) {
-      if (screen.contains(point)) {
-        return screen;
-      }
-    }
-    if (anchor != null) {
-      return screens.reduce((final Rect a, final Rect b) => (a.center - anchor).distance <= (b.center - anchor).distance ? a : b);
-    }
-    screens.sort((final Rect a, final Rect b) => a.left.compareTo(b.left));
-    return _textDirection == TextDirection.rtl ? screens.last : screens.first;
-  }
+  /// The bounds of the hinges and folds [buoy] keeps off: its own policy's, or the harbor's.
+  List<Rect> _hingesFor(final HarborBuoy buoy) => HarborPlacementEngine.hingeBounds(buoy.hinge ?? _hinge, _features);
 
   TextDirection _textDirection;
   set textDirection(final TextDirection value) {
@@ -824,15 +793,6 @@ class _RenderBuoyLayer extends RenderBox
 
   Rect _clear = Rect.zero;
 
-  /// The coast a flare's [water] reaches into: the sides always, and the top or bottom when the
-  /// flare is placed against that edge.
-  EdgeInsets _coastCovered(final Rect water, final Alignment alignment) => EdgeInsets.fromLTRB(
-    math.max(0.0, _clear.left - water.left),
-    alignment.y <= -1.0 ? math.max(0.0, _clear.top - water.top) : 0.0,
-    math.max(0.0, water.right - _clear.right),
-    alignment.y >= 1.0 ? math.max(0.0, water.bottom - _clear.bottom) : 0.0,
-  );
-
   @override
   void performLayout() {
     size = constraints.biggest;
@@ -843,30 +803,29 @@ class _RenderBuoyLayer extends RenderBox
     while (child != null) {
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
+      final HarborPlacement placement = buoy.placement;
       final bool reaches = _reaching.contains(i);
-      final Rect base = reaches ? open : _clear;
-      // The harbor that raised a flare keeps it inside its own clear water. Reaching the coast, an
-      // edge of that which is the coast's edge opens out to the coast; one its own docks set holds.
-      final Rect? raised = buoy.within;
-      final Rect? within = raised == null || !reaches
-          ? raised
-          : Rect.fromLTRB(
-              raised.left <= _clear.left + 0.5 ? open.left : raised.left,
-              raised.top <= _clear.top + 0.5 ? open.top : raised.top,
-              raised.right >= _clear.right - 0.5 ? open.right : raised.right,
-              raised.bottom >= _clear.bottom - 0.5 ? open.bottom : raised.bottom,
-            );
-      final Rect bounded = within == null || !within.overlaps(base) ? base : base.intersect(within);
-      final Rect water = buoy.anchor == null
-          ? _screenFor(buoy, buoy.margin.resolve(_textDirection).deflateRect(bounded))
-          : buoy.margin.resolve(_textDirection).deflateRect(bounded);
-      final Size room = Size(math.max(0.0, water.width), math.max(0.0, water.height));
-      child.layout(
-        reaches ? _CoastConstraints(room, _coastCovered(water, buoy.alignment.resolve(_textDirection))) : BoxConstraints.loose(room),
-        parentUsesSize: true,
+      // An anchored buoy is laid out in the largest screen of its water, since which screen holds
+      // its anchor is only known when it paints.
+      final HarborWater water = HarborPlacementEngine.water(
+        clear: _clear,
+        open: reaches ? open : null,
+        within: buoy.within,
+        placement: placement,
+        textDirection: _textDirection,
+        hinges: _hingesFor(buoy),
       );
+      final Size room = Size(math.max(0.0, water.rect.width), math.max(0.0, water.rect.height));
+      child.layout(reaches ? _CoastConstraints(room, water.coastCovered) : BoxConstraints.loose(room), parentUsesSize: true);
       // Anchored buoys are placed when they paint, once their anchors have a size.
-      data.offset = buoy.anchor == null ? buoy.alignment.resolve(_textDirection).inscribe(child.size, water).topLeft : data.offset;
+      if (placement is HarborAligned) {
+        data.offset = HarborPlacementEngine.place(
+          placement: placement,
+          water: water.rect,
+          size: child.size,
+          textDirection: _textDirection,
+        ).offset;
+      }
       child = data.nextSibling;
       i++;
     }
@@ -874,7 +833,7 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
-    if (_buoys.any((final HarborBuoy b) => b.anchor != null)) {
+    if (_buoys.any((final HarborBuoy b) => b.placement is HarborAnchored)) {
       _follow.next(markNeedsPaint);
     }
     RenderBox? child = firstChild;
@@ -882,30 +841,35 @@ class _RenderBuoyLayer extends RenderBox
     while (child != null) {
       final _BuoyParentData data = child.parentData! as _BuoyParentData;
       final HarborBuoy buoy = _buoys[i];
-      final RenderBox? anchorBox = buoy.anchor?.box;
-      final bool painted = buoy.anchor == null || anchorBox != null;
+      final HarborPlacement placement = buoy.placement;
+      final RenderBox? anchorBox = placement is HarborAnchored ? placement.anchor?.box : null;
+      final bool painted = placement is HarborAligned || anchorBox != null;
       if (painted != data.painted) {
         data.painted = painted;
         markNeedsSemanticsUpdate();
       }
-      if (buoy.anchor != null) {
-        if (anchorBox == null) {
-          child = data.nextSibling;
-          i++;
-          continue;
-        }
-        final Rect at = MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size);
-        data.offset = _anchoredOffset(
-          // Split before the margin, so it keeps the margin off the hinge as well as the edges.
-          water: buoy.margin.resolve(_textDirection).deflateRect(_screenFor(buoy, _clear, anchor: at.center)),
-          at: at,
+      if (!painted) {
+        child = data.nextSibling;
+        i++;
+        continue;
+      }
+      if (placement is HarborAnchored) {
+        final Rect at = MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size);
+        data.offset = HarborPlacementEngine.place(
+          placement: placement,
+          water: HarborPlacementEngine.water(
+            clear: _clear,
+            within: buoy.within,
+            placement: placement,
+            textDirection: _textDirection,
+            hinges: _hingesFor(buoy),
+            holding: at.center,
+          ).rect,
           size: child.size,
-          side: buoy.side,
-          gap: buoy.gap,
-          overlap: buoy.overlap,
-          crossAlignment: buoy.crossAlignment,
-          crossOffset: buoy.crossOffset,
           textDirection: _textDirection,
+          anchorRect: at,
+          // A flare never flips, so its transition knows its side (HarborFlareEntry.side).
+          flips: buoy.child is! _Flare && (placement.flips ?? false),
         ).offset;
       }
       context.paintChild(child, data.offset + offset);
@@ -953,13 +917,13 @@ class _RenderBuoyLayer extends RenderBox
 /// from a button, declared where it is opened rather than in [Harbor.buoys].
 ///
 /// It is an [OverlayPortal]: while [controller] shows it, [buoyBuilder]'s
-/// buoy floats in the nearest [Overlay] and is placed as a
-/// [HarborBuoy.anchored] is, in the clear water of the harbor around this
-/// widget: by [anchor] (or by [child] when there is none), on its [side],
-/// [gap] away, lined up by [crossAlignment], [margin] in from the water's
-/// edges. When [side] has no room and the opposite side has, it [flips] there;
-/// otherwise it is kept inside the clear water. [sideOf] tells the buoy which
-/// side it landed on.
+/// buoy floats in the nearest [Overlay] and is placed by [placement], as an
+/// anchored [HarborBuoy] is, in the clear water of the harbor around this
+/// widget: by the placement's anchor (or by [child] when it has none), on its
+/// side, its gap away, lined up by its cross alignment, its margin in from the
+/// water's edges. When that side has no room and the opposite side has, it
+/// flips there (unless [HarborAnchored.flips] is false); otherwise it is kept
+/// inside the clear water. [sideOf] tells the buoy which side it landed on.
 ///
 /// With [onDismiss], it closes as a `MenuAnchor` does: a tap outside both the
 /// buoy and [child], Escape while focus is in either, and back all call it.
@@ -982,14 +946,47 @@ class HarborPortalBuoy extends StatefulWidget {
     required this.controller,
     required this.buoyBuilder,
     required this.child,
-    this.anchor,
-    this.side = HarborBuoySide.above,
-    this.gap = 8.0,
-    this.overlap = 0.0,
-    this.crossAlignment = HarborBuoyCrossAlignment.center,
-    this.crossOffset = 0.0,
-    this.margin = const EdgeInsets.all(8.0),
-    this.flips = true,
+    final HarborAnchored? placement,
+    @Deprecated(
+      'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborAnchor? anchor,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborAnchorSide? side,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final double? gap,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final double? overlap,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborCrossAlignment? crossAlignment,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final double? crossOffset,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final EdgeInsetsGeometry? margin,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final bool? flips,
     this.onDismiss,
     this.consumeOutsideTaps = false,
     this.requestFocus = false,
@@ -997,7 +994,29 @@ class HarborPortalBuoy extends StatefulWidget {
   }) : assert(
          !requestFocus || onDismiss != null,
          'A HarborPortalBuoy that takes focus needs an onDismiss, so Escape can close it and a keyboard user is not left in it.',
-       );
+       ),
+       assert(
+         placement == null ||
+             (anchor == null &&
+                 side == null &&
+                 gap == null &&
+                 overlap == null &&
+                 crossAlignment == null &&
+                 crossOffset == null &&
+                 margin == null &&
+                 flips == null),
+         'Give a portal buoy a placement, or the deprecated anchor, side, gap, overlap, crossAlignment, crossOffset, '
+         'margin and flips, not both.',
+       ),
+       _placement = placement,
+       _anchor = anchor,
+       _side = side,
+       _gap = gap,
+       _overlap = overlap,
+       _crossAlignment = crossAlignment,
+       _crossOffset = crossOffset,
+       _margin = margin,
+       _flips = flips;
 
   /// Shows and hides the buoy.
   final OverlayPortalController controller;
@@ -1006,27 +1025,70 @@ class HarborPortalBuoy extends StatefulWidget {
   /// themes and harbor.
   final WidgetBuilder buoyBuilder;
 
-  /// Where this widget lives in the tree, and its anchor when [anchor] is null.
+  /// Where this widget lives in the tree, and its anchor when [placement] has none.
   final Widget child;
 
+  // The placement given, or null when the deprecated parameters were used (or none at all).
+  final HarborAnchored? _placement;
+  final HarborAnchor? _anchor;
+  final HarborAnchorSide? _side;
+  final double? _gap;
+  final double? _overlap;
+  final HarborCrossAlignment? _crossAlignment;
+  final double? _crossOffset;
+  final EdgeInsetsGeometry? _margin;
+  final bool? _flips;
+
+  /// Where the buoy sits by its anchor. A null [HarborAnchored.anchor] anchors it to [child], and a
+  /// null [HarborAnchored.flips] flips it when its side has no room.
+  ///
+  /// Given no placement, it sits above [child], as it did before placements: a portal buoy's side
+  /// was above by default, where a [HarborAnchored]'s is below.
+  HarborAnchored get placement =>
+      _placement ??
+      HarborAnchored(
+        _anchor,
+        side: _side ?? HarborAnchorSide.above,
+        gap: _gap ?? HarborAnchored.defaultGap,
+        overlap: _overlap ?? 0.0,
+        crossAlignment: _crossAlignment ?? HarborCrossAlignment.center,
+        crossOffset: _crossOffset ?? 0.0,
+        flips: _flips,
+        margin: _margin ?? HarborAnchored.defaultMargin,
+      );
+
   /// What the buoy sits by. Null anchors it to [child].
-  final HarborAnchor? anchor;
+  @Deprecated('Read placement.anchor. Deprecated after 0.6.3.')
+  HarborAnchor? get anchor => placement.anchor;
 
-  final HarborBuoySide side;
-  final double gap;
-  final double overlap;
+  /// Which side of its anchor the buoy sits on before any flip.
+  @Deprecated('Read placement.side. Deprecated after 0.6.3.')
+  HarborAnchorSide get side => placement.side;
 
-  /// How the buoy lines up with its anchor across its [side]; centred by default.
-  final HarborBuoyCrossAlignment crossAlignment;
+  /// How far the buoy sits from its anchor.
+  @Deprecated('Read placement.gap. Deprecated after 0.6.3.')
+  double get gap => placement.gap;
 
-  /// How far the buoy is moved across its [side] from where [crossAlignment] puts it, as
-  /// [HarborBuoy.crossOffset].
-  final double crossOffset;
-  final EdgeInsetsGeometry margin;
+  /// How far the buoy reaches back over its anchor.
+  @Deprecated('Read placement.overlap. Deprecated after 0.6.3.')
+  double get overlap => placement.overlap;
 
-  /// Whether the buoy goes to the opposite side of its anchor when [side] has
-  /// no room and that side has.
-  final bool flips;
+  /// How the buoy lines up with its anchor across its side; centred by default.
+  @Deprecated('Read placement.crossAlignment. Deprecated after 0.6.3.')
+  HarborCrossAlignment get crossAlignment => placement.crossAlignment;
+
+  /// How far the buoy is moved across its side from where its cross alignment puts it.
+  @Deprecated('Read placement.crossOffset. Deprecated after 0.6.3.')
+  double get crossOffset => placement.crossOffset;
+
+  /// How far in from the clear water's edges.
+  @Deprecated('Read placement.margin. Deprecated after 0.6.3.')
+  EdgeInsetsGeometry get margin => placement.margin;
+
+  /// Whether the buoy goes to the opposite side of its anchor when its side has no room and that
+  /// side has.
+  @Deprecated('Read placement.flips. Deprecated after 0.6.3.')
+  bool get flips => placement.flips ?? true;
 
   /// Called while the buoy is shown when a tap lands outside both the buoy and [child] (a
   /// [TapRegion] group, as a `MenuAnchor`'s), when Escape is pressed with focus in either, and on
@@ -1056,17 +1118,17 @@ class HarborPortalBuoy extends StatefulWidget {
   /// Escape from focus in it still calls [onDismiss], which it requires.
   final bool requestFocus;
 
-  /// The side of its anchor the portal buoy around [context] landed on: its [side], or the
+  /// The side of its anchor the portal buoy around [context] landed on: its placement's side, or the
   /// opposite one after it flipped. A popover reads it to point its arrow at the anchor. It is
   /// placed when it paints, so after a flip this changes on the next frame.
-  static HarborBuoySide sideOf(final BuildContext context) {
-    final HarborBuoySide? side = maybeSideOf(context);
+  static HarborAnchorSide sideOf(final BuildContext context) {
+    final HarborAnchorSide? side = maybeSideOf(context);
     assert(side != null, 'HarborPortalBuoy.sideOf was called from outside a portal buoy\'s buoyBuilder.');
     return side!;
   }
 
   /// [sideOf], or null outside a portal buoy.
-  static HarborBuoySide? maybeSideOf(final BuildContext context) =>
+  static HarborAnchorSide? maybeSideOf(final BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_PortalBuoySide>()?.side;
 
   @override
@@ -1076,23 +1138,28 @@ class HarborPortalBuoy extends StatefulWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<OverlayPortalController>('controller', controller));
-    properties.add(DiagnosticsProperty<HarborAnchor>('anchor', anchor, defaultValue: null));
-    properties.add(EnumProperty<HarborBuoySide>('side', side, defaultValue: HarborBuoySide.above));
-    properties.add(DoubleProperty('gap', gap, defaultValue: 8.0));
-    properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
-    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: const EdgeInsets.all(8.0)));
-    properties.add(FlagProperty('flips', value: flips, ifFalse: 'no flip'));
+    if (_placement case final HarborAnchored placement) {
+      properties.add(DiagnosticsProperty<HarborAnchored>('placement', placement));
+    } else {
+      // Made with the deprecated parameters, or none: described as it was then.
+      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', _anchor, defaultValue: null));
+      properties.add(EnumProperty<HarborAnchorSide>('side', _side, defaultValue: null));
+      properties.add(DoubleProperty('gap', _gap, defaultValue: null));
+      properties.add(DoubleProperty('overlap', _overlap, defaultValue: null));
+      properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', _margin, defaultValue: null));
+      properties.add(FlagProperty('flips', value: _flips ?? true, ifFalse: 'no flip'));
+    }
     properties.add(FlagProperty('requestFocus', value: requestFocus, ifTrue: 'requests focus'));
   }
 }
 
 class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   HarborAnchor? _own;
-  late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.side);
+  late final ValueNotifier<HarborAnchorSide> _landed = ValueNotifier<HarborAnchorSide>(widget.placement.side);
   late final _DismissPortalBuoyAction _dismissAction = _DismissPortalBuoyAction(this);
   bool _shown = false;
 
-  HarborAnchor get _anchor => widget.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
+  HarborAnchor get _anchor => widget.placement.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPortalBuoy'));
 
   void _dismiss() => widget.onDismiss?.call();
 
@@ -1148,13 +1215,13 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
   @override
   Widget build(final BuildContext context) {
     final bool dismissible = widget.onDismiss != null;
-    final Widget anchored = widget.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child;
+    final Widget anchored = widget.placement.anchor == null ? HarborAnchorPoint(anchor: _anchor, child: widget.child) : widget.child;
     final Widget portal = OverlayPortal(
       controller: widget.controller,
       overlayChildBuilder: (final BuildContext context) {
-        Widget buoy = ValueListenableBuilder<HarborBuoySide>(
+        Widget buoy = ValueListenableBuilder<HarborAnchorSide>(
           valueListenable: _landed,
-          builder: (final BuildContext context, final HarborBuoySide side, final Widget? child) => _PortalBuoySide(side: side, child: child!),
+          builder: (final BuildContext context, final HarborAnchorSide side, final Widget? child) => _PortalBuoySide(side: side, child: child!),
           // A Builder, so the builder's own context is below the side it reads.
           child: Builder(builder: widget.buoyBuilder),
         );
@@ -1169,17 +1236,15 @@ class _HarborPortalBuoyState extends State<HarborPortalBuoy> {
           onCameOrWent: _buoyCameOrWent,
           child: buoy,
         );
-        return _PortalBuoyLayout(
+        return _PlacedLayout(
           harbor: HarborController.maybeOf(context),
-          hinges: _hingeBounds(widget.hinge ?? HarborHinge.of(this.context), context),
+          hinges: HarborPlacementEngine.hingeBounds(
+            widget.hinge ?? HarborHinge.of(this.context),
+            MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[],
+          ),
+          placement: widget.placement,
           anchor: _anchor,
-          side: widget.side,
-          gap: widget.gap,
-          overlap: widget.overlap,
-          crossAlignment: widget.crossAlignment,
-          crossOffset: widget.crossOffset,
-          margin: widget.margin,
-          flips: widget.flips,
+          flips: widget.placement.flips ?? true,
           textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
           landed: _landed,
           child: buoy,
@@ -1258,7 +1323,7 @@ class _DismissPortalBuoyAction extends DismissAction {
 class _PortalBuoySide extends InheritedWidget {
   const _PortalBuoySide({required this.side, required super.child});
 
-  final HarborBuoySide side;
+  final HarborAnchorSide side;
 
   @override
   bool updateShouldNotify(final _PortalBuoySide oldWidget) => side != oldWidget.side;
@@ -1374,58 +1439,67 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
   );
 }
 
-class _PortalBuoyLayout extends SingleChildRenderObjectWidget {
-  const _PortalBuoyLayout({
-    required this.harbor,
+/// Places one overlay in the water of the box it fills: a portal buoy by its anchor in the clear
+/// water of the harbor around it, or a flare with no harbor above it in the water its overlay's
+/// padding and keyboard leave.
+class _PlacedLayout extends SingleChildRenderObjectWidget {
+  const _PlacedLayout({
+    this.harbor,
+    this.covered = EdgeInsets.zero,
+    this.keyboard,
     this.hinges = const <Rect>[],
-    required this.anchor,
-    required this.side,
-    required this.gap,
-    required this.overlap,
-    required this.crossAlignment,
-    required this.crossOffset,
-    required this.margin,
-    required this.flips,
+    required this.placement,
+    this.anchor,
+    this.flips = false,
     required this.textDirection,
-    required this.landed,
+    this.landed,
     super.child,
-  });
+  }) : assert(keyboard == null || placement is HarborAligned, 'Only an aligned overlay reaches over the coast.'),
+       assert(harbor == null || placement is HarborAnchored, 'An aligned overlay in a harbor is placed by its buoy layer.'),
+       assert(placement is HarborAligned || anchor != null, 'An anchored overlay needs its anchor.');
 
+  /// The harbor whose clear water the overlay keeps to; with none, the box less [covered].
   final HarborController? harbor;
 
-  /// The hinges and folds the buoy keeps off, in the overlay's coordinates: it stays on the screen
-  /// that holds its anchor, and flips within that screen.
+  /// What covers each edge of the box when there is no [harbor]: the larger of the padding and
+  /// the keyboard.
+  final EdgeInsets covered;
+
+  /// The keyboard, for an aligned overlay that reaches over the coast: its water is the box less
+  /// this alone. Null for one that does not.
+  final EdgeInsets? keyboard;
+
+  /// The hinges and folds the overlay keeps off, in the box's coordinates.
   final List<Rect> hinges;
-  final HarborAnchor anchor;
-  final HarborBuoySide side;
-  final double gap;
-  final double overlap;
-  final HarborBuoyCrossAlignment crossAlignment;
-  final double crossOffset;
-  final EdgeInsetsGeometry margin;
+  final HarborPlacement placement;
+
+  /// The anchor an anchored overlay sits by: its placement's, or a portal buoy's own around its child.
+  final HarborAnchor? anchor;
+
+  /// Whether an anchored overlay goes to the opposite side when its own has no room.
   final bool flips;
   final TextDirection textDirection;
 
-  /// Told the side the buoy landed on, the frame after it changes.
-  final ValueNotifier<HarborBuoySide> landed;
+  /// Told the side an anchored overlay landed on, the frame after it changes.
+  final ValueNotifier<HarborAnchorSide>? landed;
 
   @override
-  RenderObject createRenderObject(final BuildContext context) => _RenderPortalBuoy(this);
+  RenderObject createRenderObject(final BuildContext context) => _RenderPlaced(this);
 
   @override
-  void updateRenderObject(final BuildContext context, final _RenderPortalBuoy renderObject) {
+  void updateRenderObject(final BuildContext context, final _RenderPlaced renderObject) {
     renderObject.config = this;
   }
 }
 
-/// Fills the overlay and places its buoy when it paints, once the harbor's
-/// clear water and the anchor are laid out for this frame.
-class _RenderPortalBuoy extends RenderShiftedBox {
-  _RenderPortalBuoy(this._config) : super(null);
+/// Fills its box and places its child: an aligned one as it lays out, an anchored one when it
+/// paints, once the harbor's clear water and the anchor are laid out for this frame.
+class _RenderPlaced extends RenderShiftedBox {
+  _RenderPlaced(this._config) : super(null);
 
-  _PortalBuoyLayout _config;
-  set config(final _PortalBuoyLayout value) {
-    final _PortalBuoyLayout old = _config;
+  _PlacedLayout _config;
+  set config(final _PlacedLayout value) {
+    final _PlacedLayout old = _config;
     _config = value;
     if (attached) {
       _unlisten(old);
@@ -1436,15 +1510,15 @@ class _RenderPortalBuoy extends RenderShiftedBox {
 
   bool _placed = false;
 
-  void _listen(final _PortalBuoyLayout c) {
+  void _listen(final _PlacedLayout c) {
     c.harbor?.clearWater.addListener(markNeedsLayout);
   }
 
-  void _unlisten(final _PortalBuoyLayout c) {
+  void _unlisten(final _PlacedLayout c) {
     c.harbor?.clearWater.removeListener(markNeedsLayout);
   }
 
-  // Its own layer, since it is painted again every frame.
+  // Its own layer, since an anchored one is painted again every frame.
   @override
   bool get isRepaintBoundary => true;
 
@@ -1463,42 +1537,15 @@ class _RenderPortalBuoy extends RenderShiftedBox {
     super.detach();
   }
 
-  /// The harbor's clear water in this box's coordinates, or the whole box when there is no
-  /// harbor around the buoy; only the screen of it that holds [anchor] when a hinge splits it, and
-  /// [margin] in from its edges, the hinge's included.
-  Rect _water(final Offset anchor) {
+  /// The harbor's clear water in this box's coordinates, or the box less what covers it when there
+  /// is no harbor.
+  Rect _clearWater() {
     final HarborController? harbor = _config.harbor;
     final RenderBox? box = harbor?.layoutBox;
     final HarborLayoutRecord? layout = harbor?.layoutRecord;
-    final Rect clear = box == null || layout == null || !box.attached || !box.hasSize
-        ? Offset.zero & size
+    return box == null || layout == null || !box.attached || !box.hasSize
+        ? _config.covered.deflateRect(Offset.zero & size)
         : MatrixUtils.transformRect(box.getTransformTo(this), layout.clearWater);
-    return _config.margin.resolve(_config.textDirection).deflateRect(_screenOf(clear, anchor));
-  }
-
-  /// The screen of [water] that holds [point] when a hinge the buoy keeps off splits it: the one
-  /// its anchor is on. A point on the hinge goes to the nearest screen.
-  Rect _screenOf(final Rect water, final Offset point) {
-    if (_config.hinges.isEmpty) {
-      return water;
-    }
-    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, _config.hinges).toList();
-    if (screens.length < 2) {
-      return screens.isEmpty ? water : screens.single;
-    }
-    Rect best = screens.first;
-    double nearest = double.infinity;
-    for (final Rect screen in screens) {
-      if (screen.contains(point)) {
-        return screen;
-      }
-      final double distance = (screen.center - point).distance;
-      if (distance < nearest) {
-        nearest = distance;
-        best = screen;
-      }
-    }
-    return best;
   }
 
   @override
@@ -1508,66 +1555,88 @@ class _RenderPortalBuoy extends RenderShiftedBox {
   void performLayout() {
     size = constraints.biggest;
     final RenderBox? child = this.child;
-    if (child != null) {
-      // Only the water's size is known while laying out: the harbor's last
-      // one. A change to it lays the buoy out again. Where a hinge splits it, the widest screen of
-      // it, since which screen holds the anchor is only known when it paints.
-      Rect water = _config.harbor?.layoutRecord?.clearWater ?? Offset.zero & size;
-      if (_config.hinges.isNotEmpty) {
-        final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, _config.hinges).toList();
-        if (screens.length > 1) {
-          water = screens.reduce((final Rect a, final Rect b) => a.width * a.height >= b.width * b.height ? a : b);
-        }
-      }
-      water = _config.margin.resolve(_config.textDirection).deflateRect(water);
-      child.layout(BoxConstraints.loose(Size(math.max(0.0, water.width), math.max(0.0, water.height))), parentUsesSize: true);
+    if (child == null) {
+      return;
+    }
+    // Only the harbor's water's size is known while laying out: its last one. A change to it lays
+    // the overlay out again.
+    final EdgeInsets? keyboard = _config.keyboard;
+    final HarborWater water = HarborPlacementEngine.water(
+      clear: _config.harbor?.layoutRecord?.clearWater ?? _config.covered.deflateRect(Offset.zero & size),
+      open: keyboard?.deflateRect(Offset.zero & size),
+      placement: _config.placement,
+      textDirection: _config.textDirection,
+      hinges: _config.hinges,
+    );
+    final Size room = Size(math.max(0.0, water.rect.width), math.max(0.0, water.rect.height));
+    child.layout(keyboard != null ? _CoastConstraints(room, water.coastCovered) : BoxConstraints.loose(room), parentUsesSize: true);
+    if (_config.placement is HarborAligned) {
+      (child.parentData! as BoxParentData).offset = HarborPlacementEngine.place(
+        placement: _config.placement,
+        water: water.rect,
+        size: child.size,
+        textDirection: _config.textDirection,
+      ).offset;
     }
   }
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
-    _follow.next(markNeedsPaint);
     final RenderBox? child = this.child;
-    final RenderBox? anchorBox = _config.anchor.box;
-    final bool placed = child != null && anchorBox != null;
-    if (placed != _placed) {
-      _placed = placed;
-      markNeedsSemanticsUpdate();
-    }
-    if (!placed) {
+    final HarborPlacement placement = _config.placement;
+    if (placement is HarborAligned) {
+      _setPlaced(child != null);
+      if (child != null) {
+        context.paintChild(child, (child.parentData! as BoxParentData).offset + offset);
+      }
       return;
     }
-    final BoxParentData data = child.parentData! as BoxParentData;
+    _follow.next(markNeedsPaint);
+    final RenderBox? anchorBox = _config.anchor?.box;
+    _setPlaced(child != null && anchorBox != null);
+    if (!_placed) {
+      return;
+    }
+    final BoxParentData data = child!.parentData! as BoxParentData;
     final Offset was = data.offset;
-    final Rect at = MatrixUtils.transformRect(anchorBox.getTransformTo(this), Offset.zero & anchorBox.size);
-    final ({Offset offset, HarborBuoySide side}) landed = _anchoredOffset(
-      water: _water(at.center),
-      at: at,
+    final Rect at = MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size);
+    final HarborLanding landed = HarborPlacementEngine.place(
+      placement: placement,
+      water: HarborPlacementEngine.water(
+        clear: _clearWater(),
+        placement: placement,
+        textDirection: _config.textDirection,
+        hinges: _config.hinges,
+        holding: at.center,
+      ).rect,
       size: child.size,
-      side: _config.side,
-      gap: _config.gap,
-      overlap: _config.overlap,
-      crossAlignment: _config.crossAlignment,
-      crossOffset: _config.crossOffset,
       textDirection: _config.textDirection,
+      anchorRect: at,
       flips: _config.flips,
     );
     data.offset = landed.offset;
-    _report(landed.side);
-    // Layout refreshes semantics, but the buoy is placed here, after it, so a move refreshes them too.
+    _report(landed.side!);
+    // Layout refreshes semantics, but the overlay is placed here, after it, so a move refreshes them too.
     if (data.offset != was) {
       markNeedsSemanticsUpdate();
     }
     context.paintChild(child, data.offset + offset);
   }
 
-  HarborBuoySide? _reporting;
+  void _setPlaced(final bool placed) {
+    if (placed != _placed) {
+      _placed = placed;
+      markNeedsSemanticsUpdate();
+    }
+  }
+
+  HarborAnchorSide? _reporting;
 
   // The side is only known here, and nothing may be rebuilt while painting, so the buoy hears it
   // the frame after, as an anchor reports that it moved.
-  void _report(final HarborBuoySide side) {
-    final ValueNotifier<HarborBuoySide> landed = _config.landed;
-    if (side == (_reporting ?? landed.value)) {
+  void _report(final HarborAnchorSide side) {
+    final ValueNotifier<HarborAnchorSide>? landed = _config.landed;
+    if (landed == null || side == (_reporting ?? landed.value)) {
       return;
     }
     final bool scheduled = _reporting != null;
@@ -1576,10 +1645,10 @@ class _RenderPortalBuoy extends RenderShiftedBox {
       return;
     }
     SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
-      final HarborBuoySide? reported = _reporting;
+      final HarborAnchorSide? reported = _reporting;
       _reporting = null;
       if (reported != null && attached) {
-        _config.landed.value = reported;
+        _config.landed?.value = reported;
       }
     });
     SchedulerBinding.instance.ensureVisualUpdate();
@@ -1670,24 +1739,23 @@ abstract final class HarborFlares {
   /// `SnackBar` with `persist` does; give it to a flare with a button, so a
   /// screen-reader user has time to reach it.
   ///
-  /// [alignment] places the flare at an exact point instead of a slot, as
-  /// [HarborBuoy.alignment] places a buoy; give one or the other, or neither
-  /// for [HarborFlareSlot.high]. An [AlignmentDirectional] is resolved in the
-  /// reading direction of [context], the page that raised it, whose themes the
-  /// flare also keeps.
+  /// [placement] places the flare instead of a slot: at an exact point of the
+  /// clear water ([HarborAligned]), as an aligned [HarborBuoy] is placed, or by
+  /// a [HarborAnchorPoint] ([HarborAnchored]). Give a slot or a placement, or
+  /// neither for [HarborFlareSlot.high]. An [AlignmentDirectional] or an
+  /// [EdgeInsetsDirectional] is resolved in the reading direction of
+  /// [context], the page that raised it, whose themes the flare also keeps.
   ///
-  /// [anchor] places the flare by a [HarborAnchorPoint] instead, as a
-  /// [HarborBuoy.anchored] is placed: on its [side], [gap] away, lined up by
-  /// [crossAlignment], and kept inside the clear water. Give it alone, without
-  /// a [slot] or an [alignment], and raise it from the page that holds the
-  /// anchor: an anchored flare is shown by that page's port rather than the
-  /// one on top ([target] is not read), so it never sits over a sheet or
-  /// dialog by an anchor beneath it. Flares at one anchor and side take turns.
-  /// While the anchor is out of the tree the flare is not shown, takes no taps
-  /// and is not read out, and its time stops. If its page is popped, it is
-  /// lowered with [HarborFlareClosedReason.remove] rather than moving to the
-  /// port now on top. [side], [gap] and [crossAlignment] are not read without
-  /// an anchor.
+  /// An anchored flare sits on its side of the anchor (below by default), its
+  /// gap away, lined up by its cross alignment, and kept inside the clear
+  /// water; it never flips, so its transition knows its side. Raise it from
+  /// the page that holds the anchor: an anchored flare is shown by that page's
+  /// port rather than the one on top ([target] is not read), so it never sits
+  /// over a sheet or dialog by an anchor beneath it. Flares at one anchor and
+  /// side take turns. While the anchor is out of the tree the flare is not
+  /// shown, takes no taps and is not read out, and its time stops. If its page
+  /// is popped, it is lowered with [HarborFlareClosedReason.remove] rather than
+  /// moving to the port now on top.
   ///
   /// The flare fades and scales in and out over [animationStyle] (220 ms each
   /// way by default). [AnimationStyle.noAnimation] shows it as it is, for a
@@ -1702,18 +1770,17 @@ abstract final class HarborFlares {
   /// content is handed the coast it covers as `MediaQuery.padding` to keep its
   /// text clear. It is against the sides always, and against the top or bottom
   /// when it is placed there ([HarborFlareSlot.top], [HarborFlareSlot.low], or
-  /// an alignment at that edge). Give it `margin: EdgeInsets.zero` to run edge
-  /// to edge. With [anchor] it has no effect: an anchored flare sits by its
-  /// anchor, clear of the coast.
+  /// an alignment at that edge). Give it a [HarborAligned] with
+  /// `margin: EdgeInsets.zero` to run edge to edge. It is for an aligned flare
+  /// only: an anchored flare sits by its anchor, clear of the coast.
   ///
   /// [queue] is what it does when a flare is already up at its place: wait its
   /// turn ([HarborFlareQueue.wait]) or take it at once
   /// ([HarborFlareQueue.replace]), lowering the one up. A [HarborFlarePolicy]
   /// above [context] sets it for a subtree; [HarborFlareQueue.wait] with none.
   ///
-  /// [margin] is how far the flare keeps in from the clear water's edges: 16
-  /// at a slot or an alignment and 8 by an anchor when null, as for a buoy. An
-  /// [EdgeInsetsDirectional] is resolved in the reading direction of [context].
+  /// A placement's margin is how far the flare keeps in from the clear water's
+  /// edges: 16 at a slot or an alignment and 8 by an anchor unless it says.
   /// [EdgeInsets.zero] lets it reach them, for a bar the width of the screen
   /// (a fixed `SnackBar`'s look). It stays in the clear water either way, off
   /// the coast and the docks. [HarborFlareEntry.hold] stops its time while it
@@ -1734,6 +1801,11 @@ abstract final class HarborFlares {
     final BuildContext context, {
     required final WidgetBuilder builder,
     final HarborFlareSlot? slot,
+    final HarborPlacement? placement,
+    @Deprecated(
+      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
     final AlignmentGeometry? alignment,
     final Duration? duration = const Duration(seconds: 4),
     final bool persist = false,
@@ -1741,10 +1813,30 @@ abstract final class HarborFlares {
     final AnimationStyle? animationStyle,
     final HarborFlareTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
+    @Deprecated(
+      'Use placement: HarborAnchored(anchor). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
     final HarborAnchor? anchor,
-    final HarborBuoySide side = HarborBuoySide.below,
-    final double gap = 8.0,
-    final HarborBuoyCrossAlignment crossAlignment = HarborBuoyCrossAlignment.center,
+    @Deprecated(
+      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborAnchorSide? side,
+    @Deprecated(
+      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final double? gap,
+    @Deprecated(
+      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborCrossAlignment? crossAlignment,
+    @Deprecated(
+      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
     final EdgeInsetsGeometry? margin,
     final bool countsEntrance = false,
     final bool reachesCoast = false,
@@ -1754,6 +1846,50 @@ abstract final class HarborFlares {
   }) {
     assert(slot == null || alignment == null, 'Give a flare a slot or an alignment, not both.');
     assert(anchor == null || (slot == null && alignment == null), 'Give an anchored flare its anchor alone, without a slot or an alignment.');
+    assert(
+      placement == null || (slot == null && alignment == null && anchor == null && side == null && gap == null && crossAlignment == null && margin == null),
+      'Give a flare a slot or a placement, not both, and not with the deprecated alignment, anchor, side, gap, '
+      'crossAlignment or margin.',
+    );
+    assert(placement is! HarborAnchored || placement.anchor != null, 'An anchored flare needs an anchor.');
+    assert(
+      placement is! HarborAnchored || placement.flips != true,
+      'A flare never flips: its transition is built for the side it was raised on. Leave flips null.',
+    );
+    // The deprecated anchor with reachesCoast stays as it was since 0.6.3, a no-op; spelled as a
+    // placement it is a mistake.
+    assert(!reachesCoast || placement is! HarborAnchored, 'reachesCoast is for an aligned flare: an anchored one sits by its anchor, clear of the coast.');
+    final TextDirection textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
+    // Resolved where it is raised: the page that raised it decides its reading direction, wherever
+    // it is shown.
+    final HarborPlacement placed = switch (placement ??
+        (anchor != null
+            ? HarborAnchored(
+                anchor,
+                side: side ?? HarborAnchorSide.below,
+                gap: gap ?? HarborAnchored.defaultGap,
+                crossAlignment: crossAlignment ?? HarborCrossAlignment.center,
+                margin: margin ?? HarborAnchored.defaultMargin,
+              )
+            : HarborAligned(
+                alignment: alignment ?? (slot ?? HarborFlareSlot.high).alignment,
+                margin: margin ?? HarborAligned.defaultMargin,
+              ))) {
+      HarborAligned(:final AlignmentGeometry alignment, :final EdgeInsetsGeometry margin) => HarborAligned(
+        alignment: alignment.resolve(textDirection),
+        margin: margin.resolve(textDirection),
+      ),
+      final HarborAnchored anchored => HarborAnchored(
+        anchored.anchor,
+        side: anchored.side,
+        gap: anchored.gap,
+        overlap: anchored.overlap,
+        crossAlignment: anchored.crossAlignment,
+        crossOffset: anchored.crossOffset,
+        flips: anchored.flips,
+        margin: anchored.margin.resolve(textDirection),
+      ),
+    };
     final HarborFleet? fleet = HarborFleetScope.maybeOf(context);
     // A flare is built in its harbor's buoy layer, not where it was raised, so it takes the
     // themes and text style of the place that raised it, as a sheet does. Without this a page
@@ -1762,7 +1898,7 @@ abstract final class HarborFlares {
     final HarborFlareEntry entry = HarborFlareEntry(
       // A Builder, so the builder's own context sees the captured themes, not only what it returns.
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
-      alignment: alignment?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr) ?? (slot ?? HarborFlareSlot.high).alignment,
+      placement: placed,
       duration: duration,
       persist: persist,
       // Sent to the sea, a flare clears only the coast.
@@ -1771,11 +1907,6 @@ abstract final class HarborFlares {
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
       liveRegion: liveRegion,
-      anchor: anchor,
-      side: side,
-      gap: gap,
-      crossAlignment: crossAlignment,
-      margin: margin?.resolve(Directionality.maybeOf(context) ?? TextDirection.ltr),
       countsEntrance: countsEntrance,
       reachesCoast: reachesCoast,
       // Read where it is raised: the page that raised it decides, wherever it is shown.
@@ -1783,7 +1914,7 @@ abstract final class HarborFlares {
       countsWhileCovered: countsWhileCovered,
       queue: queue ?? HarborFlarePolicy.queueOf(context),
     );
-    final HarborController? controller = anchor != null
+    final HarborController? controller = placed is HarborAnchored
         ? _portOf(HarborController.maybeOf(context))
         : switch (target) {
             HarborFlareTarget.topmost => fleet?.topmost,
@@ -1912,14 +2043,8 @@ class _OverlayFlare extends StatefulWidget {
 }
 
 class _OverlayFlareState extends State<_OverlayFlare> {
-  static const EdgeInsets _margin = EdgeInsets.all(16.0);
-  static const EdgeInsets _anchoredMargin = EdgeInsets.all(8.0);
-
   Timer? _removal;
   bool _removed = false;
-
-  /// Where an anchored flare landed; it does not flip, so this is never read.
-  late final ValueNotifier<HarborBuoySide> _landed = ValueNotifier<HarborBuoySide>(widget.entry.side);
 
   @override
   void initState() {
@@ -1946,7 +2071,6 @@ class _OverlayFlareState extends State<_OverlayFlare> {
   @override
   void dispose() {
     widget.entry.showing.removeListener(_changed);
-    _landed.dispose();
     _removal?.cancel();
     if (!_removed) {
       // The overlay went away with the flare still up: nothing is left to show it.
@@ -1959,76 +2083,28 @@ class _OverlayFlareState extends State<_OverlayFlare> {
   @override
   Widget build(final BuildContext context) {
     final HarborFlareEntry entry = widget.entry;
-    if (entry.anchor != null) {
-      // Placed as a portal buoy, which keeps to the screen its anchor is on itself.
-      return _place(context);
-    }
-    // At an alignment it keeps to the screen that holds that point of the overlay when a hinge
-    // its policy keeps off splits it, as a flare in a harbor does. Before 0.6.2 it took the whole
-    // width of both screens whatever its policy.
-    final MediaQueryData media = MediaQuery.of(context);
-    return MediaQuery(
-      data: (entry.hinge ?? HarborHinge.of(context)).splitting(media),
-      child: DisplayFeatureSubScreen(
-        anchorPoint: entry.alignment.withinRect(Offset.zero & media.size),
-        child: Builder(builder: _place),
-      ),
-    );
-  }
-
-  Widget _place(final BuildContext context) {
+    final HarborPlacement placement = entry.placement;
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final EdgeInsets keyboard = MediaQuery.viewInsetsOf(context);
-    // Both are measured from the screen's edges, so the larger one on each edge is what is covered.
-    final EdgeInsets covered = EdgeInsets.fromLTRB(
-      math.max(padding.left, keyboard.left),
-      math.max(padding.top, keyboard.top),
-      math.max(padding.right, keyboard.right),
-      math.max(padding.bottom, keyboard.bottom),
-    );
-    final HarborFlareEntry entry = widget.entry;
-    if (entry.reachesCoast && entry.anchor == null) {
-      // Over the coast on the edges it is against, still off the keyboard; its content keeps the
-      // coast there as its padding, and only there.
-      final Alignment alignment = entry.alignment;
-      final EdgeInsets coast = EdgeInsets.fromLTRB(
-        padding.left,
-        alignment.y <= -1.0 ? padding.top : 0.0,
-        padding.right,
-        alignment.y >= 1.0 ? padding.bottom : 0.0,
-      );
-      return Padding(
-        padding: keyboard + (entry.margin ?? _margin),
-        child: Align(
-          alignment: alignment,
-          child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(padding: coast, viewPadding: coast),
-            child: _Flare(entry: entry),
-          ),
-        ),
-      );
-    }
-    if (entry.anchor case final HarborAnchor anchor) {
-      // Placed as a portal buoy with no harbor around it is: by its anchor, as it paints.
-      return _PortalBuoyLayout(
-        harbor: null,
-        hinges: _hingeBounds(entry.hinge ?? HarborHinge.of(context), context),
-        anchor: anchor,
-        side: entry.side,
-        gap: entry.gap,
-        overlap: 0.0,
-        crossAlignment: entry.crossAlignment,
-        crossOffset: 0.0,
-        margin: covered + (entry.margin ?? _anchoredMargin),
-        flips: false,
-        textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
-        landed: _landed,
-        child: _Flare(entry: entry),
-      );
-    }
-    return Padding(
-      padding: covered + (entry.margin ?? _margin),
-      child: Align(alignment: entry.alignment, child: _Flare(entry: entry)),
+    // Placed as a buoy is, in the overlay less its padding and keyboard: both are measured from the
+    // screen's edges, so the larger one on each edge is what is covered. Reaching the coast, only
+    // the keyboard covers it.
+    return _PlacedLayout(
+      covered: EdgeInsets.fromLTRB(
+        math.max(padding.left, keyboard.left),
+        math.max(padding.top, keyboard.top),
+        math.max(padding.right, keyboard.right),
+        math.max(padding.bottom, keyboard.bottom),
+      ),
+      keyboard: entry.reachesCoast && placement is HarborAligned ? keyboard : null,
+      hinges: HarborPlacementEngine.hingeBounds(
+        entry.hinge ?? HarborHinge.of(context),
+        MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[],
+      ),
+      placement: placement,
+      anchor: entry.anchor,
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      child: _Flare(entry: entry),
     );
   }
 }
@@ -2148,6 +2224,35 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(final BuildContext context) {
+    final MediaQueryData media = MediaQuery.of(context);
+    final MediaQueryData screen = _screenOf(context, media);
+    return identical(screen, media) ? _content(context) : MediaQuery(data: screen, child: Builder(builder: _content));
+  }
+
+  /// [media] cut down to the one screen an aligned flare keeps to when a hinge its policy keeps off
+  /// splits the screen, as `DisplayFeatureSubScreen` cuts it for a dialog: the padding of the other
+  /// screen and the hinge itself are not its content's to clear. An anchored flare's screen is known
+  /// only as it paints, so it reads [media] as it is.
+  MediaQueryData _screenOf(final BuildContext context, final MediaQueryData media) {
+    final HarborFlareEntry entry = widget.entry;
+    if (entry.placement is! HarborAligned) {
+      return media;
+    }
+    final List<Rect> hinges = HarborPlacementEngine.hingeBounds(entry.hinge ?? HarborHinge.of(context), media.displayFeatures);
+    if (hinges.isEmpty) {
+      return media;
+    }
+    final Rect whole = Offset.zero & media.size;
+    final Rect screen = HarborPlacementEngine.screen(
+      water: whole,
+      placement: entry.placement,
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      hinges: hinges,
+    );
+    return screen == whole ? media : media.removeDisplayFeatures(screen);
+  }
+
+  Widget _content(final BuildContext context) {
     final HarborFlareEntry entry = widget.entry;
     if (!entry.reachesCoast) {
       return _build(context);
@@ -2231,7 +2336,7 @@ class HarborFlareScope extends InheritedWidget {
 /// ```dart
 /// HarborFlares.raise(
 ///   context,
-///   anchor: searchField,
+///   placement: HarborAnchored(searchField),
 ///   transitionBuilder: (context, animation, child) {
 ///     final HarborFlareEntry entry = HarborFlareEntry.maybeOf(context)!;
 ///     return HarborAnchorClip(
@@ -2252,7 +2357,7 @@ class HarborAnchorClip extends SingleChildRenderObjectWidget {
   const HarborAnchorClip({super.key, required this.anchor, required this.side, super.child});
 
   final HarborAnchor anchor;
-  final HarborBuoySide side;
+  final HarborAnchorSide side;
 
   @override
   RenderObject createRenderObject(final BuildContext context) =>
@@ -2278,8 +2383,8 @@ class _RenderAnchorClip extends RenderProxyBox {
     }
   }
 
-  HarborBuoySide _side;
-  set side(final HarborBuoySide value) {
+  HarborAnchorSide _side;
+  set side(final HarborAnchorSide value) {
     if (value != _side) {
       _side = value;
       markNeedsPaint();
@@ -2308,10 +2413,10 @@ class _RenderAnchorClip extends RenderProxyBox {
     const double far = 1e6;
     final bool ltr = _textDirection == TextDirection.ltr;
     final Rect beyond = switch (_side) {
-      HarborBuoySide.below => Rect.fromLTRB(-far, at.bottom, far, far),
-      HarborBuoySide.above => Rect.fromLTRB(-far, -far, far, at.top),
-      HarborBuoySide.start => ltr ? Rect.fromLTRB(-far, -far, at.left, far) : Rect.fromLTRB(at.right, -far, far, far),
-      HarborBuoySide.end => ltr ? Rect.fromLTRB(at.right, -far, far, far) : Rect.fromLTRB(-far, -far, at.left, far),
+      HarborAnchorSide.below => Rect.fromLTRB(-far, at.bottom, far, far),
+      HarborAnchorSide.above => Rect.fromLTRB(-far, -far, far, at.top),
+      HarborAnchorSide.start => ltr ? Rect.fromLTRB(-far, -far, at.left, far) : Rect.fromLTRB(at.right, -far, far, far),
+      HarborAnchorSide.end => ltr ? Rect.fromLTRB(at.right, -far, far, far) : Rect.fromLTRB(-far, -far, at.left, far),
     };
     _clip.layer = context.pushClipRect(needsCompositing, offset, beyond, super.paint, oldLayer: _clip.layer);
   }
@@ -2322,12 +2427,6 @@ class _RenderAnchorClip extends RenderProxyBox {
     super.dispose();
   }
 }
-
-/// The bounds of the hinges and folds [hinge] keeps off, from the `MediaQuery` at [context].
-List<Rect> _hingeBounds(final HarborHinge hinge, final BuildContext context) => <Rect>[
-  for (final DisplayFeature feature in hinge.keptOff(MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[]))
-    feature.bounds,
-];
 
 /// Sets what flares raised beneath it do when one is already up at their place, for a subtree:
 /// on a remote-driven screen, `HarborFlarePolicy(queue: HarborFlareQueue.replace)` makes a
