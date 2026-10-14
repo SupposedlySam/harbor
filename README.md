@@ -1104,7 +1104,8 @@ testWidgets('the composer rides the keyboard', (tester) async {
 arrives, and `settle: true` pumps until nothing is animating.
 
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
-`iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenCover`,
+`iPhone17Landscape`, `androidThreeButtonLandscape`, `androidGestureLandscape`,
+`foldableOpen` (a flat fold), `dualScreenCover`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
 Each device goes on the view at its own `devicePixelRatio`, and
 `device.displayFeatures` puts its folds and hinges there.

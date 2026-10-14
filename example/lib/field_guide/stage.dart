@@ -17,6 +17,7 @@ class StageDevice {
     this.cutout = EdgeInsets.zero,
     this.island = false,
     this.camera = false,
+    this.sideNavigationBar = 0,
     this.tv = false,
   });
 
@@ -37,8 +38,14 @@ class StageDevice {
   /// Whether it has a Dynamic Island to draw.
   final bool island;
 
-  /// Whether it has a punch-hole camera to draw.
+  /// Whether it has a punch-hole camera to draw, in the top coast or, on a phone on its side, the
+  /// side [cutout].
   final bool camera;
+
+  /// How much of the right coast a navigation bar takes: an Android phone with three buttons, on
+  /// its side, moves its bar there. The home indicator switch hides it, as it hides one at the
+  /// bottom.
+  final double sideNavigationBar;
 
   /// Whether it's a television (no keyboard, title-safe band).
   final bool tv;
@@ -79,6 +86,21 @@ class StageDevice {
     cutout: EdgeInsets.only(left: 62, right: 62),
     island: true,
   );
+  static const StageDevice androidThreeButtonLandscape = StageDevice(
+    name: 'Android 3-button landscape',
+    size: Size(915, 412),
+    coast: EdgeInsets.only(top: 24, right: 48),
+    tideHeight: 200,
+    sideNavigationBar: 48,
+  );
+  static const StageDevice androidGestureLandscape = StageDevice(
+    name: 'Android gesture landscape',
+    size: Size(915, 412),
+    coast: EdgeInsets.only(top: 24, left: 24, bottom: 24),
+    tideHeight: 200,
+    cutout: EdgeInsets.only(left: 24),
+    camera: true,
+  );
   static const StageDevice foldableOpen = StageDevice(
     name: 'foldable open',
     size: Size(750, 832),
@@ -107,6 +129,8 @@ class StageDevice {
     androidThreeButton,
     androidGesture,
     iPhone17Landscape,
+    androidThreeButtonLandscape,
+    androidGestureLandscape,
     foldableOpen,
     dualScreenCover,
   ];
@@ -256,7 +280,7 @@ class StageSettings extends ChangeNotifier {
       _device.coast.left,
       // Hiding the status bar gives back only what the status bar took: the hardware's share stays.
       _statusBar ? _device.coast.top : _device.cutout.top,
-      _device.coast.right,
+      _homeIndicator ? _device.coast.right : _device.coast.right - _device.sideNavigationBar,
       _homeIndicator ? _device.coast.bottom : 0.0,
     );
     final double keyboard = tideHeight;
@@ -445,8 +469,9 @@ class _Screen extends StatelessWidget {
                 ),
               ),
               // The device's own furniture, over everything and never in the way of touches.
-              // A phone on its side has no status bar: its top inset is 0, so none is drawn (one
+              // An iPhone on its side has no status bar: its top inset is 0, so none is drawn (one
               // squeezed into a 0-high strip spilled over the page). Its island sits in the left inset.
+              // An Android phone on its side keeps its status bar, and its camera moves to the left.
               // With the status bar hidden its time and icons go, and the hardware stays: the island
               // or the camera, in the inset it still takes.
               if (!device.tv && device.coast.top > 0 && (settings.statusBar || device.cutout.top > 0))
@@ -456,7 +481,11 @@ class _Screen extends StatelessWidget {
                   right: 0,
                   height: settings.statusBar ? device.coast.top : device.cutout.top,
                   child: IgnorePointer(
-                    child: StatusBarArt(island: device.island, camera: device.camera, icons: settings.statusBar),
+                    child: StatusBarArt(
+                      island: device.island,
+                      camera: device.camera && device.cutout.top > 0,
+                      icons: settings.statusBar,
+                    ),
                   ),
                 ),
               if (device.island && device.coast.top <= 0 && device.coast.left > 0)
@@ -470,6 +499,29 @@ class _Screen extends StatelessWidget {
                       key: const ValueKey<String>('side island'),
                       decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(15)),
                     ),
+                  ),
+                ),
+              if (device.camera && device.cutout.left > 0)
+                Positioned(
+                  left: device.cutout.left / 2 - 6,
+                  top: device.size.height / 2 - 6,
+                  width: 12,
+                  height: 12,
+                  child: const IgnorePointer(
+                    child: DecoratedBox(
+                      key: ValueKey<String>('side camera'),
+                      decoration: BoxDecoration(color: Colors.black, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+              if (settings.homeIndicator && device.sideNavigationBar > 0)
+                Positioned(
+                  top: device.coast.top,
+                  right: 0,
+                  bottom: 0,
+                  width: device.sideNavigationBar,
+                  child: const IgnorePointer(
+                    child: RotatedBox(key: ValueKey<String>('side navigation bar'), quarterTurns: 1, child: HomeIndicatorArt()),
                   ),
                 ),
               if (settings.homeIndicator && device.coast.bottom > 0 && settings.tideHeight <= 0)

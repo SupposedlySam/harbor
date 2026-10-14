@@ -27,7 +27,8 @@ after the keyboard moves, for a test that checks that frame or pumps on its
 own; `settle: true` pumps until nothing is animating.
 
 Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
-`iPhone17Landscape`, `foldableOpen` (a flat fold), `dualScreenOpen` (a hinge),
+`iPhone17Landscape`, `androidThreeButtonLandscape`, `androidGestureLandscape`,
+`foldableOpen` (a flat fold), `dualScreenOpen` (a hinge),
 `dualScreenCover`, `television`, plus the `phones` and `all` lists. Each goes on
 the test view at its own `devicePixelRatio`; `device.copyWith(devicePixelRatio: 1.0)`
 trials one at another. `pumpSeaTrial(textScaleFactor: 2.0)` reports a larger

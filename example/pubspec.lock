@@ -98,7 +98,7 @@ packages:
       path: "../harbor_test"
       relative: true
     source: path
-    version: "0.2.4"
+    version: "0.3.0"
   integration_test:
     dependency: "direct dev"
     description: flutter
