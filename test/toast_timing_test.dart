@@ -120,8 +120,10 @@ void main() {
         timing: const HarborToastTiming(duration: Duration(seconds: 1), countsEntrance: true),
         builder: _toast,
       );
-      await _wait(tester, 1.1);
-      expect(entry.showing.value, isFalse, reason: 'counted from the start of the entrance');
+      await _wait(tester, 0.9);
+      expect(entry.showing.value, isTrue, reason: 'positive control: still up just before its second');
+      await _wait(tester, 0.2);
+      expect(entry.showing.value, isFalse, reason: 'counted from the start of the entrance, not its end');
     });
 
     testWidgets('given with a deprecated spelling, it asserts', (final tester) async {
@@ -185,20 +187,46 @@ void main() {
       expect(entry.showing.value, isFalse);
     });
 
-    testWidgets('countsEntrance: and countsWhileCovered: land on the value', (final tester) async {
+    testWidgets('countsEntrance: counts the entrance', (final tester) async {
       final BuildContext page = await _page(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,
         countsEntrance: true,
-        countsWhileCovered: true,
         duration: const Duration(seconds: 1),
         builder: _toast,
       );
       expect(entry.countsEntrance, isTrue);
-      expect(entry.countsWhileCovered, isTrue);
-      await _wait(tester, 1.1);
-      expect(entry.showing.value, isFalse);
+      await _wait(tester, 0.9);
+      expect(entry.showing.value, isTrue, reason: 'positive control: still up just before its second');
+      await _wait(tester, 0.2);
+      expect(entry.showing.value, isFalse, reason: 'counted from the start of the entrance, not its end');
     });
+
+    for (final bool counts in <bool>[false, true]) {
+      testWidgets('countsWhileCovered: $counts ${counts ? 'runs the time' : 'stops it'} under a covering page', (
+        final tester,
+      ) async {
+        final BuildContext page = await _page(tester);
+        final HarborToastEntry entry = HarborToasts.show(
+          page,
+          countsWhileCovered: counts,
+          duration: const Duration(seconds: 2),
+          builder: _toast,
+        );
+        expect(entry.countsWhileCovered, counts);
+        await _wait(tester, 0.3); // the entrance
+        unawaited(
+          Navigator.of(page).push(
+            MaterialPageRoute<void>(builder: (final BuildContext _) => const HarborFrame(body: Text('next page'))),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await _wait(tester, 3);
+        expect(entry.showing.value, !counts);
+        entry.hide();
+        await _wait(tester, 1);
+      });
+    }
 
     testWidgets('raise, the 0.8 name, forwards them too', (final tester) async {
       final BuildContext page = await _page(tester);
@@ -249,6 +277,40 @@ void main() {
         ..hide(reason: HarborToastClosedReason.dismiss)
         ..hide();
       await _wait(tester, 1);
+      expect(await _closed(tester, entry), HarborToastClosedReason.dismiss);
+    });
+    testWidgets('dismiss() closes it as the user dismissed it', (final tester) async {
+      final BuildContext page = await _page(tester);
+      final HarborToastEntry entry = HarborToasts.show(page, timing: HarborToastTiming.untilHidden, builder: _toast);
+      await _wait(tester, 0.5);
+      expect(entry.phase, HarborToastPhase.shown, reason: 'positive control: it is up');
+      entry.dismiss();
+      expect(entry.showing.value, isFalse, reason: 'hidden at once, as hide() does');
+      entry.hide();
+      expect(await _closed(tester, entry), HarborToastClosedReason.dismiss, reason: 'the first reason stands');
+      expect(find.text('toast'), findsNothing);
+    });
+
+    testWidgets('positive control: hide() reports hide, so dismiss is told apart', (final tester) async {
+      final BuildContext page = await _page(tester);
+      final HarborToastEntry entry = HarborToasts.show(page, timing: HarborToastTiming.untilHidden, builder: _toast);
+      await _wait(tester, 0.5);
+      entry
+        ..hide()
+        ..dismiss();
+      expect(await _closed(tester, entry), HarborToastClosedReason.hide);
+    });
+
+    testWidgets('dismiss() from inside the toast, as its own close button would', (final tester) async {
+      final BuildContext page = await _page(tester);
+      final HarborToastEntry entry = HarborToasts.show(
+        page,
+        timing: HarborToastTiming.untilHidden,
+        builder: (final BuildContext context) =>
+            GestureDetector(onTap: () => HarborToastEntry.maybeOf(context)!.dismiss(), child: const Text('close')),
+      );
+      await _wait(tester, 0.5);
+      await tester.tap(find.text('close'));
       expect(await _closed(tester, entry), HarborToastClosedReason.dismiss);
     });
   });

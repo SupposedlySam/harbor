@@ -6,8 +6,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-// What frame shows a toast, and why it closed, are harbor's to read: the entry a caller holds says neither.
-import 'package:harbor/src/controller.dart' show ShownToast;
 import 'package:harbor_test/harbor_test.dart';
 
 Widget _bar(final String label, final double height) =>
@@ -44,7 +42,7 @@ void main() {
         slot: HarborToastSlot.low,
         builder: (final c) => const Text('first'),
       );
-      (first as ShownToast).hideAs(HarborToastClosedReason.dismiss);
+      first.dismiss();
       HarborToastClosedReason? why;
       unawaited(first.closed.then((final r) => why = r));
       await tester.pump();

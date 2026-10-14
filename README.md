@@ -596,7 +596,10 @@ Toasts shown at the same slot or alignment of one page take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before
 it has run its exit, so "Copied" tapped twice is never drawn over itself. To
 replace the toast that is up, `hide()` it; one hidden while it waits leaves
-without being shown. Toasts at different slots show together.
+without being shown. `dismiss()` closes it the same way but says the user did it:
+`closed` reports `HarborToastClosedReason.dismiss`, as it does when a screen
+reader dismisses a toast, so a toast's own close button, or a toast in a
+`Dismissible`, counts as dismissed in analytics rather than hidden by the app. Toasts at different slots show together.
 `queue: HarborToastQueue.replace` takes the turn at once instead: the toast goes
 first and the one up leaves, closed with `HarborToastClosedReason.replaced`, for
 an Undo whose window is tied to a pending action. `HarborFlarePolicy(queue:,
@@ -623,7 +626,10 @@ itself. Holds are counted, the time starts over at the last release, and
 `entry.held` says whether one is on. `HarborToastTiming(countsEntrance: true)` counts the
 duration from the start of the entrance, so a 4 s toast is on screen 4 s, and setting
 `entry.duration` after it is shown starts the time over with the new one (longer
-once a screen reader turns on, say; null keeps it until it is hidden).
+once a screen reader turns on, say; null keeps it until it is hidden). Leave an
+`untilHidden` toast's duration alone: its `duration` is null, and setting one gives
+it a time to run out, so a helper that stretches every toast's time checks
+`entry.duration != null` first.
 `HarborToastTiming(countsWhileCovered: true)` keeps the time
 running while another page covers the toast's, so a "Saved" toast is gone when
 the user comes back; a hold still stops it. A toast with neither a slot nor an alignment goes to

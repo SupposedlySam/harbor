@@ -75,7 +75,8 @@ enum HarborToastClosedReason {
   /// [HarborToastEntry.hide] was called.
   hide,
 
-  /// A screen reader's dismiss action hid it.
+  /// The user dismissed it: [HarborToastEntry.dismiss] was called, or a screen reader's dismiss
+  /// action hid it.
   dismiss,
 
   /// Its [HarborToastEntry.duration] ran out.
@@ -310,11 +311,18 @@ abstract final class HarborToastEntry {
   /// nothing: the first reason is the one [closed] reports.
   void hide({
     @Deprecated(
-      'Leave it out: hide() reports HarborToastClosedReason.hide. The other reasons are what harbor '
-      'reports for a toast it hid itself. Deprecated after 0.9.0.',
+      'Leave it out: hide() reports HarborToastClosedReason.hide, and dismiss() reports dismiss. The other '
+      'reasons are what harbor reports for a toast it hid itself. Deprecated after 0.9.0.',
     )
     final HarborToastClosedReason reason = HarborToastClosedReason.hide,
   }) => _hideAs(reason);
+
+  /// Hides the toast because the user dismissed it; [closed] reports
+  /// [HarborToastClosedReason.dismiss], as it does when a screen reader dismisses it.
+  ///
+  /// For a toast with its own close button, or one in a `Dismissible`, so analytics can tell a
+  /// toast the user dismissed from one the app hid with [hide]. Once hidden, it does nothing.
+  void dismiss() => _hideAs(HarborToastClosedReason.dismiss);
 
   void _hideAs(final HarborToastClosedReason reason) {
     if (_showing.value) {
@@ -395,7 +403,10 @@ abstract final class HarborToastEntry {
   bool get countsEntrance;
 
   /// Ticks when [duration] is set.
-  @Deprecated(_internal)
+  @Deprecated(
+    'A counter harbor runs a toast\'s time on, not its HarborToastTiming, which is not kept on the entry: '
+    'read duration, which is the timing\'s duration until it is set. No replacement. Deprecated after 0.9.0.',
+  )
   ValueListenable<int> get timing => _restarts;
 
   /// Whether the toast stays until it is hidden: now a null [duration].

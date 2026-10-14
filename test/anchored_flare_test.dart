@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
-// What frame shows a toast, and why it closed, are harbor's to read: the entry a caller holds says neither.
+// What frame shows a toast is harbor's to read: the entry a caller holds does not say.
 import 'package:harbor/src/controller.dart' show ShownToast;
 import 'package:harbor_test/harbor_test.dart';
 
