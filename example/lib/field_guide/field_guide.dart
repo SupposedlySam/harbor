@@ -7,6 +7,7 @@ import '../game/widgets.dart';
 import 'entries_content.dart';
 import 'entries_docks.dart';
 import 'entries_floating.dart';
+import 'entries_folds.dart';
 import 'entries_frames.dart';
 import 'entries_platform.dart';
 import 'entries_tide.dart';
@@ -19,6 +20,7 @@ final List<GuideEntry> fieldGuideEntries = <GuideEntry>[
   ...tideEntries,
   ...contentEntries,
   ...floatingEntries,
+  ...foldEntries,
   ...platformEntries,
 ];
 

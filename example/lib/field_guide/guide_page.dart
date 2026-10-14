@@ -582,6 +582,7 @@ class _StageControlsState extends State<StageControls> {
 
   String get _summary => <String>[
     settings.device.name,
+    if (settings.posture != HarborPosture.flat) settings.posture.name,
     if (!settings.device.tv && !settings.statusBar) 'no status bar',
     if (!settings.device.tv && !settings.homeIndicator) 'no home indicator',
     if (settings.rtl) 'right-to-left',
@@ -635,6 +636,14 @@ class _StageControlsState extends State<StageControls> {
                   labelOf: (final StageDevice d) => d.name,
                   onChanged: (final StageDevice d) => settings.device = d,
                 ),
+                if (settings.device.displayFeatures.isNotEmpty)
+                  ChoiceControl<HarborPosture>(
+                    label: 'Posture',
+                    values: HarborPosture.values,
+                    value: settings.posture,
+                    labelOf: (final HarborPosture p) => p.name,
+                    onChanged: (final HarborPosture p) => settings.posture = p,
+                  ),
                 if (!settings.device.tv) ...<Widget>[
                   ToggleControl(
                     label: 'Status bar',

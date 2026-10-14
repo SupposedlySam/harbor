@@ -4,6 +4,7 @@ import 'package:harbor/harbor.dart';
 import '../art/docks.dart';
 import '../art/palette.dart';
 import 'art/docks_art.dart';
+import 'art/folds_art.dart';
 import 'art/pier_art.dart';
 import 'entry.dart';
 import 'guide_page.dart';
@@ -59,6 +60,14 @@ final List<GuideEntry> dockEntries = <GuideEntry>[
     realWorld: 'A gangway gate, one leaf shut and one open',
     art: (final BuildContext context) => const GangwayGateArt(),
     page: (final BuildContext context) => const HitTestEntry(),
+  ),
+  GuideEntry(
+    id: 'dock-reserve',
+    className: 'HarborDock.reserve',
+    group: GuideGroup.docks,
+    realWorld: 'A berth on the quay marked RESERVED, nobody tied up yet',
+    art: (final BuildContext context) => const ReservedBerthArt(),
+    page: (final BuildContext context) => const ReserveEntry(),
   ),
 ];
 
@@ -889,5 +898,132 @@ class _HitTestEntryState extends State<HitTestEntry> {
         ),
       ),
     ),
+  );
+}
+
+/// `HarborDock.reserve`: an edge held for something drawn elsewhere.
+class ReserveEntry extends StatefulWidget {
+  const ReserveEntry({super.key});
+
+  @override
+  State<ReserveEntry> createState() => _ReserveEntryState();
+}
+
+class _ReserveEntryState extends State<ReserveEntry> {
+  double _extent = 80;
+  HarborDockKind _kind = HarborDockKind.pier;
+  bool _tabBar = false;
+
+  /// The tab bar's own height, over the coast it absorbs.
+  static const double _tabBarHeight = 56;
+
+  @override
+  Widget build(final BuildContext context) => GuidePage(
+    className: 'HarborDock.reserve',
+    focus: const StageFocus.bottom(440),
+    tryThis: const <TryStep>[
+      TryStep(
+        'Open The stage, pick Device: iPhone 17 and scroll the rows to the end',
+        'The last row comes to rest on the brass footer, 80 up: the reserve held its ground, though the footer is drawn '
+            'over the harbor, not in it.',
+      ),
+      TryStep(
+        'On iPhone 17, slide extent to 20',
+        'The footer stops at 34, not 20, and Readings show padding B 34: a reserve reaches the larger of the coast and its '
+            'extent, so nothing it stands in for sits on the home indicator.',
+      ),
+      TryStep('Pick Device: iPhone SE', 'With no home indicator the footer is exactly 20 high, and Readings show padding B 20.'),
+      TryStep(
+        'Pick Device: iPhone 17 and kind: quay',
+        'The brass outline of the body stops at the footer and the rows no longer pass under it: a quay reserve takes its ground.',
+      ),
+      TryStep(
+        'On iPhone 17, switch on tab bar outside',
+        'The footer moves up onto the tab bar and keeps its full extent: past the docks outside it, a reserve reaches its '
+            'extent beyond theirs.',
+      ),
+    ],
+    realWorld:
+        'A harbor master paints out a berth and puts up a RESERVED sign before the boat arrives. Nothing is tied up there '
+        'yet, but nobody else moors in it.',
+    inYourApp:
+        'HarborDock.reserve(extent: 80) holds an edge for something drawn elsewhere: a footer in an overlay, a bar a parent '
+        'paints. It reaches 80 in from the edge, coast included (the larger of the coast and 80 when it is outermost), or '
+        '80 past the docks outside it. It paints nothing and takes no taps, so what it stands in for gets them. It is a pier '
+        'by default, so the body runs under it and rests clear of it; kind: quay makes the body stop at it.',
+    art: const ReservedBerthArt(),
+    controls: <Widget>[
+      SliderControl(label: 'extent', value: _extent, min: 0, max: 140, divisions: 14, onChanged: (final double v) => setState(() => _extent = v)),
+      ChoiceControl<HarborDockKind>(
+        label: 'kind',
+        values: HarborDockKind.values,
+        value: _kind,
+        labelOf: (final HarborDockKind k) => k.name,
+        onChanged: (final HarborDockKind k) => setState(() => _kind = k),
+      ),
+      ToggleControl(label: 'tab bar outside', value: _tabBar, onChanged: (final bool v) => setState(() => _tabBar = v)),
+    ],
+    code:
+        'Stack(\n'
+        '  children: [\n'
+        '    Harbor(\n'
+        '      bottom: [\n'
+        '        HarborDock.reserve(extent: ${_extent.toStringAsFixed(0)}${_kind == HarborDockKind.quay ? ', kind: HarborDockKind.quay' : ''}),\n'
+        '${_tabBar ? '        HarborDock.quay(child: TabBar()),\n' : ''}'
+        '      ],\n'
+        '      body: HarborFairway(slivers: [boats]),\n'
+        '    ),\n'
+        '    // Drawn over the harbor, in the ground the reserve holds.\n'
+        '    Positioned(bottom: ${_tabBar ? 'tabBar' : '0'}, left: 0, right: 0, child: Footer()),\n'
+        '  ],\n'
+        ')',
+    stage: (final BuildContext context) {
+      // The footer is drawn by the stage, not the harbor: it is told where the reserve is, as a
+      // parent painting a bar would be.
+      final double coast = MediaQuery.viewPaddingOf(context).bottom;
+      final double below = _tabBar ? _tabBarHeight + coast : 0;
+      final double reach = _tabBar ? _extent : (_extent > coast ? _extent : coast);
+      return Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Harbor(
+            debugLabel: 'reserve page',
+            bottom: <HarborDock>[
+              HarborDock.reserve(extent: _extent, kind: _kind, debugLabel: 'reserve'),
+              if (_tabBar)
+                const HarborDock.quay(
+                  debugLabel: 'tab bar',
+                  backdrop: QuayStones(),
+                  child: StageBar(key: ValueKey<String>('reserve tab bar'), label: 'HarborDock.quay', height: _tabBarHeight),
+                ),
+            ],
+            body: StageProbe(label: 'Harbor body', child: _MarkedBody(child: _rows())),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: below,
+            height: reach,
+            child: DecoratedBox(
+              key: const ValueKey<String>('reserve footer'),
+              decoration: BoxDecoration(
+                color: Palette.brass.withValues(alpha: 0.82),
+                border: const Border(top: BorderSide(color: Palette.plankDark, width: 2)),
+              ),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    reach >= 20 ? 'Drawn elsewhere · ${reach.toStringAsFixed(0)}' : '',
+                    style: const TextStyle(fontFamily: 'Menlo', fontSize: 12, fontWeight: FontWeight.w700, color: Palette.night),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
   );
 }

@@ -1115,6 +1115,7 @@ String _trialName(final StageDevice device) => switch (device.name) {
   'Android 3-button landscape' => 'androidThreeButtonLandscape',
   'Android gesture landscape' => 'androidGestureLandscape',
   'foldable open' => 'foldableOpen',
+  'dual screen open' => 'dualScreenOpen',
   'dual screen cover' => 'dualScreenCover',
   _ => 'television',
 };

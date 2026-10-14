@@ -7,6 +7,7 @@ import 'package:harbor_example/art/palette.dart';
 import 'package:harbor_example/field_guide/entries_content.dart';
 import 'package:harbor_example/field_guide/entries_docks.dart';
 import 'package:harbor_example/field_guide/entries_frames.dart';
+import 'package:harbor_example/field_guide/guide_page.dart' show ProbeReadout;
 import 'package:harbor_example/field_guide/stage.dart' show StatusBarArt;
 
 const double _deviceWidth = 402;
@@ -175,6 +176,7 @@ void main() {
       'HarborDockState',
       'HarborDock.restingExtent + HarborFollow',
       'HarborDock.hitTestBehavior',
+      'HarborDock.reserve',
     ]);
   });
 
@@ -976,6 +978,65 @@ void main() {
       await tapTitle(tester);
       expect(find.textContaining('row taps: 1'), findsOneWidget, reason: 'the title takes its own tap');
       expect(find.text('hitTestBehavior: deferToChild'), findsOneWidget);
+    });
+  });
+
+  group('HarborDock.reserve', () {
+    /// How far the body's probe reads padding at the bottom.
+    double paddingBottom(final WidgetTester tester) {
+      final String reading = tester.widget<ProbeReadout>(find.byType(ProbeReadout)).settings.probes['Harbor body']!;
+      return double.parse(RegExp(r'padding  T \d+ · B (\d+)').firstMatch(reading)!.group(1)!);
+    }
+
+    testWidgets('a pier reserve holds 80: the body runs under the footer and rests clear of it', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const ReserveEntry());
+      final (:Rect screen, :double scale) = _screen(tester);
+      expect(paddingBottom(tester), 80, reason: 'the body is told how far the reserve reaches');
+      _near(_rect(tester, 'harbor body').bottom, screen.bottom, 'a pier: the body runs to the edge');
+      final Rect footer = _rect(tester, 'reserve footer');
+      _near(footer.height, 80 * scale, 'the footer drawn elsewhere fills the 80 held for it');
+      _near(footer.bottom, screen.bottom, 'from the edge, over the home indicator');
+      expect(_code(tester), contains('HarborDock.reserve(extent: 80),'));
+    });
+
+    testWidgets('a short reserve reaches the coast; with no coast, just its extent', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const ReserveEntry());
+      await _slide(tester, 'extent', 20);
+      expect(paddingBottom(tester), _homeIndicator, reason: 'the larger of the coast and the extent');
+      final (:Rect screen, :double scale) = _screen(tester);
+      _near(_rect(tester, 'reserve footer').height, _homeIndicator * scale, 'the footer stops at the coast, not at 20');
+
+      await _stageSetting(tester, 'Device: iPhone SE');
+      expect(paddingBottom(tester), 20, reason: 'no home indicator: the extent alone');
+      final ({Rect screen, double scale}) se = _screen(tester, deviceWidth: 375);
+      _near(_rect(tester, 'reserve footer').height, 20 * se.scale, 'the footer is the extent high');
+      expect(_code(tester), contains('HarborDock.reserve(extent: 20),'));
+    });
+
+    testWidgets('a quay reserve stops the body at it', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const ReserveEntry());
+      await _tapKey(tester, 'kind: quay');
+      await _showStage(tester);
+      final (:Rect screen, :double scale) = _screen(tester);
+      expect(paddingBottom(tester), 0, reason: 'a quay takes its ground: nothing left to clear');
+      _near(_rect(tester, 'harbor body').bottom, screen.bottom - 80 * scale, 'the body ends where the reserve starts');
+      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'reserve footer').top, 'at the footer drawn elsewhere');
+      expect(_code(tester), contains('HarborDock.reserve(extent: 80, kind: HarborDockKind.quay),'));
+    });
+
+    testWidgets('past a tab bar outside it, a reserve reaches its extent beyond the tab bar', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const ReserveEntry());
+      await _tapKey(tester, 'toggle tab bar outside');
+      await _showStage(tester);
+      final (:Rect screen, :double scale) = _screen(tester);
+      final Rect tabBar = _rect(tester, 'reserve tab bar');
+      _near(screen.bottom - tabBar.bottom, _homeIndicator * scale, 'the tab bar absorbs the coast');
+      _near(_rect(tester, 'harbor body').bottom, tabBar.top, 'the body stops at the tab bar, a quay');
+      expect(paddingBottom(tester), 80, reason: 'the reserve is a pier 80 past the tab bar');
+      final Rect footer = _rect(tester, 'reserve footer');
+      _near(footer.bottom, tabBar.top, 'the footer sits on the tab bar');
+      _near(footer.height, 80 * scale, 'and keeps all 80: the coast is the tab bar\'s');
+      expect(_code(tester), contains('        HarborDock.quay(child: TabBar()),\n'));
     });
   });
 

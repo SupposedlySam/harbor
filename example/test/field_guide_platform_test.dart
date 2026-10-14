@@ -616,6 +616,7 @@ void main() {
       'Android 3-button landscape': 'androidThreeButtonLandscape',
       'Android gesture landscape': 'androidGestureLandscape',
       'foldable open': 'foldableOpen',
+      'dual screen open': 'dualScreenOpen',
       'dual screen cover': 'dualScreenCover',
     };
     String n(final double v) => v.toStringAsFixed(0);
