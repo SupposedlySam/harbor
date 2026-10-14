@@ -270,6 +270,16 @@ abstract final class HarborPlacementEngine {
     );
   }
 
+  /// The screen of [water] an overlay placed by [placement] keeps to when [hinges] split it, by
+  /// the rule [water] follows; [water] itself when they do not.
+  static Rect screen({
+    required final Rect water,
+    required final HarborPlacement placement,
+    required final TextDirection textDirection,
+    final List<Rect> hinges = const <Rect>[],
+    final Offset? holding,
+  }) => _screen(water, hinges, placement, textDirection, holding);
+
   /// The screen of [water] the overlay keeps to when [hinges] split it.
   static Rect _screen(
     final Rect water,

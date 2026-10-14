@@ -238,11 +238,19 @@ class HarborBuoy with Diagnosticable {
   /// across that side, and never past its far edge.
   @Deprecated(
     'Use HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
-    'by default. `dart fix` applies it. Deprecated after 0.6.3.',
+    'by default. `dart fix` applies it to a call; a tear-off is yours to change. Deprecated after 0.6.3.',
   )
   const HarborBuoy.anchored({
     this.key,
-    required HarborAnchor this._anchor,
+    // Optional and deprecated in itself, though every call gives it: `dart fix` can move a call's
+    // arguments only from a diagnostic on one of them, never from the one on the constructor's name,
+    // and a tear-off (which has no arguments to move) must keep compiling. So it is asserted, not typed.
+    // ignore: tighten_type_of_initializing_formals
+    @Deprecated(
+      'Use HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it. '
+      'Deprecated after 0.6.3.',
+    )
+    this._anchor,
     required this.child,
     this._side = HarborAnchorSide.above,
     this._gap = HarborAnchored.defaultGap,
@@ -257,6 +265,7 @@ class HarborBuoy with Diagnosticable {
     this.barrierLabel = harborBarrierDismissLabel,
     this.hinge,
   }) : assert(!modal || onDismiss != null, 'A modal buoy needs onDismiss: a tap outside it and back both call it.'),
+       assert(_anchor != null, 'HarborBuoy.anchored needs an anchor.'),
        _placement = null,
        _alignment = null,
        within = null;
@@ -859,7 +868,8 @@ class _RenderBuoyLayer extends RenderBox
           size: child.size,
           textDirection: _textDirection,
           anchorRect: at,
-          flips: placement.flips ?? false,
+          // A flare never flips, so its transition knows its side (HarborFlareEntry.side).
+          flips: buoy.child is! _Flare && (placement.flips ?? false),
         ).offset;
       }
       context.paintChild(child, data.offset + offset);
@@ -1842,6 +1852,10 @@ abstract final class HarborFlares {
       'crossAlignment or margin.',
     );
     assert(placement is! HarborAnchored || placement.anchor != null, 'An anchored flare needs an anchor.');
+    assert(
+      placement is! HarborAnchored || placement.flips != true,
+      'A flare never flips: its transition is built for the side it was raised on. Leave flips null.',
+    );
     // The deprecated anchor with reachesCoast stays as it was since 0.6.3, a no-op; spelled as a
     // placement it is a mistake.
     assert(!reachesCoast || placement is! HarborAnchored, 'reachesCoast is for an aligned flare: an anchored one sits by its anchor, clear of the coast.');
@@ -2210,6 +2224,35 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(final BuildContext context) {
+    final MediaQueryData media = MediaQuery.of(context);
+    final MediaQueryData screen = _screenOf(context, media);
+    return identical(screen, media) ? _content(context) : MediaQuery(data: screen, child: Builder(builder: _content));
+  }
+
+  /// [media] cut down to the one screen an aligned flare keeps to when a hinge its policy keeps off
+  /// splits the screen, as `DisplayFeatureSubScreen` cuts it for a dialog: the padding of the other
+  /// screen and the hinge itself are not its content's to clear. An anchored flare's screen is known
+  /// only as it paints, so it reads [media] as it is.
+  MediaQueryData _screenOf(final BuildContext context, final MediaQueryData media) {
+    final HarborFlareEntry entry = widget.entry;
+    if (entry.placement is! HarborAligned) {
+      return media;
+    }
+    final List<Rect> hinges = HarborPlacementEngine.hingeBounds(entry.hinge ?? HarborHinge.of(context), media.displayFeatures);
+    if (hinges.isEmpty) {
+      return media;
+    }
+    final Rect whole = Offset.zero & media.size;
+    final Rect screen = HarborPlacementEngine.screen(
+      water: whole,
+      placement: entry.placement,
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      hinges: hinges,
+    );
+    return screen == whole ? media : media.removeDisplayFeatures(screen);
+  }
+
+  Widget _content(final BuildContext context) {
     final HarborFlareEntry entry = widget.entry;
     if (!entry.reachesCoast) {
       return _build(context);
