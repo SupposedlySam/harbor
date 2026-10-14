@@ -1,0 +1,73 @@
+// The rename's parameter transforms (lib/fix_data/rename.yaml, 0.9.0): every renamed named argument,
+// alone and together, on the class or function that now declares it.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void frames(BuildContext context, HarborEdgeEffectPainter painter) {
+  const HarborFrame(isPage: true, body: SizedBox());
+  HarborFrame(
+    floats: const <HarborFloat>[],
+    systemEdges: HarborSystemEdges.none,
+    isPage: false,
+    bodyClearsKeyboard: false,
+    edgeEffectPainter: painter,
+    barHinge: HarborHinge.never,
+    body: const SizedBox(),
+  );
+  const HarborRoot(systemEdges: HarborSystemEdges.none, child: SizedBox());
+  const HarborScaledScreen(referenceSize: Size(1200, 675), systemEdges: HarborSystemEdges.ambient, child: SizedBox());
+  const HarborSystemEdges.fixed(EdgeInsets.zero, ignoresKeyboard: true);
+}
+
+void bars(HarborBar dock) {
+  const HarborBar.overlay(edgeEffect: HarborEdgeEffect.none, keyboard: HarborKeyboardStance.rides, systemEdges: HarborSystemEdgeStance.live, child: SizedBox());
+  const HarborBar.solid(keyboard: HarborKeyboardStance.reserves, child: SizedBox());
+  const HarborBar.reserve(extent: 80, keyboard: HarborKeyboardStance.rides, systemEdges: HarborSystemEdgeStance.none);
+  dock.copyWith(keyboard: HarborKeyboardStance.stays, state: HarborBarState.dark);
+  const HarborAttachedBar(edge: HarborEdge.bottom, bar: HarborBar.overlay(child: SizedBox()), child: SizedBox());
+}
+
+void keyboard(BuildContext context) {
+  const HarborKeyboardSpace(showsChildWhileShown: true);
+  const HarborKeyboardState(height: 0, remaining: 0, settledHeight: 300, settledHeightIsEstimate: false, phase: HarborKeyboardPhase.hidden);
+}
+
+void room(BuildContext context, HarborRoomData waters) {
+  HarborRoom.clearanceOf(context, HarborEdge.bottom, keyboard: false);
+  const HarborRoomData(systemEdges: EdgeInsetsDirectional.zero, bars: EdgeInsetsDirectional.zero, hasBars: <HarborEdge>{});
+  waters.copyWith(systemEdgesSteady: EdgeInsetsDirectional.zero, barsResting: EdgeInsetsDirectional.zero, edgeEffects: const <HarborEdge, HarborFadeBand>{}, edgeEffectsPainted: const <HarborEdge>{});
+  const HarborHandled(keyboard: true, bars: false, child: SizedBox());
+  const HarborFadeBand(barFace: 40, fadeEnd: 80, faceOpacity: 0.5);
+}
+
+void content(BuildContext context) {
+  const HarborClear(keyboard: false, rowInsets: true, padding: EdgeInsets.all(8), child: SizedBox());
+  HarborClear.clearanceOf(context, keyboard: false, rowInsets: true, padding: EdgeInsets.zero);
+  const HarborScrollView(rowInsets: false, keyboard: false, edgeEffects: false, startsUnderBars: true, slivers: <Widget>[]);
+  HarborScrollView.box(keyboard: false, edgeEffects: false, child: const SizedBox());
+  HarborScrollView.paddingOf(context, rowInsets: false, keyboard: false);
+  const HarborSliverClear(keyboard: false, sliver: SliverToBoxAdapter());
+}
+
+void effects() {
+  const HarborEdgeEffect.fade(length: 12, faceOpacity: 0.6);
+  const HarborFadeMask(edgeEffects: <HarborEdge, HarborFadeBand>{}, faceOpacity: 0.5, child: SizedBox());
+}
+
+void overlays(BuildContext context, OverlayPortalController menu) {
+  HarborPopover(controller: menu, popoverBuilder: (_) => const SizedBox(), child: const SizedBox());
+  HarborToasts.show(context, reachesSystemEdges: true, builder: (_) => const SizedBox());
+  showHarborSheet<void>(context, coversPage: true, reachesTop: true, builder: (_) => const SizedBox());
+  const HarborSheet(
+    headerEdgeEffect: HarborEdgeEffect.none,
+    footerEdgeEffect: HarborEdgeEffect.none,
+    footerKeyboard: HarborKeyboardStance.stays,
+    clearsTopSystemEdge: false,
+    bodyClearsKeyboard: false,
+    body: SizedBox(),
+  );
+  HarborSheet.draggable(footerKeyboard: HarborKeyboardStance.rides, builder: (context, controller) => const SizedBox());
+  showHarborDialog<void>(context, inheritRoom: true, builder: (_) => const SizedBox());
+  HarborDialogRoute<void>(context: context, inheritRoom: true, builder: (_) => const SizedBox());
+}

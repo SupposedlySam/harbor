@@ -1,0 +1,75 @@
+// The rename's member transforms (lib/fix_data/rename.yaml, 0.9.0): every renamed getter, method and
+// static, read through an old type name or a new one, and a tear-off of each kind.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void reads(
+  BuildContext context,
+  HarborFrame frame,
+  HarborRoot sea,
+  HarborBar dock,
+  HarborBarRecord record,
+  HarborAttachedBar pontoon,
+  HarborAttachedBarHandle handle,
+  HarborSystemEdges edges,
+  HarborKeyboardState keyboard,
+  HarborKeyboardSpace space,
+  HarborRoomData room,
+  HarborHandled handled,
+  HarborLayoutRecord layout,
+  HarborController controller,
+  HarborClear clear,
+  HarborScrollView scroll,
+  HarborSliverClear sliver,
+  HarborEdgeEffect fade,
+  HarborFadeBand band,
+  HarborFadeMask mask,
+  HarborPopover popover,
+  HarborToastEntry toast,
+  HarborFrameRegistry registry,
+  HarborSheet sheet,
+  HarborDialogRoute<void> dialog,
+  HarborInspectorEntry entry,
+  HarborScaledScreen scaled,
+) {
+  <Object?>[frame.floats, frame.systemEdges, frame.isPage, frame.bodyClearsKeyboard, frame.edgeEffectPainter, frame.barHinge, sea.systemEdges];
+  <Object?>[dock.edgeEffect, dock.keyboard, dock.systemEdges, dock.effectiveSystemEdges, record.keyboard, pontoon.bar, handle.bar];
+  <Object?>[edges.ignoresKeyboard, keyboard.settledHeight, keyboard.settledHeightIsEstimate, keyboard.isShown, space.showsChildWhileShown];
+  <Object?>[room.systemEdges, room.systemEdgesSteady, room.bars, room.barsResting, room.edgeEffects, room.hasBars, room.edgeEffectsPainted];
+  <Object?>[room.handled(HarborEdge.vertical), room.edgeEffectOf(HarborEdge.top), handled.keyboard, handled.bars];
+  <Object?>[layout.room, layout.bars, layout.keyboard];
+  <Object?>[controller.room, controller.roomInGlobal(), controller.registry, controller.isPage, controller.edgesWithBars];
+  <Object?>[controller.pageCoverTopsInGlobal, controller.pageCoverage, controller.pageCoverChanges, controller.toasts];
+  <Object?>[clear.keyboard, clear.rowInsets, clear.padding, scroll.rowInsets, scroll.keyboard, scroll.edgeEffects, scroll.startsUnderBars];
+  <Object?>[sliver.keyboard, fade.faceOpacity, band.barFace, band.fadeEnd, band.faceOpacity, mask.edgeEffects, mask.faceOpacity];
+  <Object?>[popover.popoverBuilder, toast.shownFrom, toast.reachesSystemEdges, registry.frames, registry.root];
+  <Object?>[sheet.headerEdgeEffect, sheet.footerEdgeEffect, sheet.footerKeyboard, sheet.clearsTopSystemEdge, sheet.bodyClearsKeyboard, dialog.inheritRoom];
+  <Object?>[entry.room, entry.bars, entry.keyboard, scaled.systemEdges];
+}
+
+void calls(BuildContext context, HarborController controller, HarborToastEntry toast) {
+  HarborKeyboard.isShownOf(context);
+  HarborRoom.steadySystemEdgeOf(context, HarborEdge.bottom);
+  HarborRoom.barFaceOf(context, HarborEdge.top);
+  HarborFadeMask.alphaFade(context, const <HarborEdge, HarborFadeBand>{}, const SizedBox());
+  controller.withBarOn(HarborEdge.top);
+  final HarborClaim claim = controller.hideBar(HarborEdge.bottom, mode: HarborYield.dark);
+  final HarborAttachedBarHandle handle = controller.attachBar(HarborEdge.bottom, const HarborBar.reserve(extent: 0));
+  controller.updateAttachedBar(handle, HarborEdge.top, const HarborBar.reserve(extent: 0));
+  controller.attachedBarsOn(HarborEdge.top);
+  controller.detachBar(handle);
+  controller.addPageCover(ValueNotifier<double>(0)).remove();
+  controller.addPageCoverEdge(ValueNotifier<double>(0)).remove();
+  toast.hide();
+  toast.hide(reason: HarborToastClosedReason.dismiss);
+  claim.release();
+}
+
+void tearOffs(BuildContext context) {
+  final bool Function(BuildContext) isIn = HarborKeyboard.isShownOf;
+  final HarborToastEntry Function(BuildContext, {required WidgetBuilder builder}) show = HarborToasts.show;
+  final void Function({HarborToastClosedReason reason}) Function(HarborToastEntry) lower =
+      (final HarborToastEntry e) => e.hide;
+  <Object?>[isIn, show, lower];
+}

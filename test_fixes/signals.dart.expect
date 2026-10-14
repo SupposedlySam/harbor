@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:harbor/harbor.dart';
 
 void signals(BuildContext context, HarborAnchor anchor) {
-  HarborFlares.raise(context, slot: HarborFlareSlot.low, target: HarborFlareTarget.sea, builder: (_) => const SizedBox());
-  final HarborFlareEntry entry = HarborFlares.raise(context, placement: const HarborAligned(alignment: Alignment.bottomCenter), builder: (_) => const SizedBox());
-  HarborFlares.raise(context, placement: HarborAnchored(anchor), builder: (_) => const SizedBox());
-  entry.closed.then((final HarborFlareClosedReason reason) => reason);
-  final HarborFlareTransitionBuilder fade = (context, animation, child) => FadeTransition(opacity: animation, child: child);
+  HarborToasts.show(context, slot: HarborToastSlot.low, target: HarborToastTarget.root, builder: (_) => const SizedBox());
+  final HarborToastEntry entry = HarborToasts.show(context, placement: const HarborAligned(alignment: Alignment.bottomCenter), builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: HarborAnchored(anchor), builder: (_) => const SizedBox());
+  entry.closed.then((final HarborToastClosedReason reason) => reason);
+  final HarborToastTransitionBuilder fade = (context, animation, child) => FadeTransition(opacity: animation, child: child);
   fade(context, const AlwaysStoppedAnimation<double>(1), const SizedBox());
 }

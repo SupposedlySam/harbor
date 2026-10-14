@@ -1,0 +1,60 @@
+// The rename's constructor transforms (lib/fix_data/rename.yaml, 0.9.0): HarborDock, a deprecated
+// subclass whose constructors are replaced by HarborBar's; HarborMooringLine, replaced by
+// HarborClear.rowInsets; HarborBuoy, a subclass too; and named constructors reached through an old
+// type name, which keep their names.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void bars() {
+  final List<HarborBar> top = <HarborBar>[
+    const HarborBar.overlay(child: SizedBox()),
+    const HarborBar.solid(debugLabel: 'tabs', child: SizedBox()),
+    const HarborBar.reserve(extent: 80),
+    const HarborBar.reserve(extent: 40, kind: HarborBarKind.solid),
+  ];
+  HarborFrame(top: top, bottom: const <HarborBar>[HarborBar.solid(child: SizedBox())], body: const SizedBox());
+  final HarborBar Function({required Widget child}) pier = HarborBar.overlay;
+  <Object?>[pier];
+}
+
+void rows() {
+  const HarborClear.rowInsets(child: SizedBox());
+  const HarborClear.rowInsets(follow: HarborFollow.resting, child: SizedBox());
+  // A tear-off and the type HarborMooringLine have no HarborClear equivalent: left, deprecated.
+  final HarborMooringLine Function({required Widget child}) row = HarborMooringLine.new;
+  <Object?>[row];
+}
+
+void floats(HarborAnchor anchor) {
+  const HarborFloat(child: SizedBox());
+  const HarborFloat(modal: true, onDismiss: _close, child: SizedBox());
+  const List<HarborFloat> floats = <HarborFloat>[HarborFloat(child: SizedBox())];
+  <Object?>[floats];
+}
+
+void named(BuildContext context) {
+  HarborScrollView.box(child: const SizedBox());
+  HarborScrollView.paddingOf(context);
+  const HarborSystemEdges.fixed(EdgeInsets.zero);
+  const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05));
+  const HarborEdgeEffect.fade(length: 12);
+  const HarborEdgeEffect.hairline();
+  HarborSheet.draggable(builder: (context, controller) => const SizedBox());
+}
+
+// A value the API returns, kept in a variable typed with an old subclass name. Before the fix this
+// does not compile, since the API returns the new class; the fix renames the type, so after it,
+// it does. No API returns a HarborFairway, so it is declared from its own constructor.
+void stored(HarborBar dock, HarborFrame frame, HarborRoot sea) {
+  final HarborEdgeEffect edge = dock.edgeEffect;
+  final List<HarborBar> top = frame.top;
+  final HarborSystemEdges? edges = frame.systemEdges;
+  final HarborSystemEdges root = sea.systemEdges;
+  final List<HarborFloat> floats = frame.floats;
+  final HarborScrollView scroll = const HarborScrollView(slivers: <Widget>[]);
+  final HarborBar copy = dock.copyWith(keyboard: HarborKeyboardStance.rides);
+  <Object?>[edge, top, edges, root, floats, scroll, copy];
+}
+
+void _close() {}

@@ -1,18 +1,24 @@
-# `dart fix` transforms for `bars:`, which replaces `clear:` and the HarborClear enum (#120, Q1): the
-# name HarborClear goes to the widget HarborMoored in the rename. Checked by test_fixes/bars.dart.
+# `dart fix` transforms for `bars:`, which replaced `clear:` and the HarborClear enum in 0.8.0 (#120,
+# Q1). Checked by test_fixes/bars.dart.
 #
 # The rewrite depends on the value, so only the two literal spellings are fixed:
 # `clear: HarborClear.coast` becomes `bars: false`, and `clear: HarborClear.everything`, the
 # default, is removed. A `clear:` given anything else (a variable, a conditional) is left for you.
+#
+# 0.9.0 removed the enum and `clear:`, so the name HarborClear could go to the widget HarborMoored
+# was. A call still on `clear:` no longer compiles, and these transforms still rewrite it, keyed on
+# the classes the old names now resolve to. They read the argument as text, so `HarborClear.coast`
+# matches though it names nothing now. HarborFairway is a deprecated subclass of HarborScrollView, so
+# its calls are keyed on it as well.
 version: 1
 transforms:
-  # HarborMoored(clear:)
+  # HarborMoored(clear:), now HarborClear(clear:)
   - title: "Migrate to 'bars'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       constructor: ''
-      inClass: 'HarborMoored'
+      inClass: 'HarborClear'
     oneOf:
       - if: "clear == 'HarborClear.coast'"
         changes:
@@ -40,7 +46,7 @@ transforms:
     element:
       uris: [ 'harbor.dart' ]
       method: 'clearanceOf'
-      inClass: 'HarborMoored'
+      inClass: 'HarborClear'
     oneOf:
       - if: "clear == 'HarborClear.coast'"
         changes:
@@ -62,7 +68,35 @@ transforms:
         kind: 'fragment'
         value: 'arguments[clear]'
 
-  # HarborFairway(clear:)
+  # HarborFairway(clear:), now HarborScrollView(clear:)
+  - title: "Migrate to 'bars'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborScrollView'
+    oneOf:
+      - if: "clear == 'HarborClear.coast'"
+        changes:
+          - kind: 'addParameter'
+            index: 13
+            name: 'bars'
+            style: optional_named
+            argumentValue:
+              expression: 'false'
+              requiredIf: "clear == 'HarborClear.coast'"
+          - kind: 'removeParameter'
+            name: 'clear'
+      - if: "clear == 'HarborClear.everything'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'clear'
+    variables:
+      clear:
+        kind: 'fragment'
+        value: 'arguments[clear]'
+
+  # HarborFairway(clear:), through the deprecated subclass
   - title: "Migrate to 'bars'"
     date: 2026-10-14
     element:
@@ -90,18 +124,18 @@ transforms:
         kind: 'fragment'
         value: 'arguments[clear]'
 
-  # HarborFairway.box(clear:)
+  # HarborFairway.paddingOf(clear:)
   - title: "Migrate to 'bars'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
-      constructor: 'box'
-      inClass: 'HarborFairway'
+      method: 'paddingOf'
+      inClass: 'HarborScrollView'
     oneOf:
       - if: "clear == 'HarborClear.coast'"
         changes:
           - kind: 'addParameter'
-            index: 11
+            index: 5
             name: 'bars'
             style: optional_named
             argumentValue:
@@ -118,7 +152,7 @@ transforms:
         kind: 'fragment'
         value: 'arguments[clear]'
 
-  # HarborFairway.paddingOf(clear:)
+  # HarborFairway.paddingOf(clear:), through the deprecated subclass
   - title: "Migrate to 'bars'"
     date: 2026-10-14
     element:
@@ -146,13 +180,13 @@ transforms:
         kind: 'fragment'
         value: 'arguments[clear]'
 
-  # HarborFairwaySliver(clear:)
+  # HarborFairwaySliver(clear:), now HarborSliverClear
   - title: "Migrate to 'bars'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       constructor: ''
-      inClass: 'HarborFairwaySliver'
+      inClass: 'HarborSliverClear'
     oneOf:
       - if: "clear == 'HarborClear.coast'"
         changes:
@@ -173,3 +207,31 @@ transforms:
       clear:
         kind: 'fragment'
         value: 'arguments[clear]'
+  # HarborFairway.box(clear:), through the deprecated subclass
+  - title: "Migrate to 'bars'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'box'
+      inClass: 'HarborFairway'
+    oneOf:
+      - if: "clear == 'HarborClear.coast'"
+        changes:
+          - kind: 'addParameter'
+            index: 11
+            name: 'bars'
+            style: optional_named
+            argumentValue:
+              expression: 'false'
+              requiredIf: "clear == 'HarborClear.coast'"
+          - kind: 'removeParameter'
+            name: 'clear'
+      - if: "clear == 'HarborClear.everything'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'clear'
+    variables:
+      clear:
+        kind: 'fragment'
+        value: 'arguments[clear]'
+

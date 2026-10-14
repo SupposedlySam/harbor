@@ -4,51 +4,51 @@
 # Checked by test_fixes/signals.dart.
 version: 1
 transforms:
-  - title: "Rename to 'HarborFlares'"
+  - title: "Rename to 'HarborToasts'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       typedef: 'HarborSignals'
     changes:
       - kind: 'rename'
-        newName: 'HarborFlares'
-  - title: "Rename to 'HarborFlareSlot'"
+        newName: 'HarborToasts'
+  - title: "Rename to 'HarborToastSlot'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       typedef: 'HarborSignalSlot'
     changes:
       - kind: 'rename'
-        newName: 'HarborFlareSlot'
-  - title: "Rename to 'HarborFlareTarget'"
+        newName: 'HarborToastSlot'
+  - title: "Rename to 'HarborToastTarget'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       typedef: 'HarborSignalTarget'
     changes:
       - kind: 'rename'
-        newName: 'HarborFlareTarget'
-  - title: "Rename to 'HarborFlareEntry'"
+        newName: 'HarborToastTarget'
+  - title: "Rename to 'HarborToastEntry'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       typedef: 'HarborSignalEntry'
     changes:
       - kind: 'rename'
-        newName: 'HarborFlareEntry'
-  - title: "Rename to 'HarborFlareTransitionBuilder'"
+        newName: 'HarborToastEntry'
+  - title: "Rename to 'HarborToastTransitionBuilder'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       typedef: 'HarborSignalTransitionBuilder'
     changes:
       - kind: 'rename'
-        newName: 'HarborFlareTransitionBuilder'
-  - title: "Rename to 'HarborFlareClosedReason'"
+        newName: 'HarborToastTransitionBuilder'
+  - title: "Rename to 'HarborToastClosedReason'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
       typedef: 'HarborSignalClosedReason'
     changes:
       - kind: 'rename'
-        newName: 'HarborFlareClosedReason'
+        newName: 'HarborToastClosedReason'

@@ -1,5 +1,6 @@
-// The `bars:` transforms (lib/fix_data/bars.yaml): this file is written against the deprecated
-// `clear:`, and bars.dart.expect is what `dart fix --apply` makes of it.
+// The `bars:` transforms (lib/fix_data/bars.yaml): this file is written against `clear:`, deprecated
+// in 0.8.0 and removed in 0.9.0, and bars.dart.expect is what `dart fix --apply` makes of it: the
+// rename's transforms (rename.yaml) take the old class names to the new ones as it goes.
 
 import 'package:flutter/widgets.dart';
 import 'package:harbor/harbor.dart';

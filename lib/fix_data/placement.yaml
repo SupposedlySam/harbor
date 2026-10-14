@@ -3,7 +3,8 @@
 #
 # `dart fix` transforms for the placement API (0.7.0): HarborPlacement, HarborAligned and
 # HarborAnchored replace the placement parameters of HarborBuoy, HarborBuoy.anchored,
-# HarborPortalBuoy and HarborFlares.raise. Each is checked by a golden in test_fixes/.
+# HarborPortalBuoy and HarborFlares.raise (HarborFloat, HarborPopover and HarborToasts.show
+# since 0.9.0, where the transforms are keyed). Each is checked by a golden in test_fixes/.
 version: 1
 transforms:
   # HarborBuoySide was renamed HarborAnchorSide: flares and HarborAnchorClip take it too.
@@ -1808,6 +1809,1770 @@ transforms:
       margin:
         kind: 'fragment'
         value: 'arguments[margin]'
+  # HarborBuoy.anchored(anchor: a, ...) becomes HarborBuoy(placement: HarborAnchored(a, ...)), from the diagnostic
+  # on its deprecated anchor argument, so a tear-off (no arguments) is left alone. The old anchored buoy's side
+  # was above, a HarborAnchored's is below, so side: above is written where it was left out.
+  - title: "Migrate to 'placement'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'anchored'
+      inClass: 'HarborFloat'
+    oneOf:
+      - if: "anchor != '' && side == '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above)'
+              requiredIf: "anchor != '' && side == '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+      - if: "anchor != '' && side != '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %})'
+              requiredIf: "anchor != '' && side != '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+      - if: "anchor != '' && gap != '' && side == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %})'
+              requiredIf: "anchor != '' && gap != '' && side == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+      - if: "anchor != '' && overlap != '' && side == '' && gap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %})'
+              requiredIf: "anchor != '' && overlap != '' && side == '' && gap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+      - if: "anchor != '' && crossAlignment != '' && side == '' && gap == '' && overlap == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && crossAlignment != '' && side == '' && gap == '' && overlap == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && crossOffset != '' && side == '' && gap == '' && overlap == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && crossOffset != '' && side == '' && gap == '' && overlap == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && margin != '' && side == '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, margin: {% margin %})'
+              requiredIf: "anchor != '' && margin != '' && side == '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && crossOffset != '' && margin != '' && side == '' && gap == '' && overlap == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && crossOffset != '' && margin != '' && side == '' && gap == '' && overlap == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+      - if: "anchor != '' && side != '' && overlap != '' && gap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && gap == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+      - if: "anchor != '' && gap != '' && overlap != '' && side == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && side == '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+      - if: "anchor != '' && side != '' && crossAlignment != '' && gap == '' && overlap == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && side != '' && crossAlignment != '' && gap == '' && overlap == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && gap != '' && crossAlignment != '' && side == '' && overlap == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && gap != '' && crossAlignment != '' && side == '' && overlap == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && overlap != '' && crossAlignment != '' && side == '' && gap == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && overlap != '' && crossAlignment != '' && side == '' && gap == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && side != '' && crossOffset != '' && gap == '' && overlap == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && crossOffset != '' && gap == '' && overlap == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && gap != '' && crossOffset != '' && side == '' && overlap == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && gap != '' && crossOffset != '' && side == '' && overlap == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && overlap != '' && crossOffset != '' && side == '' && gap == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && overlap != '' && crossOffset != '' && side == '' && gap == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && crossAlignment != '' && crossOffset != '' && side == '' && gap == '' && overlap == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && crossAlignment != '' && crossOffset != '' && side == '' && gap == '' && overlap == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && margin != '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && margin != '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && margin != '' && side == '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && margin != '' && side == '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && overlap != '' && margin != '' && side == '' && gap == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && overlap != '' && margin != '' && side == '' && gap == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && overlap == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && overlap == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && overlap != '' && crossOffset != '' && gap == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && crossOffset != '' && gap == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && overlap == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && overlap == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && side != '' && crossAlignment != '' && crossOffset != '' && gap == '' && overlap == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && crossAlignment != '' && crossOffset != '' && gap == '' && overlap == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && gap != '' && crossAlignment != '' && crossOffset != '' && side == '' && overlap == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && gap != '' && crossAlignment != '' && crossOffset != '' && side == '' && overlap == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && side == '' && gap == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && side == '' && gap == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && crossAlignment != '' && margin != '' && gap == '' && overlap == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && crossAlignment != '' && margin != '' && gap == '' && overlap == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+      - if: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && gap == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && gap == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && side != '' && gap != '' && crossOffset != '' && overlap == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossOffset != '' && overlap == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && gap != '' && margin != '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && margin != '' && overlap == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && side == '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && side == '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && side != '' && overlap != '' && margin != '' && gap == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && margin != '' && gap == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && overlap != '' && margin != '' && side == '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && margin != '' && side == '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && crossAlignment != '' && margin != '' && side == '' && overlap == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && crossAlignment != '' && margin != '' && side == '' && overlap == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && overlap != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && overlap != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && overlap != '' && crossOffset != '' && side == '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && crossOffset != '' && side == '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && crossOffset != '' && margin != '' && gap == '' && overlap == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && crossOffset != '' && margin != '' && gap == '' && overlap == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && crossOffset != '' && margin != '' && side == '' && overlap == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && crossOffset != '' && margin != '' && side == '' && overlap == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && overlap != '' && crossOffset != '' && margin != '' && side == '' && gap == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && overlap != '' && crossOffset != '' && margin != '' && side == '' && gap == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == '' && gap == '' && overlap == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == '' && gap == '' && overlap == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossOffset != '' && crossAlignment == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossOffset != '' && crossAlignment == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && crossOffset != '' && overlap == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && crossOffset != '' && overlap == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && gap == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && gap == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && side == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && side == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && margin != '' && crossAlignment == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && margin != '' && crossAlignment == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset == '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset == '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+      - if: "anchor != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == '' && gap == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == '' && gap == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin != '' && overlap == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin != '' && overlap == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && margin != '' && gap == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && margin != '' && gap == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && margin != '' && side == '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && margin != '' && side == '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == '' && overlap == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == '' && overlap == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && crossOffset != '' && margin != '' && overlap == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossOffset != '' && margin != '' && overlap == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && crossAlignment != '' && crossOffset != '' && margin != '' && gap == '' && overlap == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && crossAlignment != '' && crossOffset != '' && margin != '' && gap == '' && overlap == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && overlap != '' && crossOffset != '' && margin != '' && side == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && crossOffset != '' && margin != '' && side == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && overlap != '' && crossOffset != '' && margin != '' && gap == '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && crossOffset != '' && margin != '' && gap == '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && margin != '' && crossOffset == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && margin != '' && crossOffset == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && overlap == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && overlap == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && gap == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && gap == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% HarborAnchorSide %}.above, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != '' && side == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+                HarborAnchorSide:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchorSide'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossOffset != '' && margin != '' && crossAlignment == ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossOffset != '' && margin != '' && crossAlignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != ''"
+        changes:
+          - kind: 'rename'
+            newName: ''
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, overlap: {% overlap %}, crossAlignment: {% crossAlignment %}, crossOffset: {% crossOffset %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && overlap != '' && crossAlignment != '' && crossOffset != '' && margin != ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'overlap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'crossOffset'
+          - kind: 'removeParameter'
+            name: 'margin'
+    variables:
+      anchor:
+        kind: 'fragment'
+        value: 'arguments[anchor]'
+      side:
+        kind: 'fragment'
+        value: 'arguments[side]'
+      gap:
+        kind: 'fragment'
+        value: 'arguments[gap]'
+      overlap:
+        kind: 'fragment'
+        value: 'arguments[overlap]'
+      crossAlignment:
+        kind: 'fragment'
+        value: 'arguments[crossAlignment]'
+      crossOffset:
+        kind: 'fragment'
+        value: 'arguments[crossOffset]'
+      margin:
+        kind: 'fragment'
+        value: 'arguments[margin]'
+  # HarborBuoy(alignment:, margin:) becomes HarborBuoy(placement: HarborAligned(...)).
+  - title: "Migrate to 'placement'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborFloat'
+    oneOf:
+      - if: "alignment != '' && anchor == '' && margin == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(alignment: {% alignment %})'
+              requiredIf: "alignment != '' && anchor == '' && margin == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+          - kind: 'removeParameter'
+            name: 'alignment'
+      - if: "margin != '' && anchor == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(margin: {% margin %})'
+              requiredIf: "margin != '' && anchor == '' && alignment == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "alignment != '' && margin != '' && anchor == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 0
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(alignment: {% alignment %}, margin: {% margin %})'
+              requiredIf: "alignment != '' && margin != '' && anchor == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+          - kind: 'removeParameter'
+            name: 'alignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+    variables:
+      anchor:
+        kind: 'fragment'
+        value: 'arguments[anchor]'
+      alignment:
+        kind: 'fragment'
+        value: 'arguments[alignment]'
+      margin:
+        kind: 'fragment'
+        value: 'arguments[margin]'
   # HarborPortalBuoy(anchor:, side:, gap:, overlap:, crossAlignment:, crossOffset:, margin:, flips:) becomes
   # HarborPortalBuoy(placement: HarborAnchored(anchor or null, ...)). A portal buoy's old side was above, so
   # side: above is written where it was left out.
@@ -1816,7 +3581,7 @@ transforms:
     element:
       uris: [ 'harbor.dart' ]
       constructor: ''
-      inClass: 'HarborPortalBuoy'
+      inClass: 'HarborPopover'
     oneOf:
       - if: "side != '' && anchor == '' && gap == '' && overlap == '' && crossAlignment == '' && crossOffset == '' && margin == '' && flips == ''"
         changes:
@@ -7977,7 +9742,7 @@ transforms:
     element:
       uris: [ 'harbor.dart' ]
       method: 'raise'
-      inClass: 'HarborFlares'
+      inClass: 'HarborToasts'
     oneOf:
       - if: "alignment != '' && anchor == '' && margin == ''"
         changes:
@@ -8038,17 +9803,17 @@ transforms:
             name: 'placement'
             style: optional_named
             argumentValue:
-              expression: '{% HarborAligned %}(alignment: {% HarborFlareSlot %}.high.alignment, margin: {% margin %})'
+              expression: '{% HarborAligned %}(alignment: {% HarborToastSlot %}.high.alignment, margin: {% margin %})'
               requiredIf: "margin != '' && anchor == '' && alignment == '' && slot == ''"
               variables:
                 HarborAligned:
                   kind: 'import'
                   uris: [ 'package:harbor/harbor.dart' ]
                   name: 'HarborAligned'
-                HarborFlareSlot:
+                HarborToastSlot:
                   kind: 'import'
                   uris: [ 'package:harbor/harbor.dart' ]
-                  name: 'HarborFlareSlot'
+                  name: 'HarborToastSlot'
           - kind: 'removeParameter'
             name: 'margin'
       - if: "anchor != '' && side == '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
@@ -8067,6 +9832,8 @@ transforms:
                   name: 'HarborAnchored'
           - kind: 'removeParameter'
             name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8085,6 +9852,8 @@ transforms:
             name: 'anchor'
           - kind: 'removeParameter'
             name: 'side'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && gap != '' && side == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8103,6 +9872,8 @@ transforms:
             name: 'anchor'
           - kind: 'removeParameter'
             name: 'gap'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && crossAlignment != '' && side == '' && gap == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8121,6 +9892,8 @@ transforms:
             name: 'anchor'
           - kind: 'removeParameter'
             name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && margin != '' && side == '' && gap == '' && crossAlignment == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8139,6 +9912,8 @@ transforms:
             name: 'anchor'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && gap != '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8159,6 +9934,8 @@ transforms:
             name: 'side'
           - kind: 'removeParameter'
             name: 'gap'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && crossAlignment != '' && gap == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8179,6 +9956,8 @@ transforms:
             name: 'side'
           - kind: 'removeParameter'
             name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && gap != '' && crossAlignment != '' && side == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8199,6 +9978,8 @@ transforms:
             name: 'gap'
           - kind: 'removeParameter'
             name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && margin != '' && gap == '' && crossAlignment == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8219,6 +10000,8 @@ transforms:
             name: 'side'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && gap != '' && margin != '' && side == '' && crossAlignment == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8239,6 +10022,8 @@ transforms:
             name: 'gap'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8259,6 +10044,8 @@ transforms:
             name: 'crossAlignment'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8281,6 +10068,8 @@ transforms:
             name: 'gap'
           - kind: 'removeParameter'
             name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && gap != '' && margin != '' && crossAlignment == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8303,6 +10092,8 @@ transforms:
             name: 'gap'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && crossAlignment != '' && margin != '' && gap == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8325,6 +10116,8 @@ transforms:
             name: 'crossAlignment'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && gap != '' && crossAlignment != '' && margin != '' && side == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8347,6 +10140,8 @@ transforms:
             name: 'crossAlignment'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
       - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin != '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -8371,6 +10166,464 @@ transforms:
             name: 'crossAlignment'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesCoast'
+    variables:
+      anchor:
+        kind: 'fragment'
+        value: 'arguments[anchor]'
+      alignment:
+        kind: 'fragment'
+        value: 'arguments[alignment]'
+      slot:
+        kind: 'fragment'
+        value: 'arguments[slot]'
+      side:
+        kind: 'fragment'
+        value: 'arguments[side]'
+      gap:
+        kind: 'fragment'
+        value: 'arguments[gap]'
+      crossAlignment:
+        kind: 'fragment'
+        value: 'arguments[crossAlignment]'
+      margin:
+        kind: 'fragment'
+        value: 'arguments[margin]'
+  # HarborFlares.raise(alignment:, margin:) becomes raise(placement: HarborAligned(...)), slot: with margin:
+  # included, and raise(anchor:, side:, gap:, crossAlignment:, margin:) becomes placement: HarborAnchored(...).
+  # A flare's old side was below, as a HarborAnchored's is, so nothing is added for it. slot: alone stays.
+  - title: "Migrate to 'placement'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      method: 'show'
+      inClass: 'HarborToasts'
+    oneOf:
+      - if: "alignment != '' && anchor == '' && margin == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(alignment: {% alignment %})'
+              requiredIf: "alignment != '' && anchor == '' && margin == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+          - kind: 'removeParameter'
+            name: 'alignment'
+      - if: "alignment != '' && margin != '' && anchor == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(alignment: {% alignment %}, margin: {% margin %})'
+              requiredIf: "alignment != '' && margin != '' && anchor == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+          - kind: 'removeParameter'
+            name: 'alignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "slot != '' && margin != '' && anchor == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(alignment: {% slot %}.alignment, margin: {% margin %})'
+              requiredIf: "slot != '' && margin != '' && anchor == '' && alignment == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+          - kind: 'removeParameter'
+            name: 'slot'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "margin != '' && anchor == '' && alignment == '' && slot == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAligned %}(alignment: {% HarborToastSlot %}.high.alignment, margin: {% margin %})'
+              requiredIf: "margin != '' && anchor == '' && alignment == '' && slot == ''"
+              variables:
+                HarborAligned:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAligned'
+                HarborToastSlot:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborToastSlot'
+          - kind: 'removeParameter'
+            name: 'margin'
+      - if: "anchor != '' && side == '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %})'
+              requiredIf: "anchor != '' && side == '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %})'
+              requiredIf: "anchor != '' && side != '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && gap != '' && side == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, gap: {% gap %})'
+              requiredIf: "anchor != '' && gap != '' && side == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && crossAlignment != '' && side == '' && gap == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && crossAlignment != '' && side == '' && gap == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && margin != '' && side == '' && gap == '' && crossAlignment == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && margin != '' && side == '' && gap == '' && crossAlignment == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && crossAlignment != '' && gap == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && side != '' && crossAlignment != '' && gap == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && gap != '' && crossAlignment != '' && side == '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, gap: {% gap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && gap != '' && crossAlignment != '' && side == '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && margin != '' && gap == '' && crossAlignment == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && margin != '' && gap == '' && crossAlignment == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && gap != '' && margin != '' && side == '' && crossAlignment == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, gap: {% gap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && margin != '' && side == '' && crossAlignment == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && crossAlignment != '' && margin != '' && side == '' && gap == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossAlignment: {% crossAlignment %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && gap != '' && margin != '' && crossAlignment == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && margin != '' && crossAlignment == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && crossAlignment != '' && margin != '' && gap == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && crossAlignment != '' && margin != '' && gap == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && gap != '' && crossAlignment != '' && margin != '' && side == '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, gap: {% gap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && gap != '' && crossAlignment != '' && margin != '' && side == '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
+      - if: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin != '' && slot == '' && alignment == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'placement'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborAnchored %}({% anchor %}, side: {% side %}, gap: {% gap %}, crossAlignment: {% crossAlignment %}, margin: {% margin %})'
+              requiredIf: "anchor != '' && side != '' && gap != '' && crossAlignment != '' && margin != '' && slot == '' && alignment == ''"
+              variables:
+                HarborAnchored:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborAnchored'
+          - kind: 'removeParameter'
+            name: 'anchor'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
+          - kind: 'removeParameter'
+            name: 'margin'
+          - kind: 'removeParameter'
+            name: 'reachesSystemEdges'
     variables:
       anchor:
         kind: 'fragment'

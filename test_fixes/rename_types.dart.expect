@@ -1,0 +1,78 @@
+// The rename's type transforms (lib/fix_data/rename.yaml, 0.9.0): every old type name, in a type, a
+// construction and a static access. rename_types.dart.expect is what `dart fix --apply` makes of it.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+class Log extends HarborFrameObserver {
+  const Log();
+}
+
+void types(BuildContext context, HarborController controller, ValueNotifier<double> ime) {
+  // The frame and the root.
+  const HarborRoot sea = HarborRoot(child: SizedBox());
+  const HarborFrame frame = HarborFrame(body: SizedBox());
+  final HarborController? nearest = HarborFrame.maybeOf(context);
+
+  // Bars.
+  const HarborBarKind kind = HarborBarKind.overlay;
+  const HarborBarState state = HarborBarState.dark;
+  const HarborSystemEdgeStance stance = HarborSystemEdgeStance.steady;
+  final List<HarborBarRecord> records = <HarborBarRecord>[];
+  const HarborSliverBar pinned = HarborSliverBar(child: SizedBox());
+  const HarborHideBar hide = HarborHideBar(edge: HarborEdge.bottom, child: SizedBox());
+  final HarborAttachedBarHandle? handle = null;
+
+  // The system edges and the keyboard.
+  const HarborSystemEdges edges = HarborSystemEdges.ambient;
+  const HarborSystemEdges fixed = HarborSystemEdges.fixed(EdgeInsets.zero);
+  const HarborSystemEdgeFeature feature = HarborSystemEdgeFeature.statusBar;
+  final HarborKeyboardState keyboard = HarborKeyboard.of(context);
+  const HarborKeyboardPhase phase = HarborKeyboardPhase.hidden;
+  const HarborKeyboardStance keyboardStance = HarborKeyboardStance.rides;
+  const HarborKeyboardSpace space = HarborKeyboardSpace();
+  final HarborKeyboardSource source = HarborKeyboardSource(height: ime, child: const SizedBox());
+
+  // The room.
+  final HarborRoomData room = HarborRoom.of(context, aspect: HarborRoomAspect.margin);
+  const HarborHandled handled = HarborHandled(child: SizedBox());
+  const HarborClear clear = HarborClear(child: SizedBox());
+  HarborClear.clearanceOf(context);
+
+  // Scroll views and the edge effect.
+  const HarborScrollView scroll = HarborScrollView(slivers: <Widget>[]);
+  final HarborScrollView box = HarborScrollView.box(child: const SizedBox());
+  HarborScrollView.paddingOf(context);
+  const HarborSliverClear sliver = HarborSliverClear(sliver: SliverToBoxAdapter());
+  const HarborEdgeEffect fade = HarborEdgeEffect.fade(length: 12);
+  const HarborEdgeEffectKind fadeKind = HarborEdgeEffectKind.fade;
+  const HarborFadeBand band = HarborFadeBand.none;
+  const HarborEdgeEffectPainter painter = HarborFadeMask.alphaFade;
+  const HarborFadeMask mask = HarborFadeMask(edgeEffects: <HarborEdge, HarborFadeBand>{}, child: SizedBox());
+
+  // Popovers and toasts.
+  final HarborToastEntry toast = HarborToasts.show(context, slot: HarborToastSlot.low, builder: (_) => const SizedBox());
+  const HarborToastTarget target = HarborToastTarget.topmost;
+  toast.closed.then((final HarborToastClosedReason reason) => reason);
+  const HarborToastPhase toastPhase = HarborToastPhase.waiting;
+  const HarborToastQueue queue = HarborToastQueue.replace;
+  final HarborToastHold hold = toast.hold();
+  final HarborToastTransitionBuilder transition = (context, animation, child) => child;
+  final HarborPopover? popover = null;
+
+  // Sheets, keeping in sight, the inspector, the registry and the scaled screen.
+  final HarborPageCover cover = controller.addPageCover(ValueNotifier<double>(0));
+  const HarborKeepInSight keep = HarborKeepInSight(child: SizedBox());
+  HarborKeepInSight.reveal(context);
+  const HarborKeepInSightRegion region = HarborKeepInSightRegion(child: SizedBox());
+  final List<HarborInspectorEntry> entries = HarborInspector.snapshot(context);
+  const HarborInspectorOverlay inspector = HarborInspectorOverlay(child: SizedBox());
+  final HarborFrameRegistry registry = controller.registry;
+  const HarborFrameObserver log = Log();
+  const HarborScaledScreen scaled = HarborScaledScreen(referenceSize: Size(1200, 675), child: SizedBox());
+
+  <Object?>[sea, frame, nearest, kind, state, stance, records, pinned, hide, handle, edges, fixed, feature];
+  <Object?>[keyboard, phase, keyboardStance, space, source, room, handled, clear, scroll, box, sliver, fade];
+  <Object?>[fadeKind, band, painter, mask, target, queue, toastPhase, hold, transition, popover, cover, keep];
+  <Object?>[region, entries, inspector, registry, log, scaled];
+}

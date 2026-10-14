@@ -1,24 +1,25 @@
-// The `bars:` transforms (lib/fix_data/bars.yaml): this file is written against the deprecated
-// `clear:`, and bars.dart.expect is what `dart fix --apply` makes of it.
+// The `bars:` transforms (lib/fix_data/bars.yaml): this file is written against `clear:`, deprecated
+// in 0.8.0 and removed in 0.9.0, and bars.dart.expect is what `dart fix --apply` makes of it: the
+// rename's transforms (rename.yaml) take the old class names to the new ones as it goes.
 
 import 'package:flutter/widgets.dart';
 import 'package:harbor/harbor.dart';
 
 void moored(BuildContext context) {
   // The coast alone becomes bars: false; everything, the default, goes.
-  const HarborMoored(bars: false, child: SizedBox());
-  const HarborMoored(child: SizedBox());
-  const HarborMoored(edges: {HarborEdge.top}, bars: false, tide: false, child: SizedBox());
-  HarborMoored.clearanceOf(context, bars: false);
-  HarborMoored.clearanceOf(context, edges: HarborEdge.vertical);
+  const HarborClear(bars: false, child: SizedBox());
+  const HarborClear(child: SizedBox());
+  const HarborClear(edges: {HarborEdge.top}, bars: false, keyboard: false, child: SizedBox());
+  HarborClear.clearanceOf(context, bars: false);
+  HarborClear.clearanceOf(context, edges: HarborEdge.vertical);
 }
 
 void fairways(BuildContext context) {
-  const HarborFairway(slivers: <Widget>[], bars: false);
-  const HarborFairway(scrollDirection: Axis.horizontal, slivers: <Widget>[]);
-  HarborFairway.box(tide: false, bars: false, child: const SizedBox());
-  HarborFairway.paddingOf(context, bars: false);
-  HarborFairway.paddingOf(context, axis: Axis.horizontal);
-  const HarborFairwaySliver(sliver: SliverToBoxAdapter(), bars: false);
-  const HarborFairwaySliver(clearLeading: false, sliver: SliverToBoxAdapter());
+  const HarborScrollView(slivers: <Widget>[], bars: false);
+  const HarborScrollView(scrollDirection: Axis.horizontal, slivers: <Widget>[]);
+  HarborScrollView.box(keyboard: false, bars: false, child: const SizedBox());
+  HarborScrollView.paddingOf(context, bars: false);
+  HarborScrollView.paddingOf(context, axis: Axis.horizontal);
+  const HarborSliverClear(sliver: SliverToBoxAdapter(), bars: false);
+  const HarborSliverClear(clearLeading: false, sliver: SliverToBoxAdapter());
 }
