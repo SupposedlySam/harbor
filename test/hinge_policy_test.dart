@@ -137,8 +137,8 @@ void main() {
         tester,
         device: _dual,
         buoys: const <HarborBuoy>[
-          HarborBuoy(alignment: Alignment.center, hinge: HarborHinge.never, child: SizedBox(key: ValueKey<String>('spanning'), width: 100, height: 40)),
-          HarborBuoy(alignment: Alignment.topCenter, child: SizedBox(key: ValueKey<String>('kept'), width: 100, height: 40)),
+          HarborBuoy(placement: HarborAligned(alignment: Alignment.center), hinge: HarborHinge.never, child: SizedBox(key: ValueKey<String>('spanning'), width: 100, height: 40)),
+          HarborBuoy(placement: HarborAligned(alignment: Alignment.topCenter), child: SizedBox(key: ValueKey<String>('kept'), width: 100, height: 40)),
         ],
       );
       HarborFlares.raise(page, slot: HarborFlareSlot.low, hinge: HarborHinge.never, builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('flare'), width: 100, height: 20), duration: null);

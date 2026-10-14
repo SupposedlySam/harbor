@@ -342,7 +342,7 @@ void main() {
       final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(Harbor(body: _Probe((final BuildContext c) => page = c))));
       HarborFlares.raise(
         page,
-        alignment: notch,
+        placement: const HarborAligned(alignment: notch),
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
         duration: null,
       );
@@ -364,7 +364,7 @@ void main() {
       );
       HarborFlares.raise(
         page,
-        alignment: AlignmentDirectional.centerEnd,
+        placement: const HarborAligned(alignment: AlignmentDirectional.centerEnd),
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
         duration: null,
       );
@@ -380,7 +380,7 @@ void main() {
       await tester.pumpSeaTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
       HarborFlares.raise(
         page,
-        alignment: notch,
+        placement: const HarborAligned(alignment: notch),
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
         duration: null,
       );

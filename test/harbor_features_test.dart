@@ -269,7 +269,7 @@ void main() {
             ),
           ],
           buoys: <HarborBuoy>[
-            HarborBuoy.anchored(anchor: anchor, gap: 4, overlap: 10, child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30)),
+            HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 4, overlap: 10), child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30)),
           ],
           body: const SizedBox.expand(),
         ),
@@ -291,7 +291,7 @@ void main() {
           textDirection: TextDirection.rtl,
           child: Harbor(
             buoys: <HarborBuoy>[
-              HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.start, child: _box('start', 60, 30)),
+              HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.start), child: _box('start', 60, 30)),
             ],
             body: Center(child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40))),
           ),
@@ -304,10 +304,10 @@ void main() {
 
   test('a buoy side named before or after is the start or the end', () {
     expect(
-      <HarborBuoySide>[HarborBuoySide.before, HarborBuoySide.after],
-      <HarborBuoySide>[HarborBuoySide.start, HarborBuoySide.end],
+      <HarborAnchorSide>[HarborAnchorSide.before, HarborAnchorSide.after],
+      <HarborAnchorSide>[HarborAnchorSide.start, HarborAnchorSide.end],
     );
-    expect(HarborBuoySide.values.map((final HarborBuoySide side) => side.name), <String>['above', 'below', 'start', 'end']);
+    expect(HarborAnchorSide.values.map((final HarborAnchorSide side) => side.name), <String>['above', 'below', 'start', 'end']);
   });
 
   testWidgets('an anchored buoy whose anchor is not in the tree takes no taps', (final tester) async {
@@ -319,8 +319,8 @@ void main() {
       _app(
         Harbor(
           buoys: <HarborBuoy>[
-            HarborBuoy.anchored(
-              anchor: anchor,
+            HarborBuoy(
+              placement: HarborAnchored(anchor, side: HarborAnchorSide.above),
               child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => bubbleTaps++, child: _box('bubble', 100, 30)),
             ),
           ],
@@ -345,8 +345,8 @@ void main() {
       _app(
         Harbor(
           buoys: <HarborBuoy>[
-            HarborBuoy.anchored(
-              anchor: anchor,
+            HarborBuoy(
+              placement: HarborAnchored(anchor, side: HarborAnchorSide.above),
               child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => bubbleTaps++, child: _box('bubble', 100, 30)),
             ),
           ],
@@ -384,11 +384,8 @@ void main() {
       _app(
         Harbor(
           buoys: <HarborBuoy>[
-            HarborBuoy.anchored(
-              anchor: anchor,
-              side: HarborBuoySide.below,
-              crossAlignment: HarborBuoyCrossAlignment.end,
-              crossOffset: 6,
+            HarborBuoy(
+              placement: HarborAnchored(anchor, side: HarborAnchorSide.below, crossAlignment: HarborCrossAlignment.end, crossOffset: 6),
               child: _box('menu', 160, 30),
             ),
           ],
@@ -409,7 +406,7 @@ void main() {
     await tester.pumpSeaTrial(
       _app(
         Harbor(
-          buoys: <HarborBuoy>[HarborBuoy.anchored(anchor: anchor, side: HarborBuoySide.below, child: _box('menu', 200, 120))],
+          buoys: <HarborBuoy>[HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.below), child: _box('menu', 200, 120))],
           body: ListView.builder(
             controller: scroll,
             itemCount: 40,
@@ -434,8 +431,8 @@ void main() {
         body: Align(
           alignment: rowAt,
           child: HarborPortalBuoy(
+            placement: const HarborAnchored(null, side: HarborAnchorSide.below),
             controller: menu,
-            side: HarborBuoySide.below,
             buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
             child: _bar('row', 48),
           ),
@@ -498,8 +495,8 @@ void main() {
               itemCount: 40,
               itemBuilder: (final BuildContext context, final int i) => i == 3
                   ? HarborPortalBuoy(
+                      placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                       controller: menu,
-                      side: HarborBuoySide.below,
                       buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
                       child: _box('row', 300, 48),
                     )
@@ -529,8 +526,8 @@ void main() {
               onTap: () => pageTaps++,
               child: Center(
                 child: HarborPortalBuoy(
+                  placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: menu,
-                  side: HarborBuoySide.below,
                   buoyBuilder: (final BuildContext context) => GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => menuTaps++, child: _box('menu', 200, 120)),
                   child: _bar('row', 48),
                 ),
@@ -554,8 +551,8 @@ void main() {
             bottom: <HarborDock>[HarborDock.quay(child: _bar('nav', 56))],
             body: Center(
               child: HarborPortalBuoy(
+                placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                 controller: menu,
-                side: HarborBuoySide.below,
                 buoyBuilder: (final BuildContext context) => _box('menu', 200, 600),
                 child: _bar('row', 48),
               ),
@@ -580,9 +577,8 @@ void main() {
             top: <HarborDock>[HarborDock.quay(child: HarborAnchorPoint(anchor: anchor, child: _bar('header', 50)))],
             body: Center(
               child: HarborPortalBuoy(
+                placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
                 controller: menu,
-                anchor: anchor,
-                side: HarborBuoySide.below,
                 buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
                 child: _bar('row', 48),
               ),
@@ -604,8 +600,8 @@ void main() {
             child: Harbor(
               body: Center(
                 child: HarborPortalBuoy(
+                  placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                   controller: menu,
-                  side: HarborBuoySide.end,
                   buoyBuilder: (final BuildContext context) => _box('menu', 60, 30),
                   child: _box('button', 40, 40),
                 ),
@@ -629,8 +625,8 @@ void main() {
               body: Align(
                 alignment: Alignment.centerLeft,
                 child: HarborPortalBuoy(
+                  placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                   controller: menu,
-                  side: HarborBuoySide.end,
                   buoyBuilder: (final BuildContext context) => _box('menu', 60, 30),
                   child: _box('button', 40, 40),
                 ),
@@ -648,8 +644,8 @@ void main() {
       Widget aligned({
         required final OverlayPortalController menu,
         required final AlignmentDirectional buttonAt,
-        required final HarborBuoyCrossAlignment crossAlignment,
-        final HarborBuoySide side = HarborBuoySide.below,
+        required final HarborCrossAlignment crossAlignment,
+        final HarborAnchorSide side = HarborAnchorSide.below,
         final double crossOffset = 0.0,
         final TextDirection direction = TextDirection.ltr,
       }) => _app(
@@ -661,10 +657,8 @@ void main() {
               child: Align(
                 alignment: buttonAt,
                 child: HarborPortalBuoy(
+                  placement: HarborAnchored(null, side: side, crossAlignment: crossAlignment, crossOffset: crossOffset),
                   controller: menu,
-                  side: side,
-                  crossAlignment: crossAlignment,
-                  crossOffset: crossOffset,
                   buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
                   child: _box('button', 40, 40),
                 ),
@@ -676,7 +670,7 @@ void main() {
 
       testWidgets('to the start lines up with its anchor\'s left edge', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
-        await tester.pumpSeaTrial(aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborBuoyCrossAlignment.start));
+        await tester.pumpSeaTrial(aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborCrossAlignment.start));
         menu.show();
         await tester.pump();
         expect(_rect(tester, 'button').left, 40);
@@ -687,7 +681,7 @@ void main() {
       testWidgets('to the start lines up with its anchor\'s right edge under right-to-left', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborBuoyCrossAlignment.start, direction: TextDirection.rtl),
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborCrossAlignment.start, direction: TextDirection.rtl),
         );
         menu.show();
         await tester.pump();
@@ -697,7 +691,7 @@ void main() {
       testWidgets('to the end lines up with its anchor\'s right edge, moved by crossOffset in reading order', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborBuoyCrossAlignment.end, crossOffset: -12),
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborCrossAlignment.end, crossOffset: -12),
         );
         menu.show();
         await tester.pump();
@@ -710,7 +704,7 @@ void main() {
           aligned(
             menu: menu,
             buttonAt: AlignmentDirectional.topStart,
-            crossAlignment: HarborBuoyCrossAlignment.start,
+            crossAlignment: HarborCrossAlignment.start,
             crossOffset: 12,
             direction: TextDirection.rtl,
           ),
@@ -723,7 +717,7 @@ void main() {
       testWidgets('to the start of an anchor at the water\'s right edge is still held inside the clear water', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         final HarborSeaTrial trial = await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborBuoyCrossAlignment.start),
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborCrossAlignment.start),
         );
         menu.show();
         await tester.pump();
@@ -734,7 +728,7 @@ void main() {
       testWidgets('beside its anchor, to the start lines up with its top edge', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborBuoySide.end, crossAlignment: HarborBuoyCrossAlignment.start),
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborAnchorSide.end, crossAlignment: HarborCrossAlignment.start),
         );
         menu.show();
         await tester.pump();
@@ -755,8 +749,8 @@ void main() {
             children: <Widget>[
               const SizedBox(height: 100),
               HarborPortalBuoy(
+                placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                 controller: menu,
-                side: HarborBuoySide.end,
                 consumeOutsideTaps: consumeOutsideTaps,
                 onDismiss: () {
                   events.add('dismissed');
@@ -877,8 +871,8 @@ void main() {
                   ValueListenableBuilder<bool>(
                     valueListenable: closes,
                     builder: (final BuildContext context, final bool closes, final Widget? _) => HarborPortalBuoy(
+                      placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                       controller: menu,
-                      side: HarborBuoySide.end,
                       onDismiss: closes ? menu.hide : null,
                       buoyBuilder: (final BuildContext context) => const SizedBox(width: 200, height: 60, child: TextField(key: ValueKey<String>('filter'))),
                       child: const SizedBox(width: 200, child: TextField(key: ValueKey<String>('query'))),
@@ -931,8 +925,8 @@ void main() {
             builder: (final BuildContext _) => Center(
               child: Material(
                 child: HarborPortalBuoy(
+                  placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: menu,
-                  side: HarborBuoySide.below,
                   onDismiss: () {
                     events.add('menu dismissed');
                     menu.hide();

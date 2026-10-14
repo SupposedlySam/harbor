@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborBuoy, HarborBuoyCrossAlignment, HarborBuoySide, HarborFlareScope;
+import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFlareScope, HarborFlareSlot;
+import 'placement.dart';
 import 'dock.dart';
 import 'edge.dart';
 import 'hinge.dart';
@@ -123,7 +124,7 @@ class HarborFlareEntry {
   @internal
   HarborFlareEntry({
     required this.builder,
-    required this.alignment,
+    required this.placement,
     required this._duration,
     this.persist = false,
     final Rect? avoidInGlobal,
@@ -131,11 +132,6 @@ class HarborFlareEntry {
     this.animationStyle,
     this.transitionBuilder,
     this.liveRegion = true,
-    this.anchor,
-    this.side = HarborBuoySide.below,
-    this.gap = 8.0,
-    this.crossAlignment = HarborBuoyCrossAlignment.center,
-    this.margin,
     this.countsEntrance = false,
     this.reachesCoast = false,
     this.hinge,
@@ -148,29 +144,55 @@ class HarborFlareEntry {
 
   final WidgetBuilder builder;
 
-  /// Where the flare sits in the clear water. Not read for a flare with an [anchor].
-  final Alignment alignment;
+  /// Where the flare sits: at a point of the clear water, or by an anchor. Its directional
+  /// values are resolved in the reading direction of the page that raised it.
+  final HarborPlacement placement;
 
-  /// What the flare sits by, as a [HarborBuoy.anchored] does, in place of an [alignment]; null
-  /// for a flare at a slot or an alignment.
-  final HarborAnchor? anchor;
+  /// Where an aligned flare sits in the clear water; [HarborFlareSlot.high]'s point for an
+  /// anchored one.
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
+  Alignment get alignment => switch (placement) {
+    HarborAligned(:final AlignmentGeometry alignment) => alignment as Alignment,
+    HarborAnchored() => HarborFlareSlot.high.alignment,
+  };
 
-  /// Which side of its [anchor] the flare sits on.
-  final HarborBuoySide side;
+  /// What an anchored flare sits by; null for one at a slot or an alignment. With [side], what a
+  /// transition reads to clip at the anchor ([HarborAnchorClip]).
+  HarborAnchor? get anchor => switch (placement) {
+    HarborAnchored(:final HarborAnchor? anchor) => anchor,
+    HarborAligned() => null,
+  };
+
+  /// Which side of its [anchor] the flare sits on; an anchored flare never flips, so this is the
+  /// side it hangs on.
+  HarborAnchorSide get side => switch (placement) {
+    HarborAnchored(:final HarborAnchorSide side) => side,
+    HarborAligned() => HarborAnchorSide.below,
+  };
 
   /// How far the flare sits from its [anchor].
-  final double gap;
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
+  double get gap => switch (placement) {
+    HarborAnchored(:final double gap) => gap,
+    HarborAligned() => HarborAnchored.defaultGap,
+  };
 
   /// How the flare lines up with its [anchor] across its [side].
-  final HarborBuoyCrossAlignment crossAlignment;
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
+  HarborCrossAlignment get crossAlignment => switch (placement) {
+    HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
+    HarborAligned() => HarborCrossAlignment.center,
+  };
 
-  /// How far the flare keeps in from the clear water's edges; null for 16 at a slot or an
-  /// alignment and 8 by an anchor, a buoy's defaults. [EdgeInsets.zero] lets a flare reach the
-  /// edges of the clear water, for a bar the width of the screen.
-  final EdgeInsets? margin;
+  /// How far the flare keeps in from the clear water's edges.
+  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
+  EdgeInsets? get margin => placement.margin as EdgeInsets;
 
   /// Where the flare takes its turn: flares at one place are shown one at a time.
-  Object get _place => anchor == null ? alignment : (anchor, side);
+  Object get _place => switch (placement) {
+    HarborAligned(:final AlignmentGeometry alignment) => alignment,
+    HarborAnchored(:final HarborAnchor? anchor, :final HarborAnchorSide side) => (anchor, side),
+  };
 
   /// How long the flare stays once it is in sight: from the end of its
   /// entrance (or its start, with [countsEntrance]), while no other route

@@ -316,8 +316,10 @@ class _HarborBuoyEntryState extends State<HarborBuoyEntry> {
         '${_tabBar ? '  bottom: [HarborDock.quay(child: TabBar())],\n' : ''}'
         '  buoys: [\n'
         '    HarborBuoy(\n'
-        '      alignment: Alignment.$_alignment,\n'
-        '      margin: const EdgeInsets.all(${_f(_margin)}),\n'
+        '      placement: HarborAligned(\n'
+        '        alignment: Alignment.$_alignment,\n'
+        '        margin: const EdgeInsets.all(${_f(_margin)}),\n'
+        '      ),\n'
         '      child: Fab(),\n'
         '    ),\n'
         '  ],\n'
@@ -328,8 +330,7 @@ class _HarborBuoyEntryState extends State<HarborBuoyEntry> {
       bottom: <HarborDock>[if (_tabBar) _tabBarDock('HarborDock.quay', key: const ValueKey<String>('buoy tab bar'))],
       buoys: <HarborBuoy>[
         HarborBuoy(
-          alignment: _alignments[_alignment]!,
-          margin: EdgeInsets.all(_margin),
+          placement: HarborAligned(alignment: _alignments[_alignment]!, margin: EdgeInsets.all(_margin)),
           child: const _BuoyTag(key: ValueKey<String>('free buoy'), label: 'HarborBuoy'),
         ),
       ],
@@ -357,7 +358,7 @@ class AnchoredBuoyEntry extends StatefulWidget {
 class _AnchoredBuoyEntryState extends State<AnchoredBuoyEntry> {
   final HarborAnchor _dockAnchor = HarborAnchor(debugLabel: 'launch button');
   final HarborAnchor _boatAnchor = HarborAnchor(debugLabel: 'boat');
-  HarborBuoySide _side = HarborBuoySide.above;
+  HarborAnchorSide _side = HarborAnchorSide.above;
   double _gap = 8;
   double _overlap = 0;
   _AnchorTo _anchorTo = _AnchorTo.dockButton;
@@ -398,12 +399,12 @@ class _AnchoredBuoyEntryState extends State<AnchoredBuoyEntry> {
         labelOf: (final _AnchorTo a) => a == _AnchorTo.boat ? 'draggable boat' : 'dock button',
         onChanged: (final _AnchorTo a) => setState(() => _anchorTo = a),
       ),
-      ChoiceControl<HarborBuoySide>(
+      ChoiceControl<HarborAnchorSide>(
         label: 'side',
-        values: HarborBuoySide.values,
+        values: HarborAnchorSide.values,
         value: _side,
-        labelOf: (final HarborBuoySide s) => s.name,
-        onChanged: (final HarborBuoySide s) => setState(() => _side = s),
+        labelOf: (final HarborAnchorSide s) => s.name,
+        onChanged: (final HarborAnchorSide s) => setState(() => _side = s),
       ),
       SliderControl(label: 'gap', value: _gap, min: 0, max: 32, onChanged: (final double v) => setState(() => _gap = v)),
       SliderControl(label: 'overlap', value: _overlap, min: 0, max: 20, onChanged: (final double v) => setState(() => _overlap = v)),
@@ -417,11 +418,13 @@ class _AnchoredBuoyEntryState extends State<AnchoredBuoyEntry> {
         '    ),\n'
         '  ],\n'
         '  buoys: [\n'
-        '    HarborBuoy.anchored(\n'
-        '      anchor: ${_anchorTo == _AnchorTo.boat ? 'boat' : 'launch'},\n'
-        '      side: HarborBuoySide.${_side.name},\n'
-        '      gap: ${_f(_gap)},\n'
-        '      overlap: ${_f(_overlap)},\n'
+        '    HarborBuoy(\n'
+        '      placement: HarborAnchored(\n'
+        '        ${_anchorTo == _AnchorTo.boat ? 'boat' : 'launch'},\n'
+        '        side: HarborAnchorSide.${_side.name},\n'
+        '        gap: ${_f(_gap)},\n'
+        '        overlap: ${_f(_overlap)},\n'
+        '      ),\n'
         '      child: SpeechBubble(),\n'
         '    ),\n'
         '  ],\n'
@@ -452,11 +455,8 @@ class _AnchoredBuoyEntryState extends State<AnchoredBuoyEntry> {
         ),
       ],
       buoys: <HarborBuoy>[
-        HarborBuoy.anchored(
-          anchor: _anchorTo == _AnchorTo.boat ? _boatAnchor : _dockAnchor,
-          side: _side,
-          gap: _gap,
-          overlap: _overlap,
+        HarborBuoy(
+          placement: HarborAnchored(_anchorTo == _AnchorTo.boat ? _boatAnchor : _dockAnchor, side: _side, gap: _gap, overlap: _overlap),
           child: _SpeechBubble(key: const ValueKey<String>('anchored buoy'), side: _side, text: 'HarborBuoy.anchored'),
         ),
       ],
@@ -513,7 +513,7 @@ class _AnchoredBuoyEntryState extends State<AnchoredBuoyEntry> {
 class _SpeechBubble extends StatelessWidget {
   const _SpeechBubble({super.key, required this.side, required this.text});
 
-  final HarborBuoySide side;
+  final HarborAnchorSide side;
   final String text;
 
   static const double _tail = 9;
@@ -523,10 +523,10 @@ class _SpeechBubble extends StatelessWidget {
     painter: _BubblePainter(side),
     child: Padding(
       padding: EdgeInsets.fromLTRB(
-        12 + (side == HarborBuoySide.end ? _tail : 0),
-        10 + (side == HarborBuoySide.below ? _tail : 0),
-        12 + (side == HarborBuoySide.start ? _tail : 0),
-        10 + (side == HarborBuoySide.above ? _tail : 0),
+        12 + (side == HarborAnchorSide.end ? _tail : 0),
+        10 + (side == HarborAnchorSide.below ? _tail : 0),
+        12 + (side == HarborAnchorSide.start ? _tail : 0),
+        10 + (side == HarborAnchorSide.above ? _tail : 0),
       ),
       child: Text(text, style: const TextStyle(fontFamily: 'Menlo', color: Palette.night, fontWeight: FontWeight.w700, fontSize: 12)),
     ),
@@ -536,31 +536,31 @@ class _SpeechBubble extends StatelessWidget {
 class _BubblePainter extends CustomPainter {
   _BubblePainter(this.side);
 
-  final HarborBuoySide side;
+  final HarborAnchorSide side;
 
   @override
   void paint(final Canvas canvas, final Size size) {
     const double t = _SpeechBubble._tail;
     final Rect body = Rect.fromLTRB(
-      side == HarborBuoySide.end ? t : 0,
-      side == HarborBuoySide.below ? t : 0,
-      size.width - (side == HarborBuoySide.start ? t : 0),
-      size.height - (side == HarborBuoySide.above ? t : 0),
+      side == HarborAnchorSide.end ? t : 0,
+      side == HarborAnchorSide.below ? t : 0,
+      size.width - (side == HarborAnchorSide.start ? t : 0),
+      size.height - (side == HarborAnchorSide.above ? t : 0),
     );
     final Path tail = switch (side) {
-      HarborBuoySide.above => Path()
+      HarborAnchorSide.above => Path()
         ..moveTo(body.center.dx - t, body.bottom - 1)
         ..lineTo(body.center.dx, size.height)
         ..lineTo(body.center.dx + t, body.bottom - 1),
-      HarborBuoySide.below => Path()
+      HarborAnchorSide.below => Path()
         ..moveTo(body.center.dx - t, body.top + 1)
         ..lineTo(body.center.dx, 0)
         ..lineTo(body.center.dx + t, body.top + 1),
-      HarborBuoySide.start => Path()
+      HarborAnchorSide.start => Path()
         ..moveTo(body.right - 1, body.center.dy - t)
         ..lineTo(size.width, body.center.dy)
         ..lineTo(body.right - 1, body.center.dy + t),
-      HarborBuoySide.end => Path()
+      HarborAnchorSide.end => Path()
         ..moveTo(body.left + 1, body.center.dy - t)
         ..lineTo(0, body.center.dy)
         ..lineTo(body.left + 1, body.center.dy + t),
@@ -594,7 +594,7 @@ class _PortalBuoyEntryState extends State<PortalBuoyEntry> {
     _rowCount,
     (final int i) => OverlayPortalController(debugLabel: 'row $i menu'),
   );
-  HarborBuoySide _side = HarborBuoySide.below;
+  HarborAnchorSide _side = HarborAnchorSide.below;
   bool _flips = true;
 
   void _toggle(final int row) {
@@ -626,12 +626,12 @@ class _PortalBuoyEntryState extends State<PortalBuoyEntry> {
         'below it above the tab bar, so the menu flips above the row instead.',
     art: const DanBuoyArt(),
     controls: <Widget>[
-      ChoiceControl<HarborBuoySide>(
+      ChoiceControl<HarborAnchorSide>(
         label: 'side',
-        values: const <HarborBuoySide>[HarborBuoySide.above, HarborBuoySide.below],
+        values: const <HarborAnchorSide>[HarborAnchorSide.above, HarborAnchorSide.below],
         value: _side,
-        labelOf: (final HarborBuoySide s) => s.name,
-        onChanged: (final HarborBuoySide s) => setState(() => _side = s),
+        labelOf: (final HarborAnchorSide s) => s.name,
+        onChanged: (final HarborAnchorSide s) => setState(() => _side = s),
       ),
       ToggleControl(label: 'flips', value: _flips, onChanged: (final bool v) => setState(() => _flips = v)),
     ],
@@ -640,8 +640,11 @@ class _PortalBuoyEntryState extends State<PortalBuoyEntry> {
         '// In a row, anywhere below the harbor:\n'
         'HarborPortalBuoy(\n'
         '  controller: menu,\n'
-        '  side: HarborBuoySide.${_side.name},\n'
-        '  flips: $_flips,\n'
+        '  placement: HarborAnchored(\n'
+        '    null, // anchored to its child\n'
+        '    side: HarborAnchorSide.${_side.name},\n'
+        '    flips: $_flips,\n'
+        '  ),\n'
         '  buoyBuilder: (context) => RowMenu(),\n'
         '  child: GestureDetector(onTap: menu.toggle, child: Row()),\n'
         ')',
@@ -657,9 +660,8 @@ class _PortalBuoyEntryState extends State<PortalBuoyEntry> {
               behavior: HitTestBehavior.opaque,
               onTap: () => _toggle(i),
               child: HarborPortalBuoy(
+                placement: HarborAnchored(null, side: _side, flips: _flips),
                 controller: _menus[i],
-                side: _side,
-                flips: _flips,
                 buoyBuilder: (final BuildContext context) =>
                     _BuoyTag(key: const ValueKey<String>('portal buoy'), label: 'Menu for row ${i + 1}'),
                 child: StageRow(index: i),
@@ -711,7 +713,7 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
     code:
         'Harbor(\n'
         '  buoys: [\n'
-        '    HarborBuoy(alignment: Alignment.bottomCenter, child: Tooltip()),\n'
+        '    HarborBuoy(placement: HarborAligned(alignment: Alignment.bottomCenter), child: Tooltip()),\n'
         '${_launchUp ? (_modal ? '    HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip\n' : '    HarborBuoy(child: QuickActions()), // floats beside it\n') : ''}'
         '  ],\n'
         '  ...\n'
@@ -721,14 +723,14 @@ class _ModalBuoyEntryState extends State<ModalBuoyEntry> {
       bottom: <HarborDock>[_tabBarDock('HarborDock.quay', key: const ValueKey<String>('modal tab bar'))],
       buoys: <HarborBuoy>[
         const HarborBuoy(
-          alignment: Alignment.bottomCenter,
+          placement: HarborAligned(alignment: Alignment.bottomCenter),
           child: _BuoyTag(key: ValueKey<String>('listed first'), label: 'HarborBuoy (listed first)', color: Color(0xFF2E7D5B)),
         ),
         if (_launchUp)
           HarborBuoy(
+            placement: const HarborAligned(alignment: Alignment.center),
             modal: _modal,
             onDismiss: _modal ? () => setState(() => _launchUp = false) : null,
-            alignment: Alignment.center,
             child: _LaunchPanel(
               key: const ValueKey<String>('modal buoy'),
               modal: _modal,

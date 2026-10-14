@@ -45,14 +45,14 @@ void main() {
 
     testWidgets('positive control: by default a low bar stops at the home indicator', (final tester) async {
       final BuildContext page = await _page(tester);
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, margin: EdgeInsets.zero, builder: bar, duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), builder: bar, duration: null);
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 34 - 40, 402, 874 - 34));
     });
 
     testWidgets('a low bar runs down over the home indicator and is handed it as padding', (final tester) async {
       final BuildContext page = await _page(tester);
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, margin: EdgeInsets.zero, reachesCoast: true, builder: bar, duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 40, 402, 874));
       expect(padding, const EdgeInsets.only(bottom: 34));
@@ -63,7 +63,7 @@ void main() {
         tester,
         bottom: const <HarborDock>[HarborDock.quay(child: SizedBox(key: ValueKey<String>('tabs'), height: 56))],
       );
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, margin: EdgeInsets.zero, reachesCoast: true, builder: bar, duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
       await _step(tester);
       expect(_rect(tester, 'bar').bottom, _rect(tester, 'tabs').top - 0);
       expect(padding.bottom, 0);
@@ -71,7 +71,7 @@ void main() {
 
     testWidgets('on a phone on its side it runs over the side insets too', (final tester) async {
       final BuildContext page = await _page(tester, device: HarborTrialDevice.iPhone17Landscape);
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, margin: EdgeInsets.zero, reachesCoast: true, builder: bar, duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 402 - 40, 874, 402));
       expect(padding, const EdgeInsets.fromLTRB(62, 0, 62, 21));
@@ -79,7 +79,7 @@ void main() {
 
     testWidgets('at the top it runs under the status bar, and only the top is handed over', (final tester) async {
       final BuildContext page = await _page(tester);
-      HarborFlares.raise(page, slot: HarborFlareSlot.top, margin: EdgeInsets.zero, reachesCoast: true, builder: bar, duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.top.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
       await _step(tester);
       expect(_rect(tester, 'bar').top, 0);
       expect(padding, const EdgeInsets.only(top: 62));
@@ -87,7 +87,7 @@ void main() {
 
     testWidgets('with no harbor, in an overlay, the same', (final tester) async {
       final BuildContext page = await _page(tester, sea: false);
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, margin: EdgeInsets.zero, reachesCoast: true, builder: bar, duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 40, 402, 874));
       expect(padding, const EdgeInsets.only(bottom: 34));
@@ -178,9 +178,9 @@ void main() {
       expect(entry.showing.value, isTrue);
     });
 
-    for (final (HarborBuoySide side, String label) in const <(HarborBuoySide, String)>[
-      (HarborBuoySide.below, 'below'),
-      (HarborBuoySide.above, 'above'),
+    for (final (HarborAnchorSide side, String label) in const <(HarborAnchorSide, String)>[
+      (HarborAnchorSide.below, 'below'),
+      (HarborAnchorSide.above, 'above'),
     ]) {
       testWidgets('HarborAnchorClip clips at the anchor\'s $label edge', (final tester) async {
         final HarborAnchor anchor = HarborAnchor(debugLabel: 'field');
@@ -194,8 +194,7 @@ void main() {
         ));
         HarborFlares.raise(
           page,
-          anchor: anchor,
-          side: side,
+          placement: HarborAnchored(anchor, side: side),
           transitionBuilder: (final c, final animation, final child) {
             final HarborFlareEntry entry = HarborFlareEntry.maybeOf(c)!;
             return HarborAnchorClip(key: const ValueKey<String>('clip'), anchor: entry.anchor!, side: entry.side, child: child);
@@ -206,7 +205,7 @@ void main() {
         await _step(tester);
         final Rect field = _rect(tester, 'field');
         final Offset clipOrigin = tester.getTopLeft(find.byKey(const ValueKey<String>('clip')));
-        final Rect expected = side == HarborBuoySide.below
+        final Rect expected = side == HarborAnchorSide.below
             ? Rect.fromLTRB(-1e6, field.bottom - clipOrigin.dy, 1e6, 1e6)
             : Rect.fromLTRB(-1e6, -1e6, 1e6, field.top - clipOrigin.dy);
         expect(find.byKey(const ValueKey<String>('clip')), paints..clipRect(rect: expected));

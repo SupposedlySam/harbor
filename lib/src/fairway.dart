@@ -76,7 +76,7 @@ class HarborFairway extends StatelessWidget {
     final bool bars = true,
     @Deprecated(
       'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborClear? clear,
     this.tide = true,
@@ -121,7 +121,7 @@ class HarborFairway extends StatelessWidget {
     final bool bars = true,
     @Deprecated(
       'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborClear? clear,
     this.tide = true,
@@ -199,7 +199,7 @@ class HarborFairway extends StatelessWidget {
   final bool bars;
 
   /// The old spelling of [bars]: [HarborClear.coast] where [bars] is false.
-  @Deprecated('Use bars. Deprecated after 0.6.3.')
+  @Deprecated('Use bars. Deprecated after 0.7.0.')
   HarborClear get clear => bars ? HarborClear.everything : HarborClear.coast;
 
   /// Whether a vertical fairway keeps clear of the keyboard, as on
@@ -291,7 +291,7 @@ class HarborFairway extends StatelessWidget {
     final bool bars = true,
     @Deprecated(
       'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborClear? clear,
     final bool tide = true,
@@ -1008,7 +1008,7 @@ class HarborFairwaySliver extends StatelessWidget {
     final bool bars = true,
     @Deprecated(
       'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborClear? clear,
     this.tide = true,
@@ -1028,7 +1028,7 @@ class HarborFairwaySliver extends StatelessWidget {
   final bool bars;
 
   /// The old spelling of [bars]: [HarborClear.coast] where [bars] is false.
-  @Deprecated('Use bars. Deprecated after 0.6.3.')
+  @Deprecated('Use bars. Deprecated after 0.7.0.')
   HarborClear get clear => bars ? HarborClear.everything : HarborClear.coast;
 
   /// Whether a bottom end it clears keeps clear of the keyboard, and casts it

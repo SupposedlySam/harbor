@@ -98,7 +98,7 @@ void main() {
 
   testWidgets('a centred buoy keeps off the hinge', (final tester) async {
     await _pump(tester, buoys: const <HarborBuoy>[
-      HarborBuoy(alignment: Alignment.center, child: SizedBox(key: ValueKey<String>('buoy'), width: 120, height: 40)),
+      HarborBuoy(placement: HarborAligned(alignment: Alignment.center), child: SizedBox(key: ValueKey<String>('buoy'), width: 120, height: 40)),
     ]);
     expect(_rect(tester, 'buoy').overlaps(_hinge), isFalse);
   });
@@ -109,7 +109,7 @@ void main() {
       MaterialApp(
         builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
         home: Harbor(
-          buoys: const <HarborBuoy>[HarborBuoy(alignment: Alignment.center, child: SizedBox(key: ValueKey<String>('buoy'), width: 120, height: 40))],
+          buoys: const <HarborBuoy>[HarborBuoy(placement: HarborAligned(alignment: Alignment.center), child: SizedBox(key: ValueKey<String>('buoy'), width: 120, height: 40))],
           body: Builder(
             builder: (final BuildContext context) {
               page = context;

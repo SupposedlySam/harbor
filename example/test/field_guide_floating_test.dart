@@ -429,8 +429,8 @@ void main() {
     expect(_rect(tester, 'anchored buoy').bottom, _near(button.top - 8 * s));
     expect(_rect(tester, 'anchored buoy').center.dx, _near(button.center.dx));
     expect(_selected(tester, 'anchor: dock button'), isTrue);
-    expect(_code(tester), contains('anchor: launch,'));
-    expect(_code(tester), contains('side: HarborBuoySide.above,'));
+    expect(_code(tester), contains('HarborAnchored(\n        launch,'));
+    expect(_code(tester), contains('side: HarborAnchorSide.above,'));
   });
 
   testWidgets('HarborBuoy.anchored: each side puts the bubble gap away on that side of the boat', (
@@ -439,14 +439,14 @@ void main() {
     await _pumpEntry(tester, _page('buoy-anchored'));
     final double s = _scale(tester);
     await _tap(tester, 'anchor: draggable boat');
-    expect(_code(tester), contains('anchor: boat,'));
+    expect(_code(tester), contains('HarborAnchored(\n        boat,'));
     Rect bubble() => _rect(tester, 'anchored buoy');
     final Rect boat = _rect(tester, 'draggable anchor');
 
     await _tap(tester, 'side: below');
     expect(bubble().top, _near(boat.bottom + 8 * s));
     expect(bubble().center.dx, _near(boat.center.dx));
-    expect(_code(tester), contains('side: HarborBuoySide.below,'));
+    expect(_code(tester), contains('side: HarborAnchorSide.below,'));
 
     await _tap(tester, 'side: start');
     expect(bubble().right, _near(boat.left - 8 * s));
@@ -551,7 +551,7 @@ void main() {
     await _tapStage(tester, 'stage row 0');
     final Rect row = _rect(tester, 'stage row 0');
     expect(_rect(tester, 'portal buoy').top, _near(row.bottom + 8 * s));
-    expect(_code(tester), contains('side: HarborBuoySide.below,'));
+    expect(_code(tester), contains('side: HarborAnchorSide.below,'));
   });
 
   testWidgets('HarborPortalBuoy: the menu opened from the last row flips above it, clear of the tab bar', (

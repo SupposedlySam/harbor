@@ -61,9 +61,12 @@ void main() {
       expect(const HarborBuoy(child: _child).toString(), 'HarborBuoy');
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'more button');
       addTearDown(anchor.dispose);
+      // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
+      // how a buoy given a placement describes itself.
+      // ignore: deprecated_member_use_from_same_package
       final HarborBuoy menu = HarborBuoy.anchored(
         anchor: anchor,
-        side: HarborBuoySide.below,
+        side: HarborAnchorSide.below,
         modal: true,
         onDismiss: () {},
         requestFocus: false,
@@ -207,9 +210,13 @@ void main() {
 
       final OverlayPortalController controller = OverlayPortalController(debugLabel: 'row menu');
       final List<String> portal = _shown(
+        // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
+        // how a portal buoy given a placement describes itself.
         HarborPortalBuoy(
           controller: controller,
-          side: HarborBuoySide.below,
+          // ignore: deprecated_member_use_from_same_package
+          side: HarborAnchorSide.below,
+          // ignore: deprecated_member_use_from_same_package
           flips: false,
           buoyBuilder: (final BuildContext context) => _child,
           child: _child,

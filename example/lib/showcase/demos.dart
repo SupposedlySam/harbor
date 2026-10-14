@@ -778,7 +778,7 @@ class _BuoyDemoState extends State<_BuoyDemo> {
           buoys: <HarborBuoy>[
             if (t >= _cue('buoy', 'floating') - 0.2)
               const HarborBuoy(
-                alignment: AlignmentDirectional.bottomEnd,
+                placement: HarborAligned(alignment: AlignmentDirectional.bottomEnd),
                 child: FloatingActionButton(
                   onPressed: null,
                   backgroundColor: Palette.shallows,
@@ -786,8 +786,8 @@ class _BuoyDemoState extends State<_BuoyDemo> {
                 ),
               ),
             if (t >= _cue('buoy', 'speech') - 0.2 && t < modal)
-              HarborBuoy.anchored(
-                anchor: _launch,
+              HarborBuoy(
+                placement: HarborAnchored(_launch, side: HarborAnchorSide.above),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(color: Palette.deepSea, borderRadius: BorderRadius.circular(16)),
@@ -796,10 +796,10 @@ class _BuoyDemoState extends State<_BuoyDemo> {
               ),
             if (t >= modal && t < closes)
               HarborBuoy(
+                placement: const HarborAligned(alignment: Alignment.center),
                 modal: true,
                 onDismiss: () {},
                 barrierColor: const Color(0x66000000),
-                alignment: Alignment.center,
                 child: Container(
                   width: 260,
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -858,14 +858,14 @@ class _PortalDemoState extends State<_PortalDemo> {
               final Widget row = HarborMooringLine(child: BoatRow(index: i));
               return switch (i) {
                 1 => HarborPortalBuoy(
+                  placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: _first,
-                  side: HarborBuoySide.below,
                   buoyBuilder: (final BuildContext _) => const _RowMenu(),
                   child: row,
                 ),
                 6 => HarborPortalBuoy(
+                  placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: _flipped,
-                  side: HarborBuoySide.below,
                   buoyBuilder: (final BuildContext _) => const _RowMenu(),
                   child: row,
                 ),

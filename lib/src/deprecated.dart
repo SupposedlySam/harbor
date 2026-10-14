@@ -3,6 +3,7 @@
 
 import 'buoy.dart';
 import 'controller.dart';
+import 'placement.dart';
 
 /// The old name of [HarborFlares].
 @Deprecated(
@@ -39,3 +40,17 @@ typedef HarborSignalTransitionBuilder = HarborFlareTransitionBuilder;
   'Use HarborFlareClosedReason. Signals were renamed flares before 1.0, so they are not mistaken for the signals package.',
 )
 typedef HarborSignalClosedReason = HarborFlareClosedReason;
+
+/// The old name of [HarborAnchorSide].
+@Deprecated(
+  'Use HarborAnchorSide. Flares and HarborAnchorClip take it too, so it is not a buoy\'s alone. '
+  '`dart fix` applies it. Deprecated after 0.7.0.',
+)
+typedef HarborBuoySide = HarborAnchorSide;
+
+/// The old name of [HarborCrossAlignment].
+@Deprecated(
+  'Use HarborCrossAlignment. Flares take it too, so it is not a buoy\'s alone. '
+  '`dart fix` applies it. Deprecated after 0.7.0.',
+)
+typedef HarborBuoyCrossAlignment = HarborCrossAlignment;

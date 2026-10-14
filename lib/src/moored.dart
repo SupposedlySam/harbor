@@ -22,7 +22,7 @@ enum HarborFollow {
 /// [HarborMoored], which becomes `HarborClear` in the rename (#120).
 @Deprecated(
   'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-  'The name HarborClear goes to the widget HarborMoored. Deprecated after 0.6.3.',
+  'The name HarborClear goes to the widget HarborMoored. Deprecated after 0.7.0.',
 )
 enum HarborClear {
   /// The coast, the docks, and the tide. The default.
@@ -51,7 +51,7 @@ class HarborMoored extends StatelessWidget {
     final bool bars = true,
     @Deprecated(
       'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborClear? clear,
     this.follow = HarborFollow.live,
@@ -79,7 +79,7 @@ class HarborMoored extends StatelessWidget {
   final bool bars;
 
   /// The old spelling of [bars]: [HarborClear.coast] where [bars] is false.
-  @Deprecated('Use bars. Deprecated after 0.6.3.')
+  @Deprecated('Use bars. Deprecated after 0.7.0.')
   HarborClear get clear => bars ? HarborClear.everything : HarborClear.coast;
 
   final HarborFollow follow;
@@ -122,7 +122,7 @@ class HarborMoored extends StatelessWidget {
     final bool bars = true,
     @Deprecated(
       'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborClear? clear,
     final HarborFollow follow = HarborFollow.live,

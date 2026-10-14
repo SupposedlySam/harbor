@@ -27,8 +27,8 @@ Widget _row({
   children: <Widget>[
     const SizedBox(height: 100),
     HarborPortalBuoy(
+      placement: const HarborAnchored(null, side: HarborAnchorSide.end),
       controller: menu,
-      side: HarborBuoySide.end,
       requestFocus: requestFocus,
       onDismiss: () {
         events.add('menu');
