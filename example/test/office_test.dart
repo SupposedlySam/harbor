@@ -12,24 +12,28 @@ Widget _officeApp(final HarborSettings settings) => HarborSettingsScope(
   child: MaterialApp(
     theme: Palette.theme(),
     builder: (final BuildContext context, final Widget? child) =>
-        HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
-    home: const HarborPage(child: Harbor(newPort: true, body: OfficeTab())),
+        HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+    home: const HarborPage(child: HarborFrame(isPage: true, body: OfficeTab())),
   ),
 );
 
-Future<HarborSeaTrial> _pumpOffice(
+Future<HarborTrial> _pumpOffice(
   final WidgetTester tester, {
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
-  final bool tideIn = false,
+  final bool keyboardShown = false,
 }) async {
   final HarborSettings settings = HarborSettings();
   addTearDown(settings.dispose);
-  final HarborSeaTrial trial = await tester.pumpSeaTrial(_officeApp(settings), device: device, tideIn: tideIn);
+  final HarborTrial trial = await tester.pumpHarborTrial(
+    _officeApp(settings),
+    device: device,
+    keyboardShown: keyboardShown,
+  );
   await tester.pump(const Duration(milliseconds: 100));
   return trial;
 }
 
-/// Scrolls the office fairway until [target] is built, then centers it. The
+/// Scrolls the office scroll view until [target] is built, then centers it. The
 /// harbor's seas never settle, so this steps time rather than settling.
 Future<void> _bringIntoView(final WidgetTester tester, final Finder target) async {
   final Finder scrollable = find
@@ -67,20 +71,20 @@ void main() {
       expect(_rect(tester, 'cargo footer').bottom, 667.0 - 16.0);
     });
 
-    testWidgets('the footer floats on the tide, and the crates scroll inside the cap', (
+    testWidgets('the footer rides the keyboard, and the crates scroll inside the cap', (
       final WidgetTester tester,
     ) async {
-      final HarborSeaTrial trial = await _pumpOffice(tester, tideIn: true);
+      final HarborTrial trial = await _pumpOffice(tester, keyboardShown: true);
       await _open(tester, 'Cargo manifest');
-      final HarborDockRecord footer = trial
-          .docksAround(find.byKey(const ValueKey<String>('cargo footer')))
-          .singleWhere((final HarborDockRecord d) => d.label == 'sheet footer');
-      expect(footer.rect.bottom, trial.waterline);
+      final HarborBarRecord footer = trial
+          .barsAround(find.byKey(const ValueKey<String>('cargo footer')))
+          .singleWhere((final HarborBarRecord d) => d.label == 'sheet footer');
+      expect(footer.rect.bottom, trial.keyboardTop);
       // The footer's own 16 minimum still stands over the keyboard.
-      expect(_rect(tester, 'cargo footer').bottom, trial.waterline - 16.0);
+      expect(_rect(tester, 'cargo footer').bottom, trial.keyboardTop - 16.0);
       // Capped at 0.9 of the water above the keyboard: no overflow, the body scrolls.
       final Rect header = tester.getRect(find.byType(SheetHeader));
-      expect(header.top, greaterThanOrEqualTo(trial.waterline * 0.1 - 0.5));
+      expect(header.top, greaterThanOrEqualTo(trial.keyboardTop * 0.1 - 0.5));
       expect(tester.takeException(), isNull);
       final ScrollableState crates = tester.state<ScrollableState>(
         find.descendant(of: find.byType(HarborSheet), matching: find.byType(Scrollable)).first,
@@ -98,9 +102,12 @@ void main() {
     });
 
     testWidgets('its heights are fractions of the water above the keyboard', (final WidgetTester tester) async {
-      final HarborSeaTrial trial = await _pumpOffice(tester, tideIn: true);
+      final HarborTrial trial = await _pumpOffice(tester, keyboardShown: true);
       await _open(tester, 'Charter board');
-      expect(_rect(tester, 'charter header').top, moreOrLessEquals(trial.waterline - (trial.waterline - 62) * 0.5, epsilon: 1));
+      expect(
+        _rect(tester, 'charter header').top,
+        moreOrLessEquals(trial.keyboardTop - (trial.keyboardTop - 62) * 0.5, epsilon: 1),
+      );
     });
   });
 
@@ -109,12 +116,12 @@ void main() {
       testWidgets('"I agree" keeps at least 16 off the bottom on $device', (final WidgetTester tester) async {
         await _pumpOffice(tester, device: device);
         await _open(tester, 'Harbor rules');
-        final double bottomCoast = device.coast.bottom > 16 ? device.coast.bottom : 16;
+        final double bottomCoast = device.systemEdges.bottom > 16 ? device.systemEdges.bottom : 16;
         expect(_rect(tester, 'i agree').bottom, device.size.height - bottomCoast);
       });
     }
 
-    testWidgets('the rules start below the quay header', (final WidgetTester tester) async {
+    testWidgets('the rules start below the solid header', (final WidgetTester tester) async {
       await _pumpOffice(tester, device: HarborTrialDevice.iPhoneSE);
       await _open(tester, 'Harbor rules');
       final Rect header = _rect(tester, 'rules header');
@@ -127,7 +134,7 @@ void main() {
   });
 
   group('Signal flags (#28)', () {
-    testWidgets('a flare raised on a page that leaves moves to the page on top', (final WidgetTester tester) async {
+    testWidgets('a toast shown on a page that leaves moves to the page on top', (final WidgetTester tester) async {
       await _pumpOffice(tester);
       await _bringIntoView(tester, find.byKey(const ValueKey<String>('raise and leave')));
       await tester.tap(find.byKey(const ValueKey<String>('raise and leave')));
@@ -143,7 +150,7 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('flares go to each slot', (final WidgetTester tester) async {
+    testWidgets('toasts go to each slot', (final WidgetTester tester) async {
       await _pumpOffice(tester);
       await _bringIntoView(tester, find.text('Middle'));
       await tester.tap(find.text('Middle'));
@@ -157,9 +164,9 @@ void main() {
     Future<(Rect, Rect)> postcardOn(
       final WidgetTester tester,
       final HarborTrialDevice device, {
-      final bool tideIn = false,
+      final bool keyboardShown = false,
     }) async {
-      await _pumpOffice(tester, device: device, tideIn: tideIn);
+      await _pumpOffice(tester, device: device, keyboardShown: keyboardShown);
       await _bringIntoView(tester, find.byKey(const ValueKey<String>('postcard header')));
       final Rect frame = _rect(tester, 'postcard frame');
       final Rect header = _rect(tester, 'postcard header').shift(-frame.topLeft);
@@ -173,7 +180,7 @@ void main() {
       final (Rect headerTide, Rect footerTide) = await postcardOn(
         tester,
         HarborTrialDevice.androidThreeButton,
-        tideIn: true,
+        keyboardShown: true,
       );
       expect(header17, const Rect.fromLTWH(0, 0, 300, 30));
       expect(headerSE, header17);
@@ -188,7 +195,7 @@ void main() {
       HarborTrialDevice.iPhone17,
       HarborTrialDevice.iPhoneSE,
     ]) {
-      testWidgets('the shop\'s header docks right below the sheet\'s on $device', (final WidgetTester tester) async {
+      testWidgets('the shop\'s header sits right below the sheet\'s on $device', (final WidgetTester tester) async {
         await _pumpOffice(tester, device: device);
         await _open(tester, 'Chandlery');
         final Rect sheetHeader = _rect(tester, 'chandlery sheet header');
@@ -199,10 +206,10 @@ void main() {
   });
 
   group('Switches (#31)', () {
-    testWidgets('flip the chart, right-to-left and TV', (final WidgetTester tester) async {
+    testWidgets('flip the inspector, right-to-left and TV', (final WidgetTester tester) async {
       final HarborSettings settings = HarborSettings();
       addTearDown(settings.dispose);
-      await tester.pumpSeaTrial(_officeApp(settings));
+      await tester.pumpHarborTrial(_officeApp(settings));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(find.byKey(const ValueKey<String>('chart switch')));
       await tester.tap(find.byKey(const ValueKey<String>('rtl switch')));

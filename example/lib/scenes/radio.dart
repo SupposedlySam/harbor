@@ -9,32 +9,32 @@ import '../game/fleet.dart';
 import '../game/widgets.dart';
 import 'registration.dart';
 
-/// The radio room: a column-style page. Its header is a quay, so the list of
+/// The radio room: a column-style page. Its header is a solid bar, so the list of
 /// channels starts below it rather than sailing under it, and the page ends
 /// above the town's tab bar like any tab.
 class RadioTab extends StatelessWidget {
   const RadioTab({super.key});
 
   @override
-  Widget build(final BuildContext context) => Harbor(
+  Widget build(final BuildContext context) => HarborFrame(
     debugLabel: 'radio room',
-    top: const <HarborDock>[
-      HarborDock.quay(
+    top: const <HarborBar>[
+      HarborBar.solid(
         debugLabel: 'radio room header',
         backdrop: QuayStones(),
         child: PierHeader(title: 'Radio room', subtitle: 'Four channels on the air'),
       ),
     ],
     body: RadioWaves(
-      child: HarborFairway(
+      child: HarborScrollView(
         padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
         slivers: <Widget>[
           const SliverToBoxAdapter(
-            child: HarborMooringLine(
+            child: HarborClear.rowInsets(
               child: LogbookNote(
-                pattern: 'Column-style quay header',
+                pattern: 'Column-style solid header',
                 tryThis:
-                    'The header is a quay: this list starts where it ends instead of sailing under it. '
+                    'The header is a solid bar: this list starts where it ends instead of sailing under it. '
                     'Tune in to a channel, or register a new boat at the bottom.',
               ),
             ),
@@ -51,7 +51,7 @@ class RadioTab extends StatelessWidget {
             ),
           ),
           SliverToBoxAdapter(
-            child: HarborMooringLine(
+            child: HarborClear.rowInsets(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: Builder(
@@ -85,7 +85,7 @@ class _ChannelRow extends StatelessWidget {
     final RadioCall latest = channel.calls.first;
     return InkWell(
       onTap: onTap,
-      child: HarborMooringLine(
+      child: HarborClear.rowInsets(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
@@ -140,14 +140,14 @@ class _LoggedCall {
 
 enum _CallAction { reply, edit, copy }
 
-/// A radio channel: a new port with a frosted pier for its header and a
-/// composer quay that floats on the tide. The thread is a reversed fairway, so
-/// its newest call rests just above the composer, at low tide and high, and
+/// A radio channel: a page with a frosted overlay bar for its header and a
+/// solid composer bar that rides the keyboard. The thread is a reversed scroll
+/// view, so its newest call rests just above the composer, keyboard hidden or shown, and
 /// older calls sail up under the header.
 ///
-/// Type "@" for a buoy of crew anchored above the composer, hold a call for a
-/// dialog of actions that keeps to this page's clear water, and open the photo
-/// locker with the paperclip: a breakwater sheet the thread keeps clear of.
+/// Type "@" for a float of crew anchored above the composer, hold a call for a
+/// dialog of actions that keeps to this page's room, and open the photo
+/// locker with the paperclip: a sheet that covers the page, which the thread keeps clear of.
 class ChannelPage extends StatefulWidget {
   const ChannelPage({super.key, required this.channel});
 
@@ -157,13 +157,13 @@ class ChannelPage extends StatefulWidget {
   /// ids from 0 (the newest) up; calls sent here take the next ids after them.
   static Key callKey(final int id) => ValueKey<String>('call $id');
 
-  /// The key on the composer, inside its dock.
+  /// The key on the composer, inside its bar.
   static const Key composerKey = ValueKey<String>('composer');
 
-  /// The key on the header, inside its dock.
+  /// The key on the header, inside its bar.
   static const Key headerKey = ValueKey<String>('channel header');
 
-  /// The key on the crew mention list, inside its buoy.
+  /// The key on the crew mention list, inside its float.
   static const Key mentionsKey = ValueKey<String>('crew mentions');
 
   /// The key on the call actions card, inside its dialog.
@@ -281,7 +281,7 @@ class _ChannelPageState extends State<ChannelPage> {
     final Rect near = box.localToGlobal(Offset.zero) & box.size;
     final _CallAction? action = await showHarborDialog<_CallAction>(
       callContext,
-      inheritClearWater: true,
+      inheritRoom: true,
       builder: (final BuildContext context) => _CallActionsDialog(logged: logged, near: near),
     );
     if (!mounted || action == null) {
@@ -307,9 +307,9 @@ class _ChannelPageState extends State<ChannelPage> {
       case _CallAction.copy:
         await Clipboard.setData(ClipboardData(text: logged.call.text));
         if (callContext.mounted) {
-          HarborFlares.raise(
+          HarborToasts.show(
             callContext,
-            slot: HarborFlareSlot.low,
+            slot: HarborToastSlot.low,
             builder: (final BuildContext context) =>
                 const SignalFlag(message: 'Call copied to the log', icon: Icons.content_copy_rounded),
           );
@@ -320,19 +320,19 @@ class _ChannelPageState extends State<ChannelPage> {
   void _openPhotoLocker(final BuildContext context) {
     showHarborSheet<void>(
       context,
-      breakwater: true,
+      coversPage: true,
       builder: (final BuildContext context) => HarborSheet.draggable(
         debugLabel: 'photo locker',
         extent: _lockerExtent,
         surface: const Sailcloth(),
         header: const SheetHeader(title: 'Photo locker'),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+        builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
           controller: controller,
           padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 16),
           slivers: <Widget>[
             const SliverToBoxAdapter(
               child: LogbookNote(
-                pattern: 'Breakwater sheet',
+                pattern: 'Page-covering sheet',
                 tryThis:
                     'This sheet reports how far it covers the channel, so the thread keeps clear of it: '
                     'drag the locker up and down and watch the newest call ride above it. Tap a photo to send it.',
@@ -376,13 +376,13 @@ class _ChannelPageState extends State<ChannelPage> {
   @override
   Widget build(final BuildContext context) {
     final List<Sailor> crew = _mentionQuery == null ? const <Sailor>[] : _mentionable;
-    return Harbor(
-      newPort: true,
+    return HarborFrame(
+      isPage: true,
       debugLabel: 'radio channel',
-      top: <HarborDock>[
-        HarborDock.pier(
+      top: <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'channel header',
-          wake: const HarborWake.fade(length: 12, blurSigma: 20),
+          edgeEffect: const HarborEdgeEffect.fade(length: 12, blurSigma: 20),
           backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.55)),
           child: PierHeader(
             key: ChannelPage.headerKey,
@@ -397,11 +397,11 @@ class _ChannelPageState extends State<ChannelPage> {
           ),
         ),
       ],
-      bottom: <HarborDock>[
-        HarborDock.quay(
+      bottom: <HarborBar>[
+        HarborBar.solid(
           debugLabel: 'composer',
-          tide: HarborTideStance.float,
-          wake: const HarborWake.hairline(),
+          keyboard: HarborKeyboardStance.rides,
+          edgeEffect: const HarborEdgeEffect.hairline(),
           backdrop: const ColoredBox(color: Color(0xF20A2036)),
           child: HarborAnchorPoint(
             anchor: _composerAnchor,
@@ -417,20 +417,23 @@ class _ChannelPageState extends State<ChannelPage> {
           ),
         ),
       ],
-      buoys: <HarborBuoy>[
+      floats: <HarborFloat>[
         if (_noteUp)
-          HarborBuoy(
-            placement: const HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.symmetric(horizontal: 16)),
+          HarborFloat(
+            placement: const HarborAligned(
+              alignment: Alignment.topCenter,
+              margin: EdgeInsets.symmetric(horizontal: 16),
+            ),
             key: const ValueKey<String>('logbook'),
             child: GestureDetector(
               onTap: () => setState(() => _noteUp = false),
-              // Scrolls rather than overflowing when the clear water is small:
-              // the tide is in and the photo locker is up on a small phone.
+              // Scrolls rather than overflowing when the room is small:
+              // the keyboard is shown and the photo locker is up on a small phone.
               child: const SingleChildScrollView(
                 child: LogbookNote(
-                  pattern: 'Pier header · reversed fairway · floating composer',
+                  pattern: 'Overlay header · reversed scroll view · composer that rides the keyboard',
                   tryThis:
-                      'Tap the composer: the tide rises, the composer floats on it, and the newest call stays just above. '
+                      'Tap the composer: the keyboard comes in, the composer rides it, and the newest call stays just above. '
                       'Type @ for crew, hold a call for actions, open the photo locker with the paperclip. '
                       'Tap this note to stow it; the logbook button brings it back.',
                 ),
@@ -438,14 +441,14 @@ class _ChannelPageState extends State<ChannelPage> {
             ),
           ),
         if (crew.isNotEmpty)
-          HarborBuoy(
+          HarborFloat(
             placement: HarborAnchored(_composerAnchor, side: HarborAnchorSide.above),
             key: const ValueKey<String>('mentions'),
             child: _MentionList(crew: crew, onPick: _mention),
           ),
       ],
       body: RadioWaves(
-        child: HarborFairway(
+        child: HarborScrollView(
           reverse: true,
           padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -461,7 +464,9 @@ class _ChannelPageState extends State<ChannelPage> {
                   onLongPress: (final BuildContext context) => _showActions(context, logged),
                 );
                 // The call being edited keeps itself in sight as the keyboard comes in.
-                return logged.id == _editingId ? HarborBeacon(keepInSight: true, clearance: 8, child: bubble) : bubble;
+                return logged.id == _editingId
+                    ? HarborKeepInSight(keepInSight: true, clearance: 8, child: bubble)
+                    : bubble;
               },
             ),
           ],
@@ -490,7 +495,7 @@ class _Composer extends StatelessWidget {
   final ValueChanged<BuildContext> onAttach;
 
   @override
-  Widget build(final BuildContext context) => HarborMooringLine(
+  Widget build(final BuildContext context) => HarborClear.rowInsets(
     child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -552,7 +557,7 @@ class _CallBubble extends StatelessWidget {
   Widget build(final BuildContext context) {
     final RadioCall call = logged.call;
     final String when = call.minutesAgo == 0 ? 'just now' : '${call.minutesAgo} min ago';
-    return HarborMooringLine(
+    return HarborClear.rowInsets(
       child: Align(
         alignment: call.mine ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
         child: ConstrainedBox(
@@ -611,8 +616,8 @@ class _MentionList extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => ConstrainedBox(
-    // Never taller than the water it floats in: the buoy layer hands it the
-    // clear water as its constraints, so a long list scrolls instead of
+    // Never taller than the room it floats in: the float layer hands it the
+    // room as its constraints, so a long list scrolls instead of
     // reaching up under the header.
     constraints: const BoxConstraints(maxHeight: 300, maxWidth: 360),
     child: Material(
@@ -650,7 +655,7 @@ class _MentionList extends StatelessWidget {
 }
 
 /// The actions card for a call, inside a dialog that inherits the channel's
-/// clear water: it settles beside the call it was opened from, but never
+/// room: it settles beside the call it was opened from, but never
 /// under the header or the composer.
 class _CallActionsDialog extends StatelessWidget {
   const _CallActionsDialog({required this.logged, required this.near});
@@ -662,13 +667,13 @@ class _CallActionsDialog extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    // The dialog's padding is the channel's docks and the tide, so this is the
-    // channel's clear water; align the card to the call within it.
+    // The dialog's padding is the channel's bars and the keyboard, so this is the
+    // channel's room; align the card to the call within it.
     final EdgeInsets clear = MediaQuery.paddingOf(context);
     final double height = MediaQuery.sizeOf(context).height - clear.vertical;
     final double along = height <= 0 ? 0.5 : ((near.center.dy - clear.top) / height).clamp(0.0, 1.0);
-    return HarborMoored(
-      extra: const EdgeInsetsDirectional.all(8),
+    return HarborClear(
+      padding: const EdgeInsetsDirectional.all(8),
       child: Align(
         alignment: Alignment(0, along * 2 - 1),
         child: Material(

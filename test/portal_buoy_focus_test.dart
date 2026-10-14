@@ -10,7 +10,7 @@ import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
 Widget _app(final Widget home) => MaterialApp(
-  builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
   home: Material(child: home),
 );
 
@@ -26,7 +26,7 @@ Widget _row({
   mainAxisSize: MainAxisSize.min,
   children: <Widget>[
     const SizedBox(height: 100),
-    HarborPortalBuoy(
+    HarborPopover(
       placement: const HarborAnchored(null, side: HarborAnchorSide.end),
       controller: menu,
       requestFocus: requestFocus,
@@ -34,7 +34,7 @@ Widget _row({
         events.add('menu');
         menu.hide();
       },
-      buoyBuilder: (final BuildContext context) => SizedBox(
+      popoverBuilder: (final BuildContext context) => SizedBox(
         width: 200,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -88,18 +88,32 @@ void main() {
   }
 
   testWidgets('by default it leaves focus where it was, as a MenuAnchor does', (final tester) async {
-    await tester.pumpSeaTrial(_app(Harbor(body: _row(menu: menu, events: events, opener: opener, requestFocus: false))));
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          body: _row(menu: menu, events: events, opener: opener, requestFocus: false),
+        ),
+      ),
+    );
     await open(tester);
     expect(find.text('Copy'), findsOneWidget, reason: 'positive control: the menu is up');
     expect(opener.hasPrimaryFocus, isTrue);
   });
 
-  testWidgets('with requestFocus it takes focus as it opens, and gives it back as Escape closes it', (final tester) async {
-    await tester.pumpSeaTrial(_app(Harbor(body: _row(menu: menu, events: events, opener: opener))));
+  testWidgets('with requestFocus it takes focus as it opens, and gives it back as Escape closes it', (
+    final tester,
+  ) async {
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          body: _row(menu: menu, events: events, opener: opener),
+        ),
+      ),
+    );
     await open(tester);
     expect(opener.hasFocus, isFalse, reason: 'focus left the opener');
     expect(_focusInBuoy(tester), isTrue, reason: 'focus moved into the menu');
-    expect(_buoyScope(tester).debugLabel, 'HarborPortalBuoy');
+    expect(_buoyScope(tester).debugLabel, 'HarborPopover');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
@@ -113,8 +127,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Tab past its last item does what it does at a route\'s edge, not going round inside it', (final tester) async {
-    await tester.pumpSeaTrial(_app(Harbor(body: _row(menu: menu, events: events, opener: opener, below: below))));
+  testWidgets('Tab past its last item does what it does at a route\'s edge, not going round inside it', (
+    final tester,
+  ) async {
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          body: _row(menu: menu, events: events, opener: opener, below: below),
+        ),
+      ),
+    );
     await open(tester);
     final NavigatorState navigator = Navigator.of(tester.element(find.text('Copy')));
     expect(_buoyScope(tester).traversalEdgeBehavior, navigator.widget.routeTraversalEdgeBehavior);
@@ -127,12 +149,22 @@ void main() {
       reached.add(_focused());
     }
     expect(reached.take(2), <String>['Copy', 'Share']);
-    expect(reached.last, isNot(isIn(<String>['Copy', 'Share'])), reason: 'Tab left the menu after its last item: $reached');
+    expect(
+      reached.last,
+      isNot(isIn(<String>['Copy', 'Share'])),
+      reason: 'Tab left the menu after its last item: $reached',
+    );
     expect(_focusInBuoy(tester), isFalse);
   });
 
   testWidgets('it leaves focus alone as it closes once focus has moved out of it', (final tester) async {
-    await tester.pumpSeaTrial(_app(Harbor(body: _row(menu: menu, events: events, opener: opener, below: below))));
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          body: _row(menu: menu, events: events, opener: opener, below: below),
+        ),
+      ),
+    );
     await open(tester);
     expect(_focusInBuoy(tester), isTrue, reason: 'positive control: the menu took focus');
     below.requestFocus();
@@ -143,13 +175,23 @@ void main() {
   });
 
   testWidgets('its scope is disposed after it closes, and a new one is made when it opens again', (final tester) async {
-    await tester.pumpSeaTrial(_app(Harbor(body: _row(menu: menu, events: events, opener: opener))));
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          body: _row(menu: menu, events: events, opener: opener),
+        ),
+      ),
+    );
     await open(tester);
     final FocusScopeNode first = _buoyScope(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     await tester.pump();
-    expect(() => ChangeNotifier.debugAssertNotDisposed(first), throwsFlutterError, reason: 'the closed menu\'s scope was disposed');
+    expect(
+      () => ChangeNotifier.debugAssertNotDisposed(first),
+      throwsFlutterError,
+      reason: 'the closed menu\'s scope was disposed',
+    );
 
     await open(tester);
     expect(_buoyScope(tester), isNot(same(first)));
@@ -162,7 +204,13 @@ void main() {
   });
 
   testWidgets('back closes it and gives focus back, before back reaches the page', (final tester) async {
-    await tester.pumpSeaTrial(_app(Harbor(body: _row(menu: menu, events: events, opener: opener))));
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          body: _row(menu: menu, events: events, opener: opener),
+        ),
+      ),
+    );
     await open(tester);
     await tester.binding.handlePopRoute();
     await tester.pump();
@@ -172,13 +220,15 @@ void main() {
 
   group('in a modal buoy', () {
     Widget modalPage() => StatefulBuilder(
-      builder: (final BuildContext context, final StateSetter setState) => Harbor(
-        buoys: <HarborBuoy>[
+      builder: (final BuildContext context, final StateSetter setState) => HarborFrame(
+        floats: <HarborFloat>[
           if (!events.contains('modal'))
-            HarborBuoy(
+            HarborFloat(
               modal: true,
               onDismiss: () => setState(() => events.add('modal')),
-              child: Material(child: _row(menu: menu, events: events, opener: opener)),
+              child: Material(
+                child: _row(menu: menu, events: events, opener: opener),
+              ),
             ),
         ],
         body: const SizedBox.expand(),
@@ -186,10 +236,10 @@ void main() {
     );
 
     testWidgets('Escape from inside it closes it before the modal buoy (#23)', (final tester) async {
-      await tester.pumpSeaTrial(_app(modalPage()));
+      await tester.pumpHarborTrial(_app(modalPage()));
       await tester.pump();
       await open(tester);
-      expect(_buoyScope(tester).debugLabel, 'HarborPortalBuoy');
+      expect(_buoyScope(tester).debugLabel, 'HarborPopover');
       expect(_focusInBuoy(tester), isTrue, reason: 'positive control: the menu took focus from the modal buoy');
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -205,7 +255,7 @@ void main() {
     });
 
     testWidgets("it gives focus back to the modal buoy's scope", (final tester) async {
-      await tester.pumpSeaTrial(_app(modalPage()));
+      await tester.pumpHarborTrial(_app(modalPage()));
       await tester.pump();
       final FocusScopeNode modal = FocusScope.of(tester.element(find.text('Open')));
       await open(tester);
@@ -220,10 +270,10 @@ void main() {
 
   test('a portal buoy that takes focus must be one Escape can close', () {
     expect(
-      () => HarborPortalBuoy(
+      () => HarborPopover(
         controller: OverlayPortalController(),
         requestFocus: true,
-        buoyBuilder: (final BuildContext _) => const SizedBox(),
+        popoverBuilder: (final BuildContext _) => const SizedBox(),
         child: const SizedBox(),
       ),
       throwsAssertionError,

@@ -14,16 +14,16 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
   const HarborAnchorSide after = HarborAnchorSide.end;
 
   // An aligned buoy.
-  const HarborBuoy(placement: HarborAligned(alignment: AlignmentDirectional.bottomEnd), child: SizedBox());
-  const HarborBuoy(placement: HarborAligned(margin: EdgeInsets.zero), child: SizedBox());
-  const HarborBuoy(placement: HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.all(4)), requestFocus: false, child: SizedBox());
-  HarborBuoy(placement: const HarborAligned(alignment: Alignment.center), onDismiss: close, child: const SizedBox());
+  const HarborFloat(placement: HarborAligned(alignment: AlignmentDirectional.bottomEnd), child: SizedBox());
+  const HarborFloat(placement: HarborAligned(margin: EdgeInsets.zero), child: SizedBox());
+  const HarborFloat(placement: HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.all(4)), requestFocus: false, child: SizedBox());
+  HarborFloat(placement: const HarborAligned(alignment: Alignment.center), onDismiss: close, child: const SizedBox());
 
   // An anchored buoy: its old side was above, so side: above is written where it was left out.
-  HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above), child: const SizedBox());
-  HarborBuoy(placement: HarborAnchored(anchor, side: side, overlap: 6), child: const SizedBox());
-  HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 4, crossAlignment: cross, crossOffset: 2, margin: EdgeInsets.zero), child: const SizedBox());
-  HarborBuoy(
+  HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above), child: const SizedBox());
+  HarborFloat(placement: HarborAnchored(anchor, side: side, overlap: 6), child: const SizedBox());
+  HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 4, crossAlignment: cross, crossOffset: 2, margin: EdgeInsets.zero), child: const SizedBox());
+  HarborFloat(
     placement: HarborAnchored(anchor, side: HarborAnchorSide.end, gap: 1, overlap: 2, crossAlignment: HarborCrossAlignment.end, crossOffset: 3, margin: const EdgeInsets.all(5)), modal: true,
     onDismiss: close,
     child: const SizedBox(),
@@ -31,48 +31,52 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
 
   // A tear-off is left alone: it has no arguments to move, and renamed it would be a type, not a
   // constructor. It stays deprecated, for a hand to change.
-  final HarborBuoy Function({required HarborAnchor anchor, required Widget child}) tearOff = HarborBuoy.anchored;
+  final HarborFloat Function({required HarborAnchor anchor, required Widget child}) tearOff = HarborFloat.anchored;
   tearOff(anchor: anchor, child: const SizedBox());
 }
 
 void portals(HarborAnchor anchor, OverlayPortalController menu) {
   // A portal buoy given no placement arguments stays as it is: nothing in it is deprecated.
-  HarborPortalBuoy(controller: menu, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
-  HarborPortalBuoy(placement: const HarborAnchored(null, side: HarborAnchorSide.below), controller: menu, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
-  HarborPortalBuoy(
+  HarborPopover(controller: menu, popoverBuilder: (_) => const SizedBox(), child: const SizedBox());
+  HarborPopover(placement: const HarborAnchored(null, side: HarborAnchorSide.below), controller: menu, popoverBuilder: (_) => const SizedBox(), child: const SizedBox());
+  HarborPopover(
     placement: const HarborAnchored(null, side: HarborAnchorSide.below, crossAlignment: HarborCrossAlignment.start), controller: menu,
     onDismiss: menu.hide,
-    buoyBuilder: (_) => const SizedBox(),
+    popoverBuilder: (_) => const SizedBox(),
     child: const SizedBox(),
   );
-  HarborPortalBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 2, flips: false), controller: menu, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
-  HarborPortalBuoy(placement: const HarborAnchored(null, side: HarborAnchorSide.above, overlap: 4, crossOffset: 8, margin: EdgeInsets.zero), controller: menu, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
+  HarborPopover(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 2, flips: false), controller: menu, popoverBuilder: (_) => const SizedBox(), child: const SizedBox());
+  HarborPopover(placement: const HarborAnchored(null, side: HarborAnchorSide.above, overlap: 4, crossOffset: 8, margin: EdgeInsets.zero), controller: menu, popoverBuilder: (_) => const SizedBox(), child: const SizedBox());
   // A dropdown passes five or more.
-  HarborPortalBuoy(
+  HarborPopover(
     placement: const HarborAnchored(null, side: HarborAnchorSide.end, gap: 1, overlap: 2, crossOffset: 3, margin: EdgeInsets.zero), controller: menu,
-    buoyBuilder: (_) => const SizedBox(),
+    popoverBuilder: (_) => const SizedBox(),
     child: const SizedBox(),
   );
   // All eight.
-  HarborPortalBuoy(
+  HarborPopover(
     placement: HarborAnchored(anchor, side: HarborAnchorSide.below, gap: 1, overlap: 2, crossAlignment: HarborCrossAlignment.end, crossOffset: 3, margin: const EdgeInsets.all(4), flips: false), controller: menu,
-    buoyBuilder: (_) => const SizedBox(),
+    popoverBuilder: (_) => const SizedBox(),
     child: const SizedBox(),
   );
 }
 
 void flares(BuildContext context, HarborAnchor anchor) {
   // A slot alone is not deprecated, and stays.
-  HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (_) => const SizedBox());
-  HarborFlares.raise(context, placement: const HarborAligned(alignment: Alignment(0, -0.8)), builder: (_) => const SizedBox());
-  HarborFlares.raise(context, placement: const HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.zero), builder: (_) => const SizedBox());
-  HarborFlares.raise(context, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: (_) => const SizedBox());
-  HarborFlares.raise(context, placement: HarborAligned(alignment: HarborFlareSlot.high.alignment, margin: const EdgeInsets.all(4)), builder: (_) => const SizedBox());
+  HarborToasts.show(context, slot: HarborToastSlot.low, builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: const HarborAligned(alignment: Alignment(0, -0.8)), builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: const HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.zero), builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero), reachesSystemEdges: true, builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: HarborAligned(alignment: HarborToastSlot.high.alignment, margin: const EdgeInsets.all(4)), builder: (_) => const SizedBox());
 
   // An anchored flare: its old side was below, as a HarborAnchored's is.
-  HarborFlares.raise(context, placement: HarborAnchored(anchor), builder: (_) => const SizedBox());
-  HarborFlares.raise(context, placement: HarborAnchored(anchor, side: HarborAnchorSide.above), builder: (_) => const SizedBox());
-  HarborFlares.raise(
+  HarborToasts.show(context, placement: HarborAnchored(anchor), builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: HarborAnchored(anchor, side: HarborAnchorSide.above), builder: (_) => const SizedBox());
+  // reachesCoast did nothing by an anchor since 0.6.3, and asserts with a HarborAnchored placement, so
+  // it goes, whatever it was given.
+  HarborToasts.show(context, placement: HarborAnchored(anchor), builder: (_) => const SizedBox());
+  HarborToasts.show(context, placement: HarborAnchored(anchor, gap: 4), builder: (_) => const SizedBox());
+  HarborToasts.show(
     context, placement: HarborAnchored(anchor, side: HarborAnchorSide.start, gap: 2, crossAlignment: HarborCrossAlignment.end, margin: EdgeInsets.zero),
     duration: null,
     builder: (_) => const SizedBox(),

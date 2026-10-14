@@ -6,7 +6,13 @@ import 'narration.dart';
 
 /// One chapter of the showcase: a harbor word, the plain word for it, and when it plays.
 class ShowcaseChapter {
-  const ShowcaseChapter({required this.key, required this.term, required this.start, required this.end, this.pronounced});
+  const ShowcaseChapter({
+    required this.key,
+    required this.term,
+    required this.start,
+    required this.end,
+    this.pronounced,
+  });
 
   /// The chapter's name in narration.tsv.
   final String key;
@@ -130,7 +136,8 @@ abstract final class ShowcaseTimeline {
       chapters.firstWhere((final ShowcaseChapter c) => c.contains(t), orElse: () => outro);
 
   /// When [word] is spoken in [chapter], or [fallback] if the narration never says it.
-  static double cue(final String chapter, final String word, final double fallback) => Narration.when(chapter, word) ?? fallback;
+  static double cue(final String chapter, final String word, final double fallback) =>
+      Narration.when(chapter, word) ?? fallback;
 
   /// 0 to 1 across [a, b] seconds, eased.
   static double ease(final double t, final double a, final double b) =>

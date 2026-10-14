@@ -1,11 +1,9 @@
-// `bars: false` replaces `clear: HarborClear.coast` (the pre-rename step of #120, Q1): it must place
-// exactly as the enum did, on a page with a translucent header and tab bar and the keyboard up.
+// `bars: false` replaced `clear: HarborClear.coast` in 0.8.0 (the pre-rename step of #120, Q1), and the
+// enum went in 0.9.0. These pin where `bars: false` places, on a page with a translucent header and tab
+// bar and the keyboard up: the numbers the enum's tests measured before it went.
 //
 // On an iPhone 17: status bar 62, home indicator 34, 874 tall, a keyboard of 336. The body does not
 // clear the tide, so the keyboard reaches the content and each widget decides for itself.
-
-// The deprecated `clear:` is the reference these tests measure `bars:` against.
-// ignore_for_file: deprecated_member_use_from_same_package
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,24 +25,24 @@ Widget _rows() => SliverList.builder(
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
 /// A 50 header and a 60 tab bar, both piers, over [body], with the keyboard up.
-Future<HarborSeaTrial> _pumpPage(final WidgetTester tester, final Widget body) async {
+Future<HarborTrial> _pumpPage(final WidgetTester tester, final Widget body) async {
   // A fresh tree each time, so one variant's scroll offset does not carry into the next.
   await tester.pumpWidget(const SizedBox());
-  final HarborSeaTrial trial = await tester.pumpSeaTrial(
+  final HarborTrial trial = await tester.pumpHarborTrial(
     MaterialApp(
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
       home: Material(
-        child: Harbor(
-          bodyClearsTide: false,
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-          bottom: <HarborDock>[HarborDock.pier(child: _bar('tabs', 60))],
+        child: HarborFrame(
+          bodyClearsKeyboard: false,
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          bottom: <HarborBar>[HarborBar.overlay(child: _bar('tabs', 60))],
           body: body,
         ),
       ),
     ),
   );
-  await trial.raiseTide(settle: true);
-  expect(trial.waterline, _keyboardTop, reason: 'positive control: the keyboard is up');
+  await trial.showKeyboard(settle: true);
+  expect(trial.keyboardTop, _keyboardTop, reason: 'positive control: the keyboard is up');
   expect(_rect(tester, 'header').bottom, _statusBar + 50, reason: 'positive control: the header is there');
   return trial;
 }
@@ -76,120 +74,76 @@ class _Probe extends StatelessWidget {
 void main() {
   group('HarborMoored(bars: false)', () {
     // Breaks if: bars: false keeps clear of the docks or the keyboard, where clear: coast did not.
-    testWidgets('places its child exactly as clear: HarborClear.coast did, the keyboard left out', (final tester) async {
-      await _pumpPage(tester, HarborMoored(clear: HarborClear.coast, child: _content()));
-      final Rect coast = _rect(tester, 'content');
-      await _pumpPage(tester, HarborMoored(bars: false, child: _content()));
+    testWidgets('places its child clear of the coast alone, the keyboard left out', (final tester) async {
+      await _pumpPage(tester, HarborClear(bars: false, child: _content()));
       final Rect bars = _rect(tester, 'content');
-      expect(bars, coast);
-      // clear: coast left the keyboard out though tide is true: bars: false does the same, and runs
+      // bars: false leaves the keyboard out though tide is true, and runs
       // to the bottom of the screen, where the home indicator's coast is under the keyboard.
       expect(bars, const Rect.fromLTRB(0, _statusBar, 402, _screen));
     });
 
     // Breaks if: bars: false casts off something clear: coast did not, or stops casting off what it did.
-    testWidgets('casts off the coast and the docks but not the keyboard, as clear: coast did', (final tester) async {
-      late BuildContext coast;
+    testWidgets('casts off the coast and the docks but not the keyboard', (final tester) async {
       late BuildContext bars;
-      await _pumpPage(tester, HarborMoored(clear: HarborClear.coast, child: _Probe((final c) => coast = c)));
-      final HarborWatersData coastWaters = HarborWaters.of(coast);
-      final EdgeInsets coastInsets = MediaQuery.viewInsetsOf(coast);
-      await _pumpPage(tester, HarborMoored(bars: false, child: _Probe((final c) => bars = c)));
-      expect(HarborWaters.of(bars).docks, coastWaters.docks);
-      expect(HarborWaters.of(bars).coast, coastWaters.coast);
-      expect(MediaQuery.viewInsetsOf(bars), coastInsets);
-      expect(HarborWaters.of(bars).coast.top, 0, reason: 'the coast is cast off');
-      expect(HarborWaters.of(bars).docks.top, 0, reason: 'the docks are cast off, though not cleared');
+      await _pumpPage(tester, HarborClear(bars: false, child: _Probe((final c) => bars = c)));
+      expect(HarborRoom.of(bars).systemEdges.top, 0, reason: 'the coast is cast off');
+      expect(HarborRoom.of(bars).bars.top, 0, reason: 'the docks are cast off, though not cleared');
       expect(MediaQuery.viewInsetsOf(bars).bottom, 336, reason: 'the keyboard is left to the content');
     });
 
     // Breaks if: clearanceOf ignores bars.
-    testWidgets('clearanceOf gives what clear: coast gave', (final tester) async {
-      late EdgeInsetsDirectional coast;
+    testWidgets('clearanceOf gives the coast alone', (final tester) async {
       late EdgeInsetsDirectional bars;
       await _pumpPage(
         tester,
         Builder(
           builder: (final BuildContext context) {
-            coast = HarborMoored.clearanceOf(context, clear: HarborClear.coast);
-            bars = HarborMoored.clearanceOf(context, bars: false);
+            bars = HarborClear.clearanceOf(context, bars: false);
             return const SizedBox.expand();
           },
         ),
       );
-      expect(bars, coast);
       expect(bars, const EdgeInsetsDirectional.only(top: _statusBar));
     });
 
-    // Breaks if: clear: stops forwarding, or the default changes.
-    test('clear: still forwards, and reads back', () {
-      expect(const HarborMoored(child: SizedBox()).bars, isTrue);
-      expect(const HarborMoored(clear: HarborClear.coast, child: SizedBox()).bars, isFalse);
-      expect(const HarborMoored(clear: HarborClear.everything, child: SizedBox()).bars, isTrue);
-      expect(const HarborMoored(bars: false, child: SizedBox()).clear, HarborClear.coast);
-      expect(const HarborMoored(child: SizedBox()).clear, HarborClear.everything);
-    });
-
-    // Breaks if: a call that says both, in conflict, is quietly resolved one way.
-    test('asserts when clear: everything and bars: false are both given', () {
-      final HarborClear everything = HarborClear.values.byName('everything');
-      expect(() => HarborMoored(clear: everything, bars: false, child: const SizedBox()), throwsAssertionError);
+    // Breaks if: the default changes.
+    test('bars defaults to true', () {
+      expect(const HarborClear(child: SizedBox()).bars, isTrue);
     });
   });
 
   group('HarborFairway(bars: false)', () {
     // Breaks if: bars: false clears the docks, or drops the keyboard a coast-only fairway keeps.
-    testWidgets('rests its ends exactly as clear: HarborClear.coast did, the keyboard kept', (final tester) async {
-      final (double, double) coast = await _fairwayEnds(
+    testWidgets('rests its ends clear of the coast alone, the keyboard kept', (final tester) async {
+      final (double, double) bars = await _fairwayEnds(
         tester,
-        HarborFairway(clear: HarborClear.coast, slivers: <Widget>[_rows()]),
+        HarborScrollView(bars: false, slivers: <Widget>[_rows()]),
       );
-      final (double, double) bars = await _fairwayEnds(tester, HarborFairway(bars: false, slivers: <Widget>[_rows()]));
-      expect(bars, coast);
       // Unlike HarborMoored, a fairway's bottom end keeps clear of the keyboard while tide is true.
       expect(bars, (_statusBar, _keyboardTop));
     });
 
     // Breaks if: paddingOf ignores bars.
-    testWidgets('paddingOf gives what clear: coast gave', (final tester) async {
-      late EdgeInsets coast;
+    testWidgets('paddingOf gives the coast alone, and the keyboard', (final tester) async {
       late EdgeInsets bars;
       await _pumpPage(
         tester,
         Builder(
           builder: (final BuildContext context) {
-            coast = HarborFairway.paddingOf(context, clear: HarborClear.coast);
-            bars = HarborFairway.paddingOf(context, bars: false);
+            bars = HarborScrollView.paddingOf(context, bars: false);
             return const SizedBox.expand();
           },
         ),
       );
-      expect(bars, coast);
       expect(bars, const EdgeInsets.only(top: _statusBar, bottom: 336));
     });
 
     // Breaks if: the sliver ignores bars.
-    testWidgets('a fairway sliver rests its ends as clear: coast did', (final tester) async {
+    testWidgets('a fairway sliver rests its ends clear of the coast alone', (final tester) async {
       Future<(double, double)> ends(final Widget sliver) =>
           _fairwayEnds(tester, CustomScrollView(slivers: <Widget>[sliver]));
-      final (double, double) coast = await ends(HarborFairwaySliver(clear: HarborClear.coast, sliver: _rows()));
-      final (double, double) bars = await ends(HarborFairwaySliver(bars: false, sliver: _rows()));
-      expect(bars, coast);
+      final (double, double) bars = await ends(HarborSliverClear(bars: false, sliver: _rows()));
       expect(bars, (_statusBar, _keyboardTop));
-    });
-
-    // Breaks if: clear: stops forwarding, or a conflict is quietly resolved one way.
-    test('clear: still forwards, and a conflict asserts', () {
-      expect(const HarborFairway(clear: HarborClear.coast, slivers: <Widget>[]).bars, isFalse);
-      expect(const HarborFairway(bars: false, slivers: <Widget>[]).clear, HarborClear.coast);
-      expect(HarborFairway.box(clear: HarborClear.coast, child: const SizedBox()).bars, isFalse);
-      expect(const HarborFairwaySliver(clear: HarborClear.coast, sliver: SliverToBoxAdapter()).bars, isFalse);
-      final HarborClear everything = HarborClear.values.byName('everything');
-      expect(() => HarborFairway(clear: everything, bars: false, slivers: const <Widget>[]), throwsAssertionError);
-      expect(
-        () => HarborFairwaySliver(clear: everything, bars: false, sliver: const SliverToBoxAdapter()),
-        throwsAssertionError,
-      );
     });
   });
 }

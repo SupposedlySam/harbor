@@ -38,7 +38,7 @@ class _Arg {
 /// One branch: the old arguments present in this shape of call (all others absent), and the
 /// placement expression that replaces them.
 class _Branch {
-  _Branch(this.present, this.absent, this.expression, {this.renameTo});
+  _Branch(this.present, this.absent, this.expression, {this.renameTo, this.alsoRemove = const <String>[]});
 
   /// A new name for the constructor, renamed as the arguments move.
   final String? renameTo;
@@ -48,6 +48,10 @@ class _Branch {
 
   final List<String> present;
   final List<String> absent;
+
+  /// Arguments removed whether or not the call gives them: ones that did nothing in this shape of
+  /// call and would assert in the new one.
+  final List<String> alsoRemove;
   final String expression;
 
   String yaml(final Set<String> imports) {
@@ -82,7 +86,7 @@ class _Branch {
         b.writeln("                  name: '$name'");
       }
     }
-    for (final String p in present) {
+    for (final String p in <String>[...present, ...alsoRemove]) {
       b.writeln("          - kind: 'removeParameter'");
       b.writeln("            name: '$p'");
     }
@@ -109,7 +113,7 @@ String _transform({
   required final List<_Branch> branches,
   required final List<String> variables,
   final int index = 0,
-  final Set<String> imports = const <String>{'HarborAligned', 'HarborAnchored', 'HarborAnchorSide', 'HarborFlareSlot'},
+  final Set<String> imports = const <String>{'HarborAligned', 'HarborAnchored', 'HarborAnchorSide', 'HarborToastSlot'},
 }) {
   final StringBuffer b = StringBuffer();
   for (final String line in comment.split('\n')) {
@@ -142,10 +146,18 @@ List<_Branch> _anchored({
   required final bool anchorAlways,
   required final String? sideDefault,
   final List<String> alsoAbsent = const <String>[],
+  final List<String> alsoRemove = const <String>[],
   final String? renameTo,
 }) {
   final List<String> names = <String>[for (final _Arg a in optional) a.name];
-  final List<List<String>> anchorChoices = anchorAlways ? <List<String>>[<String>['anchor']] : <List<String>>[<String>[], <String>['anchor']];
+  final List<List<String>> anchorChoices = anchorAlways
+      ? <List<String>>[
+          <String>['anchor'],
+        ]
+      : <List<String>>[
+          <String>[],
+          <String>['anchor'],
+        ];
   return <_Branch>[
     for (final List<String> anchor in anchorChoices)
       for (final List<_Arg> given in _subsets(optional))
@@ -158,12 +170,9 @@ List<_Branch> _anchored({
                 if (!given.any((final _Arg a) => a.name == n)) n,
               ...alsoAbsent,
             ],
-            '{% HarborAnchored %}(${<String>[
-              if (anchor.isEmpty) 'null' else '{% anchor %}',
-              if (sideDefault != null && !given.any((final _Arg a) => a.name == 'side')) 'side: $sideDefault',
-              for (final _Arg a in given) a.write(),
-            ].join(', ')})',
+            '{% HarborAnchored %}(${<String>[if (anchor.isEmpty) 'null' else '{% anchor %}', if (sideDefault != null && !given.any((final _Arg a) => a.name == 'side')) 'side: $sideDefault', for (final _Arg a in given) a.write()].join(', ')})',
             renameTo: renameTo,
+            alsoRemove: alsoRemove,
           ),
   ];
 }
@@ -195,7 +204,8 @@ String generate() {
     ..writeln('#')
     ..writeln('# `dart fix` transforms for the placement API (0.7.0): HarborPlacement, HarborAligned and')
     ..writeln('# HarborAnchored replace the placement parameters of HarborBuoy, HarborBuoy.anchored,')
-    ..writeln('# HarborPortalBuoy and HarborFlares.raise. Each is checked by a golden in test_fixes/.')
+    ..writeln('# HarborPortalBuoy and HarborFlares.raise (HarborFloat, HarborPopover and HarborToasts.show')
+    ..writeln('# since 0.9.0, where the transforms are keyed). Each is checked by a golden in test_fixes/.')
     ..writeln('version: 1')
     ..writeln('transforms:');
 
@@ -231,86 +241,109 @@ String generate() {
       ..writeln("        newName: '$now'");
   }
 
-  out.write(
-    _transform(
-      title: "Migrate to 'placement'",
-      comment:
-          'HarborBuoy.anchored(anchor: a, ...) becomes HarborBuoy(placement: HarborAnchored(a, ...)), from the diagnostic\n'
-          "on its deprecated anchor argument, so a tear-off (no arguments) is left alone. The old anchored buoy's side\n"
-          "was above, a HarborAnchored's is below, so side: above is written where it was left out.",
-      element: "      constructor: 'anchored'\n      inClass: 'HarborBuoy'\n",
-      branches: _anchored(optional: buoyAnchored, anchorAlways: true, sideDefault: above, renameTo: ''),
-      variables: <String>['anchor', for (final _Arg a in buoyAnchored) a.name],
-    ),
-  );
+  // HarborBuoy is a deprecated subclass of HarborFloat since 0.9.0, so a call spelled with either
+  // name is keyed on the class that declares its constructor.
+  for (final String buoy in <String>['HarborBuoy', 'HarborFloat']) {
+    out.write(
+      _transform(
+        title: "Migrate to 'placement'",
+        comment:
+            'HarborBuoy.anchored(anchor: a, ...) becomes HarborBuoy(placement: HarborAnchored(a, ...)), from the diagnostic\n'
+            "on its deprecated anchor argument, so a tear-off (no arguments) is left alone. The old anchored buoy's side\n"
+            "was above, a HarborAnchored's is below, so side: above is written where it was left out.",
+        element: "      constructor: 'anchored'\n      inClass: '$buoy'\n",
+        branches: _anchored(optional: buoyAnchored, anchorAlways: true, sideDefault: above, renameTo: ''),
+        variables: <String>['anchor', for (final _Arg a in buoyAnchored) a.name],
+      ),
+    );
 
-  out.write(
-    _transform(
-      title: "Migrate to 'placement'",
-      comment:
-          'HarborBuoy(alignment:, margin:) becomes HarborBuoy(placement: HarborAligned(...)).',
-      element: "      constructor: ''\n      inClass: 'HarborBuoy'\n",
-      branches: <_Branch>[
-        for (final List<_Arg> given in _subsets(const <_Arg>[_Arg('alignment'), _Arg('margin')]))
-          if (given.isNotEmpty)
-            _Branch(
-              <String>[for (final _Arg a in given) a.name],
-              <String>[
-                'anchor',
-                for (final String n in <String>['alignment', 'margin'])
-                  if (!given.any((final _Arg a) => a.name == n)) n,
-              ],
-              '{% HarborAligned %}(${given.map((final _Arg a) => a.write()).join(', ')})',
-            ),
-      ],
-      variables: <String>['anchor', 'alignment', 'margin'],
-    ),
-  );
+    out.write(
+      _transform(
+        title: "Migrate to 'placement'",
+        comment: 'HarborBuoy(alignment:, margin:) becomes HarborBuoy(placement: HarborAligned(...)).',
+        element: "      constructor: ''\n      inClass: '$buoy'\n",
+        branches: <_Branch>[
+          for (final List<_Arg> given in _subsets(const <_Arg>[_Arg('alignment'), _Arg('margin')]))
+            if (given.isNotEmpty)
+              _Branch(
+                <String>[for (final _Arg a in given) a.name],
+                <String>[
+                  'anchor',
+                  for (final String n in <String>['alignment', 'margin'])
+                    if (!given.any((final _Arg a) => a.name == n)) n,
+                ],
+                '{% HarborAligned %}(${given.map((final _Arg a) => a.write()).join(', ')})',
+              ),
+        ],
+        variables: <String>['anchor', 'alignment', 'margin'],
+      ),
+    );
+  }
 
-  out.write(
-    _transform(
-      title: "Migrate to 'placement'",
-      comment:
-          'HarborPortalBuoy(anchor:, side:, gap:, overlap:, crossAlignment:, crossOffset:, margin:, flips:) becomes\n'
-          "HarborPortalBuoy(placement: HarborAnchored(anchor or null, ...)). A portal buoy's old side was above, so\n"
-          'side: above is written where it was left out.',
-      element: "      constructor: ''\n      inClass: 'HarborPortalBuoy'\n",
-      branches: _anchored(optional: portal, anchorAlways: false, sideDefault: above),
-      variables: <String>['anchor', for (final _Arg a in portal) a.name],
-    ),
-  );
+  // HarborPortalBuoy is a deprecated subclass of HarborPopover since 0.9.0, so a call spelled with
+  // either name is keyed on the class that declares its constructor.
+  for (final String popover in <String>['HarborPortalBuoy', 'HarborPopover']) {
+    out.write(
+      _transform(
+        title: "Migrate to 'placement'",
+        comment:
+            'HarborPortalBuoy(anchor:, side:, gap:, overlap:, crossAlignment:, crossOffset:, margin:, flips:) becomes\n'
+            "HarborPortalBuoy(placement: HarborAnchored(anchor or null, ...)). A portal buoy's old side was above, so\n"
+            'side: above is written where it was left out.',
+        element: "      constructor: ''\n      inClass: '$popover'\n",
+        branches: _anchored(optional: portal, anchorAlways: false, sideDefault: above),
+        variables: <String>['anchor', for (final _Arg a in portal) a.name],
+      ),
+    );
+  }
 
-  out.write(
-    _transform(
-      title: "Migrate to 'placement'",
-      comment:
-          'HarborFlares.raise(alignment:, margin:) becomes raise(placement: HarborAligned(...)), slot: with margin:\n'
-          "included, and raise(anchor:, side:, gap:, crossAlignment:, margin:) becomes placement: HarborAnchored(...).\n"
-          "A flare's old side was below, as a HarborAnchored's is, so nothing is added for it. slot: alone stays.",
-      element: "      method: 'raise'\n      inClass: 'HarborFlares'\n",
-      index: 1,
-      branches: <_Branch>[
-        _Branch(<String>['alignment'], <String>['anchor', 'margin'], '{% HarborAligned %}(alignment: {% alignment %})'),
-        _Branch(
-          <String>['alignment', 'margin'],
-          <String>['anchor'],
-          '{% HarborAligned %}(alignment: {% alignment %}, margin: {% margin %})',
-        ),
-        _Branch(
-          <String>['slot', 'margin'],
-          <String>['anchor', 'alignment'],
-          '{% HarborAligned %}(alignment: {% slot %}.alignment, margin: {% margin %})',
-        ),
-        _Branch(
-          <String>['margin'],
-          <String>['anchor', 'alignment', 'slot'],
-          '{% HarborAligned %}(alignment: {% HarborFlareSlot %}.high.alignment, margin: {% margin %})',
-        ),
-        ..._anchored(optional: flareAnchored, anchorAlways: true, sideDefault: null, alsoAbsent: <String>['slot', 'alignment']),
-      ],
-      variables: <String>['anchor', 'alignment', 'slot', for (final _Arg a in flareAnchored) a.name],
-    ),
-  );
+  // The class is HarborToasts since 0.9.0, where `raise` was renamed `show`: a call through the old
+  // name HarborFlares resolves there, and either name may be the one in the code when this runs.
+  for (final String method in <String>['raise', 'show']) {
+    out.write(
+      _transform(
+        title: "Migrate to 'placement'",
+        comment:
+            'HarborFlares.raise(alignment:, margin:) becomes raise(placement: HarborAligned(...)), slot: with margin:\n'
+            "included, and raise(anchor:, side:, gap:, crossAlignment:, margin:) becomes placement: HarborAnchored(...).\n"
+            "A flare's old side was below, as a HarborAnchored's is, so nothing is added for it. slot: alone stays.",
+        element: "      method: '$method'\n      inClass: 'HarborToasts'\n",
+        index: 1,
+        branches: <_Branch>[
+          _Branch(
+            <String>['alignment'],
+            <String>['anchor', 'margin'],
+            '{% HarborAligned %}(alignment: {% alignment %})',
+          ),
+          _Branch(
+            <String>['alignment', 'margin'],
+            <String>['anchor'],
+            '{% HarborAligned %}(alignment: {% alignment %}, margin: {% margin %})',
+          ),
+          _Branch(
+            <String>['slot', 'margin'],
+            <String>['anchor', 'alignment'],
+            '{% HarborAligned %}(alignment: {% slot %}.alignment, margin: {% margin %})',
+          ),
+          _Branch(
+            <String>['margin'],
+            <String>['anchor', 'alignment', 'slot'],
+            '{% HarborAligned %}(alignment: {% HarborToastSlot %}.high.alignment, margin: {% margin %})',
+          ),
+          ..._anchored(
+            optional: flareAnchored,
+            anchorAlways: true,
+            sideDefault: null,
+            alsoAbsent: <String>['slot', 'alignment'],
+            // Reaching over the system edges did nothing for a flare by an anchor (0.6.3), and
+            // with a HarborAnchored placement it asserts, so it goes.
+            alsoRemove: <String>[if (method == 'raise') 'reachesCoast' else 'reachesSystemEdges'],
+          ),
+        ],
+        variables: <String>['anchor', 'alignment', 'slot', for (final _Arg a in flareAnchored) a.name],
+      ),
+    );
+  }
   return out.toString();
 }
 

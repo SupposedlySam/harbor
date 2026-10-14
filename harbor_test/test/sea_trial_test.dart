@@ -6,11 +6,11 @@ import 'package:harbor_test/harbor_test.dart';
 const double _composerHeight = 44;
 const double _headerFontSize = 10;
 
-Widget _page() => const HarborSea(
-  child: Harbor(
-    bottom: <HarborDock>[
-      HarborDock.quay(
-        tide: HarborTideStance.float,
+Widget _page() => const HarborRoot(
+  child: HarborFrame(
+    bottom: <HarborBar>[
+      HarborBar.solid(
+        keyboard: HarborKeyboardStance.rides,
         child: SizedBox(key: ValueKey<String>('composer'), height: _composerHeight),
       ),
     ],
@@ -18,10 +18,10 @@ Widget _page() => const HarborSea(
   ),
 );
 
-Widget _pageWithHeader() => const HarborSea(
-  child: Harbor(
-    top: <HarborDock>[
-      HarborDock.quay(
+Widget _pageWithHeader() => const HarborRoot(
+  child: HarborFrame(
+    top: <HarborBar>[
+      HarborBar.solid(
         child: Text(
           'Settings',
           key: ValueKey<String>('header'),
@@ -78,53 +78,53 @@ class _RiseOnInsetsState extends State<_RiseOnInsets> with SingleTickerProviderS
 void main() {
   testWidgets('puts the device on the view and moves its tide', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+    final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
 
     expect(tester.view.physicalSize / tester.view.devicePixelRatio, device.size);
-    expect(trial.waterline, device.size.height);
+    expect(trial.keyboardTop, device.size.height);
     expect(
       tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom,
-      device.size.height - device.coast.bottom,
+      device.size.height - device.systemEdges.bottom,
     );
 
-    await trial.raiseTide();
+    await trial.showKeyboard();
 
-    expect(trial.tideIn, isTrue);
-    expect(trial.waterline, device.size.height - device.tideHeight);
-    expect(tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom, trial.waterline);
+    expect(trial.keyboardShown, isTrue);
+    expect(trial.keyboardTop, device.size.height - device.keyboardHeight);
+    expect(tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom, trial.keyboardTop);
   });
 
   testWidgets('pumps only as long as asked after the tide moves', (final tester) async {
     late AnimationController rise;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(_RiseOnInsets(onController: (final c) => rise = c));
+    final HarborTrial trial = await tester.pumpHarborTrial(_RiseOnInsets(onController: (final c) => rise = c));
 
-    await trial.raiseTide(pumpFor: Duration.zero);
+    await trial.showKeyboard(pumpFor: Duration.zero);
 
-    expect(trial.tideIn, isTrue);
-    expect(MediaQuery.viewInsetsOf(tester.element(find.byType(_RiseOnInsets))).bottom, trial.device.tideHeight);
+    expect(trial.keyboardShown, isTrue);
+    expect(MediaQuery.viewInsetsOf(tester.element(find.byType(_RiseOnInsets))).bottom, trial.device.keyboardHeight);
     expect(rise.status, AnimationStatus.forward);
     expect(rise.value, 0.0);
 
-    await trial.lowerTide(pumpFor: const Duration(milliseconds: 150));
+    await trial.hideKeyboard(pumpFor: const Duration(milliseconds: 150));
 
     expect(rise.value, 0.5);
 
-    await trial.raiseTide();
+    await trial.showKeyboard();
 
     expect(rise.status, AnimationStatus.completed);
   });
 
   testWidgets('reports the clear water and the docks around a widget', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+    final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
     final Finder body = find.byKey(const ValueKey<String>('body'));
 
-    final Rect clearWater = trial.clearWaterAround(body);
+    final Rect clearWater = trial.roomAround(body);
 
-    expect(clearWater.top, device.coast.top);
-    expect(clearWater.bottom, device.size.height - device.coast.bottom - _composerHeight);
-    expect(trial.docksAround(body).single.edge, HarborEdge.bottom);
-    expect(find.byKey(const ValueKey<String>('composer')), isNot(isInClearWater(clearWater)));
+    expect(clearWater.top, device.systemEdges.top);
+    expect(clearWater.bottom, device.size.height - device.systemEdges.bottom - _composerHeight);
+    expect(trial.barsAround(body).single.edge, HarborEdge.bottom);
+    expect(find.byKey(const ValueKey<String>('composer')), isNot(isInRoom(clearWater)));
   });
 
   test('lists every device preset in all', () {
@@ -147,72 +147,91 @@ void main() {
 
   testWidgets('puts the device on the view at its pixel ratio', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+    final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
     final MediaQueryData media = MediaQueryData.fromView(tester.view);
 
     expect(tester.view.devicePixelRatio, 3.0);
     expect(tester.view.physicalSize, device.size * 3.0);
     expect(media.size, device.size);
-    expect(media.viewPadding, device.coast);
+    expect(media.viewPadding, device.systemEdges);
 
-    await trial.raiseTide();
+    await trial.showKeyboard();
 
-    expect(MediaQueryData.fromView(tester.view).viewInsets.bottom, device.tideHeight);
-    expect(tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom, trial.waterline);
+    expect(MediaQueryData.fromView(tester.view).viewInsets.bottom, device.keyboardHeight);
+    expect(tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom, trial.keyboardTop);
   });
 
   testWidgets('puts a copied device on the view at the pixel ratio it was given', (final tester) async {
     final HarborTrialDevice device = HarborTrialDevice.iPhone17.copyWith(devicePixelRatio: 1.0);
-    await tester.pumpSeaTrial(_page(), device: device);
+    await tester.pumpHarborTrial(_page(), device: device);
 
     expect(tester.view.devicePixelRatio, 1.0);
     expect(tester.view.physicalSize, HarborTrialDevice.iPhone17.size);
-    expect(MediaQueryData.fromView(tester.view).viewPadding, HarborTrialDevice.iPhone17.coast);
+    expect(MediaQueryData.fromView(tester.view).viewPadding, HarborTrialDevice.iPhone17.systemEdges);
   });
 
   group('an Android phone on its side', () {
     test('is its portrait self turned: the width and height swapped, at the same ratio', () {
       expect(HarborTrialDevice.androidThreeButtonLandscape.size, HarborTrialDevice.androidThreeButton.size.flipped);
       expect(HarborTrialDevice.androidGestureLandscape.size, HarborTrialDevice.androidGesture.size.flipped);
-      expect(HarborTrialDevice.androidThreeButtonLandscape.devicePixelRatio, HarborTrialDevice.androidThreeButton.devicePixelRatio);
-      expect(HarborTrialDevice.androidGestureLandscape.devicePixelRatio, HarborTrialDevice.androidGesture.devicePixelRatio);
+      expect(
+        HarborTrialDevice.androidThreeButtonLandscape.devicePixelRatio,
+        HarborTrialDevice.androidThreeButton.devicePixelRatio,
+      );
+      expect(
+        HarborTrialDevice.androidGestureLandscape.devicePixelRatio,
+        HarborTrialDevice.androidGesture.devicePixelRatio,
+      );
     });
 
-    testWidgets('with three buttons, keeps the status bar on top and the navigation bar on the right', (final tester) async {
+    testWidgets('with three buttons, keeps the status bar on top and the navigation bar on the right', (
+      final tester,
+    ) async {
       const HarborTrialDevice device = HarborTrialDevice.androidThreeButtonLandscape;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+      final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
       MediaQueryData media() => MediaQueryData.fromView(tester.view);
 
       expect(media().size, const Size(915.0, 412.0));
       expect(media().padding, const EdgeInsets.only(top: 24.0, right: 48.0));
-      expect(media().viewPadding, device.coast);
+      expect(media().viewPadding, device.systemEdges);
 
-      await trial.raiseTide();
-
-      expect(media().viewInsets.bottom, 200.0);
-      expect(media().padding, const EdgeInsets.only(top: 24.0, right: 48.0), reason: 'the side bar stays under the keyboard');
-    });
-
-    testWidgets('with gestures, keeps the status bar on top, the camera on the left and the gesture bar at the bottom', (final tester) async {
-      const HarborTrialDevice device = HarborTrialDevice.androidGestureLandscape;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
-      MediaQueryData media() => MediaQueryData.fromView(tester.view);
-
-      expect(media().size, const Size(915.0, 412.0));
-      expect(media().padding, const EdgeInsets.only(top: 24.0, left: 24.0, bottom: 24.0));
-      expect(media().viewPadding, device.coast);
-
-      await trial.raiseTide();
+      await trial.showKeyboard();
 
       expect(media().viewInsets.bottom, 200.0);
-      expect(media().padding, const EdgeInsets.only(top: 24.0, left: 24.0), reason: 'the keyboard covers the gesture bar');
+      expect(
+        media().padding,
+        const EdgeInsets.only(top: 24.0, right: 48.0),
+        reason: 'the side bar stays under the keyboard',
+      );
     });
+
+    testWidgets(
+      'with gestures, keeps the status bar on top, the camera on the left and the gesture bar at the bottom',
+      (final tester) async {
+        const HarborTrialDevice device = HarborTrialDevice.androidGestureLandscape;
+        final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
+        MediaQueryData media() => MediaQueryData.fromView(tester.view);
+
+        expect(media().size, const Size(915.0, 412.0));
+        expect(media().padding, const EdgeInsets.only(top: 24.0, left: 24.0, bottom: 24.0));
+        expect(media().viewPadding, device.systemEdges);
+
+        await trial.showKeyboard();
+
+        expect(media().viewInsets.bottom, 200.0);
+        expect(
+          media().padding,
+          const EdgeInsets.only(top: 24.0, left: 24.0),
+          reason: 'the keyboard covers the gesture bar',
+        );
+      },
+    );
   });
 
   testWidgets('clears a dock at the size its text grew to', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
     const double textScaleFactor = 2.0;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _pageWithHeader(),
       device: device,
       textScaleFactor: textScaleFactor,
@@ -221,7 +240,7 @@ void main() {
 
     expect(MediaQuery.textScalerOf(tester.element(body)).scale(_headerFontSize), _headerFontSize * textScaleFactor);
     expect(tester.getSize(find.byKey(const ValueKey<String>('header'))).height, _headerFontSize * textScaleFactor);
-    expect(trial.clearWaterAround(body).top, device.coast.top + _headerFontSize * textScaleFactor);
+    expect(trial.roomAround(body).top, device.systemEdges.top + _headerFontSize * textScaleFactor);
   });
 
   testWidgets('leaves the text scale as it found it once a trial ends', (final tester) async {
@@ -229,10 +248,10 @@ void main() {
   });
 
   testWidgets('fails the test when no harbor is around a widget', (final tester) async {
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(const SizedBox(key: ValueKey<String>('alone')));
+    final HarborTrial trial = await tester.pumpHarborTrial(const SizedBox(key: ValueKey<String>('alone')));
 
     expect(
-      () => trial.clearWaterAround(find.byKey(const ValueKey<String>('alone'))),
+      () => trial.roomAround(find.byKey(const ValueKey<String>('alone'))),
       throwsA(isA<TestFailure>().having((final e) => e.message, 'message', contains("[<'alone'>]"))),
     );
   });

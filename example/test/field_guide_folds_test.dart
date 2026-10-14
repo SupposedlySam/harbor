@@ -18,7 +18,7 @@ Future<void> _pumpEntry(final WidgetTester tester, final Widget entry) async {
     MaterialApp(
       theme: Palette.theme(),
       builder: (final BuildContext context, final Widget? child) =>
-          HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+          HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
       home: entry,
     ),
   );
@@ -86,7 +86,11 @@ void _near(final double actual, final double expected, final String what) =>
 
 void main() {
   test('the folds group lists hinge, panes and posture', () {
-    expect(foldEntries.map((final GuideEntry e) => e.className), <String>['HarborHinge', 'HarborPanes', 'HarborPosture']);
+    expect(foldEntries.map((final GuideEntry e) => e.className), <String>[
+      'HarborHinge',
+      'HarborPanes',
+      'HarborPosture',
+    ]);
     expect(foldEntries.every((final GuideEntry e) => e.group == GuideGroup.folds), isTrue);
   });
 
@@ -109,7 +113,9 @@ void main() {
       expect(StageDevice.iPhone17.held(HarborPosture.book), same(StageDevice.iPhone17), reason: 'no fold to hold');
     });
 
-    testWidgets('draws the hinge as a hinge and the fold as a crease, and offers a posture only for them', (final tester) async {
+    testWidgets('draws the hinge as a hinge and the fold as a crease, and offers a posture only for them', (
+      final tester,
+    ) async {
       await _pumpEntry(tester, const HingeEntry());
       _near(_onDevice(tester, _key('stage hinge')).left, 540, 'the hinge starts where the left screen ends');
       _near(_onDevice(tester, _key('stage hinge')).width, 34, 'and is 34 wide');
@@ -125,23 +131,25 @@ void main() {
   });
 
   group('HarborHinge', () {
-    testWidgets('avoidSeparating on a dual screen: the bars and the buoy keep to the left screen', (final tester) async {
+    testWidgets('avoidSeparating on a dual screen: the bars and the float keep to the left screen', (
+      final tester,
+    ) async {
       await _pumpEntry(tester, const HingeEntry());
       expect(_settings(tester).held.name, 'dual screen open', reason: 'the page opens on the device it is about');
       _near(_onDevice(tester, _key('hinge header')).right, 540, 'the header stops at the hinge');
       _near(_onDevice(tester, _key('hinge tab bar')).right, 540, 'so does the tab bar');
-      final Rect buoy = _onDevice(tester, _key('hinge buoy'));
-      _near(buoy.center.dx, 270, 'the buoy is centred on the left screen');
+      final Rect float = _onDevice(tester, _key('hinge buoy'));
+      _near(float.center.dx, 270, 'the float is centred on the left screen');
       expect(_reading(tester, 'The page’s hinge'), contains('kept off          hinge x 540–574 flat'));
       expect(_code(tester), contains('  hinge: HarborHinge.avoidSeparating,\n'));
     });
 
-    testWidgets('never: the bars and the buoy run across the hinge', (final tester) async {
+    testWidgets('never: the bars and the float run across the hinge', (final tester) async {
       await _pumpEntry(tester, const HingeEntry());
       await _tap(tester, 'policy: never');
       _near(_onDevice(tester, _key('hinge header')).right, 1114, 'the header runs to the far edge');
       _near(_onDevice(tester, _key('hinge tab bar')).right, 1114, 'so does the tab bar');
-      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 557, 'the buoy sits on the hinge');
+      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 557, 'the float sits on the hinge');
       expect(_reading(tester, 'The page’s hinge'), contains('kept off          none'));
     });
 
@@ -149,34 +157,44 @@ void main() {
       await _pumpEntry(tester, const HingeEntry());
       await _tap(tester, 'Device: foldable open');
       _near(_onDevice(tester, _key('hinge header')).right, 750, 'a flat fold has no width: nothing separates');
-      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 375, 'the buoy spans the crease');
+      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 375, 'the float spans the crease');
       await _tap(tester, 'policy: always');
       _near(_onDevice(tester, _key('hinge header')).right, 375, 'always keeps off even a flat fold');
-      final Rect buoy = _onDevice(tester, _key('hinge buoy'));
-      expect(buoy.left >= 375 - 1.5 || buoy.right <= 375 + 1.5, isTrue, reason: 'the buoy keeps to one side: $buoy');
+      final Rect float = _onDevice(tester, _key('hinge buoy'));
+      expect(
+        float.left >= 375 - 1.5 || float.right <= 375 + 1.5,
+        isTrue,
+        reason: 'the float keeps to one side: $float',
+      );
     });
 
-    testWidgets('a fold half open like a book: avoidSeparating keeps off it, avoidOccluding does not', (final tester) async {
+    testWidgets('a fold half open like a book: avoidSeparating keeps off it, avoidOccluding does not', (
+      final tester,
+    ) async {
       await _pumpEntry(tester, const HingeEntry());
       await _tap(tester, 'Device: foldable open');
       await _tap(tester, 'Posture: book');
       expect(_reading(tester, 'The page’s hinge'), contains('HarborPosture.of  book'));
       _near(_onDevice(tester, _key('hinge header')).right, 375, 'a half-open fold separates');
       await _tap(tester, 'policy: avoidOccluding');
-      _near(_onDevice(tester, _key('hinge header')).right, 750, 'a fold hides nothing: only a hinge with width occludes');
+      _near(
+        _onDevice(tester, _key('hinge header')).right,
+        750,
+        'a fold hides nothing: only a hinge with width occludes',
+      );
     });
 
-    testWidgets('dockHinge sets the docks alone; a buoy\'s own hinge sets the buoy alone', (final tester) async {
+    testWidgets('barHinge sets the bars alone; a float\'s own hinge sets the float alone', (final tester) async {
       await _pumpEntry(tester, const HingeEntry());
       await _tap(tester, 'policy: never');
-      await _tap(tester, 'set on: Harbor(dockHinge:)');
-      _near(_onDevice(tester, _key('hinge header')).right, 1114, 'the docks cross the hinge');
-      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 270, 'the buoy keeps the sea\'s avoidSeparating');
-      expect(_code(tester), contains('  dockHinge: HarborHinge.never,\n'));
+      await _tap(tester, 'set on: HarborFrame(barHinge:)');
+      _near(_onDevice(tester, _key('hinge header')).right, 1114, 'the bars cross the hinge');
+      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 270, 'the float keeps the root\'s avoidSeparating');
+      expect(_code(tester), contains('  barHinge: HarborHinge.never,\n'));
 
-      await _tap(tester, 'set on: HarborBuoy(hinge:)');
-      _near(_onDevice(tester, _key('hinge header')).right, 540, 'the docks are back on the left screen');
-      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 557, 'the buoy alone crosses');
+      await _tap(tester, 'set on: HarborFloat(hinge:)');
+      _near(_onDevice(tester, _key('hinge header')).right, 540, 'the bars are back on the left screen');
+      _near(_onDevice(tester, _key('hinge buoy')).center.dx, 557, 'the float alone crosses');
       expect(_code(tester), contains('      hinge: HarborHinge.never,\n'));
     });
 
@@ -197,7 +215,7 @@ void main() {
       _near(start.right, 540, 'up to the hinge');
       _near(end.left, 574, 'end past the hinge');
       _near(end.right, 1114, 'to the far edge');
-      _near(_onDevice(tester, _key('start header')).top, 24, 'each pane is a harbor whose header clears the status bar');
+      _near(_onDevice(tester, _key('start header')).top, 24, 'each pane is a frame whose header clears the status bar');
       expect(_reading(tester, 'HarborPanes.modeOf'), 'wide');
     });
 
@@ -210,11 +228,17 @@ void main() {
       await _tap(tester, 'priority: end');
       expect(_key('start pane'), findsNothing);
       _near(_onDevice(tester, _key('end pane')).width, 402, 'the message fills it instead');
-      expect(find.textContaining('opens this as a page of its own'), findsOneWidget, reason: 'modeOf tells it the list is not up');
+      expect(
+        find.textContaining('opens this as a page of its own'),
+        findsOneWidget,
+        reason: 'modeOf tells it the list is not up',
+      );
       expect(_code(tester), contains('  priority: HarborPanePriority.end,\n'));
     });
 
-    testWidgets('a flat fold splits nothing: past minWideWidth startFraction decides; a book\'s fold decides', (final tester) async {
+    testWidgets('a flat fold splits nothing: past minWideWidth startFraction decides; a book\'s fold decides', (
+      final tester,
+    ) async {
       await _pumpEntry(tester, const PanesEntry());
       await _tap(tester, 'Device: foldable open');
       expect(_reading(tester, 'HarborPanes.modeOf'), 'single', reason: '750 is under 840');
@@ -302,7 +326,9 @@ void main() {
     for (final GuideEntry entry in foldEntries) {
       await _pumpEntry(tester, Builder(key: ValueKey<String>(entry.id), builder: entry.page));
       final List<String> controls = <String>[
-        for (final Widget w in tester.widgetList(find.byWidgetPredicate((final Widget w) => w is ChoiceChip || w is SwitchListTile)))
+        for (final Widget w in tester.widgetList(
+          find.byWidgetPredicate((final Widget w) => w is ChoiceChip || w is SwitchListTile),
+        ))
           (w.key! as ValueKey<String>).value,
       ];
       for (final String key in controls) {

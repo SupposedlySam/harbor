@@ -4,33 +4,32 @@ import 'package:harbor/harbor.dart';
 
 import 'trial_device.dart';
 
-/// Pumps a harbor on a [HarborTrialDevice] and moves its tide.
-extension HarborSeaTrials on WidgetTester {
-  /// Puts [widget] through its sea trials on [device]: the device's size,
-  /// pixel ratio and coast go on the test view itself, so everything that reads
-  /// the view or `MediaQuery` sees the same device. [textScaleFactor] is the
-  /// text size the platform reports, as the system font-size setting does, so
-  /// docks are measured at the size their text grows to. The view and the text
-  /// scale are reset when the test ends.
+/// Pumps a frame on a [HarborTrialDevice] and moves its keyboard.
+extension HarborTrials on WidgetTester {
+  /// Puts [widget] on trial on [device]: the device's size, pixel ratio and system edges go on
+  /// the test view itself, so everything that reads the view or `MediaQuery` sees the same device.
+  /// [keyboardShown] starts it with the keyboard up. [textScaleFactor] is the text size the
+  /// platform reports, as the system font-size setting does, so bars are measured at the size
+  /// their text grows to. The view and the text scale are reset when the test ends.
   ///
-  /// [widget] is pumped as is: give it a `MaterialApp` with a `HarborSea` in its
-  /// builder for an app, or a bare `Harbor` inside a `Directionality`.
-  Future<HarborSeaTrial> pumpSeaTrial(
+  /// [widget] is pumped as is: give it a `MaterialApp` with a `HarborRoot` in its builder for an
+  /// app, or a bare `HarborFrame` inside a `Directionality`.
+  Future<HarborTrial> pumpHarborTrial(
     final Widget widget, {
     final HarborTrialDevice device = HarborTrialDevice.iPhone17,
-    final bool tideIn = false,
+    final bool keyboardShown = false,
     final TextDirection textDirection = TextDirection.ltr,
     final double textScaleFactor = 1.0,
     final bool wrapInView = true,
   }) async {
-    final HarborSeaTrial trial = HarborSeaTrial._(this, device);
+    final HarborTrial trial = HarborTrial._(this, device);
     view
       ..devicePixelRatio = device.devicePixelRatio
       ..physicalSize = device.size * device.devicePixelRatio;
     addTearDown(view.reset);
     platformDispatcher.textScaleFactorTestValue = textScaleFactor;
     addTearDown(platformDispatcher.clearTextScaleFactorTestValue);
-    trial._apply(tideIn: tideIn);
+    trial._apply(shown: keyboardShown);
     await pumpWidget(
       wrapInView
           ? Directionality(
@@ -43,38 +42,78 @@ extension HarborSeaTrials on WidgetTester {
   }
 }
 
-/// A harbor under trial, whose tide can be raised and lowered.
-class HarborSeaTrial {
-  HarborSeaTrial._(this._tester, this.device);
+/// The old name of [HarborTrials], which holds the old name of its one method.
+///
+/// An extension cannot be aliased, so this is an extension of its own. It names no method that
+/// [HarborTrials] has, so the two never conflict.
+@Deprecated('Renamed HarborTrials. `dart fix` applies it.')
+extension HarborSeaTrials on WidgetTester {
+  /// The old name of [HarborTrials.pumpHarborTrial].
+  @Deprecated('Renamed pumpHarborTrial. `dart fix` applies it.')
+  Future<HarborTrial> pumpSeaTrial(
+    final Widget widget, {
+    final HarborTrialDevice device = HarborTrialDevice.iPhone17,
+    @Deprecated('Renamed keyboardShown. `dart fix` applies it.') final bool tideIn = false,
+    final TextDirection textDirection = TextDirection.ltr,
+    final double textScaleFactor = 1.0,
+    final bool wrapInView = true,
+  }) => pumpHarborTrial(
+    widget,
+    device: device,
+    keyboardShown: tideIn,
+    textDirection: textDirection,
+    textScaleFactor: textScaleFactor,
+    wrapInView: wrapInView,
+  );
+}
+
+/// A frame on trial, whose keyboard can be shown and hidden.
+class HarborTrial {
+  HarborTrial._(this._tester, this.device);
 
   final WidgetTester _tester;
   final HarborTrialDevice device;
-  bool _tideIn = false;
+  bool _keyboardShown = false;
 
-  bool get tideIn => _tideIn;
+  /// Whether the keyboard is up.
+  bool get keyboardShown => _keyboardShown;
+
+  /// The old name of [keyboardShown].
+  @Deprecated('Renamed keyboardShown. `dart fix` applies it.')
+  bool get tideIn => keyboardShown;
 
   /// Brings the keyboard in.
+  Future<void> showKeyboard({final bool settle = false, final Duration? pumpFor}) =>
+      setKeyboard(shown: true, settle: settle, pumpFor: pumpFor);
+
+  /// The old name of [showKeyboard].
+  @Deprecated('Renamed showKeyboard. `dart fix` applies it.')
   Future<void> raiseTide({final bool settle = false, final Duration? pumpFor}) =>
-      setTide(tideIn: true, settle: settle, pumpFor: pumpFor);
+      showKeyboard(settle: settle, pumpFor: pumpFor);
 
   /// Takes the keyboard out.
+  Future<void> hideKeyboard({final bool settle = false, final Duration? pumpFor}) =>
+      setKeyboard(shown: false, settle: settle, pumpFor: pumpFor);
+
+  /// The old name of [hideKeyboard].
+  @Deprecated('Renamed hideKeyboard. `dart fix` applies it.')
   Future<void> lowerTide({final bool settle = false, final Duration? pumpFor}) =>
-      setTide(tideIn: false, settle: settle, pumpFor: pumpFor);
+      hideKeyboard(settle: settle, pumpFor: pumpFor);
 
   static const Duration _followTime = Duration(milliseconds: 600);
   static const Duration _pumpStep = Duration(milliseconds: 50);
 
   /// Moves the keyboard, pumps a frame, then lets [pumpFor] pass: by default
-  /// 600 ms, long enough for the harbor to follow (its docks to slide, its tide
-  /// gauge to settle). A [pumpFor] of [Duration.zero] stops at that first
+  /// 600 ms, long enough for the frame to follow (its bars to slide, its keyboard
+  /// reading to settle). A [pumpFor] of [Duration.zero] stops at that first
   /// frame, as a `tester.pump()` after setting `tester.view.viewInsets` would,
   /// so a test can see the moment the keyboard arrives. With [settle], it pumps
   /// until nothing is animating instead, as `pumpAndSettle` does, which never
-  /// ends on a screen with an endless animation (a rolling sea).
-  Future<void> setTide({required final bool tideIn, final bool settle = false, final Duration? pumpFor}) async {
+  /// ends on a screen with an endless animation (a looping background).
+  Future<void> setKeyboard({required final bool shown, final bool settle = false, final Duration? pumpFor}) async {
     assert(!settle || pumpFor == null, 'Give settle or pumpFor, not both.');
     assert(pumpFor == null || pumpFor >= Duration.zero, 'pumpFor cannot be negative.');
-    _apply(tideIn: tideIn);
+    _apply(shown: shown);
     if (settle) {
       await _tester.pumpAndSettle();
       return;
@@ -88,16 +127,26 @@ class HarborSeaTrial {
     }
   }
 
-  /// Where the keyboard's top is, in global coordinates.
-  double get waterline => device.size.height - (_tideIn ? device.tideHeight : 0.0);
+  /// The old name of [setKeyboard].
+  @Deprecated('Renamed setKeyboard, and tideIn shown. `dart fix` applies it.')
+  Future<void> setTide({required final bool tideIn, final bool settle = false, final Duration? pumpFor}) =>
+      setKeyboard(shown: tideIn, settle: settle, pumpFor: pumpFor);
 
-  void _apply({required final bool tideIn}) {
-    _tideIn = tideIn;
+  /// Where the keyboard's top is, in global coordinates: the device's height while the keyboard
+  /// is hidden.
+  double get keyboardTop => device.size.height - (_keyboardShown ? device.keyboardHeight : 0.0);
+
+  /// The old name of [keyboardTop].
+  @Deprecated('Renamed keyboardTop. `dart fix` applies it.')
+  double get waterline => keyboardTop;
+
+  void _apply({required final bool shown}) {
+    _keyboardShown = shown;
     final double ratio = device.devicePixelRatio;
     _tester.view
-      ..padding = _physical(device.coastWhen(tideIn: tideIn), ratio)
-      ..viewPadding = _physical(device.coast, ratio)
-      ..viewInsets = FakeViewPadding(bottom: (tideIn ? device.tideHeight : 0.0) * ratio)
+      ..padding = _physical(device.systemEdgesWhen(keyboardShown: shown), ratio)
+      ..viewPadding = _physical(device.systemEdges, ratio)
+      ..viewInsets = FakeViewPadding(bottom: (shown ? device.keyboardHeight : 0.0) * ratio)
       ..displayFeatures = device.displayFeatures;
   }
 
@@ -108,29 +157,46 @@ class HarborSeaTrial {
     bottom: insets.bottom * ratio,
   );
 
-  /// The clear water of the harbor nearest [finder]'s widget, in global
-  /// coordinates: the rectangle no coast, dock or tide covers.
-  Rect clearWaterAround(final Finder finder) {
-    final HarborChartEntry? harbor = HarborChart.nearest(finder.evaluate().single);
-    if (harbor == null) {
-      throw TestFailure('No harbor has been laid out around ${finder.describeMatch(Plurality.one)}.');
+  /// The room of the frame nearest [finder]'s widget, in global coordinates: the rectangle no
+  /// system edge, bar or keyboard covers.
+  Rect roomAround(final Finder finder) {
+    final HarborInspectorEntry? frame = HarborInspector.nearest(finder.evaluate().single);
+    if (frame == null) {
+      throw TestFailure('No frame has been laid out around ${finder.describeMatch(Plurality.one)}.');
     }
-    return harbor.clearWater;
+    return frame.room;
   }
 
-  /// Every dock of the harbor nearest [finder], in global coordinates.
-  List<HarborDockRecord> docksAround(final Finder finder) =>
-      HarborChart.nearest(finder.evaluate().single)?.docks ?? const <HarborDockRecord>[];
+  /// The old name of [roomAround].
+  @Deprecated('Renamed roomAround. `dart fix` applies it.')
+  Rect clearWaterAround(final Finder finder) => roomAround(finder);
+
+  /// Every bar of the frame nearest [finder], in global coordinates.
+  List<HarborBarRecord> barsAround(final Finder finder) =>
+      HarborInspector.nearest(finder.evaluate().single)?.bars ?? const <HarborBarRecord>[];
+
+  /// The old name of [barsAround].
+  @Deprecated('Renamed barsAround. `dart fix` applies it.')
+  List<HarborBarRecord> docksAround(final Finder finder) => barsAround(finder);
 }
 
-/// Matches a [Finder] whose widget lies wholly in clear water: inside
-/// [clearWater], within [tolerance].
-Matcher isInClearWater(final Rect clearWater, {final double tolerance = 0.5}) => _InClearWater(clearWater, tolerance);
+/// The old name of [HarborTrial].
+@Deprecated('Renamed HarborTrial. `dart fix` applies it.')
+typedef HarborSeaTrial = HarborTrial;
 
-class _InClearWater extends Matcher {
-  const _InClearWater(this.clearWater, this.tolerance);
+/// Matches a [Finder] whose widget lies wholly in [room], within [tolerance]: read the room with
+/// [HarborTrial.roomAround].
+Matcher isInRoom(final Rect room, {final double tolerance = 0.5}) => _InRoom(room, tolerance);
 
-  final Rect clearWater;
+/// The old name of [isInRoom].
+@Deprecated('Renamed isInRoom. `dart fix` applies it.')
+Matcher isInClearWater(final Rect clearWater, {final double tolerance = 0.5}) =>
+    isInRoom(clearWater, tolerance: tolerance);
+
+class _InRoom extends Matcher {
+  const _InRoom(this.room, this.tolerance);
+
+  final Rect room;
   final double tolerance;
 
   @override
@@ -148,14 +214,14 @@ class _InClearWater extends Matcher {
     }
     final Rect rect = MatrixUtils.transformRect(box.getTransformTo(null), Offset.zero & box.size);
     matchState['rect'] = rect;
-    return rect.left >= clearWater.left - tolerance &&
-        rect.top >= clearWater.top - tolerance &&
-        rect.right <= clearWater.right + tolerance &&
-        rect.bottom <= clearWater.bottom + tolerance;
+    return rect.left >= room.left - tolerance &&
+        rect.top >= room.top - tolerance &&
+        rect.right <= room.right + tolerance &&
+        rect.bottom <= room.bottom + tolerance;
   }
 
   @override
-  Description describe(final Description description) => description.add('lies within clear water $clearWater');
+  Description describe(final Description description) => description.add('lies within the room $room');
 
   @override
   Description describeMismatch(

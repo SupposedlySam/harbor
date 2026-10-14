@@ -74,7 +74,10 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
     final Widget? demo = showcaseDemo(chapter.key);
     final EdgeInsets viewPadding = ShowcasePhone.coast;
     // As Flutter computes it: the padding is what the view padding leaves after the keyboard.
-    final EdgeInsets padding = EdgeInsets.only(top: viewPadding.top, bottom: math.max(0, viewPadding.bottom - keyboard));
+    final EdgeInsets padding = EdgeInsets.only(
+      top: viewPadding.top,
+      bottom: math.max(0, viewPadding.bottom - keyboard),
+    );
     final MediaQueryData media = MediaQuery.of(context).copyWith(
       size: ShowcasePhone.screen,
       devicePixelRatio: 3,
@@ -99,13 +102,19 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
                   children: <Widget>[
                     ShowcaseClock(
                       time: widget.time,
-                      child: HarborChartOverlay(
+                      child: HarborInspectorOverlay(
                         enabled: chapter.key == 'chart',
-                        child: HarborSea(
+                        child: HarborRoot(
                           margin: const EdgeInsetsDirectional.symmetric(horizontal: ShowcasePhone.margin),
                           child: KeyedSubtree(
                             key: ValueKey<String>(demo == null ? 'harbor master' : chapter.key),
-                            child: demo ?? _Page(parts: widget.parts, scroll: _scroll, composerOut: ShowcaseTimeline.composerOut(widget.time)),
+                            child:
+                                demo ??
+                                _Page(
+                                  parts: widget.parts,
+                                  scroll: _scroll,
+                                  composerOut: ShowcaseTimeline.composerOut(widget.time),
+                                ),
                           ),
                         ),
                       ),
@@ -115,7 +124,12 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
                       right: 0,
                       top: 0,
                       height: 62,
-                      child: IgnorePointer(child: KeyedSubtree(key: widget.parts[PhonePart.statusBar], child: const StatusBarArt(island: true))),
+                      child: IgnorePointer(
+                        child: KeyedSubtree(
+                          key: widget.parts[PhonePart.statusBar],
+                          child: const StatusBarArt(island: true),
+                        ),
+                      ),
                     ),
                     Positioned(
                       left: 0,
@@ -154,10 +168,15 @@ class _Page extends StatelessWidget {
   final bool composerOut;
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[
-      HarborDock.pier(
-        wake: const HarborWake.fade(length: 18, blurSigma: 14),
+  Widget build(final BuildContext context) => HarborFrame(
+    // The inspector overlay labels a bar by its debugLabel, or else its kind. These pin the 0.8
+    // wording the videos were recorded with (`pier`, `quay`; the kinds are `overlay` and `solid`
+    // since 0.9), so the recorded frames stay as they are. Remove them when the videos are re-voiced
+    // in the new vocabulary (#120, naming.md Q5).
+    top: <HarborBar>[
+      HarborBar.overlay(
+        debugLabel: 'pier',
+        edgeEffect: const HarborEdgeEffect.fade(length: 18, blurSigma: 14),
         backdrop: ColoredBox(color: Colors.white.withValues(alpha: 0.72)),
         child: KeyedSubtree(
           key: parts[PhonePart.header],
@@ -165,32 +184,37 @@ class _Page extends StatelessWidget {
             key: ValueKey<String>('showcase header'),
             height: 64,
             child: Center(
-              child: Text('Harbor Master', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea)),
+              child: Text(
+                'Harbor Master',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea),
+              ),
             ),
           ),
         ),
       ),
     ],
-    bottom: <HarborDock>[
-      HarborDock.pier(
-        tide: HarborTideStance.float,
-        state: composerOut ? HarborDockState.open : HarborDockState.withdrawn,
+    bottom: <HarborBar>[
+      HarborBar.overlay(
+        debugLabel: 'pier',
+        keyboard: HarborKeyboardStance.rides,
+        state: composerOut ? HarborBarState.open : HarborBarState.withdrawn,
         duration: const Duration(milliseconds: 400),
         backdrop: const ColoredBox(color: Colors.white),
         child: KeyedSubtree(key: parts[PhonePart.composer], child: const _Composer()),
       ),
-      HarborDock.quay(
+      HarborBar.solid(
+        debugLabel: 'quay',
         backdrop: const ColoredBox(color: Palette.deepSea),
         child: KeyedSubtree(key: parts[PhonePart.tabBar], child: const ShowcaseTabBar()),
       ),
     ],
-    body: HarborFairway(
+    body: HarborScrollView(
       controller: scroll,
       slivers: <Widget>[
         SliverList.builder(
           itemCount: showcaseBoats.length * 3,
           itemBuilder: (final BuildContext context, final int i) {
-            return HarborMooringLine(child: BoatRow(index: i));
+            return HarborClear.rowInsets(child: BoatRow(index: i));
           },
         ),
       ],
@@ -210,7 +234,6 @@ const List<(String, String, IconData, Color)> showcaseBoats = <(String, String, 
   ('Dory', 'Rowboat · berth 14', Icons.rowing, Color(0xFF2E7D5B)),
 ];
 
-
 /// One boat in a list: its name, its berth, and a badge.
 class BoatRow extends StatelessWidget {
   const BoatRow({super.key, required this.index});
@@ -227,13 +250,19 @@ class BoatRow extends StatelessWidget {
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: <Widget>[
-          CircleAvatar(backgroundColor: color, child: Icon(icon, color: Colors.white)),
+          CircleAvatar(
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white),
+          ),
           const SizedBox(width: 14),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Palette.deepSea)),
+              Text(
+                name,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Palette.deepSea),
+              ),
               Text(detail, style: const TextStyle(fontSize: 14, color: Color(0xFF5B6B7A))),
             ],
           ),
@@ -262,7 +291,11 @@ class _Composer extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const CircleAvatar(radius: 22, backgroundColor: Palette.shallows, child: Icon(Icons.send, color: Colors.white, size: 20)),
+        const CircleAvatar(
+          radius: 22,
+          backgroundColor: Palette.shallows,
+          child: Icon(Icons.send, color: Colors.white, size: 20),
+        ),
       ],
     ),
   );

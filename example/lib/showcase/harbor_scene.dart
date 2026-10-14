@@ -87,8 +87,10 @@ class _ScenePainter extends CustomPainter {
     final double waterline = _World.lowWater - _World.tideRange * ShowcaseTimeline.water(t);
     // Low water sits a little below the middle of the picture at every zoom.
     final double anchor = size.height * 0.6;
-    Offset toScreen(final Offset world) =>
-        Offset(size.width / 2 + (world.dx - camera.x) * camera.zoom, anchor + (world.dy - _World.lowWater) * camera.zoom);
+    Offset toScreen(final Offset world) => Offset(
+      size.width / 2 + (world.dx - camera.x) * camera.zoom,
+      anchor + (world.dy - _World.lowWater) * camera.zoom,
+    );
 
     _sky(canvas, size, toScreen(Offset(0, waterline)).dy);
 
@@ -154,7 +156,10 @@ class _ScenePainter extends CustomPainter {
     for (double x = -300; x < _World.width + 300; x += 90 + random.nextDouble() * 120) {
       final double y = _World.seabed + math.sin(x / 90) * 6;
       if (random.nextBool()) {
-        canvas.drawOval(Rect.fromCenter(center: Offset(x, y + 4), width: 30 + random.nextDouble() * 30, height: 18), Paint()..color = Palette.stone);
+        canvas.drawOval(
+          Rect.fromCenter(center: Offset(x, y + 4), width: 30 + random.nextDouble() * 30, height: 18),
+          Paint()..color = Palette.stone,
+        );
       } else {
         final Paint weed = Paint()
           ..style = PaintingStyle.stroke
@@ -197,13 +202,21 @@ class _ScenePainter extends CustomPainter {
         Path()
           ..moveTo(_World.quayStart, _World.quayTop)
           ..lineTo(_World.pilingsStart - 150, _World.quayTop)
-          ..quadraticBezierTo(_World.pilingsStart - 60, _World.quayTop + 10, _World.pilingsStart - 20, _World.lowWater + 30)
+          ..quadraticBezierTo(
+            _World.pilingsStart - 60,
+            _World.quayTop + 10,
+            _World.pilingsStart - 20,
+            _World.lowWater + 30,
+          )
           ..lineTo(_World.pilingsStart + 60, _World.seabed + 10)
           ..lineTo(_World.quayStart, _World.seabed + 10)
           ..close(),
         Paint()..color = const Color(0xFF8A6E4B),
       )
-      ..drawRect(const Rect.fromLTRB(_World.quayStart, _World.quayTop, _World.pilingsStart - 150, _World.quayTop + 10), grass);
+      ..drawRect(
+        const Rect.fromLTRB(_World.quayStart, _World.quayTop, _World.pilingsStart - 150, _World.quayTop + 10),
+        grass,
+      );
     _house(canvas, const Offset(1560, _World.quayTop), 110, const Color(0xFF3D5A98));
     _house(canvas, const Offset(1700, _World.quayTop), 80, Palette.brass);
     // The far bank past the floating dock.
@@ -231,8 +244,14 @@ class _ScenePainter extends CustomPainter {
           ..close(),
         Paint()..color = roof,
       )
-      ..drawRect(Rect.fromLTWH(wall.left + width * 0.18, wall.top + h * 0.3, width * 0.2, h * 0.25), Paint()..color = Palette.shallows)
-      ..drawRect(Rect.fromLTWH(wall.right - width * 0.36, wall.top + h * 0.45, width * 0.2, h * 0.55), Paint()..color = Palette.plankDark);
+      ..drawRect(
+        Rect.fromLTWH(wall.left + width * 0.18, wall.top + h * 0.3, width * 0.2, h * 0.25),
+        Paint()..color = Palette.shallows,
+      )
+      ..drawRect(
+        Rect.fromLTWH(wall.right - width * 0.36, wall.top + h * 0.45, width * 0.2, h * 0.55),
+        Paint()..color = Palette.plankDark,
+      );
   }
 
   // --- The pier: built out over the water on piles --------------------------------------------
@@ -245,7 +264,11 @@ class _ScenePainter extends CustomPainter {
     final Rect deck = const Rect.fromLTRB(_World.pierStart, _World.pierDeck, _World.pierEnd, deckBottom);
     canvas.drawRect(deck, Paint()..color = Palette.plank);
     for (double x = deck.left; x < deck.right; x += 10) {
-      canvas.drawLine(Offset(x, deck.top), Offset(x, deck.bottom), Paint()..color = Palette.plankDark.withValues(alpha: 0.45));
+      canvas.drawLine(
+        Offset(x, deck.top),
+        Offset(x, deck.bottom),
+        Paint()..color = Palette.plankDark.withValues(alpha: 0.45),
+      );
     }
     canvas.drawRect(Rect.fromLTRB(deck.left, deck.top, deck.right, deck.top + 4), Paint()..color = Palette.plankLight);
     final Paint rail = Paint()
@@ -261,7 +284,10 @@ class _ScenePainter extends CustomPainter {
   // --- The quay: a stone wall on the shore ----------------------------------------------------
 
   void _quay(final Canvas canvas) {
-    Scenery.quayWall(canvas, const Rect.fromLTRB(_World.quayStart, _World.quayTop, _World.quayStart + 140, _World.seabed + 10));
+    Scenery.quayWall(
+      canvas,
+      const Rect.fromLTRB(_World.quayStart, _World.quayTop, _World.quayStart + 140, _World.seabed + 10),
+    );
     Scenery.bollard(canvas, const Offset(_World.quayStart + 24, _World.quayTop), 22);
     Scenery.bollard(canvas, const Offset(_World.quayStart + 110, _World.quayTop), 22);
     // Crates waiting on the quay.
@@ -281,7 +307,10 @@ class _ScenePainter extends CustomPainter {
       Scenery.pile(canvas, Offset(x, deckBottom), _World.seabed + 4, width: 12);
     }
     canvas
-      ..drawRect(const Rect.fromLTRB(_World.pilingsStart, _World.pilingsDeck, _World.pilingsEnd, deckBottom), Paint()..color = Palette.plank)
+      ..drawRect(
+        const Rect.fromLTRB(_World.pilingsStart, _World.pilingsDeck, _World.pilingsEnd, deckBottom),
+        Paint()..color = Palette.plank,
+      )
       ..drawRect(
         const Rect.fromLTRB(_World.pilingsStart, _World.pilingsDeck, _World.pilingsEnd, _World.pilingsDeck + 3),
         Paint()..color = Palette.plankLight,
@@ -324,7 +353,10 @@ class _ScenePainter extends CustomPainter {
     final double top = waterline - 16 + bob;
     canvas
       ..drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTRB(_World.floatStart, top, _World.floatEnd, top + 26), const Radius.circular(4)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(_World.floatStart, top, _World.floatEnd, top + 26),
+          const Radius.circular(4),
+        ),
         Paint()..color = Palette.stone,
       )
       ..drawRect(Rect.fromLTRB(_World.floatStart, top, _World.floatEnd, top + 8), Paint()..color = Palette.plank)
@@ -341,7 +373,12 @@ class _ScenePainter extends CustomPainter {
     for (int i = 0; i < 2; i++) {
       final double p = ShowcaseTimeline.boat(t, pier.start + 0.6 + i * 1.6, pier.end - 0.4 + i * 0.6);
       final double x = lerpDouble(_World.pierEnd + 160, _World.pierStart - 40, Curves.easeInOut.transform(p))!;
-      Scenery.rowboat(canvas, Offset(x, waterline + 4 + ShowcaseTimeline.bob(t, phase: i * 2.0)), 70, Palette.hulls[i == 0 ? 0 : 2]);
+      Scenery.rowboat(
+        canvas,
+        Offset(x, waterline + 4 + ShowcaseTimeline.bob(t, phase: i * 2.0)),
+        70,
+        Palette.hulls[i == 0 ? 0 : 2],
+      );
     }
     // A tug comes in and stops at the quay wall, the way a list stops at a tab bar.
     final (double sets, double alongside) = ShowcaseTimeline.tugPassage;
@@ -363,13 +400,26 @@ class _ScenePainter extends CustomPainter {
       ..drawPath(body, Paint()..color = hull)
       ..drawRect(Rect.fromLTWH(center.dx - length / 2, center.dy - h * 0.5, length, 5), Paint()..color = Palette.sail)
       ..drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(center.dx - length * 0.2, center.dy - h * 1.35, length * 0.36, h * 0.85), const Radius.circular(4)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(center.dx - length * 0.2, center.dy - h * 1.35, length * 0.36, h * 0.85),
+          const Radius.circular(4),
+        ),
         Paint()..color = Palette.sail,
       )
-      ..drawRect(Rect.fromLTWH(center.dx + length * 0.02, center.dy - h * 1.9, length * 0.09, h * 0.6), Paint()..color = Palette.buoyRed)
-      ..drawRect(Rect.fromLTWH(center.dx + length * 0.02, center.dy - h * 1.9, length * 0.09, 5), Paint()..color = Colors.black87);
+      ..drawRect(
+        Rect.fromLTWH(center.dx + length * 0.02, center.dy - h * 1.9, length * 0.09, h * 0.6),
+        Paint()..color = Palette.buoyRed,
+      )
+      ..drawRect(
+        Rect.fromLTWH(center.dx + length * 0.02, center.dy - h * 1.9, length * 0.09, 5),
+        Paint()..color = Colors.black87,
+      );
     for (int i = 0; i < 3; i++) {
-      canvas.drawCircle(Offset(center.dx - length * 0.13 + i * length * 0.1, center.dy - h * 0.95), 4, Paint()..color = Palette.shallows);
+      canvas.drawCircle(
+        Offset(center.dx - length * 0.13 + i * length * 0.1, center.dy - h * 0.95),
+        4,
+        Paint()..color = Palette.shallows,
+      );
     }
   }
 
@@ -386,7 +436,10 @@ class _ScenePainter extends CustomPainter {
           ..close(),
         Paint()..color = hull,
       )
-      ..drawRect(Rect.fromLTWH(c.dx - 3, c.dy - h - length * 0.95, 6, length * 0.95), Paint()..color = Palette.plankDark)
+      ..drawRect(
+        Rect.fromLTWH(c.dx - 3, c.dy - h - length * 0.95, 6, length * 0.95),
+        Paint()..color = Palette.plankDark,
+      )
       ..drawPath(
         Path()
           ..moveTo(c.dx - 6, c.dy - h - length * 0.9)
@@ -437,7 +490,11 @@ class _ScenePainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      final Rect box = Rect.fromCenter(center: at, width: painter.width + 28 * grow, height: painter.height + 14 * grow);
+      final Rect box = Rect.fromCenter(
+        center: at,
+        width: painter.width + 28 * grow,
+        height: painter.height + 14 * grow,
+      );
       canvas.drawRRect(
         RRect.fromRectAndRadius(box, Radius.circular(10 * grow)),
         Paint()..color = (lit ? Palette.brass : Colors.white).withValues(alpha: lit ? 1 : 0.7),
@@ -448,7 +505,12 @@ class _ScenePainter extends CustomPainter {
     tag('PIER', const Offset((_World.pierStart + _World.pierEnd) / 2, _World.pierDeck - 70), ShowcaseTimeline.pier);
     tag('QUAY', const Offset(_World.quayStart + 70, _World.quayTop - 80), ShowcaseTimeline.quay);
     _pronunciation(canvas, const Offset(_World.quayStart + 70, _World.quayTop - 80), grow);
-    tag('ON PILINGS', const Offset((_World.pilingsStart + _World.pilingsEnd) / 2, 250), ShowcaseTimeline.tide, size: 24);
+    tag(
+      'ON PILINGS',
+      const Offset((_World.pilingsStart + _World.pilingsEnd) / 2, 250),
+      ShowcaseTimeline.tide,
+      size: 24,
+    );
     tag('AFLOAT', Offset(_World.floatStart + 330, waterline - 120), ShowcaseTimeline.tide, size: 24);
     tag('TIDE', Offset(_World.floatEnd + 70, waterline + 50), ShowcaseTimeline.tide, size: 24);
   }
@@ -463,24 +525,42 @@ class _ScenePainter extends CustomPainter {
     if (t < said || !quay.contains(t)) {
       return;
     }
-    TextPainter line(final String text, final double size, {final FontStyle style = FontStyle.normal, final FontWeight weight = FontWeight.w400}) =>
-        TextPainter(
-          text: TextSpan(
-            text: text,
-            style: TextStyle(fontFamily: 'Georgia', fontSize: size * grow, fontStyle: style, fontWeight: weight, color: Palette.night),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
+    TextPainter line(
+      final String text,
+      final double size, {
+      final FontStyle style = FontStyle.normal,
+      final FontWeight weight = FontWeight.w400,
+    }) => TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: 'Georgia',
+          fontSize: size * grow,
+          fontStyle: style,
+          fontWeight: weight,
+          color: Palette.night,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
     final TextPainter small = line('pronounced', 15, style: FontStyle.italic);
     final TextPainter big = line('“key”', 30, weight: FontWeight.w700);
     final double width = math.max(small.width, big.width) + 28 * grow;
     final double height = small.height + big.height + 12 * grow;
-    final Rect sign = Rect.fromCenter(center: quayLabel - Offset(0, 62 * grow + height / 2), width: width, height: height);
+    final Rect sign = Rect.fromCenter(
+      center: quayLabel - Offset(0, 62 * grow + height / 2),
+      width: width,
+      height: height,
+    );
     // A post from the sign down to the label, so it reads as belonging to it.
     canvas
-      ..drawLine(Offset(sign.center.dx, sign.bottom), Offset(sign.center.dx, quayLabel.dy - 24 * grow), Paint()
-        ..color = Palette.plankDark
-        ..strokeWidth = 3 * grow)
+      ..drawLine(
+        Offset(sign.center.dx, sign.bottom),
+        Offset(sign.center.dx, quayLabel.dy - 24 * grow),
+        Paint()
+          ..color = Palette.plankDark
+          ..strokeWidth = 3 * grow,
+      )
       ..drawRRect(RRect.fromRectAndRadius(sign, Radius.circular(10 * grow)), Paint()..color = Palette.sail)
       ..drawRRect(
         RRect.fromRectAndRadius(sign, Radius.circular(10 * grow)),

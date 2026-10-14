@@ -121,14 +121,14 @@ class _TimedFairwayState extends State<_TimedFairway> {
         _scroll.position.jumpTo(_scroll.position.maxScrollExtent * widget.fraction(t).clamp(0.0, 1.0));
       }
     });
-    return HarborFairway(controller: _scroll, slivers: widget.slivers);
+    return HarborScrollView(controller: _scroll, slivers: widget.slivers);
   }
 }
 
 // --- Pieces the demos share --------------------------------------------------------------------
 
-HarborDock _header(final String title, {final double alpha = 0.72}) => HarborDock.pier(
-  wake: const HarborWake.fade(length: 18, blurSigma: 14),
+HarborBar _header(final String title, {final double alpha = 0.72}) => HarborBar.overlay(
+  edgeEffect: const HarborEdgeEffect.fade(length: 18, blurSigma: 14),
   backdrop: ColoredBox(color: Colors.white.withValues(alpha: alpha)),
   child: SizedBox(
     height: 64,
@@ -141,18 +141,18 @@ HarborDock _header(final String title, {final double alpha = 0.72}) => HarborDoc
   ),
 );
 
-HarborDock _tabBar({final Widget? middle}) => HarborDock.quay(
+HarborBar _tabBar({final Widget? middle}) => HarborBar.solid(
   backdrop: const ColoredBox(color: Palette.deepSea),
   child: ShowcaseTabBar(middle: middle),
 );
 
 List<Widget> _boatRows(final int from, final int count) => <Widget>[
-  for (int i = from; i < from + count; i++) HarborMooringLine(child: BoatRow(index: i)),
+  for (int i = from; i < from + count; i++) HarborClear.rowInsets(child: BoatRow(index: i)),
 ];
 
 SliverList _boatList(final int count, {final int from = 0}) => SliverList.builder(
   itemCount: count,
-  itemBuilder: (final BuildContext _, final int i) => HarborMooringLine(child: BoatRow(index: from + i)),
+  itemBuilder: (final BuildContext _, final int i) => HarborClear.rowInsets(child: BoatRow(index: from + i)),
 );
 
 class _Strip extends StatelessWidget {
@@ -267,11 +267,11 @@ class _MooredDemo extends StatelessWidget {
   const _MooredDemo();
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[_header('New berth')],
-    bottom: <HarborDock>[_tabBar()],
-    body: const HarborMoored(
-      mooringLine: true,
+  Widget build(final BuildContext context) => HarborFrame(
+    top: <HarborBar>[_header('New berth')],
+    bottom: <HarborBar>[_tabBar()],
+    body: const HarborClear(
+      rowInsets: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -298,10 +298,10 @@ class _MooringDemo extends StatelessWidget {
     final double carousel = ShowcaseTimeline.ease(t, _cue('mooring', 'carousel'), _end('mooring') - 0.8);
     return Stack(
       children: <Widget>[
-        Harbor(
-          top: <HarborDock>[_header('Harbor Master')],
-          bottom: <HarborDock>[_tabBar()],
-          body: HarborFairway(
+        HarborFrame(
+          top: <HarborBar>[_header('Harbor Master')],
+          bottom: <HarborBar>[_tabBar()],
+          body: HarborScrollView(
             slivers: <Widget>[
               SliverList.list(children: _boatRows(0, 2)),
               SliverToBoxAdapter(child: _Carousel(progress: carousel)),
@@ -343,7 +343,7 @@ class _CarouselState extends State<_Carousel> {
         _scroll.position.jumpTo(_scroll.position.maxScrollExtent * widget.progress);
       }
     });
-    final double margin = HarborWaters.of(context).margin.start;
+    final double margin = HarborRoom.of(context).margin.start;
     return SizedBox(
       height: 132,
       child: ListView.separated(
@@ -405,11 +405,12 @@ class _FairwayDemo extends StatelessWidget {
   const _FairwayDemo();
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[_header('Harbor Master')],
-    bottom: <HarborDock>[_tabBar()],
+  Widget build(final BuildContext context) => HarborFrame(
+    top: <HarborBar>[_header('Harbor Master')],
+    bottom: <HarborBar>[_tabBar()],
     body: _TimedFairway(
-      fraction: (final double t) => ShowcaseTimeline.ease(t, _cue('fairway', 'channel') - 0.5, _cue('fairway', 'rest') + 0.4),
+      fraction: (final double t) =>
+          ShowcaseTimeline.ease(t, _cue('fairway', 'channel') - 0.5, _cue('fairway', 'rest') + 0.4),
       slivers: <Widget>[_boatList(14)],
     ),
   );
@@ -420,16 +421,17 @@ class _SliverDockDemo extends StatelessWidget {
   const _SliverDockDemo();
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[_header('Harbor Master')],
-    bottom: <HarborDock>[_tabBar()],
+  Widget build(final BuildContext context) => HarborFrame(
+    top: <HarborBar>[_header('Harbor Master')],
+    bottom: <HarborBar>[_tabBar()],
     body: _TimedFairway(
-      fraction: (final double t) => ShowcaseTimeline.ease(t, _cue('sliverdock', 'header') - 0.4, _end('sliverdock') - 0.8),
+      fraction: (final double t) =>
+          ShowcaseTimeline.ease(t, _cue('sliverdock', 'header') - 0.4, _end('sliverdock') - 0.8),
       slivers: <Widget>[
         _boatList(2),
-        const HarborSliverDock(child: _Strip('North pontoon')),
+        const HarborSliverBar(child: _Strip('North pontoon')),
         _boatList(4, from: 2),
-        const HarborSliverDock(child: _Strip('South pontoon', color: Color(0xFF2E7D5B))),
+        const HarborSliverBar(child: _Strip('South pontoon', color: Color(0xFF2E7D5B))),
         _boatList(12, from: 6),
       ],
     ),
@@ -441,15 +443,15 @@ class _StickyDemo extends StatelessWidget {
   const _StickyDemo();
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[_header('Harbor log')],
-    bottom: <HarborDock>[_tabBar()],
+  Widget build(final BuildContext context) => HarborFrame(
+    top: <HarborBar>[_header('Harbor log')],
+    bottom: <HarborBar>[_tabBar()],
     body: _TimedFairway(
       fraction: (final double t) => ShowcaseTimeline.ease(t, _cue('sticky', 'rides'), _end('sticky') - 0.6),
       slivers: <Widget>[
         _boatList(2),
         SliverToBoxAdapter(
-          child: HarborMooringLine(
+          child: HarborClear.rowInsets(
             child: Container(
               height: 680,
               margin: const EdgeInsets.symmetric(vertical: 6),
@@ -493,28 +495,31 @@ class _OpenWaterDemo extends StatelessWidget {
   const _OpenWaterDemo();
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[_header('Chart', alpha: 0.55)],
-    bottom: <HarborDock>[_tabBar()],
-    body: HarborOpenWater(
-      builder: (final BuildContext context, final HarborWatersData waters) => Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          const CustomPaint(painter: _BayMap()),
-          Positioned(
-            top: waters.docks.top + 18,
-            left: waters.margin.start,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Palette.deepSea, borderRadius: BorderRadius.circular(16)),
-              child: const Text(
-                'Berth 4 · 0.3 nm',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+  Widget build(final BuildContext context) => HarborFrame(
+    top: <HarborBar>[_header('Chart', alpha: 0.55)],
+    bottom: <HarborBar>[_tabBar()],
+    body: Builder(
+      builder: (final BuildContext context) {
+        final HarborRoomData waters = HarborRoom.of(context);
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const CustomPaint(painter: _BayMap()),
+            Positioned(
+              top: waters.bars.top + 18,
+              left: waters.margin.start,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: Palette.deepSea, borderRadius: BorderRadius.circular(16)),
+                child: const Text(
+                  'Berth 4 · 0.3 nm',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     ),
   );
 }
@@ -540,7 +545,11 @@ class _BayMap extends CustomPainter {
     canvas
       ..drawPath(coast, land)
       ..drawPath(coast, shore);
-    for (final (double x, double y, double r) in const <(double, double, double)>[(0.72, 0.42, 46), (0.82, 0.7, 30), (0.55, 0.82, 22)]) {
+    for (final (double x, double y, double r) in const <(double, double, double)>[
+      (0.72, 0.42, 46),
+      (0.82, 0.7, 30),
+      (0.55, 0.82, 22),
+    ]) {
       canvas
         ..drawCircle(Offset(size.width * x, size.height * y), r, land)
         ..drawCircle(Offset(size.width * x, size.height * y), r, shore);
@@ -584,11 +593,11 @@ class _DryDockDemo extends StatelessWidget {
   const _DryDockDemo();
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    top: <HarborDock>[_header('Notes')],
-    bottom: const <HarborDock>[
-      HarborDock.quay(
-        tide: HarborTideStance.dryDock,
+  Widget build(final BuildContext context) => HarborFrame(
+    top: <HarborBar>[_header('Notes')],
+    bottom: const <HarborBar>[
+      HarborBar.solid(
+        keyboard: HarborKeyboardStance.reserves,
         backdrop: ColoredBox(color: Palette.deepSea),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -605,13 +614,13 @@ class _DryDockDemo extends StatelessWidget {
                 ],
               ),
             ),
-            HarborDryDock(child: _Swatches()),
+            HarborKeyboardSpace(child: _Swatches()),
           ],
         ),
       ),
     ],
-    body: const HarborMoored(
-      mooringLine: true,
+    body: const HarborClear(
+      rowInsets: true,
       child: Padding(
         padding: EdgeInsets.only(top: 12),
         child: Text(
@@ -639,7 +648,12 @@ class _Swatches extends StatelessWidget {
         for (int i = 0; i < 15; i++)
           DecoratedBox(
             decoration: BoxDecoration(
-              color: <Color>[...Palette.hulls, Palette.brass, Palette.shallows, Palette.buoyRed][i % (Palette.hulls.length + 3)],
+              color: <Color>[
+                ...Palette.hulls,
+                Palette.brass,
+                Palette.shallows,
+                Palette.buoyRed,
+              ][i % (Palette.hulls.length + 3)],
               shape: BoxShape.circle,
             ),
           ),
@@ -662,15 +676,15 @@ class _MakeWayDemo extends StatelessWidget {
         : t >= dark && t < withdraw
         ? HarborYield.dark
         : null;
-    return Harbor(
-      top: <HarborDock>[_header('Harbor Master')],
-      bottom: <HarborDock>[_tabBar()],
-      body: HarborMakeWay(
+    return HarborFrame(
+      top: <HarborBar>[_header('Harbor Master')],
+      bottom: <HarborBar>[_tabBar()],
+      body: HarborHideBar(
         key: ValueKey<HarborYield?>(mode),
         edge: HarborEdge.bottom,
         mode: mode ?? HarborYield.dark,
         active: mode != null,
-        child: HarborFairway(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
+        child: HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
       ),
     );
   }
@@ -683,16 +697,16 @@ class _PontoonDemo extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final bool edited = ShowcaseClock.of(context) >= _cue('pontoon', 'unsaved') - 0.3;
-    return Harbor(
-      top: <HarborDock>[_header('Edit berth')],
-      bottom: <HarborDock>[_tabBar()],
-      body: HarborFairway(
+    return HarborFrame(
+      top: <HarborBar>[_header('Edit berth')],
+      bottom: <HarborBar>[_tabBar()],
+      body: HarborScrollView(
         slivers: <Widget>[
           SliverToBoxAdapter(
-            child: HarborPontoon(
+            child: HarborAttachedBar(
               edge: HarborEdge.bottom,
               active: edited,
-              dock: const HarborDock.pier(
+              bar: const HarborBar.overlay(
                 backdrop: ColoredBox(color: Palette.brass),
                 child: SizedBox(
                   height: 56,
@@ -714,7 +728,7 @@ class _PontoonDemo extends StatelessWidget {
                   ),
                 ),
               ),
-              child: HarborMooringLine(
+              child: HarborClear.rowInsets(
                 child: Column(
                   children: <Widget>[
                     _Field('Boat', edited ? 'Sea Breeze II' : 'Sea Breeze', focused: edited),
@@ -761,9 +775,9 @@ class _BuoyDemoState extends State<_BuoyDemo> {
     final double tap = _cue('buoy', 'tap');
     return Stack(
       children: <Widget>[
-        Harbor(
-          top: <HarborDock>[_header('Harbor Master')],
-          bottom: <HarborDock>[
+        HarborFrame(
+          top: <HarborBar>[_header('Harbor Master')],
+          bottom: <HarborBar>[
             _tabBar(
               middle: HarborAnchorPoint(
                 anchor: _launch,
@@ -775,9 +789,9 @@ class _BuoyDemoState extends State<_BuoyDemo> {
               ),
             ),
           ],
-          buoys: <HarborBuoy>[
+          floats: <HarborFloat>[
             if (t >= _cue('buoy', 'floating') - 0.2)
-              const HarborBuoy(
+              const HarborFloat(
                 placement: HarborAligned(alignment: AlignmentDirectional.bottomEnd),
                 child: FloatingActionButton(
                   onPressed: null,
@@ -786,7 +800,7 @@ class _BuoyDemoState extends State<_BuoyDemo> {
                 ),
               ),
             if (t >= _cue('buoy', 'speech') - 0.2 && t < modal)
-              HarborBuoy(
+              HarborFloat(
                 placement: HarborAnchored(_launch, side: HarborAnchorSide.above),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -795,7 +809,7 @@ class _BuoyDemoState extends State<_BuoyDemo> {
                 ),
               ),
             if (t >= modal && t < closes)
-              HarborBuoy(
+              HarborFloat(
                 placement: const HarborAligned(alignment: Alignment.center),
                 modal: true,
                 onDismiss: () {},
@@ -815,7 +829,7 @@ class _BuoyDemoState extends State<_BuoyDemo> {
                 ),
               ),
           ],
-          body: HarborFairway(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
+          body: HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
         ),
         _Tap(at: const Offset(70, 640), when: tap),
       ],
@@ -847,26 +861,26 @@ class _PortalDemoState extends State<_PortalDemo> {
     final double flips = _cue('portal', 'flips') - 0.5;
     _toggle(_first, t >= _cue('portal', 'menu') - 0.2 && t < flips);
     _toggle(_flipped, t >= flips && t < _end('portal') - 0.6);
-    return Harbor(
-      top: <HarborDock>[_header('Harbor Master')],
-      bottom: <HarborDock>[_tabBar()],
-      body: HarborFairway(
+    return HarborFrame(
+      top: <HarborBar>[_header('Harbor Master')],
+      bottom: <HarborBar>[_tabBar()],
+      body: HarborScrollView(
         slivers: <Widget>[
           SliverList.builder(
             itemCount: 10,
             itemBuilder: (final BuildContext _, final int i) {
-              final Widget row = HarborMooringLine(child: BoatRow(index: i));
+              final Widget row = HarborClear.rowInsets(child: BoatRow(index: i));
               return switch (i) {
-                1 => HarborPortalBuoy(
+                1 => HarborPopover(
                   placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: _first,
-                  buoyBuilder: (final BuildContext _) => const _RowMenu(),
+                  popoverBuilder: (final BuildContext _) => const _RowMenu(),
                   child: row,
                 ),
-                6 => HarborPortalBuoy(
+                6 => HarborPopover(
                   placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: _flipped,
-                  buoyBuilder: (final BuildContext _) => const _RowMenu(),
+                  popoverBuilder: (final BuildContext _) => const _RowMenu(),
                   child: row,
                 ),
                 _ => row,
@@ -915,7 +929,7 @@ class _FlareDemo extends StatefulWidget {
 
 class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   BuildContext? _page;
-  HarborFlareEntry? _flare;
+  HarborToastEntry? _flare;
 
   @override
   double get opens => _cue('signal', 'toast') - 0.2;
@@ -924,9 +938,9 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   double get closes => _end('signal') - 0.8;
 
   @override
-  void open() => _flare = HarborFlares.raise(
+  void open() => _flare = HarborToasts.show(
     _page!,
-    slot: HarborFlareSlot.low,
+    slot: HarborToastSlot.low,
     duration: null,
     builder: (final BuildContext _) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -943,7 +957,7 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   );
 
   @override
-  void close() => _flare?.lower();
+  void close() => _flare?.hide();
 
   @override
   Widget build(final BuildContext context) {
@@ -952,13 +966,13 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
     final bool heard = t >= _cue('signal', 'announce') - 0.2 && t < closes;
     return Stack(
       children: <Widget>[
-        Harbor(
-          top: <HarborDock>[_header('Harbor Master')],
-          bottom: <HarborDock>[_tabBar()],
+        HarborFrame(
+          top: <HarborBar>[_header('Harbor Master')],
+          bottom: <HarborBar>[_tabBar()],
           body: Builder(
             builder: (final BuildContext page) {
               _page = page;
-              return HarborFairway(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]);
+              return HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]);
             },
           ),
         ),
@@ -1013,14 +1027,14 @@ abstract class _OverPageState<T extends StatefulWidget> extends State<T> with _C
     }
   }
 
-  Widget body() => HarborFairway(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]);
+  Widget body() => HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]);
 
   @override
   Widget build(final BuildContext context) {
     follow(ShowcaseClock.of(context));
-    return Harbor(
-      top: <HarborDock>[_header('Harbor Master')],
-      bottom: <HarborDock>[_tabBar()],
+    return HarborFrame(
+      top: <HarborBar>[_header('Harbor Master')],
+      bottom: <HarborBar>[_tabBar()],
       body: Builder(
         builder: (final BuildContext context) {
           page = context;
@@ -1064,17 +1078,17 @@ class _SheetDemoState extends _OverPageState<_SheetDemo> {
         ),
       ),
       footer: const Padding(padding: EdgeInsets.symmetric(horizontal: 18), child: _Button('Book berth 4')),
-      body: HarborFairway(
+      body: HarborScrollView(
         slivers: <Widget>[
           SliverList.list(
             children: const <Widget>[
-              HarborMooringLine(child: _Field('Boat', 'Sea Breeze')),
-              HarborMooringLine(child: _Field('Skipper', 'A. Marsh')),
-              HarborMooringLine(child: _Field('Arrives', 'Tuesday, noon')),
-              HarborMooringLine(child: _Field('Nights', '3')),
-              HarborMooringLine(child: _Field('Shore power', 'Yes')),
-              HarborMooringLine(child: _Field('Water', 'Yes')),
-              HarborMooringLine(child: _Field('Notes', 'Arriving under sail')),
+              HarborClear.rowInsets(child: _Field('Boat', 'Sea Breeze')),
+              HarborClear.rowInsets(child: _Field('Skipper', 'A. Marsh')),
+              HarborClear.rowInsets(child: _Field('Arrives', 'Tuesday, noon')),
+              HarborClear.rowInsets(child: _Field('Nights', '3')),
+              HarborClear.rowInsets(child: _Field('Shore power', 'Yes')),
+              HarborClear.rowInsets(child: _Field('Water', 'Yes')),
+              HarborClear.rowInsets(child: _Field('Notes', 'Arriving under sail')),
             ],
           ),
         ],
@@ -1104,7 +1118,7 @@ class _BreakwaterDemoState extends _OverPageState<_BreakwaterDemo> {
   @override
   Future<void> show(final BuildContext context) => showHarborSheet<void>(
     context,
-    breakwater: true,
+    coversPage: true,
     barrier: HarborSheetBarrier.none,
     builder: (final BuildContext _) => const HarborSheet(
       surface: ColoredBox(color: Palette.deepSea),
@@ -1160,7 +1174,7 @@ class _DialogDemoState extends _OverPageState<_DialogDemo> {
   Future<void> show(final BuildContext context) => showHarborDialog<void>(
     context,
     useRootNavigator: false,
-    inheritClearWater: true,
+    inheritRoom: true,
     builder: (final BuildContext _) => Center(
       child: Container(
         width: 300,
@@ -1175,7 +1189,10 @@ class _DialogDemoState extends _OverPageState<_DialogDemo> {
               style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Palette.deepSea),
             ),
             SizedBox(height: 10),
-            Text('Sea Breeze is asking to come alongside berth 4.', style: TextStyle(fontSize: 16, height: 1.35, color: Palette.deepSea)),
+            Text(
+              'Sea Breeze is asking to come alongside berth 4.',
+              style: TextStyle(fontSize: 16, height: 1.35, color: Palette.deepSea),
+            ),
             SizedBox(height: 18),
             _Button('Answer'),
           ],
@@ -1195,23 +1212,25 @@ class _LighthouseDemo extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final bool focused = ShowcaseClock.of(context) >= _cue('lighthouse', 'focused') - 0.3;
-    return Harbor(
-      top: <HarborDock>[_header('Log a sighting')],
-      bottom: <HarborDock>[_tabBar()],
-      body: HarborFairway(
+    return HarborFrame(
+      top: <HarborBar>[_header('Log a sighting')],
+      bottom: <HarborBar>[_tabBar()],
+      body: HarborScrollView(
         slivers: <Widget>[
           SliverList.list(
             children: <Widget>[
-              const HarborMooringLine(child: _Field('Vessel', 'Northwind')),
-              const HarborMooringLine(child: _Field('Seen at', 'Harbor mouth')),
-              const HarborMooringLine(child: _Field('Heading', 'North-east')),
-              const HarborMooringLine(child: _Field('Speed', '6 knots')),
-              const HarborMooringLine(child: _Field('Flag', 'Red ensign')),
-              const HarborMooringLine(child: _Field('Crew', '3')),
-              HarborBeacon(
+              const HarborClear.rowInsets(child: _Field('Vessel', 'Northwind')),
+              const HarborClear.rowInsets(child: _Field('Seen at', 'Harbor mouth')),
+              const HarborClear.rowInsets(child: _Field('Heading', 'North-east')),
+              const HarborClear.rowInsets(child: _Field('Speed', '6 knots')),
+              const HarborClear.rowInsets(child: _Field('Flag', 'Red ensign')),
+              const HarborClear.rowInsets(child: _Field('Crew', '3')),
+              HarborKeepInSight(
                 keepInSight: true,
                 clearance: 16,
-                child: HarborMooringLine(child: _Field('Remarks', focused ? 'Under full sail|' : '', focused: focused)),
+                child: HarborClear.rowInsets(
+                  child: _Field('Remarks', focused ? 'Under full sail|' : '', focused: focused),
+                ),
               ),
               const SizedBox(height: 24),
             ],
@@ -1238,10 +1257,10 @@ class _TrialsDemo extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
-    return Harbor(
-      top: <HarborDock>[_header('sea_trial_test.dart')],
-      body: HarborMoored(
-        mooringLine: true,
+    return HarborFrame(
+      top: <HarborBar>[_header('sea_trial_test.dart')],
+      body: HarborClear(
+        rowInsets: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -1263,7 +1282,12 @@ class _TrialsDemo extends StatelessWidget {
                       Expanded(
                         child: Text(
                           _trials[i].$2,
-                          style: const TextStyle(fontFamily: 'Menlo', fontSize: 13.5, height: 1.3, color: Palette.deepSea),
+                          style: const TextStyle(
+                            fontFamily: 'Menlo',
+                            fontSize: 13.5,
+                            height: 1.3,
+                            color: Palette.deepSea,
+                          ),
                         ),
                       ),
                     ],

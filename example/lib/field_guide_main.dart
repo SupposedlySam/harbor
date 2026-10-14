@@ -11,7 +11,7 @@ void main() => runApp(
     debugShowCheckedModeBanner: false,
     theme: Palette.theme(),
     builder: (final BuildContext context, final Widget? child) =>
-        HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+        HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
     home: const FieldGuidePage(),
   ),
 );

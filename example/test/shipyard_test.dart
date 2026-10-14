@@ -11,16 +11,16 @@ const HarborTrialDevice _device = HarborTrialDevice.iPhone17;
 Widget _app() => MaterialApp(
   theme: Palette.theme(),
   builder: (final BuildContext context, final Widget? child) =>
-      HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+      HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
   home: const HarborPage(child: ShipyardPage()),
 );
 
 /// Reduce motion stills the sea and the boats, so `pumpAndSettle` (and the
-/// sea trial's tide, which settles) can finish.
-Future<HarborSeaTrial> _pumpShipyard(final WidgetTester tester) async {
+/// trial's keyboard, which settles) can finish.
+Future<HarborTrial> _pumpShipyard(final WidgetTester tester) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
-  final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(), device: _device);
+  final HarborTrial trial = await tester.pumpHarborTrial(_app(), device: _device);
   await tester.pumpAndSettle();
   return trial;
 }
@@ -38,10 +38,10 @@ Future<void> _openPaintShop(final WidgetTester tester) async {
 void main() {
   testWidgets('the tool strip stands on the home indicator', (final WidgetTester tester) async {
     await _pumpShipyard(tester);
-    expect(_rect(tester, 'tool strip').bottom, _device.size.height - _device.coast.bottom);
+    expect(_rect(tester, 'tool strip').bottom, _device.size.height - _device.systemEdges.bottom);
   });
 
-  testWidgets('a change moors the unsaved bar directly above the tool strip', (final WidgetTester tester) async {
+  testWidgets('a change attaches the unsaved bar directly above the tool strip', (final WidgetTester tester) async {
     await _pumpShipyard(tester);
     expect(find.byKey(const ValueKey<String>('unsaved bar')), findsNothing);
 
@@ -74,25 +74,25 @@ void main() {
     expect(_rect(tester, _lowBoat).top, moreOrLessEquals(before.top, epsilon: 0.5));
   });
 
-  testWidgets('the paint panel keeps one height across tabs and the tide', (final WidgetTester tester) async {
-    final HarborSeaTrial trial = await _pumpShipyard(tester);
-    // Let high water settle once, so the dry dock stops estimating.
-    await trial.raiseTide();
-    await trial.lowerTide();
+  testWidgets('the paint panel keeps one height across tabs and the keyboard', (final WidgetTester tester) async {
+    final HarborTrial trial = await _pumpShipyard(tester);
+    // Let the keyboard's height settle once, so the keyboard space stops estimating.
+    await trial.showKeyboard();
+    await trial.hideKeyboard();
 
     await _openPaintShop(tester);
     expect(find.byKey(const ValueKey<String>('estimate hint')), findsNothing);
 
-    await trial.raiseTide();
+    await trial.showKeyboard();
     final double nameTabHeight = _rect(tester, 'paint panel').height;
-    // The keyboard covers exactly the dry dock's ground.
-    expect(_rect(tester, 'dry dock').top, moreOrLessEquals(trial.waterline));
+    // The keyboard covers exactly the keyboard space's ground.
+    expect(_rect(tester, 'dry dock').top, moreOrLessEquals(trial.keyboardTop));
     expect(find.byKey(const ValueKey<String>('name field')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey<String>('tab hull')));
-    await trial.lowerTide();
+    await trial.hideKeyboard();
     expect(_rect(tester, 'paint panel').height, nameTabHeight);
-    expect(_rect(tester, 'dry dock').top, moreOrLessEquals(_device.size.height - _device.tideHeight));
+    expect(_rect(tester, 'dry dock').top, moreOrLessEquals(_device.size.height - _device.keyboardHeight));
 
     // Painting changes the hull.
     final Color red = Palette.hulls[3];
@@ -101,13 +101,13 @@ void main() {
     expect(find.byKey(const ValueKey<String>('unsaved bar')), findsOneWidget);
   });
 
-  testWidgets('with the tide in, the tool strip is withdrawn', (final WidgetTester tester) async {
-    final HarborSeaTrial trial = await _pumpShipyard(tester);
-    await trial.raiseTide();
-    final HarborDockRecord strip = trial
-        .docksAround(find.byKey(const ValueKey<String>('tool strip')))
-        .singleWhere((final HarborDockRecord d) => d.label == 'tool strip');
-    expect(strip.state, HarborDockState.withdrawn);
+  testWidgets('with the keyboard shown, the tool strip is withdrawn', (final WidgetTester tester) async {
+    final HarborTrial trial = await _pumpShipyard(tester);
+    await trial.showKeyboard();
+    final HarborBarRecord strip = trial
+        .barsAround(find.byKey(const ValueKey<String>('tool strip')))
+        .singleWhere((final HarborBarRecord d) => d.label == 'tool strip');
+    expect(strip.state, HarborBarState.withdrawn);
     expect(strip.extent, 0);
     expect(strip.rect.height, 0);
   });

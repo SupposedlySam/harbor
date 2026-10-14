@@ -18,7 +18,7 @@ const Set<String> _stageToggles = <String>{
   'toggle Status bar',
   'toggle Home indicator',
   'toggle Right-to-left',
-  'toggle HarborChartOverlay',
+  'toggle HarborInspectorOverlay',
 };
 
 /// Shows the whole phone on pages that crop to part of it, so measurements are
@@ -40,7 +40,7 @@ Future<void> _pumpEntry(final WidgetTester tester, final Widget entry) async {
     MaterialApp(
       theme: Palette.theme(),
       builder: (final BuildContext context, final Widget? child) =>
-          HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+          HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
       home: entry,
     ),
   );
@@ -96,8 +96,8 @@ Future<void> _slide(final WidgetTester tester, final String label, final double 
   await _settle(tester);
 }
 
-/// Brings the tide in (the keyboard up) or takes it out again.
-Future<void> _toggleTide(final WidgetTester tester) => _tapKey(tester, 'tide toggle');
+/// Shows the keyboard or hides it again.
+Future<void> _toggleKeyboard(final WidgetTester tester) => _tapKey(tester, 'tide toggle');
 
 /// What the code card under the stage says.
 String _code(final WidgetTester tester) => tester
@@ -113,7 +113,7 @@ Future<void> _stageSetting(final WidgetTester tester, final String key) async {
   await _showStage(tester);
 }
 
-/// Taps every option chip and switch of the entry (not the stage's own), and the tide toggle.
+/// Taps every option chip and switch of the entry (not the stage's own), and the keyboard toggle.
 Future<void> _tapEveryControl(final WidgetTester tester) async {
   final Set<String> tapped = <String>{};
   for (int pass = 0; pass < 4; pass++) {
@@ -135,93 +135,89 @@ Future<void> _tapEveryControl(final WidgetTester tester) async {
       expect(tester.takeException(), isNull, reason: 'after tapping $key');
     }
   }
-  await _toggleTide(tester);
-  await _toggleTide(tester);
+  await _toggleKeyboard(tester);
+  await _toggleKeyboard(tester);
   expect(tester.takeException(), isNull);
 }
 
 void _near(final double actual, final double expected, final String what) =>
     expect(actual, moreOrLessEquals(expected, epsilon: 0.75), reason: what);
 
-/// The wake bands the fairway holding [row] fades its rows along.
-Map<HarborEdge, HarborWakeBand> _wakesOver(final WidgetTester tester, final String row) => tester
-    .widget<HarborWakeMask>(
-      find.ancestor(of: find.byKey(ValueKey<String>(row)), matching: find.byType(HarborWakeMask)).first,
+/// The fade bands the scroll view holding [row] fades its rows along.
+Map<HarborEdge, HarborFadeBand> _fadesOver(final WidgetTester tester, final String row) => tester
+    .widget<HarborFadeMask>(
+      find.ancestor(of: find.byKey(ValueKey<String>(row)), matching: find.byType(HarborFadeMask)).first,
     )
-    .wakes;
+    .bands;
 
-/// The render box that draws a dock's frame (and its hairline), found from
-/// something in the dock.
-RenderBox _dockFrameOf(final WidgetTester tester, final Finder inDock) {
-  RenderObject? node = tester.renderObject(inDock);
+/// The render box that draws a bar's frame (and its hairline), found from
+/// something in the bar.
+RenderBox _barFrameOf(final WidgetTester tester, final Finder inBar) {
+  RenderObject? node = tester.renderObject(inBar);
   while (node != null && node.runtimeType.toString() != 'RenderHarborDockFrame') {
     node = node.parent;
   }
-  expect(node, isNotNull, reason: 'a dock frame above the dock\'s child');
+  expect(node, isNotNull, reason: 'a bar frame above the bar\'s child');
   return node! as RenderBox;
 }
 
 void main() {
   test('the entries are listed in their groups', () {
     expect(frameEntries.map((final e) => e.className), <String>[
-      'Harbor',
-      'HarborSea',
-      'Harbor(newPort: true)',
+      'HarborFrame',
+      'HarborRoot',
+      'HarborFrame(isPage: true)',
       'HarborSizing.hugBody',
     ]);
     expect(dockEntries.map((final e) => e.className), <String>[
-      'HarborDock.pier',
-      'HarborDock.quay',
+      'HarborBar.overlay',
+      'HarborBar.solid',
       'bottom: [composer, tabBar]',
-      'HarborDockState',
-      'HarborDock.restingExtent + HarborFollow',
-      'HarborDock.hitTestBehavior',
-      'HarborDock.reserve',
+      'HarborBarState',
+      'HarborBar.restingExtent + HarborFollow',
+      'HarborBar.hitTestBehavior',
+      'HarborBar.reserve',
     ]);
   });
 
-  group('Harbor', () {
-    testWidgets('the body starts below the top quay and rows keep the margin', (final WidgetTester tester) async {
+  group('HarborFrame', () {
+    testWidgets('the body starts below the top solid bar and rows keep the margin', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HarborEntry());
       final (:Rect screen, :double scale) = _screen(tester);
       final Rect body = _rect(tester, 'harbor body');
-      _near(body.top, _rect(tester, 'top dock').bottom, 'body top at the top quay');
+      _near(body.top, _rect(tester, 'top bar').bottom, 'body top at the top bar');
+      _near(_rect(tester, 'top bar').top - screen.top, _statusBar * scale, 'the bar pads itself below the status bar');
+      _near(body.bottom, _rect(tester, 'bottom bar').top, 'body bottom at the bottom bar');
       _near(
-        _rect(tester, 'top dock').top - screen.top,
-        _statusBar * scale,
-        'the quay pads itself below the status bar',
-      );
-      _near(body.bottom, _rect(tester, 'bottom dock').top, 'body bottom at the bottom quay');
-      _near(
-        screen.bottom - _rect(tester, 'bottom dock').bottom,
+        screen.bottom - _rect(tester, 'bottom bar').bottom,
         _homeIndicator * scale,
-        'the quay sits above the home indicator',
+        'the bar sits above the home indicator',
       );
-      _near(_rect(tester, 'mooring marker').left - body.left, 16 * scale, 'mooring line');
+      _near(_rect(tester, 'row insets marker').left - body.left, 16 * scale, 'row insets');
       _near(body.left, screen.left, 'the body runs to the frame\'s edge');
-      expect(_code(tester), contains('top: [HarborDock.quay(child: Header())]'));
-      expect(_code(tester), contains('bottom: [HarborDock.quay(child: TabBar())]'));
+      expect(_code(tester), contains('top: [HarborBar.solid(child: Header())]'));
+      expect(_code(tester), contains('bottom: [HarborBar.solid(child: TabBar())]'));
     });
 
-    testWidgets('top dock off: the body starts at the top of the screen', (final WidgetTester tester) async {
+    testWidgets('top bar off: the body starts at the top of the screen', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HarborEntry());
-      await _tapKey(tester, 'toggle top dock');
+      await _tapKey(tester, 'toggle top bar');
       await _showStage(tester);
       final (:Rect screen, scale: _) = _screen(tester);
-      expect(find.byKey(const ValueKey<String>('top dock')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('top bar')), findsNothing);
       _near(_rect(tester, 'harbor body').top, screen.top, 'body top at the screen top');
-      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'bottom dock').top, 'the bottom quay still holds');
+      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'bottom bar').top, 'the bottom bar still holds');
       expect(_code(tester), isNot(contains('top:')));
     });
 
-    testWidgets('bottom dock off: the body runs to the bottom of the screen', (final WidgetTester tester) async {
+    testWidgets('bottom bar off: the body runs to the bottom of the screen', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HarborEntry());
-      await _tapKey(tester, 'toggle bottom dock');
+      await _tapKey(tester, 'toggle bottom bar');
       await _showStage(tester);
       final (:Rect screen, scale: _) = _screen(tester);
-      expect(find.byKey(const ValueKey<String>('bottom dock')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('bottom bar')), findsNothing);
       _near(_rect(tester, 'harbor body').bottom, screen.bottom, 'body bottom at the screen bottom');
-      _near(_rect(tester, 'harbor body').top, _rect(tester, 'top dock').bottom, 'the top quay still holds');
+      _near(_rect(tester, 'harbor body').top, _rect(tester, 'top bar').bottom, 'the top bar still holds');
       expect(_code(tester), isNot(contains('bottom:')));
     });
 
@@ -230,22 +226,26 @@ void main() {
       await _slide(tester, 'margin', 32);
       await _showStage(tester);
       final (screen: _, :double scale) = _screen(tester);
-      _near(_rect(tester, 'mooring marker').left - _rect(tester, 'harbor body').left, 32 * scale, 'mooring line at 32');
+      _near(
+        _rect(tester, 'row insets marker').left - _rect(tester, 'harbor body').left,
+        32 * scale,
+        'row insets at 32',
+      );
       expect(_code(tester), contains('EdgeInsetsDirectional.symmetric(horizontal: 32)'));
       await _slide(tester, 'margin', 0);
       await _showStage(tester);
       _near(
-        _rect(tester, 'mooring marker').left,
+        _rect(tester, 'row insets marker').left,
         _rect(tester, 'harbor body').left,
         'no margin: rows at the body\'s edge',
       );
     });
 
-    testWidgets('bodyClearsTide on: the body ends at the waterline when the keyboard is up', (
+    testWidgets('bodyClearsKeyboard on: the body ends at the keyboard top when the keyboard is up', (
       final WidgetTester tester,
     ) async {
       await _pumpEntry(tester, const HarborEntry());
-      await _toggleTide(tester);
+      await _toggleKeyboard(tester);
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       _near(screen.bottom - _rect(tester, 'harbor body').bottom, _keyboard * scale, 'body bottom at the keyboard top');
@@ -254,45 +254,53 @@ void main() {
         findsOneWidget,
         reason: 'nothing of the keyboard reaches over the body',
       );
-      expect(_code(tester), contains('bodyClearsTide: true'));
+      expect(_code(tester), contains('bodyClearsKeyboard: true'));
     });
 
-    testWidgets('bodyClearsTide off: the body runs under the keyboard and is told how far it reaches', (
+    testWidgets('bodyClearsKeyboard off: the body runs under the keyboard and is told how far it reaches', (
       final WidgetTester tester,
     ) async {
       await _pumpEntry(tester, const HarborEntry());
-      await _tapKey(tester, 'toggle bodyClearsTide');
-      await _toggleTide(tester);
+      await _tapKey(tester, 'toggle bodyClearsKeyboard');
+      await _toggleKeyboard(tester);
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       final Rect body = _rect(tester, 'harbor body');
-      _near(body.bottom, _rect(tester, 'bottom dock').top, 'the body still ends at the bottom quay');
-      final double underQuay = (screen.bottom - body.bottom) / scale;
-      expect(underQuay, lessThan(_keyboard - 100), reason: 'the body reaches well under the keyboard');
-      expect(find.textContaining('keyboard ${(_keyboard - underQuay).toStringAsFixed(0)}'), findsOneWidget);
-      expect(_code(tester), contains('bodyClearsTide: false'));
+      _near(body.bottom, _rect(tester, 'bottom bar').top, 'the body still ends at the bottom bar');
+      final double underBar = (screen.bottom - body.bottom) / scale;
+      expect(underBar, lessThan(_keyboard - 100), reason: 'the body reaches well under the keyboard');
+      expect(find.textContaining('keyboard ${(_keyboard - underBar).toStringAsFixed(0)}'), findsOneWidget);
+      expect(_code(tester), contains('bodyClearsKeyboard: false'));
     });
   });
 
-  group('HarborSea', () {
-    testWidgets('moored content clears the coast and keeps the sea\'s margin', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const HarborSeaEntry());
+  group('HarborRoot', () {
+    testWidgets('HarborClear content clears the system edges and keeps the root\'s margin', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, const HarborRootEntry());
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'moored marker').top - screen.top, (_statusBar + 12) * scale, 'below the status bar');
-      _near(_rect(tester, 'moored marker').left - screen.left, 16 * scale, 'the sea\'s margin');
-      _near(screen.right - _rect(tester, 'moored marker').right, 16 * scale, 'the margin on the end side too');
-      expect(find.text('coast T 62'), findsOneWidget);
-      expect(find.text('coast B 34'), findsOneWidget);
+      _near(_rect(tester, 'clear marker').top - screen.top, (_statusBar + 12) * scale, 'below the status bar');
+      _near(_rect(tester, 'clear marker').left - screen.left, 16 * scale, 'the root\'s margin');
+      _near(screen.right - _rect(tester, 'clear marker').right, 16 * scale, 'the margin on the end side too');
+      expect(find.text('systemEdges T 62'), findsOneWidget);
+      expect(find.text('systemEdges B 34'), findsOneWidget);
       expect(_code(tester), startsWith('MaterialApp('));
     });
 
     // Breaks if: the stage draws a portrait status bar on a phone on its side (it spilled over the
-    // marker), or the coast readings sit in a corner where the screen's curve and the side coast cut
-    // them off, or vanish with a 0 band. Jonah saw all three on the web build.
+    // marker), or the system edge readings sit in a corner where the screen's curve and the side
+    // system edge cut them off, or vanish with a 0 band. Jonah saw all three on the web build.
     // Hiding the status bar hides the bar, not the phone: the island and the camera are hardware.
-    testWidgets('a hidden status bar takes its time and icons, and leaves the island or camera', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const HarborSeaEntry());
-      expect(tester.widget<StatusBarArt>(find.byType(StatusBarArt)).icons, isTrue, reason: 'positive control: the bar is drawn');
+    testWidgets('a hidden status bar takes its time and icons, and leaves the island or camera', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, const HarborRootEntry());
+      expect(
+        tester.widget<StatusBarArt>(find.byType(StatusBarArt)).icons,
+        isTrue,
+        reason: 'positive control: the bar is drawn',
+      );
       await _stageSetting(tester, 'toggle Status bar');
       final StatusBarArt island = tester.widget<StatusBarArt>(find.byType(StatusBarArt));
       expect(island.icons, isFalse);
@@ -305,28 +313,36 @@ void main() {
       expect(find.byType(StatusBarArt), findsNothing, reason: 'no cutout: nothing is left at the top');
     });
 
-    testWidgets('on a phone on its side there is no status bar, and the coast readings stay in view', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const HarborSeaEntry());
+    testWidgets('on a phone on its side there is no status bar, and the system edge readings stay in view', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, const HarborRootEntry());
       await _stageSetting(tester, 'Device: iPhone 17 landscape');
       await _showStage(tester);
-      expect(find.byType(StatusBarArt), findsNothing, reason: 'no top coast, no status bar');
-      expect(find.byKey(const ValueKey<String>('side island')), findsOneWidget, reason: 'the island sits in the left coast');
+      expect(find.byType(StatusBarArt), findsNothing, reason: 'no top system edge, no status bar');
+      expect(
+        find.byKey(const ValueKey<String>('side island')),
+        findsOneWidget,
+        reason: 'the island sits in the left system edge',
+      );
       final (:Rect screen, scale: _) = _screen(tester);
       // The landscape screen's own scale: 874 points across.
       final double scale = screen.width / 874;
-      final Rect labels = _rect(tester, 'coast labels');
-      expect(screen.right - labels.right, greaterThanOrEqualTo(62 * scale), reason: 'clear of the right coast');
-      expect(labels.bottom, lessThanOrEqualTo(screen.bottom - 21 * scale), reason: 'above the bottom coast');
-      expect(find.text('coast T 0'), findsOneWidget);
-      expect(find.text('coast B 21'), findsOneWidget);
+      final Rect labels = _rect(tester, 'system edge labels');
+      expect(screen.right - labels.right, greaterThanOrEqualTo(62 * scale), reason: 'clear of the right system edge');
+      expect(labels.bottom, lessThanOrEqualTo(screen.bottom - 21 * scale), reason: 'above the bottom system edge');
+      expect(find.text('systemEdges T 0'), findsOneWidget);
+      expect(find.text('systemEdges B 21'), findsOneWidget);
       await _tapKey(tester, 'toggle Home indicator');
-      expect(find.text('coast B 0'), findsOneWidget, reason: 'a 0 coast still reads 0');
+      expect(find.text('systemEdges B 0'), findsOneWidget, reason: 'a 0 system edge still reads 0');
     });
 
     // An Android phone on its side keeps its status bar (Jonah asked for it), and with three
     // buttons its navigation bar moves to the right, where the home indicator switch hides it.
-    testWidgets('an Android phone on its side keeps its status bar, and its navigation bar is on the right', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const HarborSeaEntry());
+    testWidgets('an Android phone on its side keeps its status bar, and its navigation bar is on the right', (
+      final WidgetTester tester,
+    ) async {
+      await _pumpEntry(tester, const HarborRootEntry());
       await _stageSetting(tester, 'Device: Android 3-button landscape');
       await _showStage(tester);
       final StatusBarArt bar = tester.widget<StatusBarArt>(find.byType(StatusBarArt));
@@ -335,56 +351,55 @@ void main() {
       expect(find.byKey(const ValueKey<String>('side navigation bar')), findsOneWidget);
       final (:Rect screen, scale: _) = _screen(tester);
       final double scale = screen.width / 915;
-      _near(_rect(tester, 'moored marker').top - screen.top, (24 + 12) * scale, 'below the status bar');
-      _near(screen.right - _rect(tester, 'moored marker').right, (48 + 16) * scale, 'clear of the navigation bar');
-      _near(_rect(tester, 'moored marker').left - screen.left, 16 * scale, 'no coast on the left');
+      _near(_rect(tester, 'clear marker').top - screen.top, (24 + 12) * scale, 'below the status bar');
+      _near(screen.right - _rect(tester, 'clear marker').right, (48 + 16) * scale, 'clear of the navigation bar');
+      _near(_rect(tester, 'clear marker').left - screen.left, 16 * scale, 'no system edge on the left');
       await _tapKey(tester, 'toggle Home indicator');
       expect(find.byKey(const ValueKey<String>('side navigation bar')), findsNothing);
-      _near(screen.right - _rect(tester, 'moored marker').right, 16 * scale, 'the navigation bar gives its side back');
+      _near(screen.right - _rect(tester, 'clear marker').right, 16 * scale, 'the navigation bar gives its side back');
     });
 
-    testWidgets('an Android gesture phone on its side has its camera on the left, which stays when the status bar is hidden', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const HarborSeaEntry());
-      await _stageSetting(tester, 'Device: Android gesture landscape');
-      await _showStage(tester);
-      expect(tester.widget<StatusBarArt>(find.byType(StatusBarArt)).camera, isFalse, reason: 'the camera has left the top');
-      expect(find.byKey(const ValueKey<String>('side camera')), findsOneWidget);
-      final (:Rect screen, scale: _) = _screen(tester);
-      final double scale = screen.width / 915;
-      _near(_rect(tester, 'moored marker').left - screen.left, (24 + 16) * scale, 'clear of the camera');
-      expect(find.text('coast B 24'), findsOneWidget);
-      await _stageSetting(tester, 'toggle Status bar');
-      expect(find.byType(StatusBarArt), findsNothing, reason: 'the cutout is on the side: the top is all status bar');
-      expect(find.byKey(const ValueKey<String>('side camera')), findsOneWidget, reason: 'the camera is hardware');
-    });
+    testWidgets(
+      'an Android gesture phone on its side has its camera on the left, which stays when the status bar is hidden',
+      (final WidgetTester tester) async {
+        await _pumpEntry(tester, const HarborRootEntry());
+        await _stageSetting(tester, 'Device: Android gesture landscape');
+        await _showStage(tester);
+        expect(
+          tester.widget<StatusBarArt>(find.byType(StatusBarArt)).camera,
+          isFalse,
+          reason: 'the camera has left the top',
+        );
+        expect(find.byKey(const ValueKey<String>('side camera')), findsOneWidget);
+        final (:Rect screen, scale: _) = _screen(tester);
+        final double scale = screen.width / 915;
+        _near(_rect(tester, 'clear marker').left - screen.left, (24 + 16) * scale, 'clear of the camera');
+        expect(find.text('systemEdges B 24'), findsOneWidget);
+        await _stageSetting(tester, 'toggle Status bar');
+        expect(find.byType(StatusBarArt), findsNothing, reason: 'the cutout is on the side: the top is all status bar');
+        expect(find.byKey(const ValueKey<String>('side camera')), findsOneWidget, reason: 'the camera is hardware');
+      },
+    );
 
-    testWidgets('nested HarborSea: the outer pier reads as coast', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const HarborSeaEntry());
-      await _tapKey(tester, 'toggle nested HarborSea');
+    testWidgets('nested HarborRoot: the outer bar reads as a system edge', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const HarborRootEntry());
+      await _tapKey(tester, 'toggle nested HarborRoot');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(
-        _rect(tester, 'outer pier').bottom - screen.top,
-        (_statusBar + 52) * scale,
-        'the pier under the status bar',
-      );
-      _near(
-        _rect(tester, 'moored marker').top,
-        _rect(tester, 'outer pier').bottom + 12 * scale,
-        'below the outer pier',
-      );
-      _near(_rect(tester, 'moored marker').left - screen.left, 16 * scale, 'the nested sea\'s margin');
-      expect(find.text('coast T 114'), findsOneWidget);
-      expect(find.text('coast B 34'), findsOneWidget);
-      expect(_code(tester), contains('body: HarborSea(child: preview)'));
+      _near(_rect(tester, 'outer bar').bottom - screen.top, (_statusBar + 52) * scale, 'the bar under the status bar');
+      _near(_rect(tester, 'clear marker').top, _rect(tester, 'outer bar').bottom + 12 * scale, 'below the outer bar');
+      _near(_rect(tester, 'clear marker').left - screen.left, 16 * scale, 'the nested root\'s margin');
+      expect(find.text('systemEdges T 114'), findsOneWidget);
+      expect(find.text('systemEdges B 34'), findsOneWidget);
+      expect(_code(tester), contains('body: HarborRoot(child: preview)'));
     });
   });
 
-  group('Harbor(newPort:)', () {
-    testWidgets('newPort off: the inner header sits under the outer one', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const NewPortEntry());
+  group('HarborFrame(isPage:)', () {
+    testWidgets('isPage off: the inner header sits under the outer one', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const PageEntry());
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'inner header').top, _rect(tester, 'outer header').bottom, 'sees the outer docks');
+      _near(_rect(tester, 'inner header').top, _rect(tester, 'outer header').bottom, 'sees the outer bars');
       _near(
         _rect(tester, 'inner header').top - screen.top,
         (_statusBar + 52) * scale,
@@ -393,17 +408,17 @@ void main() {
       _near(
         _rect(tester, 'stage row 0').top,
         _rect(tester, 'inner header').bottom + 12 * scale,
-        'rows rest past the inner wake',
+        'rows rest past the inner fade',
       );
-      expect(find.text('Harbor(newPort: false)'), findsOneWidget);
-      expect(_code(tester), contains('newPort: false'));
+      expect(find.text('HarborFrame(isPage: false)'), findsOneWidget);
+      expect(_code(tester), contains('isPage: false'));
     });
 
-    testWidgets('newPort on: the inner header sees only the coast and goes under the status bar', (
+    testWidgets('isPage on: the inner header sees only the system edges and goes under the status bar', (
       final WidgetTester tester,
     ) async {
-      await _pumpEntry(tester, const NewPortEntry());
-      await _tapKey(tester, 'toggle newPort');
+      await _pumpEntry(tester, const PageEntry());
+      await _tapKey(tester, 'toggle isPage');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       _near(_rect(tester, 'inner header').top, _rect(tester, 'outer header').top, 'level with the outer header');
@@ -411,22 +426,22 @@ void main() {
       _near(
         _rect(tester, 'stage row 0').top,
         _rect(tester, 'inner header').bottom + 12 * scale,
-        'rows rest past the inner wake',
+        'rows rest past the inner fade',
       );
-      expect(find.text('Harbor(newPort: true)'), findsWidgets);
-      expect(_code(tester), contains('newPort: true'));
+      expect(find.text('HarborFrame(isPage: true)'), findsWidgets);
+      expect(_code(tester), contains('isPage: true'));
     });
   });
 
   group('HarborSizing.hugBody', () {
-    testWidgets('hugBody: the harbor is as tall as its body and quay', (final WidgetTester tester) async {
+    testWidgets('hugBody: the frame is as tall as its body and bar', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HugBodyEntry());
       final (:Rect screen, :double scale) = _screen(tester);
-      final Rect harbor = _rect(tester, 'sized harbor');
-      _near(harbor.top, _rect(tester, 'sized body').top, 'no top dock: harbor top is the body top');
+      final Rect frame = _rect(tester, 'sized frame');
+      _near(frame.top, _rect(tester, 'sized body').top, 'no top bar: frame top is the body top');
       _near(_rect(tester, 'sized body').height, 180 * scale, 'the body keeps its own height');
-      _near(harbor.bottom, screen.bottom, 'sits at the bottom');
-      _near(harbor.height, (180 + 56 + _homeIndicator) * scale, 'body + quay + home indicator');
+      _near(frame.bottom, screen.bottom, 'sits at the bottom');
+      _near(frame.height, (180 + 56 + _homeIndicator) * scale, 'body + bar + home indicator');
       expect(_code(tester), contains('sizing: HarborSizing.hugBody'));
     });
 
@@ -435,77 +450,78 @@ void main() {
       await _slide(tester, 'body height', 300);
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'sized harbor').height, (300 + 56 + _homeIndicator) * scale, 'grew with the body');
-      _near(_rect(tester, 'sized harbor').bottom, screen.bottom, 'still at the bottom');
+      _near(_rect(tester, 'sized frame').height, (300 + 56 + _homeIndicator) * scale, 'grew with the body');
+      _near(_rect(tester, 'sized frame').bottom, screen.bottom, 'still at the bottom');
       expect(find.text('body 300 tall'), findsOneWidget);
       expect(_code(tester), contains('SizedBox(height: 300'));
     });
 
-    testWidgets('fill: the harbor takes the whole height whatever the body asks for', (
-      final WidgetTester tester,
-    ) async {
+    testWidgets('fill: the frame takes the whole height whatever the body asks for', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HugBodyEntry());
       await _tapKey(tester, 'sizing: fill');
       await _showStage(tester);
       final (:Rect screen, scale: _) = _screen(tester);
-      _near(_rect(tester, 'sized harbor').top, screen.top, 'fill takes the whole height');
-      _near(_rect(tester, 'sized harbor').bottom, screen.bottom, 'down to the bottom');
+      _near(_rect(tester, 'sized frame').top, screen.top, 'fill takes the whole height');
+      _near(_rect(tester, 'sized frame').bottom, screen.bottom, 'down to the bottom');
       await _slide(tester, 'body height', 300);
       await _showStage(tester);
-      _near(_rect(tester, 'sized harbor').top, _screen(tester).screen.top, 'the body height does not size it');
+      _near(_rect(tester, 'sized frame').top, _screen(tester).screen.top, 'the body height does not size it');
       expect(_code(tester), contains('sizing: HarborSizing.fill'));
     });
   });
 
-  group('HarborDock.pier', () {
-    Future<void> pumpPier(final WidgetTester tester) => _pumpEntry(tester, const PierEntry());
+  group('HarborBar.overlay', () {
+    Future<void> pumpOverlay(final WidgetTester tester) => _pumpEntry(tester, const OverlayBarEntry());
 
-    testWidgets('fade: rows rest past the wake, which runs from the pier\'s face', (final WidgetTester tester) async {
-      await pumpPier(tester);
+    testWidgets('fade: rows rest past the fade, which runs from the bar\'s face', (final WidgetTester tester) async {
+      await pumpOverlay(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       _near(
         _rect(tester, 'stage row 0').top - screen.top,
         (_statusBar + 52 + 16) * scale,
-        'first row past the 16 wake',
+        'first row past the 16 fade',
       );
-      expect(_wakesOver(tester, 'stage row 0'), <HarborEdge, HarborWakeBand>{
-        HarborEdge.top: const HarborWakeBand(dockEdge: _statusBar + 52, wakeEnd: _statusBar + 52 + 16),
+      expect(_fadesOver(tester, 'stage row 0'), <HarborEdge, HarborFadeBand>{
+        HarborEdge.top: const HarborFadeBand(barFace: _statusBar + 52, fadeEnd: _statusBar + 52 + 16),
       });
-      expect(_code(tester), contains('wake: HarborWake.fade(length: 16, blurSigma: 0, restsAt: HarborRest.wakeEnd)'));
+      expect(
+        _code(tester),
+        contains('edgeEffect: HarborEdgeEffect.fade(length: 16, blurSigma: 0, restsAt: HarborRest.fadeEnd)'),
+      );
     });
 
-    testWidgets('fade length: the wake and the resting line move together', (final WidgetTester tester) async {
-      await pumpPier(tester);
+    testWidgets('fade length: the fade and the resting line move together', (final WidgetTester tester) async {
+      await pumpOverlay(tester);
       await _slide(tester, 'length', 40);
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       _near(
         _rect(tester, 'stage row 0').top - screen.top,
         (_statusBar + 52 + 40) * scale,
-        'first row past the 40 wake',
+        'first row past the 40 fade',
       );
       expect(
-        _wakesOver(tester, 'stage row 0')[HarborEdge.top],
-        const HarborWakeBand(dockEdge: _statusBar + 52, wakeEnd: _statusBar + 52 + 40),
+        _fadesOver(tester, 'stage row 0')[HarborEdge.top],
+        const HarborFadeBand(barFace: _statusBar + 52, fadeEnd: _statusBar + 52 + 40),
       );
-      expect(_code(tester), contains('HarborWake.fade(length: 40,'));
+      expect(_code(tester), contains('HarborEdgeEffect.fade(length: 40,'));
     });
 
-    testWidgets('restsAt dockEdge: rows rest at the pier\'s face, under the wake', (final WidgetTester tester) async {
-      await pumpPier(tester);
-      await _tapKey(tester, 'restsAt: dockEdge');
+    testWidgets('restsAt barFace: rows rest at the bar\'s face, under the fade', (final WidgetTester tester) async {
+      await pumpOverlay(tester);
+      await _tapKey(tester, 'restsAt: barFace');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'stage row 0').top - screen.top, (_statusBar + 52) * scale, 'first row at the pier\'s face');
+      _near(_rect(tester, 'stage row 0').top - screen.top, (_statusBar + 52) * scale, 'first row at the bar\'s face');
       expect(
-        _wakesOver(tester, 'stage row 0')[HarborEdge.top],
-        const HarborWakeBand(dockEdge: _statusBar + 52, wakeEnd: _statusBar + 52 + 16),
+        _fadesOver(tester, 'stage row 0')[HarborEdge.top],
+        const HarborFadeBand(barFace: _statusBar + 52, fadeEnd: _statusBar + 52 + 16),
       );
-      expect(_code(tester), contains('restsAt: HarborRest.dockEdge'));
+      expect(_code(tester), contains('restsAt: HarborRest.barFace'));
     });
 
-    testWidgets('blurSigma: the water under the pier is frosted', (final WidgetTester tester) async {
-      await pumpPier(tester);
+    testWidgets('blurSigma: the content under the bar is frosted', (final WidgetTester tester) async {
+      await pumpOverlay(tester);
       expect(_onStage(find.byType(BackdropFilter)), findsNothing, reason: 'no frosting at 0');
       await _slide(tester, 'blurSigma', 12);
       final Finder frost = _onStage(find.byType(BackdropFilter));
@@ -514,31 +530,35 @@ void main() {
       expect(_code(tester), contains('blurSigma: 12'));
     });
 
-    testWidgets('wake none: rows rest at the pier\'s face and nothing fades them', (final WidgetTester tester) async {
-      await pumpPier(tester);
-      await _tapKey(tester, 'wake: none');
+    testWidgets('edgeEffect none: rows rest at the bar\'s face and nothing fades them', (
+      final WidgetTester tester,
+    ) async {
+      await pumpOverlay(tester);
+      await _tapKey(tester, 'edgeEffect: none');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'stage row 0').top - screen.top, (_statusBar + 52) * scale, 'first row at the pier\'s face');
-      expect(_wakesOver(tester, 'stage row 0'), isEmpty);
+      _near(_rect(tester, 'stage row 0').top - screen.top, (_statusBar + 52) * scale, 'first row at the bar\'s face');
+      expect(_fadesOver(tester, 'stage row 0'), isEmpty);
       expect(find.byKey(const ValueKey<String>('slider length')), findsNothing, reason: 'fade options hide');
-      expect(find.byKey(const ValueKey<String>('restsAt: wakeEnd')), findsNothing);
-      expect(_code(tester), contains('wake: HarborWake.none'));
+      expect(find.byKey(const ValueKey<String>('restsAt: fadeEnd')), findsNothing);
+      expect(_code(tester), contains('edgeEffect: HarborEdgeEffect.none'));
     });
 
-    testWidgets('wake hairline: a line on the pier\'s face, rows rest right at it', (final WidgetTester tester) async {
-      await pumpPier(tester);
-      final Finder header = _onStage(find.text('HarborDock.pier'));
-      // The pier draws its planks and title, and nothing after them.
+    testWidgets('edgeEffect hairline: a line on the bar\'s face, rows rest right at it', (
+      final WidgetTester tester,
+    ) async {
+      await pumpOverlay(tester);
+      final Finder header = _onStage(find.text('HarborBar.overlay'));
+      // The bar draws its planks and title, and nothing after them.
       final Color planks = Palette.plank.withValues(alpha: 0.82);
       expect(
-        _dockFrameOf(tester, header),
+        _barFrameOf(tester, header),
         paints
           ..rect(color: planks)
           ..paragraph(),
       );
       expect(
-        _dockFrameOf(tester, header),
+        _barFrameOf(tester, header),
         isNot(
           paints
             ..rect()
@@ -546,12 +566,12 @@ void main() {
             ..rect(),
         ),
       );
-      await _tapKey(tester, 'wake: hairline');
+      await _tapKey(tester, 'edgeEffect: hairline');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'stage row 0').top - screen.top, (_statusBar + 52) * scale, 'first row at the pier\'s face');
-      expect(_wakesOver(tester, 'stage row 0'), isEmpty);
-      final RenderBox frame = _dockFrameOf(tester, header);
+      _near(_rect(tester, 'stage row 0').top - screen.top, (_statusBar + 52) * scale, 'first row at the bar\'s face');
+      expect(_fadesOver(tester, 'stage row 0'), isEmpty);
+      final RenderBox frame = _barFrameOf(tester, header);
       expect(
         frame,
         paints
@@ -559,18 +579,18 @@ void main() {
           ..paragraph()
           ..rect(rect: Rect.fromLTWH(0, frame.size.height - 1, frame.size.width, 1), color: Palette.brass),
       );
-      expect(_code(tester), contains('wake: HarborWake.hairline()'));
+      expect(_code(tester), contains('edgeEffect: HarborEdgeEffect.hairline()'));
     });
 
-    testWidgets('backdrop: the planks are drawn under the pier, or not at all', (final WidgetTester tester) async {
-      await pumpPier(tester);
+    testWidgets('backdrop: the planks are drawn under the bar, or not at all', (final WidgetTester tester) async {
+      await pumpOverlay(tester);
       final Finder planks = _onStage(
         find.byWidgetPredicate((final Widget w) => w is ColoredBox && w.color == Palette.plank.withValues(alpha: 0.82)),
       );
       expect(planks, findsOneWidget);
       final (:Rect screen, :double scale) = _screen(tester);
       _near(tester.getRect(planks).top, screen.top, 'the backdrop runs up under the status bar');
-      _near(tester.getRect(planks).height, (_statusBar + 52) * scale, 'over the pier\'s whole ground');
+      _near(tester.getRect(planks).height, (_statusBar + 52) * scale, 'over the bar\'s whole ground');
       expect(_code(tester), contains('backdrop: PierPlanks()'));
       await _tapKey(tester, 'toggle backdrop');
       expect(planks, findsNothing);
@@ -578,42 +598,42 @@ void main() {
     });
   });
 
-  group('HarborDock.quay', () {
-    testWidgets('the body starts where the quays end', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const QuayEntry());
+  group('HarborBar.solid', () {
+    testWidgets('the body starts where the solid bars end', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const SolidBarEntry());
       final (:Rect screen, :double scale) = _screen(tester);
       final Rect body = _rect(tester, 'harbor body');
-      _near(body.top, _rect(tester, 'top quay').bottom, 'below the top quay');
-      _near(body.bottom, _rect(tester, 'bottom quay').top, 'above the bottom quay');
+      _near(body.top, _rect(tester, 'top bar').bottom, 'below the top bar');
+      _near(body.bottom, _rect(tester, 'bottom bar').top, 'above the bottom bar');
       _near(
-        screen.bottom - _rect(tester, 'bottom quay').bottom,
+        screen.bottom - _rect(tester, 'bottom bar').bottom,
         _homeIndicator * scale,
         'the home indicator beats minimum 16',
       );
       expect(find.textContaining('padding  T 0 · B 0'), findsOneWidget);
     });
 
-    testWidgets('top quay off: the body starts at the top and is padded by the status bar', (
+    testWidgets('top bar off: the body starts at the top and is padded by the status bar', (
       final WidgetTester tester,
     ) async {
-      await _pumpEntry(tester, const QuayEntry());
-      await _tapKey(tester, 'toggle top quay');
+      await _pumpEntry(tester, const SolidBarEntry());
+      await _tapKey(tester, 'toggle top bar');
       await _showStage(tester);
       final (:Rect screen, scale: _) = _screen(tester);
-      expect(find.byKey(const ValueKey<String>('top quay')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('top bar')), findsNothing);
       _near(_rect(tester, 'harbor body').top, screen.top, 'body top at the screen top');
       expect(find.textContaining('padding  T 62 · B 0'), findsOneWidget);
       expect(_code(tester), isNot(contains('top:')));
     });
 
-    testWidgets('bottom quay off: the body runs to the bottom and its minimum slider goes', (
+    testWidgets('bottom bar off: the body runs to the bottom and its minimum slider goes', (
       final WidgetTester tester,
     ) async {
-      await _pumpEntry(tester, const QuayEntry());
-      await _tapKey(tester, 'toggle bottom quay');
+      await _pumpEntry(tester, const SolidBarEntry());
+      await _tapKey(tester, 'toggle bottom bar');
       await _showStage(tester);
       final (:Rect screen, scale: _) = _screen(tester);
-      expect(find.byKey(const ValueKey<String>('bottom quay')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('bottom bar')), findsNothing);
       expect(find.byKey(const ValueKey<String>('slider minimum')), findsNothing);
       _near(_rect(tester, 'harbor body').bottom, screen.bottom, 'body bottom at the screen bottom');
       expect(find.textContaining('padding  T 0 · B 34'), findsOneWidget);
@@ -621,27 +641,27 @@ void main() {
     });
 
     testWidgets('minimum: more than the home indicator lifts the bar off the edge', (final WidgetTester tester) async {
-      await _pumpEntry(tester, const QuayEntry());
+      await _pumpEntry(tester, const SolidBarEntry());
       await _slide(tester, 'minimum', 40);
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(screen.bottom - _rect(tester, 'bottom quay').bottom, 40 * scale, 'the bar 40 off the edge');
-      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'bottom quay').top, 'the body still ends at the bar');
-      expect(find.text('HarborDock.quay(minimum: 40)'), findsOneWidget);
-      expect(_code(tester), contains('HarborDock.quay(minimum: 40,'));
+      _near(screen.bottom - _rect(tester, 'bottom bar').bottom, 40 * scale, 'the bar 40 off the edge');
+      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'bottom bar').top, 'the body still ends at the bar');
+      expect(find.text('HarborBar.solid(minimum: 40)'), findsOneWidget);
+      expect(_code(tester), contains('HarborBar.solid(minimum: 40,'));
     });
 
     testWidgets('minimum: keeps the bar 16 off the edge of a phone with no home indicator', (
       final WidgetTester tester,
     ) async {
-      await _pumpEntry(tester, const QuayEntry());
+      await _pumpEntry(tester, const SolidBarEntry());
       await _stageSetting(tester, 'Device: iPhone SE');
       final (:Rect screen, :double scale) = _screen(tester, deviceWidth: 375);
-      _near(screen.bottom - _rect(tester, 'bottom quay').bottom, 16 * scale, 'the bar 16 off the edge');
+      _near(screen.bottom - _rect(tester, 'bottom bar').bottom, 16 * scale, 'the bar 16 off the edge');
       await _slide(tester, 'minimum', 0);
       await _showStage(tester);
       _near(
-        _rect(tester, 'bottom quay').bottom,
+        _rect(tester, 'bottom bar').bottom,
         _screen(tester, deviceWidth: 375).screen.bottom,
         'minimum 0: on the edge',
       );
@@ -649,30 +669,30 @@ void main() {
   });
 
   group('bottom: [composer, tabBar]', () {
-    testWidgets('two quays add up: the body ends above both', (final WidgetTester tester) async {
+    testWidgets('two solid bars add up: the body ends above both', (final WidgetTester tester) async {
       await _pumpEntry(tester, const StackingEntry());
       final (:Rect screen, :double scale) = _screen(tester);
       _near(_rect(tester, 'composer').bottom, _rect(tester, 'tabBar').top, 'composer stacks on the tab bar');
       _near(screen.bottom - _rect(tester, 'tabBar').bottom, _homeIndicator * scale, 'the tab bar is nearest the edge');
       _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'composer').top, 'the body ends above both');
-      expect(_code(tester), contains('HarborDock.quay(child: Composer()),\n    HarborDock.quay(child: TabBar())'));
+      expect(_code(tester), contains('HarborBar.solid(child: Composer()),\n    HarborBar.solid(child: TabBar())'));
     });
 
-    testWidgets('composer pier over a tab bar quay: the body runs under the composer, stops at the tab bar', (
+    testWidgets('an overlay composer over a solid tab bar: the body runs under the composer, stops at the tab bar', (
       final WidgetTester tester,
     ) async {
       await _pumpEntry(tester, const StackingEntry());
-      await _tapKey(tester, 'composer: pier');
+      await _tapKey(tester, 'composer: overlay');
       await _showStage(tester);
       _near(_rect(tester, 'composer').bottom, _rect(tester, 'tabBar').top, 'still stacked');
-      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'tabBar').top, 'the body runs under the pier');
-      expect(_code(tester), contains('HarborDock.pier(child: Composer())'));
+      _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'tabBar').top, 'the body runs under the overlay bar');
+      expect(_code(tester), contains('HarborBar.overlay(child: Composer())'));
     });
 
-    testWidgets('two piers: the body runs to the screen bottom under both', (final WidgetTester tester) async {
+    testWidgets('two overlay bars: the body runs to the screen bottom under both', (final WidgetTester tester) async {
       await _pumpEntry(tester, const StackingEntry());
-      await _tapKey(tester, 'composer: pier');
-      await _tapKey(tester, 'tabBar: pier');
+      await _tapKey(tester, 'composer: overlay');
+      await _tapKey(tester, 'tabBar: overlay');
       await _showStage(tester);
       final (:Rect screen, scale: _) = _screen(tester);
       expect(find.byKey(const ValueKey<String>('assert card')), findsNothing);
@@ -680,9 +700,11 @@ void main() {
       _near(_rect(tester, 'harbor body').bottom, screen.bottom, 'the body runs under both');
     });
 
-    testWidgets('a quay listed inside a pier asserts, and the stage says so', (final WidgetTester tester) async {
+    testWidgets('a solid bar listed inside an overlay bar asserts, and the stage says so', (
+      final WidgetTester tester,
+    ) async {
       await _pumpEntry(tester, const StackingEntry());
-      await _tapKey(tester, 'tabBar: pier');
+      await _tapKey(tester, 'tabBar: overlay');
       await _showStage(tester);
       expect(find.byKey(const ValueKey<String>('assert card')), findsOneWidget);
       // It sits in the bottom 480 the page focuses on, not off the top of that view.
@@ -691,30 +713,34 @@ void main() {
       expect(card.top, greaterThanOrEqualTo(screen.bottom - 480 * scale));
       expect(card.bottom, lessThanOrEqualTo(screen.bottom));
       expect(find.byKey(const ValueKey<String>('composer')), findsNothing);
-      expect(_code(tester), endsWith('// Asserts: a quay listed inside a pier.'));
-      await _tapKey(tester, 'tabBar: quay');
+      expect(_code(tester), endsWith('// Asserts: a solid bar listed inside an overlay bar.'));
+      await _tapKey(tester, 'tabBar: solid');
       expect(find.byKey(const ValueKey<String>('assert card')), findsNothing);
       expect(find.byKey(const ValueKey<String>('composer')), findsOneWidget);
     });
 
-    testWidgets('second dock off: the composer alone sits on the edge', (final WidgetTester tester) async {
+    testWidgets('second bar off: the composer alone sits on the edge', (final WidgetTester tester) async {
       await _pumpEntry(tester, const StackingEntry());
-      await _tapKey(tester, 'toggle second dock (tabBar)');
+      await _tapKey(tester, 'toggle second bar (tabBar)');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       expect(find.byKey(const ValueKey<String>('tabBar')), findsNothing);
-      expect(find.byKey(const ValueKey<String>('tabBar: quay')), findsNothing, reason: 'its options go with it');
+      expect(find.byKey(const ValueKey<String>('tabBar: solid')), findsNothing, reason: 'its options go with it');
       _near(screen.bottom - _rect(tester, 'composer').bottom, _homeIndicator * scale, 'the composer takes the edge');
       _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'composer').top, 'the body ends above it');
       expect(_code(tester), isNot(contains('TabBar()')));
-      await _tapKey(tester, 'composer: pier');
+      await _tapKey(tester, 'composer: overlay');
       await _showStage(tester);
-      _near(_rect(tester, 'harbor body').bottom, _screen(tester).screen.bottom, 'a lone pier: the body runs under it');
+      _near(
+        _rect(tester, 'harbor body').bottom,
+        _screen(tester).screen.bottom,
+        'a lone overlay bar: the body runs under it',
+      );
     });
   });
 
-  group('HarborDockState', () {
-    Future<void> pumpState(final WidgetTester tester) => _pumpEntry(tester, const DockStateEntry());
+  group('HarborBarState', () {
+    Future<void> pumpState(final WidgetTester tester) => _pumpEntry(tester, const BarStateEntry());
     String hint(final WidgetTester tester) => tester.widget<Text>(find.byKey(const ValueKey<String>('hint'))).data!;
 
     testWidgets('open: drawn, tappable, and its ground taken', (final WidgetTester tester) async {
@@ -727,7 +753,7 @@ void main() {
       expect(find.text('taps: 1'), findsOneWidget, reason: 'the header takes taps');
       expect(find.byKey(const ValueKey<String>('held ground')), findsNothing);
       expect(hint(tester), startsWith('open:'));
-      expect(_code(tester), contains('state: HarborDockState.open'));
+      expect(_code(tester), contains('state: HarborBarState.open'));
     });
 
     testWidgets('dark: not drawn or tappable, but it keeps its ground', (final WidgetTester tester) async {
@@ -747,7 +773,7 @@ void main() {
       await _settle(tester, steps: 1);
       expect(find.text('taps: 0'), findsOneWidget, reason: 'its button takes no taps');
       expect(hint(tester), contains('the dashed box is the ground it still holds'));
-      expect(_code(tester), contains('state: HarborDockState.dark'));
+      expect(_code(tester), contains('state: HarborBarState.dark'));
     });
 
     testWidgets('withdrawn: it slides out and gives its ground back', (final WidgetTester tester) async {
@@ -761,7 +787,7 @@ void main() {
         lessThanOrEqualTo(screen.top + 0.75),
         reason: 'slid out past the top',
       );
-      expect(_code(tester), contains('state: HarborDockState.withdrawn'));
+      expect(_code(tester), contains('state: HarborBarState.withdrawn'));
       await _tapKey(tester, 'state: open');
       await _showStage(tester);
       _near(_rect(tester, 'harbor body').top, _rect(tester, 'state header').bottom, 'back open');
@@ -851,7 +877,7 @@ void main() {
     });
   });
 
-  group('HarborDock.restingExtent + HarborFollow', () {
+  group('HarborBar.restingExtent + HarborFollow', () {
     testWidgets('at rest the rail is restingExtent wide and both panels start past it', (
       final WidgetTester tester,
     ) async {
@@ -914,12 +940,12 @@ void main() {
       final (:Rect screen, :double scale) = _screen(tester);
       _near(_rect(tester, 'panel second').left - screen.left, 210 * scale, 'second follows the open rail');
       _near(_rect(tester, 'panel second').left, _rect(tester, 'panel live').left, 'level with live');
-      expect(find.text('HarborMoored(\n  follow: HarborFollow.live,\n)'), findsNWidgets(2));
-      expect(_code(tester), contains('HarborMoored(follow: HarborFollow.live, child: page)'));
+      expect(find.text('HarborClear(\n  follow: HarborFollow.live,\n)'), findsNWidgets(2));
+      expect(_code(tester), contains('HarborClear(follow: HarborFollow.live, child: page)'));
     });
   });
 
-  group('HarborDock.hitTestBehavior', () {
+  group('HarborBar.hitTestBehavior', () {
     /// Taps the header's empty part, beside its title, and returns the row
     /// under that point.
     Future<int> tapBesideTitle(final WidgetTester tester) async {
@@ -981,62 +1007,72 @@ void main() {
     });
   });
 
-  group('HarborDock.reserve', () {
+  group('HarborBar.reserve', () {
     /// How far the body's probe reads padding at the bottom.
     double paddingBottom(final WidgetTester tester) {
-      final String reading = tester.widget<ProbeReadout>(find.byType(ProbeReadout)).settings.probes['Harbor body']!;
+      final String reading = tester.widget<ProbeReadout>(find.byType(ProbeReadout)).settings.probes['frame body']!;
       return double.parse(RegExp(r'padding  T \d+ · B (\d+)').firstMatch(reading)!.group(1)!);
     }
 
-    testWidgets('a pier reserve holds 80: the body runs under the footer and rests clear of it', (final WidgetTester tester) async {
+    testWidgets('an overlay reserve holds 80: the body runs under the footer and rests clear of it', (
+      final WidgetTester tester,
+    ) async {
       await _pumpEntry(tester, const ReserveEntry());
       final (:Rect screen, :double scale) = _screen(tester);
       expect(paddingBottom(tester), 80, reason: 'the body is told how far the reserve reaches');
-      _near(_rect(tester, 'harbor body').bottom, screen.bottom, 'a pier: the body runs to the edge');
+      _near(_rect(tester, 'harbor body').bottom, screen.bottom, 'an overlay bar: the body runs to the edge');
       final Rect footer = _rect(tester, 'reserve footer');
       _near(footer.height, 80 * scale, 'the footer drawn elsewhere fills the 80 held for it');
       _near(footer.bottom, screen.bottom, 'from the edge, over the home indicator');
-      expect(_code(tester), contains('HarborDock.reserve(extent: 80),'));
+      expect(_code(tester), contains('HarborBar.reserve(extent: 80),'));
     });
 
-    testWidgets('a short reserve reaches the coast; with no coast, just its extent', (final WidgetTester tester) async {
+    testWidgets('a short reserve reaches the system edge; with none, just its extent', (
+      final WidgetTester tester,
+    ) async {
       await _pumpEntry(tester, const ReserveEntry());
       await _slide(tester, 'extent', 20);
-      expect(paddingBottom(tester), _homeIndicator, reason: 'the larger of the coast and the extent');
+      expect(paddingBottom(tester), _homeIndicator, reason: 'the larger of the system edge and the extent');
       final (:Rect screen, :double scale) = _screen(tester);
-      _near(_rect(tester, 'reserve footer').height, _homeIndicator * scale, 'the footer stops at the coast, not at 20');
+      _near(
+        _rect(tester, 'reserve footer').height,
+        _homeIndicator * scale,
+        'the footer stops at the system edge, not at 20',
+      );
 
       await _stageSetting(tester, 'Device: iPhone SE');
       expect(paddingBottom(tester), 20, reason: 'no home indicator: the extent alone');
       final ({Rect screen, double scale}) se = _screen(tester, deviceWidth: 375);
       _near(_rect(tester, 'reserve footer').height, 20 * se.scale, 'the footer is the extent high');
-      expect(_code(tester), contains('HarborDock.reserve(extent: 20),'));
+      expect(_code(tester), contains('HarborBar.reserve(extent: 20),'));
     });
 
-    testWidgets('a quay reserve stops the body at it', (final WidgetTester tester) async {
+    testWidgets('a solid reserve stops the body at it', (final WidgetTester tester) async {
       await _pumpEntry(tester, const ReserveEntry());
-      await _tapKey(tester, 'kind: quay');
+      await _tapKey(tester, 'kind: solid');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
-      expect(paddingBottom(tester), 0, reason: 'a quay takes its ground: nothing left to clear');
+      expect(paddingBottom(tester), 0, reason: 'a solid bar takes its ground: nothing left to clear');
       _near(_rect(tester, 'harbor body').bottom, screen.bottom - 80 * scale, 'the body ends where the reserve starts');
       _near(_rect(tester, 'harbor body').bottom, _rect(tester, 'reserve footer').top, 'at the footer drawn elsewhere');
-      expect(_code(tester), contains('HarborDock.reserve(extent: 80, kind: HarborDockKind.quay),'));
+      expect(_code(tester), contains('HarborBar.reserve(extent: 80, kind: HarborBarKind.solid),'));
     });
 
-    testWidgets('past a tab bar outside it, a reserve reaches its extent beyond the tab bar', (final WidgetTester tester) async {
+    testWidgets('past a tab bar outside it, a reserve reaches its extent beyond the tab bar', (
+      final WidgetTester tester,
+    ) async {
       await _pumpEntry(tester, const ReserveEntry());
       await _tapKey(tester, 'toggle tab bar outside');
       await _showStage(tester);
       final (:Rect screen, :double scale) = _screen(tester);
       final Rect tabBar = _rect(tester, 'reserve tab bar');
-      _near(screen.bottom - tabBar.bottom, _homeIndicator * scale, 'the tab bar absorbs the coast');
-      _near(_rect(tester, 'harbor body').bottom, tabBar.top, 'the body stops at the tab bar, a quay');
-      expect(paddingBottom(tester), 80, reason: 'the reserve is a pier 80 past the tab bar');
+      _near(screen.bottom - tabBar.bottom, _homeIndicator * scale, 'the tab bar absorbs the system edge');
+      _near(_rect(tester, 'harbor body').bottom, tabBar.top, 'the body stops at the tab bar, a solid bar');
+      expect(paddingBottom(tester), 80, reason: 'the reserve is an overlay bar 80 past the tab bar');
       final Rect footer = _rect(tester, 'reserve footer');
       _near(footer.bottom, tabBar.top, 'the footer sits on the tab bar');
-      _near(footer.height, 80 * scale, 'and keeps all 80: the coast is the tab bar\'s');
-      expect(_code(tester), contains('        HarborDock.quay(child: TabBar()),\n'));
+      _near(footer.height, 80 * scale, 'and keeps all 80: the system edge is the tab bar\'s');
+      expect(_code(tester), contains('        HarborBar.solid(child: TabBar()),\n'));
     });
   });
 
@@ -1071,16 +1107,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('smoke only: no control on any frame or dock page throws when tapped', (final WidgetTester tester) async {
+  testWidgets('smoke only: no control on any frame or bar page throws when tapped', (final WidgetTester tester) async {
     for (final Widget entry in const <Widget>[
       HarborEntry(),
-      HarborSeaEntry(),
-      NewPortEntry(),
+      HarborRootEntry(),
+      PageEntry(),
       HugBodyEntry(),
-      PierEntry(),
-      QuayEntry(),
+      OverlayBarEntry(),
+      SolidBarEntry(),
       StackingEntry(),
-      DockStateEntry(),
+      BarStateEntry(),
       RestingExtentEntry(),
       HitTestEntry(),
     ]) {
@@ -1091,7 +1127,7 @@ void main() {
   });
 
   testWidgets('unfolding the plate leaves the stage half the page, at any size', (final WidgetTester tester) async {
-    // HarborPontoon's plate has the longest text.
+    // HarborAttachedBar's plate has the longest text.
     for (final Size size in <Size>[const Size(402, 874), const Size(414, 896), const Size(375, 667)]) {
       await _pumpEntry(tester, const PontoonEntry());
       tester.view
@@ -1105,10 +1141,14 @@ void main() {
       await tester.tap(plate);
       await _settle(tester, steps: 2);
       expect(tester.takeException(), isNull, reason: '$size');
-      expect(find.textContaining('In the harbor', findRichText: true), findsOneWidget, reason: 'unfolded at $size');
+      expect(find.textContaining('As drawn', findRichText: true), findsOneWidget, reason: 'unfolded at $size');
       final Rect quay = tester.getRect(find.byKey(const ValueKey<String>('control quay handle')));
       final double body = quay.top - tester.getRect(plate).top;
-      expect(tester.getRect(plate).height, lessThanOrEqualTo(body / 2 + 1), reason: 'the plate takes at most half ($size)');
+      expect(
+        tester.getRect(plate).height,
+        lessThanOrEqualTo(body / 2 + 1),
+        reason: 'the plate takes at most half ($size)',
+      );
       expect(tester.getRect(stage).height, greaterThan(stageBefore / 3), reason: 'the stage keeps its share ($size)');
       await tester.tap(plate);
       await _settle(tester, steps: 2);

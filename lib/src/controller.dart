@@ -4,23 +4,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFlareScope, HarborFlareSlot;
+import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFlareScope, HarborToastSlot;
 import 'placement.dart';
 import 'dock.dart';
 import 'edge.dart';
 import 'hinge.dart';
 import 'tide.dart';
 
-/// How a dock makes way when content asks it to.
+/// How a bar hides when content asks it to.
 enum HarborYield {
-  /// Lights out: the dock disappears but keeps its ground.
+  /// Lights out: the bar disappears but keeps its space.
   dark,
 
-  /// The dock withdraws and gives its ground back.
+  /// The bar withdraws and gives its space back.
   withdraw,
 }
 
-/// A request that a dock make way, returned by [HarborController.makeWay].
+/// A request that a bar hide, returned by [HarborController.hideBar].
 /// Release it when the content no longer needs the edge.
 class HarborClaim {
   HarborClaim._(this._controller, this.edge, this.mode);
@@ -38,14 +38,14 @@ class HarborClaim {
   }
 }
 
-/// A breakwater: a sheet (or any overlay) reporting how far it covers the
-/// bottom of the harbor that opened it, so that harbor's content keeps clear
+/// A page cover: a sheet (or any overlay) reporting how far it covers the
+/// bottom of the frame that opened it, so that frame's content keeps clear
 /// of it while it is up.
 ///
 /// Flutter has no equivalent: a `Scaffold` lifts its floating action button over a bottom sheet but
 /// leaves the body under it.
-class HarborBreakwater {
-  HarborBreakwater._(this._controller, this._coverage, {this.measuresTop = false});
+class HarborPageCover {
+  HarborPageCover._(this._controller, this._coverage, {this.measuresTop = false});
 
   HarborController? _controller;
   final ValueListenable<double> _coverage;
@@ -56,7 +56,7 @@ class HarborBreakwater {
 
   double get coverage => _controller == null || measuresTop ? 0.0 : _coverage.value;
 
-  /// The cover's top edge in global coordinates, for a breakwater that measures it.
+  /// The cover's top edge in global coordinates, for a page cover that measures it.
   double? get topInGlobal => _controller == null || !measuresTop ? null : _coverage.value;
 
   void remove() {
@@ -66,77 +66,81 @@ class HarborBreakwater {
   }
 }
 
-/// Builds a flare's entrance and exit around [child] from [animation], which
-/// runs from 0 to 1 as the flare is raised and back as it is lowered.
-typedef HarborFlareTransitionBuilder = Widget Function(BuildContext context, Animation<double> animation, Widget child);
+/// Builds a toast's entrance and exit around [child] from [animation], which
+/// runs from 0 to 1 as the toast is shown and back as it is hidden.
+typedef HarborToastTransitionBuilder = Widget Function(BuildContext context, Animation<double> animation, Widget child);
 
-/// Why a flare was closed, as [HarborFlareEntry.closed] reports it.
-enum HarborFlareClosedReason {
-  /// [HarborFlareEntry.lower] was called.
-  lower,
+/// Why a toast was closed, as [HarborToastEntry.closed] reports it.
+enum HarborToastClosedReason {
+  /// [HarborToastEntry.hide] was called.
+  hide,
 
-  /// A screen reader's dismiss action lowered it.
+  /// A screen reader's dismiss action hid it.
   dismiss,
 
-  /// Its [HarborFlareEntry.duration] ran out.
+  /// Its [HarborToastEntry.duration] ran out.
   timeout,
 
-  /// Nothing was left to show it: its harbor or overlay went away with no other to move to.
+  /// Nothing was left to show it: its frame or overlay went away with no other to move to.
   remove,
 
-  /// A flare raised with [HarborFlareQueue.replace] at its place took its turn.
-  replaced,
+  /// A toast shown with [HarborToastQueue.replace] at its place took its turn.
+  replaced;
+
+  /// The old name of [hide].
+  @Deprecated('Renamed hide. `dart fix` applies it.')
+  static const HarborToastClosedReason lower = hide;
 }
 
-/// Where a flare is in its life, read synchronously with [HarborFlareEntry.phase].
-enum HarborFlarePhase {
-  /// Raised, and waiting its turn or for the harbor to build it.
+/// Where a toast is in its life, read synchronously with [HarborToastEntry.phase].
+enum HarborToastPhase {
+  /// Shown, and waiting its turn or for the frame to build it.
   waiting,
 
   /// Built and on screen, entrance included.
   shown,
 
-  /// Gone: lowered and left, or lowered before it ever showed.
+  /// Gone: hidden and left, or hidden before it ever showed.
   closed,
 }
 
-/// What a flare does when one is already up at its slot, alignment or anchor.
-enum HarborFlareQueue {
+/// What a toast does when one is already up at its slot, alignment or anchor.
+enum HarborToastQueue {
   /// Waits its turn, as a `ScaffoldMessenger`'s snack bars do: it comes in once the one up has
   /// left. The default.
   wait,
 
-  /// Takes the turn at once: it goes to the front, and the flare up is lowered with
-  /// [HarborFlareClosedReason.replaced] and leaves at once, so the new one shows in its place. For an Undo whose window is
+  /// Takes the turn at once: it goes to the front, and the toast up is hidden with
+  /// [HarborToastClosedReason.replaced] and leaves at once, so the new one shows in its place. For an Undo whose window is
   /// tied to a pending action, or quick toggles on a remote-driven screen that read better
   /// replaced than late.
   replace,
 }
 
-/// A transient buoy raised by `HarborFlares.raise`, which returns it.
+/// A transient float shown by `HarborToasts.show`, which returns it.
 ///
-/// Flares raised at the same alignment in one harbor take turns, as a
+/// Toasts shown at the same alignment in one frame take turns, as a
 /// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
-/// it has been lowered and has run its exit. Flares raised by an [anchor] take
+/// it has been hidden and has run its exit. Toasts shown by an [anchor] take
 /// turns per anchor and [side].
-class HarborFlareEntry {
-  /// Flares are raised with `HarborFlares.raise`.
+class HarborToastEntry {
+  /// Toasts are shown with `HarborToasts.show`.
   @internal
-  HarborFlareEntry({
+  HarborToastEntry({
     required this.builder,
     required this.placement,
     required this._duration,
     this.persist = false,
     final Rect? avoidInGlobal,
-    this.raisedIn,
+    this.shownFrom,
     this.animationStyle,
     this.transitionBuilder,
     this.liveRegion = true,
     this.countsEntrance = false,
-    this.reachesCoast = false,
+    this.reachesSystemEdges = false,
     this.hinge,
     this.countsWhileCovered = false,
-    this.queue = HarborFlareQueue.wait,
+    this.queue = HarborToastQueue.wait,
   }) : _avoidAtRaise = avoidInGlobal;
 
   static const Duration _defaultTransition = Duration(milliseconds: 220);
@@ -144,59 +148,59 @@ class HarborFlareEntry {
 
   final WidgetBuilder builder;
 
-  /// Where the flare sits: at a point of the clear water, or by an anchor. Its directional
-  /// values are resolved in the reading direction of the page that raised it.
+  /// Where the toast sits: at a point of the room, or by an anchor. Its directional
+  /// values are resolved in the reading direction of the page that showed it.
   final HarborPlacement placement;
 
-  /// Where an aligned flare sits in the clear water; [HarborFlareSlot.high]'s point for an
+  /// Where an aligned toast sits in the room; [HarborToastSlot.high]'s point for an
   /// anchored one.
   @Deprecated('Read placement. Deprecated after 0.7.0.')
   Alignment get alignment => switch (placement) {
     HarborAligned(:final AlignmentGeometry alignment) => alignment as Alignment,
-    HarborAnchored() => HarborFlareSlot.high.alignment,
+    HarborAnchored() => HarborToastSlot.high.alignment,
   };
 
-  /// What an anchored flare sits by; null for one at a slot or an alignment. With [side], what a
+  /// What an anchored toast sits by; null for one at a slot or an alignment. With [side], what a
   /// transition reads to clip at the anchor ([HarborAnchorClip]).
   HarborAnchor? get anchor => switch (placement) {
     HarborAnchored(:final HarborAnchor? anchor) => anchor,
     HarborAligned() => null,
   };
 
-  /// Which side of its [anchor] the flare sits on; an anchored flare never flips, so this is the
+  /// Which side of its [anchor] the toast sits on; an anchored toast never flips, so this is the
   /// side it hangs on.
   HarborAnchorSide get side => switch (placement) {
     HarborAnchored(:final HarborAnchorSide side) => side,
     HarborAligned() => HarborAnchorSide.below,
   };
 
-  /// How far the flare sits from its [anchor].
+  /// How far the toast sits from its [anchor].
   @Deprecated('Read placement. Deprecated after 0.7.0.')
   double get gap => switch (placement) {
     HarborAnchored(:final double gap) => gap,
     HarborAligned() => HarborAnchored.defaultGap,
   };
 
-  /// How the flare lines up with its [anchor] across its [side].
+  /// How the toast lines up with its [anchor] across its [side].
   @Deprecated('Read placement. Deprecated after 0.7.0.')
   HarborCrossAlignment get crossAlignment => switch (placement) {
     HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
     HarborAligned() => HarborCrossAlignment.center,
   };
 
-  /// How far the flare keeps in from the clear water's edges.
+  /// How far the toast keeps in from the room's edges.
   @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
   EdgeInsets? get margin => placement.margin as EdgeInsets;
 
-  /// Where the flare takes its turn: flares at one place are shown one at a time.
+  /// Where the toast takes its turn: toasts at one place are shown one at a time.
   Object get _place => switch (placement) {
     HarborAligned(:final AlignmentGeometry alignment) => alignment,
     HarborAnchored(:final HarborAnchor? anchor, :final HarborAnchorSide side) => (anchor, side),
   };
 
-  /// How long the flare stays once it is in sight: from the end of its
+  /// How long the toast stays once it is in sight: from the end of its
   /// entrance (or its start, with [countsEntrance]), while no other route
-  /// covers its harbor. Counted again from the start each time it comes back
+  /// covers its frame. Counted again from the start each time it comes back
   /// into sight. Null never times out, the same as [persist].
   ///
   /// Setting it starts the time over with the new duration, as coming back
@@ -209,44 +213,48 @@ class HarborFlareEntry {
     _timing.value++;
   }
 
-  /// Whether the flare may reach over the coast (the home indicator, the status bar, a side
-  /// cutout) on the edges it is against, still off the docks and the keyboard. Its content is
-  /// handed the coast it covers as `MediaQuery.padding`.
-  final bool reachesCoast;
+  /// Whether the toast may reach over the system edges (the home indicator, the status bar, a
+  /// side cutout) on the edges it is against, still off the bars and the keyboard. Its content is
+  /// handed the system edges it covers as `MediaQuery.padding`.
+  final bool reachesSystemEdges;
 
-  /// Which hinges and folds the flare keeps to one side of; the raising page's when raised.
+  /// The old name of [reachesSystemEdges].
+  @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it.')
+  bool get reachesCoast => reachesSystemEdges;
+
+  /// Which hinges and folds the toast keeps to one side of; the showing page's when shown.
   final HarborHinge? hinge;
 
-  /// Whether the flare's time keeps running while another route covers its page, so a toast
+  /// Whether the toast's time keeps running while another route covers its page, so a toast
   /// confirming an action goes on schedule even if a page is pushed over it. A [hold] still stops
   /// it. Its time starts once its entrance has run, which it cannot while its page is covered.
   final bool countsWhileCovered;
 
-  /// Whether it waits its turn at its place or takes it at once. See [HarborFlareQueue].
-  final HarborFlareQueue queue;
+  /// Whether it waits its turn at its place or takes it at once. See [HarborToastQueue].
+  final HarborToastQueue queue;
 
-  /// Whether [duration] counts from the start of the flare's entrance rather
-  /// than its end, so a 4 s flare is on screen 4 s, entrance included. With
+  /// Whether [duration] counts from the start of the toast's entrance rather
+  /// than its end, so a 4 s toast is on screen 4 s, entrance included. With
   /// reduced motion there is no entrance, and the two are the same.
   final bool countsEntrance;
 
-  /// Ticks when [duration] is set, so a showing flare starts its time over.
+  /// Ticks when [duration] is set, so a showing toast starts its time over.
   ValueListenable<int> get timing => _timing;
   final ValueNotifier<int> _timing = ValueNotifier<int>(0);
 
-  /// Whether the flare stays up after [duration] until it is lowered, as a
-  /// `SnackBar` with `persist` does. Give it to a flare with a button (an
+  /// Whether the toast stays up after [duration] until it is hidden, as a
+  /// `SnackBar` with `persist` does. Give it to a toast with a button (an
   /// Undo), so a screen-reader user has time to reach it.
   final bool persist;
 
   /// The duration and curve of the entrance and exit, 220 ms each way by
-  /// default; [AnimationStyle.noAnimation] shows and removes the flare as it is.
+  /// default; [AnimationStyle.noAnimation] shows and removes the toast as it is.
   final AnimationStyle? animationStyle;
 
   /// Builds the entrance and exit; a fade and a slight scale when null.
-  final HarborFlareTransitionBuilder? transitionBuilder;
+  final HarborToastTransitionBuilder? transitionBuilder;
 
-  /// Whether harbor makes the flare a live region with a dismiss action, as
+  /// Whether harbor makes the toast a live region with a dismiss action, as
   /// a `SnackBar` makes itself. False leaves the semantics to [builder]'s widget.
   final bool liveRegion;
 
@@ -256,68 +264,72 @@ class HarborFlareEntry {
   /// How long the exit takes.
   Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? transitionDuration;
 
-  /// How long a lowered flare stays in the tree: its exit, and never less
+  /// How long a hidden toast stays in the tree: its exit, and never less
   /// than 300 ms, so a child that runs an exit of its own has time to.
-  Duration get lingers => _reason == HarborFlareClosedReason.replaced
-      // Replaced, it leaves at once, so it is never drawn under the flare that took its place.
+  Duration get lingers => _reason == HarborToastClosedReason.replaced
+      // Replaced, it leaves at once, so it is never drawn under the toast that took its place.
       ? Duration.zero
       : reverseTransitionDuration > _minimumLinger
       ? reverseTransitionDuration
       : _minimumLinger;
 
-  /// The harbor the flare was raised from, whose clear water it also keeps inside.
-  final HarborController? raisedIn;
+  /// The frame the toast was shown from, whose room it also keeps inside.
+  final HarborController? shownFrom;
+
+  /// The old name of [shownFrom].
+  @Deprecated('Renamed shownFrom. `dart fix` applies it.')
+  HarborController? get raisedIn => shownFrom;
 
   final Rect? _avoidAtRaise;
 
-  /// The clear water of the harbor the flare was raised from, in global
-  /// coordinates: the flare stays inside it too, so it clears that harbor's
-  /// docks (a tab's own header) as well as its target's.
+  /// The room of the frame the toast was shown from, in global
+  /// coordinates: the toast stays inside it too, so it clears that frame's
+  /// bars (a tab's own header) as well as its target's.
   ///
-  /// Read from that harbor's latest layout, not kept from the moment it was raised: a stored
-  /// rectangle boxed the flare into a foldable's cover screen after the device opened. The
-  /// rectangle from the raise is the fallback once that harbor has gone.
-  Rect? get avoidInGlobal => raisedIn?.clearWaterInGlobal() ?? _avoidAtRaise;
+  /// Read from that frame's latest layout, not kept from the moment it was shown: a stored
+  /// rectangle boxed the toast into a foldable's cover screen after the device opened. The
+  /// rectangle from the show is the fallback once that frame has gone.
+  Rect? get avoidInGlobal => shownFrom?.roomInGlobal() ?? _avoidAtRaise;
 
-  /// Whether the flare is still up: false from the moment it is lowered.
+  /// Whether the toast is still up: false from the moment it is hidden.
   ValueListenable<bool> get showing => _showing;
   final ValueNotifier<bool> _showing = ValueNotifier<bool>(true);
 
-  /// The harbor showing the flare.
+  /// The frame showing the toast.
   HarborController? get owner => _owner;
   HarborController? _owner;
 
-  final Completer<HarborFlareClosedReason> _closed = Completer<HarborFlareClosedReason>();
-  HarborFlareClosedReason? _reason;
+  final Completer<HarborToastClosedReason> _closed = Completer<HarborToastClosedReason>();
+  HarborToastClosedReason? _reason;
 
-  /// Completes once the flare has left the screen, after its exit, with why
-  /// it was lowered; at once for a flare lowered before its turn came.
-  Future<HarborFlareClosedReason> get closed => _closed.future;
+  /// Completes once the toast has left the screen, after its exit, with why
+  /// it was hidden; at once for a toast hidden before its turn came.
+  Future<HarborToastClosedReason> get closed => _closed.future;
 
-  /// The flare whose builder or transition [context] is in, or null outside one: for a flare
+  /// The toast whose builder or transition [context] is in, or null outside one: for a toast
   /// that takes a [hold] on itself, or a transition that reads its [anchor] and [side].
-  static HarborFlareEntry? maybeOf(final BuildContext context) =>
+  static HarborToastEntry? maybeOf(final BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<HarborFlareScope>()?.entry;
 
-  /// Whether the flare's time is stopped by a [hold].
+  /// Whether the toast's time is stopped by a [hold].
   ValueListenable<bool> get held => _held;
   final ValueNotifier<bool> _held = ValueNotifier<bool>(false);
   int _holds = 0;
 
-  /// Stops the flare's time until the returned hold is released: for a toast under the user's
-  /// finger, or one a screen reader or the keyboard has focused. Holds are counted, as make-way
+  /// Stops the toast's time until the returned hold is released: for a toast under the user's
+  /// finger, or one a screen reader or the keyboard has focused. Holds are counted, as hide-bar
   /// claims are: time runs again once every hold is released, counted from the start, as it is
-  /// when the flare comes back into sight. Lowering a held flare still lowers it.
+  /// when the toast comes back into sight. Hiding a held toast still hides it.
   ///
-  /// The flare's builder reaches its own entry with [maybeOf]:
+  /// The toast's builder reaches its own entry with [maybeOf]:
   ///
   /// ```dart
-  /// HarborFlares.raise(
+  /// HarborToasts.show(
   ///   context,
   ///   builder: (context) {
-  ///     HarborFlareHold? hold;
+  ///     HarborToastHold? hold;
   ///     return Listener(
-  ///       onPointerDown: (_) => hold ??= HarborFlareEntry.maybeOf(context)?.hold(),
+  ///       onPointerDown: (_) => hold ??= HarborToastEntry.maybeOf(context)?.hold(),
   ///       onPointerUp: (_) => hold = hold?.release(),
   ///       onPointerCancel: (_) => hold = hold?.release(),
   ///       child: const Text('Saved'),
@@ -325,10 +337,10 @@ class HarborFlareEntry {
   ///   },
   /// );
   /// ```
-  HarborFlareHold hold() {
+  HarborToastHold hold() {
     _holds++;
     _held.value = true;
-    return HarborFlareHold._(this);
+    return HarborToastHold._(this);
   }
 
   void _release() {
@@ -338,190 +350,235 @@ class HarborFlareEntry {
     }
   }
 
-  /// Where the flare is in its life, updated as it happens, before [closed] completes: a flare
-  /// lowered while it waits is [HarborFlarePhase.closed] by the time [lower] returns, and
+  /// Where the toast is in its life, updated as it happens, before [closed] completes: a toast
+  /// hidden while it waits is [HarborToastPhase.closed] by the time [hide] returns, and
   /// [wasShown] says whether anyone saw it.
-  HarborFlarePhase get phase => _phase;
-  HarborFlarePhase _phase = HarborFlarePhase.waiting;
+  HarborToastPhase get phase => _phase;
+  HarborToastPhase _phase = HarborToastPhase.waiting;
 
-  /// Whether the flare was ever built on screen; stays true once it has.
+  /// Whether the toast was ever built on screen; stays true once it has.
   bool get wasShown => _wasShown;
   bool _wasShown = false;
 
-  /// The flare was built on screen.
+  /// The toast was built on screen.
   void _shownNow() {
     _wasShown = true;
-    if (_phase == HarborFlarePhase.waiting) {
-      _phase = HarborFlarePhase.shown;
+    if (_phase == HarborToastPhase.waiting) {
+      _phase = HarborToastPhase.shown;
     }
   }
 
-  /// Lowers the flare. The first [reason] given is the one [closed] reports.
-  void lower({final HarborFlareClosedReason reason = HarborFlareClosedReason.lower}) {
+  /// Hides the toast. The first [reason] given is the one [closed] reports.
+  void hide({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) {
     if (_showing.value) {
       _reason = reason;
       _showing.value = false;
     }
   }
 
+  /// The old name of [hide].
+  @Deprecated('Renamed hide. `dart fix` applies it.')
+  void lower({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) => hide(reason: reason);
+
   void _left() {
-    _phase = HarborFlarePhase.closed;
+    _phase = HarborToastPhase.closed;
     if (!_closed.isCompleted) {
-      _closed.complete(_reason ?? HarborFlareClosedReason.lower);
+      _closed.complete(_reason ?? HarborToastClosedReason.hide);
     }
   }
 }
 
-/// A hold on a flare's time, returned by [HarborFlareEntry.hold].
-class HarborFlareHold {
-  HarborFlareHold._(this._flare);
+/// A hold on a toast's time, returned by [HarborToastEntry.hold].
+class HarborToastHold {
+  HarborToastHold._(this._flare);
 
-  HarborFlareEntry? _flare;
+  HarborToastEntry? _flare;
 
-  /// Lets the flare's time run again once no other hold is on it. Releasing twice does nothing.
+  /// Lets the toast's time run again once no other hold is on it. Releasing twice does nothing.
   /// Returns null, so `hold = hold?.release()` clears the variable it is kept in.
-  HarborFlareHold? release() {
+  HarborToastHold? release() {
     _flare?._release();
     _flare = null;
     return null;
   }
 }
 
-/// Marks [flare] built on screen, for [HarborFlareEntry.phase].
-void flareShown(final HarborFlareEntry flare) => flare._shownNow();
+/// Marks the toast [flare] built on screen, for [HarborToastEntry.phase].
+void flareShown(final HarborToastEntry flare) => flare._shownNow();
 
-/// Completes [flare]'s [HarborFlareEntry.closed]: it has left the screen.
-void flareLeft(final HarborFlareEntry flare) => flare._left();
+/// Completes the toast [flare]'s [HarborToastEntry.closed]: it has left the screen.
+void flareLeft(final HarborToastEntry flare) => flare._left();
 
-/// Adds [entry] to [flares] by its [HarborFlareEntry.queue]: at the end to wait its turn, or
-/// ahead of every flare still showing at its place, which are lowered as replaced.
-void queueFlare(final List<HarborFlareEntry> flares, final HarborFlareEntry entry) {
-  if (entry.queue == HarborFlareQueue.wait) {
-    flares.add(entry);
+/// Adds [entry] to [toasts] by its [HarborToastEntry.queue]: at the end to wait its turn, or
+/// ahead of every toast still showing at its place, which are hidden as replaced.
+void queueFlare(final List<HarborToastEntry> toasts, final HarborToastEntry entry) {
+  if (entry.queue == HarborToastQueue.wait) {
+    toasts.add(entry);
     return;
   }
-  final int first = flares.indexWhere((final HarborFlareEntry f) => f._place == entry._place && f.showing.value);
+  final int first = toasts.indexWhere((final HarborToastEntry f) => f._place == entry._place && f.showing.value);
   if (first < 0) {
-    flares.add(entry);
+    toasts.add(entry);
     return;
   }
-  final List<HarborFlareEntry> ahead = <HarborFlareEntry>[
-    for (final HarborFlareEntry f in flares)
+  final List<HarborToastEntry> ahead = <HarborToastEntry>[
+    for (final HarborToastEntry f in toasts)
       if (f._place == entry._place && f.showing.value) f,
   ];
-  flares.insert(first, entry);
-  for (final HarborFlareEntry f in ahead) {
-    f.lower(reason: HarborFlareClosedReason.replaced);
+  toasts.insert(first, entry);
+  for (final HarborToastEntry f in ahead) {
+    f.hide(reason: HarborToastClosedReason.replaced);
   }
 }
 
-/// The flares of [flares] that are in sight: the first at each alignment, or at each anchor and
+/// The toasts of [toasts] that are in sight: the first at each alignment, or at each anchor and
 /// side. The others wait their turn behind it.
-List<HarborFlareEntry> flaresInSight(final Iterable<HarborFlareEntry> flares) {
+List<HarborToastEntry> flaresInSight(final Iterable<HarborToastEntry> toasts) {
   final Set<Object> taken = <Object>{};
-  return <HarborFlareEntry>[
-    for (final HarborFlareEntry flare in flares)
+  return <HarborToastEntry>[
+    for (final HarborToastEntry flare in toasts)
       if (taken.add(flare._place)) flare,
   ];
 }
 
-/// The dock positions and clearances a harbor laid out last, in its own coordinates.
+/// The bar positions and clearances a frame laid out last, in its own coordinates.
 @immutable
 class HarborLayoutRecord {
   const HarborLayoutRecord({
     required this.frame,
     required this.body,
-    required this.clearWater,
-    required this.docks,
+    required this.room,
+    required this.bars,
     required this.obstruction,
-    required this.tide,
+    required this.keyboard,
   });
 
   final Rect frame;
   final Rect body;
-  final Rect clearWater;
-  final List<HarborDockRecord> docks;
+  final Rect room;
+
+  /// The old name of [room].
+  @Deprecated('Renamed room. `dart fix` applies it.')
+  Rect get clearWater => room;
+  final List<HarborBarRecord> bars;
+
+  /// The old name of [bars].
+  @Deprecated('Renamed bars. `dart fix` applies it.')
+  List<HarborBarRecord> get docks => bars;
   final EdgeInsetsDirectional obstruction;
-  final double tide;
+  final double keyboard;
+
+  /// The old name of [keyboard].
+  @Deprecated('Renamed keyboard. `dart fix` applies it.')
+  double get tide => keyboard;
 }
 
-/// One dock as it was last laid out.
+/// One bar as it was last laid out.
 @immutable
-class HarborDockRecord {
-  const HarborDockRecord({
+class HarborBarRecord {
+  const HarborBarRecord({
     required this.edge,
     required this.kind,
     required this.rect,
     required this.extent,
     required this.restingExtent,
     required this.state,
-    required this.tide,
+    required this.keyboard,
     this.label,
   });
 
   final HarborEdge edge;
-  final HarborDockKind kind;
+  final HarborBarKind kind;
   final Rect rect;
   final double extent;
   final double restingExtent;
-  final HarborDockState state;
+  final HarborBarState state;
   final String? label;
-  final HarborTideStance tide;
+  final HarborKeyboardStance keyboard;
+
+  /// The old name of [keyboard].
+  @Deprecated('Renamed keyboard. `dart fix` applies it.')
+  HarborKeyboardStance get tide => keyboard;
 }
 
-/// Hears harbors join and leave a [HarborFleet], as a `NavigatorObserver`
+/// The old name of [HarborBarRecord], which takes the old name of its keyboard stance.
+///
+/// A subclass rather than a typedef, so the new constructor can keep [HarborBarRecord.keyboard]
+/// required.
+@Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
+class HarborDockRecord extends HarborBarRecord {
+  /// The old name of [HarborBarRecord.new].
+  @Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
+  const HarborDockRecord({
+    required super.edge,
+    required super.kind,
+    required super.rect,
+    required super.extent,
+    required super.restingExtent,
+    required super.state,
+    @Deprecated('Renamed keyboard. `dart fix` applies it.') final HarborKeyboardStance? tide,
+    super.label,
+  }) : assert(tide != null, 'tide is required.'),
+       super(keyboard: tide ?? HarborKeyboardStance.stays);
+}
+
+/// Hears frames join and leave a [HarborFrameRegistry], as a `NavigatorObserver`
 /// hears routes come and go.
 ///
-/// Register one with `HarborSea(observers:)`, or with
-/// [HarborFleet.addObserver] on a fleet you already have
-/// (`Harbor.of(context).fleet`). Both methods do nothing unless overridden.
+/// Register one with `HarborRoot(observers:)`, or with
+/// [HarborFrameRegistry.addObserver] on a registry you already have
+/// (`HarborFrame.of(context).registry`). Both methods do nothing unless overridden.
 ///
-/// A harbor joins as it is first built, in the middle of a frame, so both
-/// events are delivered after that frame, in the order they happened: by
-/// then a harbor that joined has laid out, and `HarborChart.nearest` or
-/// `HarborChart.snapshotOf(harbor.fleet)` can read where it is. A harbor that
-/// joins and leaves within one frame is reported to nobody. Harbors already
-/// in the fleet when an observer is added are not replayed: read
-/// [HarborFleet.harbors] for those.
+/// A frame joins as it is first built, in the middle of a drawn frame, so both
+/// events are delivered after that drawn frame, in the order they happened: by
+/// then a frame that joined has laid out, and `HarborInspector.nearest` or
+/// `HarborInspector.snapshotOf(harbor.registry)` can read where it is. A frame that
+/// joins and leaves within one drawn frame is reported to nobody. Frames already
+/// in the registry when an observer is added are not replayed: read
+/// [HarborFrameRegistry.frames] for those.
 ///
 /// See also:
 ///
 ///  * `NavigatorObserver`, the model for this one.
-///  * `HarborChart.snapshotAll`, every live harbor of every sea at once.
-abstract class HarborFleetObserver {
+///  * `HarborInspector.snapshotAll`, every live frame of every root at once.
+abstract class HarborFrameObserver {
   /// Const so that subclasses can be const.
-  const HarborFleetObserver();
+  const HarborFrameObserver();
 
-  /// [harbor] has joined the fleet: a page, a sheet, a dialog or a harbor
+  /// [frame] has joined the registry: a page, a sheet, a dialog or a frame
   /// inside one has been built.
-  void didJoin(final HarborController harbor) {}
+  void didJoin(final HarborController frame) {}
 
-  /// [harbor] has left the fleet: it was removed from the tree. Its handle
+  /// [frame] has left the registry: it was removed from the tree. Its handle
   /// no longer changes anything.
-  void didLeave(final HarborController harbor) {}
+  void didLeave(final HarborController frame) {}
 }
 
-/// Everything harbors in one view know about each other: which is on top
-/// (where a flare goes) and the list a chart reads.
-class HarborFleet {
+/// Everything frames in one view know about each other: which is on top
+/// (where a toast goes) and the list the inspector reads.
+class HarborFrameRegistry {
   final List<HarborController> _harbors = <HarborController>[];
 
-  /// Every harbor mounted in this view, outermost first.
-  List<HarborController> get harbors => List<HarborController>.unmodifiable(_harbors);
+  /// Every frame mounted in this view, outermost first.
+  List<HarborController> get frames => List<HarborController>.unmodifiable(_harbors);
 
-  final List<HarborFleetObserver> _observers = <HarborFleetObserver>[];
+  /// The old name of [frames].
+  @Deprecated('Renamed frames. `dart fix` applies it.')
+  List<HarborController> get harbors => frames;
 
-  /// Events not yet delivered: a harbor and whether it joined.
+  final List<HarborFrameObserver> _observers = <HarborFrameObserver>[];
+
+  /// Events not yet delivered: a frame and whether it joined.
   final List<(HarborController, bool)> _pending = <(HarborController, bool)>[];
 
-  /// Tells [observer] of every harbor that joins or leaves from now on, after
-  /// the frame it happens in. Adding one observer twice reports to it twice,
+  /// Tells [observer] of every frame that joins or leaves from now on, after
+  /// the drawn frame it happens in. Adding one observer twice reports to it twice,
   /// as a listener added twice to a `ChangeNotifier` is called twice.
-  void addObserver(final HarborFleetObserver observer) => _observers.add(observer);
+  void addObserver(final HarborFrameObserver observer) => _observers.add(observer);
 
   /// Stops telling [observer]; one registration is removed. Events still
-  /// waiting for the end of the frame are not delivered to it.
-  void removeObserver(final HarborFleetObserver observer) => _observers.remove(observer);
+  /// waiting for the end of the drawn frame are not delivered to it.
+  void removeObserver(final HarborFrameObserver observer) => _observers.remove(observer);
 
   void _join(final HarborController controller) {
     _harbors.add(controller);
@@ -530,7 +587,7 @@ class HarborFleet {
 
   void _queue(final HarborController controller, {required final bool joined}) {
     if (!joined) {
-      // A harbor that leaves before its join was delivered was never seen.
+      // A frame that leaves before its join was delivered was never seen.
       final int index = _pending.indexWhere(
         (final (HarborController, bool) event) => identical(event.$1, controller) && event.$2,
       );
@@ -545,7 +602,10 @@ class HarborFleet {
     final bool first = _pending.isEmpty;
     _pending.add((controller, joined));
     if (first) {
-      SchedulerBinding.instance.addPostFrameCallback((final Duration _) => _deliver(), debugLabel: 'HarborFleet.observers');
+      SchedulerBinding.instance.addPostFrameCallback(
+        (final Duration _) => _deliver(),
+        debugLabel: 'HarborFrameRegistry.observers',
+      );
       SchedulerBinding.instance.ensureVisualUpdate();
     }
   }
@@ -554,7 +614,7 @@ class HarborFleet {
     final List<(HarborController, bool)> events = List<(HarborController, bool)>.of(_pending);
     _pending.clear();
     for (final (HarborController harbor, bool joined) in events) {
-      for (final HarborFleetObserver observer in List<HarborFleetObserver>.of(_observers)) {
+      for (final HarborFrameObserver observer in List<HarborFrameObserver>.of(_observers)) {
         if (joined) {
           observer.didJoin(harbor);
         } else {
@@ -567,25 +627,25 @@ class HarborFleet {
   void _leave(final HarborController controller) {
     _harbors.remove(controller);
     _queue(controller, joined: false);
-    // Flares on a harbor that is leaving move to the one now on top. With no
-    // harbor left to show them, they are lowered, which stops their timers. An
-    // anchored flare's anchor left with its page, so it is lowered too.
-    final List<HarborFlareEntry> orphans = controller._releaseFlares();
+    // Toasts on a frame that is leaving move to the one now on top. With no
+    // frame left to show them, they are hidden, which stops their timers. An
+    // anchored toast's anchor left with its page, so it is hidden too.
+    final List<HarborToastEntry> orphans = controller._releaseFlares();
     final HarborController? top = topmost;
-    for (final HarborFlareEntry flare in orphans) {
+    for (final HarborToastEntry flare in orphans) {
       if (top != null && flare.anchor == null) {
         top._raiseFlare(flare);
       } else {
         flare
-          ..lower(reason: HarborFlareClosedReason.remove)
+          ..hide(reason: HarborToastClosedReason.remove)
           .._left();
       }
     }
   }
 
-  /// The port on top: the frame a flare goes to. Only the first harbor of
-  /// each route (and of each sheet over the sea) counts, so a frame embedded in
-  /// a page never takes a page's flares; among those, the most recently opened
+  /// The page on top: the frame a toast goes to. Only the first frame of
+  /// each route (and of each sheet over the root) counts, so a frame embedded in
+  /// a page never takes a page's toasts; among those, the most recently opened
   /// whose route is showing.
   HarborController? get topmost {
     HarborController? fallback;
@@ -605,113 +665,136 @@ class HarborFleet {
     return fallback ?? (_harbors.isEmpty ? null : _harbors.first);
   }
 
-  /// The outermost harbor, where flares go when asked to stay put.
-  HarborController? get sea => _harbors.isEmpty ? null : _harbors.first;
+  /// The outermost frame, where toasts go when asked to stay put.
+  HarborController? get root => _harbors.isEmpty ? null : _harbors.first;
+
+  /// The old name of [root].
+  @Deprecated('Renamed root. `dart fix` applies it.')
+  HarborController? get sea => root;
 }
 
-/// A harbor's handle on itself, for its docks, its content and its neighbors.
+/// A frame's handle on itself, for its bars, its content and its neighbors.
 ///
-/// Get it with `Harbor.of`, as a `Scaffold`'s is got with `Scaffold.of`. The
-/// harbor makes it; claims, pontoons and breakwaters registered here change
-/// what the harbor builds, and are applied on the next frame when they arrive
-/// during one.
+/// Get it with `HarborFrame.of`, as a `Scaffold`'s is got with `Scaffold.of`. The
+/// frame makes it; claims, attached bars and page covers registered here change
+/// what the frame builds, and are applied on the next frame drawn when they
+/// arrive during one.
 class HarborController {
-  /// Made by the harbor it belongs to.
+  /// Made by the frame it belongs to.
   @internal
-  HarborController({required this.parent, required this.fleet, required this.isPort, this.isSea = false, this._debugLabel});
+  HarborController({
+    required this.parent,
+    required this.registry,
+    required this.isPage,
+    this.isRoot = false,
+    this._debugLabel,
+  });
 
-  /// The harbor this one sits in, if any.
+  /// The frame this one sits in, if any.
   final HarborController? parent;
 
-  final HarborFleet fleet;
+  /// Every frame under the same root as this one.
+  final HarborFrameRegistry registry;
 
-  /// Whether this harbor is a port (the sea, a route or a sheet) rather than a
-  /// component inside one. Reserved and not yet read: flares find their port
+  /// The old name of [registry].
+  @Deprecated('Renamed registry. `dart fix` applies it.')
+  HarborFrameRegistry get fleet => registry;
+
+  /// Whether this frame is a page (the root, a route or a sheet) rather than a
+  /// component inside one. Reserved and not yet read: toasts find their page
   /// with [isRouteLevel] instead.
-  final bool isPort;
+  final bool isPage;
 
-  /// Whether this harbor is a `HarborSea`, whose children are each a port.
+  /// The old name of [isPage].
+  @Deprecated('Renamed isPage. `dart fix` applies it.')
+  bool get isPort => isPage;
+
+  /// Whether this frame is a `HarborRoot`, whose children are each a page.
   @internal
-  final bool isSea;
+  final bool isRoot;
 
-  /// This harbor's name on a chart.
+  /// This frame's name in the [HarborInspector].
   String? get debugLabel => _debugLabel;
   @internal
   set debugLabel(final String? value) => _debugLabel = value;
   String? _debugLabel;
 
-  /// Called when something registered here changes what the harbor builds.
+  /// Called when something registered here changes what the frame builds.
   @internal
   VoidCallback? onChanged;
 
-  /// The edges this harbor has docks on.
-  Set<HarborEdge> get dockedEdges => Set<HarborEdge>.unmodifiable(_dockedEdges);
+  /// The edges this frame has bars on.
+  Set<HarborEdge> get edgesWithBars => Set<HarborEdge>.unmodifiable(_dockedEdges);
   @internal
-  set dockedEdges(final Set<HarborEdge> value) => _dockedEdges = value;
+  set edgesWithBars(final Set<HarborEdge> value) => _dockedEdges = value;
   Set<HarborEdge> _dockedEdges = <HarborEdge>{};
 
-  /// The route this harbor is in, if any.
+  /// The old name of [edgesWithBars].
+  @Deprecated('Renamed edgesWithBars. `dart fix` applies it.')
+  Set<HarborEdge> get dockedEdges => edgesWithBars;
+
+  /// The route this frame is in, if any.
   ModalRoute<Object?>? get route => _route;
   @internal
   set route(final ModalRoute<Object?>? value) => _route = value;
   ModalRoute<Object?>? _route;
 
-  /// Whether this is the first harbor of its route, or sits right on the sea:
-  /// a port flares can go to.
+  /// Whether this is the first frame of its route, or sits right on the root:
+  /// a page toasts can go to.
   ///
-  /// Only a `HarborSea` makes the harbors right inside it ports. With no sea, the outermost harbor
-  /// is the route's port and the ones inside it are not: counting them too sent a flare raised
-  /// from a header band's own harbor into that band, 100 high, instead of the page (#86).
+  /// Only a `HarborRoot` makes the frames right inside it pages. With no root, the outermost frame
+  /// is the route's page and the ones inside it are not: counting them too sent a toast shown
+  /// from a header band's own frame into that band, 100 high, instead of the page (#86).
   bool get isRouteLevel {
     final HarborController? parent = this.parent;
     if (parent == null || !identical(route, parent.route)) {
       return true;
     }
-    return parent.parent == null && parent.isSea;
+    return parent.parent == null && parent.isRoot;
   }
 
-  /// The last layout, in this harbor's coordinates.
+  /// The last layout, in this frame's coordinates.
   @Deprecated(
-    'Read HarborChart.nearest(context), which has the same rectangles in global coordinates, or listen to '
-    'clearWater. This getter goes in a later release.',
+    'Read HarborInspector.nearest(context), which has the same rectangles in global coordinates, or listen to '
+    'room. This getter goes in a later release.',
   )
   HarborLayoutRecord? get lastLayout => _layoutRecord;
 
-  /// The render object of the harbor.
+  /// The render object of the frame.
   @Deprecated(
-    'Read HarborChart.nearest(context) for the harbor\'s rectangles in global coordinates, or clearWaterInGlobal(). '
+    'Read HarborInspector.nearest(context) for the harbor\'s rectangles in global coordinates, or roomInGlobal(). '
     'This getter goes in a later release.',
   )
   RenderBox? get renderBox => layoutBox;
 
-  /// The last layout, for charts and for overlays that need the clear water.
+  /// The last layout, for the inspector and for overlays that need the room.
   @internal
   HarborLayoutRecord? get layoutRecord => _layoutRecord;
   HarborLayoutRecord? _layoutRecord;
 
-  /// The render object of the harbor, to map the last layout into global coordinates.
+  /// The render object of the frame, to map the last layout into global coordinates.
   @internal
   RenderBox? layoutBox;
 
   final List<HarborClaim> _claims = <HarborClaim>[];
-  final List<HarborPontoonHandle> _pontoons = <HarborPontoonHandle>[];
-  final List<HarborBreakwater> _breakwaters = <HarborBreakwater>[];
-  final List<HarborFlareEntry> _flares = <HarborFlareEntry>[];
-  final Map<HarborFlareEntry, VoidCallback> _flareListeners = <HarborFlareEntry, VoidCallback>{};
-  final Map<HarborFlareEntry, Timer> _flareRemovals = <HarborFlareEntry, Timer>{};
+  final List<HarborAttachedBarHandle> _pontoons = <HarborAttachedBarHandle>[];
+  final List<HarborPageCover> _breakwaters = <HarborPageCover>[];
+  final List<HarborToastEntry> _flares = <HarborToastEntry>[];
+  final Map<HarborToastEntry, VoidCallback> _flareListeners = <HarborToastEntry, VoidCallback>{};
+  final Map<HarborToastEntry, Timer> _flareRemovals = <HarborToastEntry, Timer>{};
   final _BreakwaterNotifier _breakwaterChanges = _BreakwaterNotifier();
 
-  /// The nearest harbor above [context].
+  /// The nearest frame above [context].
   static HarborController? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<HarborScope>()?.controller;
 
-  /// The nearest harbor above [context]. Throws a [FlutterError], in release
+  /// The nearest frame above [context]. Throws a [FlutterError], in release
   /// builds too, when there is none; [maybeOf] returns null instead.
   static HarborController of(final BuildContext context) =>
       maybeOf(context) ?? (throw harborNotFound(context, 'HarborController'));
 
-  /// The nearest harbor, from this one outward, that has a dock on [edge].
-  HarborController? withDockOn(final HarborEdge edge) {
+  /// The nearest frame, from this one outward, that has a bar on [edge].
+  HarborController? withBarOn(final HarborEdge edge) {
     HarborController? candidate = this;
     while (candidate != null) {
       if (candidate._dockedEdges.contains(edge)) {
@@ -722,19 +805,28 @@ class HarborController {
     return null;
   }
 
+  /// The old name of [withBarOn].
+  @Deprecated('Renamed withBarOn. `dart fix` applies it.')
+  HarborController? withDockOn(final HarborEdge edge) => withBarOn(edge);
+
   // Claims.
 
-  /// Asks the docks on [edge] to make way: go [HarborYield.dark] or
-  /// [HarborYield.withdraw]. Claims are counted, so the dock comes back only
-  /// when every claim is released. The claim goes to the nearest harbor, from
-  /// this one outward, that has a dock on [edge].
-  HarborClaim makeWay(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) {
-    final HarborController target = withDockOn(edge) ?? this;
+  /// Asks the bars on [edge] to hide: go [HarborYield.dark] or
+  /// [HarborYield.withdraw]. Claims are counted, so the bar comes back only
+  /// when every claim is released. The claim goes to the nearest frame, from
+  /// this one outward, that has a bar on [edge].
+  HarborClaim hideBar(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) {
+    final HarborController target = withBarOn(edge) ?? this;
     final HarborClaim claim = HarborClaim._(target, edge, mode);
     target._claims.add(claim);
     target._changed();
     return claim;
   }
+
+  /// The old name of [hideBar].
+  @Deprecated('Renamed hideBar. `dart fix` applies it.')
+  HarborClaim makeWay(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) =>
+      hideBar(edge, mode: mode);
 
   void _releaseClaim(final HarborClaim claim) {
     if (_claims.remove(claim)) {
@@ -743,120 +835,161 @@ class HarborController {
   }
 
   /// The state claims impose on [edge], or null when nothing has asked.
-  HarborDockState? claimedStateOf(final HarborEdge edge) {
+  HarborBarState? claimedStateOf(final HarborEdge edge) {
     bool dark = false;
     for (final HarborClaim claim in _claims) {
       if (claim.edge != edge) {
         continue;
       }
       if (claim.mode == HarborYield.withdraw) {
-        return HarborDockState.withdrawn;
+        return HarborBarState.withdrawn;
       }
       dark = true;
     }
-    return dark ? HarborDockState.dark : null;
+    return dark ? HarborBarState.dark : null;
   }
 
-  // Pontoons.
+  // Attached bars.
 
-  /// Moors [dock] on [edge] of this harbor, as a [HarborPontoon] does, until
-  /// the returned handle is given to [removePontoon].
-  HarborPontoonHandle addPontoon(final HarborEdge edge, final HarborDock dock) {
-    final HarborPontoonHandle pontoon = HarborPontoonHandle._(edge, dock);
+  /// Attaches [bar] to [edge] of this frame, as a [HarborAttachedBar] does, until
+  /// the returned handle is given to [detachBar].
+  HarborAttachedBarHandle attachBar(final HarborEdge edge, final HarborBar bar) {
+    final HarborAttachedBarHandle pontoon = HarborAttachedBarHandle._(edge, bar);
     _pontoons.add(pontoon);
     _changed();
     return pontoon;
   }
 
-  /// Moves the pontoon [handle] stands for to [edge] and rebuilds it as [dock].
-  void updatePontoon(final HarborPontoonHandle handle, final HarborEdge edge, final HarborDock dock) {
-    if (handle._edge == edge && identical(handle._dock, dock)) {
+  /// The old name of [attachBar].
+  @Deprecated('Renamed attachBar. `dart fix` applies it.')
+  HarborAttachedBarHandle addPontoon(final HarborEdge edge, final HarborBar dock) => attachBar(edge, dock);
+
+  /// Moves the attached bar [handle] stands for to [edge] and rebuilds it as [bar].
+  void updateAttachedBar(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar bar) {
+    if (handle._edge == edge && identical(handle._dock, bar)) {
       return;
     }
     handle
       .._edge = edge
-      .._dock = dock;
+      .._dock = bar;
     _changed();
   }
 
-  /// Takes the pontoon [handle] stands for out of this harbor.
-  void removePontoon(final HarborPontoonHandle handle) {
+  /// The old name of [updateAttachedBar].
+  @Deprecated('Renamed updateAttachedBar. `dart fix` applies it.')
+  void updatePontoon(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar dock) =>
+      updateAttachedBar(handle, edge, dock);
+
+  /// Takes the attached bar [handle] stands for out of this frame.
+  void detachBar(final HarborAttachedBarHandle handle) {
     if (_pontoons.remove(handle)) {
       _changed();
     }
   }
 
-  /// Docks moored here from deeper in the tree, by edge, in arrival order.
-  List<HarborDock> pontoonsOn(final HarborEdge edge) => <HarborDock>[
-    for (final HarborPontoonHandle p in _pontoons)
+  /// The old name of [detachBar].
+  @Deprecated('Renamed detachBar. `dart fix` applies it.')
+  void removePontoon(final HarborAttachedBarHandle handle) => detachBar(handle);
+
+  /// Bars attached here from deeper in the tree, by edge, in arrival order.
+  List<HarborBar> attachedBarsOn(final HarborEdge edge) => <HarborBar>[
+    for (final HarborAttachedBarHandle p in _pontoons)
       if (p._edge == edge) p._dock,
   ];
 
-  // Breakwaters.
+  /// The old name of [attachedBarsOn].
+  @Deprecated('Renamed attachedBarsOn. `dart fix` applies it.')
+  List<HarborBar> pontoonsOn(final HarborEdge edge) => attachedBarsOn(edge);
 
-  /// Reports that something now covers [coverage] of this harbor's bottom edge
+  // Page covers.
+
+  /// Reports that something now covers [coverage] of this frame's bottom edge
   /// (measured from the bottom of the screen). Content keeps clear of it until
-  /// the breakwater is removed.
-  HarborBreakwater addBreakwater(final ValueListenable<double> coverage) {
-    final HarborBreakwater breakwater = HarborBreakwater._(this, coverage);
-    _breakwaters.add(breakwater);
+  /// the page cover is removed.
+  HarborPageCover addPageCover(final ValueListenable<double> coverage) {
+    final HarborPageCover coversPage = HarborPageCover._(this, coverage);
+    _breakwaters.add(coversPage);
     coverage.addListener(_breakwaterChanges.ping);
     _breakwaterChanges.ping();
-    return breakwater;
+    return coversPage;
   }
 
-  void _removeBreakwater(final HarborBreakwater breakwater) {
-    if (_breakwaters.remove(breakwater)) {
-      breakwater._coverage.removeListener(_breakwaterChanges.ping);
+  /// The old name of [addPageCover].
+  @Deprecated('Renamed addPageCover. `dart fix` applies it.')
+  HarborPageCover addBreakwater(final ValueListenable<double> coverage) => addPageCover(coverage);
+
+  void _removeBreakwater(final HarborPageCover coversPage) {
+    if (_breakwaters.remove(coversPage)) {
+      coversPage._coverage.removeListener(_breakwaterChanges.ping);
       _breakwaterChanges.ping();
     }
   }
 
-  /// Reports that something covers this harbor's bottom up to [topInGlobal], a
-  /// top edge in global coordinates. Unlike [addBreakwater] it holds under any
-  /// scale between the cover and the screen (a preview, a scale model).
-  HarborBreakwater addBreakwaterEdge(final ValueListenable<double> topInGlobal) {
-    final HarborBreakwater breakwater = HarborBreakwater._(this, topInGlobal, measuresTop: true);
-    _breakwaters.add(breakwater);
+  /// Reports that something covers this frame's bottom up to [topInGlobal], a
+  /// top edge in global coordinates. Unlike [addPageCover] it holds under any
+  /// scale between the cover and the screen (a preview, a scaled screen).
+  HarborPageCover addPageCoverEdge(final ValueListenable<double> topInGlobal) {
+    final HarborPageCover coversPage = HarborPageCover._(this, topInGlobal, measuresTop: true);
+    _breakwaters.add(coversPage);
     topInGlobal.addListener(_breakwaterChanges.ping);
     _breakwaterChanges.ping();
-    return breakwater;
+    return coversPage;
   }
 
-  /// The top edges, in global coordinates, of breakwaters that measure one.
-  Iterable<double> get breakwaterTopsInGlobal sync* {
-    for (final HarborBreakwater breakwater in _breakwaters) {
-      final double? top = breakwater.topInGlobal;
+  /// The old name of [addPageCoverEdge].
+  @Deprecated('Renamed addPageCoverEdge. `dart fix` applies it.')
+  HarborPageCover addBreakwaterEdge(final ValueListenable<double> topInGlobal) => addPageCoverEdge(topInGlobal);
+
+  /// The old name of [pageCoverTopsInGlobal].
+  @Deprecated('Renamed pageCoverTopsInGlobal. `dart fix` applies it.')
+  Iterable<double> get breakwaterTopsInGlobal => pageCoverTopsInGlobal;
+
+  /// The top edges, in global coordinates, of page covers that measure one.
+  Iterable<double> get pageCoverTopsInGlobal sync* {
+    for (final HarborPageCover coversPage in _breakwaters) {
+      final double? top = coversPage.topInGlobal;
       if (top != null && top.isFinite) {
         yield top;
       }
     }
   }
 
-  /// How far breakwaters cover the bottom of the screen, the largest of them.
-  double get breakwaterCoverage {
+  /// How far page covers cover the bottom of the screen, the largest of them.
+  double get pageCoverage {
     double largest = 0.0;
-    for (final HarborBreakwater breakwater in _breakwaters) {
-      if (breakwater.coverage > largest) {
-        largest = breakwater.coverage;
+    for (final HarborPageCover coversPage in _breakwaters) {
+      if (coversPage.coverage > largest) {
+        largest = coversPage.coverage;
       }
     }
     return largest;
   }
 
-  /// Fires when a breakwater moves, so the harbor can lay out again without rebuilding.
-  Listenable get breakwaterChanges => _breakwaterChanges;
+  /// Fires when a page cover moves, so the frame can lay out again without rebuilding.
+  Listenable get pageCoverChanges => _breakwaterChanges;
 
-  // Flares.
+  /// The old name of [pageCoverage].
+  @Deprecated('Renamed pageCoverage. `dart fix` applies it.')
+  double get breakwaterCoverage => pageCoverage;
 
-  /// The flares raised on this harbor, in the order they were raised.
-  List<HarborFlareEntry> get flares => List<HarborFlareEntry>.unmodifiable(_flares);
+  /// The old name of [pageCoverChanges].
+  @Deprecated('Renamed pageCoverChanges. `dart fix` applies it.')
+  Listenable get breakwaterChanges => pageCoverChanges;
 
-  /// The flares raised on this harbor: the old name of [flares].
-  @Deprecated('Use flares. Signals were renamed flares before 1.0, so they are not mistaken for the signals package.')
-  List<HarborFlareEntry> get signals => flares;
+  // Toasts.
 
-  void _raiseFlare(final HarborFlareEntry flare) {
+  /// The toasts shown on this frame, in the order they were shown.
+  List<HarborToastEntry> get toasts => List<HarborToastEntry>.unmodifiable(_flares);
+
+  /// The old name of [toasts].
+  @Deprecated('Renamed toasts. `dart fix` applies it.')
+  List<HarborToastEntry> get flares => toasts;
+
+  /// The flares raised on this harbor: the old name of [toasts].
+  @Deprecated('Use toasts. Signals were renamed toasts before 1.0, so they are not mistaken for the signals package.')
+  List<HarborToastEntry> get signals => toasts;
+
+  void _raiseFlare(final HarborToastEntry flare) {
     flare._owner = this;
     queueFlare(_flares, flare);
     void lowered() {
@@ -864,20 +997,20 @@ class HarborController {
         return;
       }
       if (!flaresInSight(_flares).contains(flare)) {
-        // Lowered while it waited its turn: it has no exit to run.
+        // Hidden while it waited its turn: it has no exit to run.
         _forgetFlare(flare);
         flare._left();
         return;
       }
       if (!flare.wasShown) {
-        // Lowered before the harbor ever built it (raised and cancelled in one frame): it has no
+        // Hidden before the frame ever built it (shown and cancelled in one drawn frame): it has no
         // exit to run either, so it goes now rather than being built once, unseen, to linger.
         _forgetFlare(flare);
         flare._left();
         _changed();
         return;
       }
-      // Leave time for the flare's own exit animation.
+      // Leave time for the toast's own exit animation.
       _flareRemovals[flare] ??= Timer(flare.lingers, () {
         _flareRemovals.remove(flare);
         _forgetFlare(flare);
@@ -891,7 +1024,7 @@ class HarborController {
     _changed();
   }
 
-  void _forgetFlare(final HarborFlareEntry flare) {
+  void _forgetFlare(final HarborToastEntry flare) {
     _flares.remove(flare);
     final VoidCallback? listener = _flareListeners.remove(flare);
     if (listener != null) {
@@ -899,15 +1032,15 @@ class HarborController {
     }
   }
 
-  /// Lets go of every flare, cancelling pending removals, and returns those
-  /// still showing, in the order they were raised.
-  List<HarborFlareEntry> _releaseFlares() {
-    final List<HarborFlareEntry> showing = _flares.where((final HarborFlareEntry s) => s.showing.value).toList();
+  /// Lets go of every toast, cancelling pending removals, and returns those
+  /// still showing, in the order they were shown.
+  List<HarborToastEntry> _releaseFlares() {
+    final List<HarborToastEntry> showing = _flares.where((final HarborToastEntry s) => s.showing.value).toList();
     for (final Timer removal in _flareRemovals.values) {
       removal.cancel();
     }
     _flareRemovals.clear();
-    for (final HarborFlareEntry flare in List<HarborFlareEntry>.of(_flares)) {
+    for (final HarborToastEntry flare in List<HarborToastEntry>.of(_flares)) {
       _forgetFlare(flare);
       if (!flare.showing.value) {
         flare._left();
@@ -916,24 +1049,24 @@ class HarborController {
     return showing;
   }
 
-  /// Raises [flare] on this harbor.
+  /// Shows the toast [flare] on this frame.
   @internal
-  void raiseFlare(final HarborFlareEntry flare) => _raiseFlare(flare);
+  void showToast(final HarborToastEntry flare) => _raiseFlare(flare);
 
   // Lifecycle.
 
-  /// Called by the harbor as it mounts.
+  /// Called by the frame as it mounts.
   @internal
-  void join() => fleet._join(this);
+  void join() => registry._join(this);
 
   final List<VoidCallback> _leaveListeners = <VoidCallback>[];
 
-  /// Calls [listener] once when this harbor leaves the tree.
+  /// Calls [listener] once when this frame leaves the tree.
   void addLeaveListener(final VoidCallback listener) => _leaveListeners.add(listener);
 
   void removeLeaveListener(final VoidCallback listener) => _leaveListeners.remove(listener);
 
-  /// Called by the harbor as it leaves the tree.
+  /// Called by the frame as it leaves the tree.
   @internal
   void leave() {
     for (final VoidCallback listener in List<VoidCallback>.of(_leaveListeners)) {
@@ -944,12 +1077,12 @@ class HarborController {
       claim._controller = null;
     }
     _claims.clear();
-    for (final HarborBreakwater breakwater in List<HarborBreakwater>.of(_breakwaters)) {
-      breakwater._coverage.removeListener(_breakwaterChanges.ping);
-      breakwater._controller = null;
+    for (final HarborPageCover coversPage in List<HarborPageCover>.of(_breakwaters)) {
+      coversPage._coverage.removeListener(_breakwaterChanges.ping);
+      coversPage._controller = null;
     }
     _breakwaters.clear();
-    fleet._leave(this);
+    registry._leave(this);
     onChanged = null;
   }
 
@@ -969,16 +1102,20 @@ class HarborController {
   final ValueNotifier<Rect> _clearWater = ValueNotifier<Rect>(Rect.zero);
   bool _clearWaterPending = false;
 
-  /// The water nothing covers, in this harbor's coordinates, a frame after
-  /// each layout. For content that follows the docks by transform rather than
+  /// The room nothing covers, in this frame's coordinates, a drawn frame after
+  /// each layout. For content that follows the bars by transform rather than
   /// relayout (a card that slides as a drawer rises).
-  ValueListenable<Rect> get clearWater => _clearWater;
+  ValueListenable<Rect> get room => _clearWater;
 
-  /// Called by the harbor's layout.
+  /// The old name of [room].
+  @Deprecated('Renamed room. `dart fix` applies it.')
+  ValueListenable<Rect> get clearWater => room;
+
+  /// Called by the frame's layout.
   @internal
   void recordLayout(final HarborLayoutRecord record) {
     _layoutRecord = record;
-    if (_clearWater.value == record.clearWater || _clearWaterPending) {
+    if (_clearWater.value == record.room || _clearWaterPending) {
       return;
     }
     _clearWaterPending = true;
@@ -986,42 +1123,50 @@ class HarborController {
       _clearWaterPending = false;
       final HarborLayoutRecord? latest = _layoutRecord;
       if (latest != null) {
-        _clearWater.value = latest.clearWater;
+        _clearWater.value = latest.room;
       }
     });
   }
 
-  /// The water nothing covers, in global coordinates, from the last layout.
-  Rect? clearWaterInGlobal() {
+  /// The room nothing covers, in global coordinates, from the last layout.
+  Rect? roomInGlobal() {
     final RenderBox? box = layoutBox;
     final HarborLayoutRecord? layout = _layoutRecord;
     if (box == null || layout == null || !box.attached || !box.hasSize) {
       return null;
     }
-    return MatrixUtils.transformRect(box.getTransformTo(null), layout.clearWater);
+    return MatrixUtils.transformRect(box.getTransformTo(null), layout.room);
   }
+
+  /// The old name of [roomInGlobal].
+  @Deprecated('Renamed roomInGlobal. `dart fix` applies it.')
+  Rect? clearWaterInGlobal() => roomInGlobal();
 }
 
-/// A dock moored on a harbor by [HarborController.addPontoon]; give it to
-/// [HarborController.updatePontoon] and [HarborController.removePontoon].
-class HarborPontoonHandle {
-  HarborPontoonHandle._(this._edge, this._dock);
+/// A bar attached to a frame by [HarborController.attachBar]; give it to
+/// [HarborController.updateAttachedBar] and [HarborController.detachBar].
+class HarborAttachedBarHandle {
+  HarborAttachedBarHandle._(this._edge, this._dock);
 
   HarborEdge _edge;
-  HarborDock _dock;
+  HarborBar _dock;
 
-  /// The edge the pontoon is moored on.
+  /// The edge the bar is attached to.
   HarborEdge get edge => _edge;
 
-  /// The dock it is moored as.
-  HarborDock get dock => _dock;
+  /// The bar it is attached as.
+  HarborBar get bar => _dock;
+
+  /// The old name of [bar].
+  @Deprecated('Renamed bar. `dart fix` applies it.')
+  HarborBar get dock => bar;
 }
 
 class _BreakwaterNotifier extends ChangeNotifier {
   void ping() => notifyListeners();
 }
 
-/// Carries a [HarborController] down to the harbor's docks and content.
+/// Carries a [HarborController] down to the frame's bars and content.
 class HarborScope extends InheritedWidget {
   const HarborScope({super.key, required this.controller, required super.child});
 
@@ -1031,31 +1176,31 @@ class HarborScope extends InheritedWidget {
   bool updateShouldNotify(final HarborScope oldWidget) => controller != oldWidget.controller;
 }
 
-/// Carries the [HarborFleet] down from the outermost harbor.
+/// Carries the [HarborFrameRegistry] down from the outermost frame.
 class HarborFleetScope extends InheritedWidget {
-  const HarborFleetScope({super.key, required this.fleet, required super.child});
+  const HarborFleetScope({super.key, required this.registry, required super.child});
 
-  final HarborFleet fleet;
+  final HarborFrameRegistry registry;
 
-  static HarborFleet? maybeOf(final BuildContext context) =>
-      context.getInheritedWidgetOfExactType<HarborFleetScope>()?.fleet;
+  static HarborFrameRegistry? maybeOf(final BuildContext context) =>
+      context.getInheritedWidgetOfExactType<HarborFleetScope>()?.registry;
 
   @override
-  bool updateShouldNotify(final HarborFleetScope oldWidget) => fleet != oldWidget.fleet;
+  bool updateShouldNotify(final HarborFleetScope oldWidget) => registry != oldWidget.registry;
 }
 
-/// The error `of` throws when no harbor is above [context], naming [owner]'s
+/// The error `of` throws when no frame is above [context], naming [owner]'s
 /// `of` and `maybeOf`, as `Scaffold.of` names its own.
 FlutterError harborNotFound(final BuildContext context, final String owner) => FlutterError.fromParts(<DiagnosticsNode>[
-  ErrorSummary('$owner.of() called with a context that has no Harbor above it.'),
+  ErrorSummary('$owner.of() called with a context that has no HarborFrame above it.'),
   ErrorDescription(
-    'No Harbor ancestor could be found starting from the context that was passed to $owner.of(). '
-    'This usually happens when the context is from the widget whose build method creates the Harbor, '
-    'or when the widget is outside every HarborSea.',
+    'No HarborFrame ancestor could be found starting from the context that was passed to $owner.of(). '
+    'This usually happens when the context is from the widget whose build method creates the HarborFrame, '
+    'or when the widget is outside every HarborRoot.',
   ),
   ErrorHint(
-    'Use a Builder, or a widget of its own, below the Harbor to get a context inside it. '
-    'For a widget that may be used outside a harbor, call $owner.maybeOf() and handle null.',
+    'Use a Builder, or a widget of its own, below the HarborFrame to get a context inside it. '
+    'For a widget that may be used outside a frame, call $owner.maybeOf() and handle null.',
   ),
   context.describeElement('The context used was'),
 ]);

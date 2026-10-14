@@ -11,7 +11,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-final RegExp _designLibrary = RegExp(r'''import\s+['"]package:(flutter/(material|cupertino)\.dart|material_ui/|cupertino_ui/)''');
+final RegExp _designLibrary = RegExp(
+  r'''import\s+['"]package:(flutter/(material|cupertino)\.dart|material_ui/|cupertino_ui/)''',
+);
 
 List<String> _offenders(final String dir) => <String>[
   for (final FileSystemEntity file in Directory(dir).listSync(recursive: true))
@@ -20,7 +22,12 @@ List<String> _offenders(final String dir) => <String>[
 
 void main() {
   test('nothing in lib/ imports a design library', () {
-    final List<String> scanned = Directory('lib').listSync(recursive: true).whereType<File>().where((final File f) => f.path.endsWith('.dart')).map((final File f) => f.path).toList();
+    final List<String> scanned = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((final File f) => f.path.endsWith('.dart'))
+        .map((final File f) => f.path)
+        .toList();
     expect(scanned.length, greaterThan(10), reason: 'positive control: the scan saw the library');
     expect(_offenders('lib'), isEmpty);
   });

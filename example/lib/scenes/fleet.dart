@@ -15,10 +15,10 @@ import '../game/widgets.dart';
 
 /// The Fleet tab: the harbor's registry of every boat afloat (#9).
 ///
-/// Its header is a frosted pier holding the title and a search field, so the
-/// rows sail under it and come to rest past its wake. The tab lives in Harbor
-/// Town's body, which ends at the waterline while the tab bar stands on
-/// pilings: focus the search and the keyboard covers the tab bar without
+/// Its header is a frosted overlay bar holding the title and a search field, so
+/// the rows sail under it and come to rest past its fade. The tab lives in Harbor
+/// Town's body, which ends at the keyboard's top while the tab bar stays where it
+/// is: focus the search and the keyboard covers the tab bar without
 /// moving it, while the last row stays reachable above the keyboard.
 class FleetTab extends StatefulWidget {
   const FleetTab({super.key});
@@ -59,9 +59,9 @@ class _FleetTabState extends State<FleetTab> {
     if (!context.mounted) {
       return;
     }
-    HarborFlares.raise(
+    HarborToasts.show(
       context,
-      slot: HarborFlareSlot.low,
+      slot: HarborToastSlot.low,
       builder: (final BuildContext context) => SignalFlag(
         message: 'Registry updated: ${Fleet.boats.length} boats accounted for',
         icon: Icons.fact_check_rounded,
@@ -81,12 +81,12 @@ class _FleetTabState extends State<FleetTab> {
     final List<Boat> boats = _boats;
     return ColoredBox(
       color: Palette.deepSea,
-      child: Harbor(
+      child: HarborFrame(
         debugLabel: 'fleet registry',
-        top: <HarborDock>[
-          HarborDock.pier(
+        top: <HarborBar>[
+          HarborBar.overlay(
             debugLabel: 'registry header',
-            wake: const HarborWake.fade(length: 12, blurSigma: 18),
+            edgeEffect: const HarborEdgeEffect.fade(length: 12, blurSigma: 18),
             backdrop: const PierPlanks(opacity: 0.55),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -96,7 +96,7 @@ class _FleetTabState extends State<FleetTab> {
                   subtitle: '${boats.length} of ${Fleet.boats.length} boats afloat',
                   trailing: const Padding(padding: EdgeInsets.all(8), child: BuoyArt(size: 24)),
                 ),
-                HarborMooringLine(
+                HarborClear.rowInsets(
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _RegistrySearch(
@@ -112,22 +112,22 @@ class _FleetTabState extends State<FleetTab> {
         body: Builder(
           builder: (final BuildContext context) => RefreshIndicator(
             // Appears below the header rather than behind it.
-            edgeOffset: HarborWaters.of(context).docks.top,
+            edgeOffset: HarborRoom.of(context).bars.top,
             color: Palette.night,
             backgroundColor: Palette.brass,
             onRefresh: () => _refresh(context),
-            child: HarborFairway(
+            child: HarborScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               slivers: <Widget>[
                 const SliverToBoxAdapter(
-                  child: HarborMooringLine(
+                  child: HarborClear.rowInsets(
                     child: LogbookNote(
-                      pattern: 'Frosted pier header · fairway on the mooring line',
+                      pattern: 'Frosted overlay header · scroll view on the row insets',
                       tryThis:
-                          'Scroll: the boats sail under the planks and fade in the wake. Tap the search and the '
-                          'keyboard covers the tab bar (it stands on pilings) while the last boat still docks above '
-                          'the keyboard. Pull down to refresh: the anchor drops just below the header.',
+                          'Scroll: the boats sail under the planks and fade at the header\'s edge. Tap the search and '
+                          'the keyboard covers the tab bar (it stays put) while the last boat '
+                          'still rests above the keyboard. Pull down to refresh: the anchor drops just below the header.',
                     ),
                   ),
                 ),
@@ -180,7 +180,7 @@ class _EmptyRegistry extends StatelessWidget {
   const _EmptyRegistry();
 
   @override
-  Widget build(final BuildContext context) => HarborMooringLine(
+  Widget build(final BuildContext context) => HarborClear.rowInsets(
     child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
@@ -198,16 +198,16 @@ class _EmptyRegistry extends StatelessWidget {
 // #10–#14 Boat detail
 // ---------------------------------------------------------------------------
 
-/// A boat's page in the registry (#10–#14), pushed as a new port.
+/// A boat's page in the registry (#10–#14), pushed as a page.
 ///
-/// - **#10 hero:** open water (a sea and the boat) runs under the header and
-///   the status bar; its title block keeps clear of the coast alone.
-/// - **#11 title handoff:** a beacon on the hero title reports how much of it
+/// - **#10 hero:** a background (a sea and the boat) runs under the header and
+///   the status bar; its title block keeps clear of the system edges alone.
+/// - **#11 title handoff:** a HarborKeepInSight on the hero title reports how much of it
 ///   the header covers, and the header's title fades in by as much.
-/// - **#12 logbook tabs:** two sliver docks that pin under the header, stacked.
-/// - **#13 crew carousel:** a horizontal fairway, edge to edge, padded at both
-///   ends by the mooring line.
-/// - **#14 charter pill:** a pontoon moored from deep inside the tab strip,
+/// - **#12 logbook tabs:** two sliver bars that pin under the header, stacked.
+/// - **#13 crew carousel:** a horizontal scroll view, edge to edge, padded at both
+///   ends by the row insets.
+/// - **#14 charter pill:** a HarborAttachedBar from deep inside the tab strip,
 ///   which the last voyage tile rests above.
 class BoatDetailPage extends StatefulWidget {
   const BoatDetailPage({super.key, required this.boat});
@@ -258,13 +258,13 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
     final Boat boat = widget.boat;
     final List<_Voyage> voyages = _Voyage.of(boat, _sort);
     return HarborPage(
-      child: Harbor(
-        newPort: true,
+      child: HarborFrame(
+        isPage: true,
         debugLabel: 'boat detail',
-        top: <HarborDock>[
-          HarborDock.pier(
+        top: <HarborBar>[
+          HarborBar.overlay(
             debugLabel: 'boat header',
-            wake: const HarborWake.fade(length: 8, blurSigma: 16),
+            edgeEffect: const HarborEdgeEffect.fade(length: 8, blurSigma: 16),
             backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.35)),
             child: PierHeader(
               key: const ValueKey<String>('boat header'),
@@ -275,10 +275,9 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
               trailing: BrassButton(
                 icon: Icons.bookmark_add_rounded,
                 tooltip: 'Moor in favorites',
-                onPressed: () => HarborFlares.raise(
+                onPressed: () => HarborToasts.show(
                   context,
-                  builder: (final BuildContext context) =>
-                      SignalFlag(message: '${boat.name} moored in your favorites'),
+                  builder: (final BuildContext context) => SignalFlag(message: '${boat.name} moored in your favorites'),
                 ),
               ),
             ),
@@ -287,11 +286,11 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
         body: Builder(
           builder: (final BuildContext context) => ColoredBox(
             color: Palette.deepSea,
-            child: HarborFairway(
+            child: HarborScrollView(
               controller: _scroll,
               // The hero starts at the frame's top, under the header; the
               // strips still pin at the header's face.
-              startsInOpenWater: true,
+              startsUnderBars: true,
               slivers: <Widget>[
                 SliverToBoxAdapter(
                   child: _BoatHero(
@@ -300,11 +299,11 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
                     onTitleObscured: (final double covered) => _titleOpacity.value = covered,
                   ),
                 ),
-                HarborSliverDock(
+                HarborSliverBar(
                   backdrop: const _StripBackdrop(),
                   child: _TabStrip(boat: boat, current: _tab, onSelect: _jumpTo),
                 ),
-                HarborSliverDock(
+                HarborSliverBar(
                   backdrop: const _StripBackdrop(),
                   child: _SortStrip(
                     key: _sortStripKey,
@@ -317,18 +316,18 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
                 ),
                 SliverToBoxAdapter(child: _CrewSection(key: _sections[_LogbookTab.crew])),
                 SliverToBoxAdapter(
-                  child: HarborMooringLine(
+                  child: HarborClear.rowInsets(
                     key: _sections[_LogbookTab.cargo],
                     child: const _SectionTitle(title: 'Cargo runs', icon: Icons.inventory_2_rounded),
                   ),
                 ),
                 SliverPadding(
-                  padding: HarborMoored.clearanceOf(
+                  padding: HarborClear.clearanceOf(
                     context,
                     edges: HarborEdge.horizontal,
-                    tide: false,
-                    mooringLine: true,
-                    extra: const EdgeInsetsDirectional.only(bottom: 16),
+                    clearsKeyboard: false,
+                    rowInsets: true,
+                    padding: const EdgeInsetsDirectional.only(bottom: 16),
                   ).resolve(Directionality.of(context)),
                   sliver: SliverGrid.builder(
                     itemCount: voyages.length,
@@ -364,22 +363,25 @@ class _BoatHero extends StatelessWidget {
     final TextTheme text = Theme.of(context).textTheme;
     return Stack(
       children: <Widget>[
-        // Open water: the sea runs under the status bar and the header.
+        // The background: the sea runs under the status bar and the header.
         Positioned.fill(
-          child: HarborOpenWater(
-            builder: (final BuildContext context, final HarborWatersData waters) => Stack(
-              children: <Widget>[
-                const Positioned.fill(child: Sea()),
-                PositionedDirectional(top: waters.coast.top + 70, start: 40, child: const GullArt(size: 28)),
-                PositionedDirectional(top: waters.coast.top + 96, end: 56, child: const GullArt(size: 18)),
-              ],
-            ),
+          child: Builder(
+            builder: (final BuildContext context) {
+              final HarborRoomData waters = HarborRoom.of(context);
+              return Stack(
+                children: <Widget>[
+                  const Positioned.fill(child: Sea()),
+                  PositionedDirectional(top: waters.systemEdges.top + 70, start: 40, child: const GullArt(size: 28)),
+                  PositionedDirectional(top: waters.systemEdges.top + 96, end: 56, child: const GullArt(size: 18)),
+                ],
+              );
+            },
           ),
         ),
         // The title block clears the status bar only, so it sits under the
         // translucent header.
-        HarborMoored(
-          bars: false,
+        HarborClear(
+          clearsBars: false,
           edges: const <HarborEdge>{HarborEdge.top},
           child: Column(
             key: const ValueKey<String>('hero title block'),
@@ -392,7 +394,7 @@ class _BoatHero extends StatelessWidget {
                   child: BoatArt(kind: boat.kind, hull: boat.hull, flag: boat.flag),
                 ),
               ),
-              HarborMooringLine(
+              HarborClear.rowInsets(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -401,7 +403,7 @@ class _BoatHero extends StatelessWidget {
                       style: text.labelMedium?.copyWith(color: Palette.brass, letterSpacing: 1.6),
                     ),
                     const SizedBox(height: 4),
-                    HarborBeacon(
+                    HarborKeepInSight(
                       onObscured: onTitleObscured,
                       child: Text(
                         boat.name,
@@ -425,7 +427,7 @@ class _BoatHero extends StatelessWidget {
   }
 }
 
-// #12: the logbook tabs and the sort strip, two sliver docks that stack.
+// #12: the logbook tabs and the sort strip, two sliver bars that stack.
 
 class _StripBackdrop extends StatelessWidget {
   const _StripBackdrop();
@@ -453,8 +455,8 @@ class _TabStrip extends StatefulWidget {
 }
 
 class _TabStripState extends State<_TabStrip> {
-  // Kept identical across rebuilds, so the pontoon isn't re-moored each frame.
-  late final HarborDock _charter = HarborDock.pier(
+  // Kept identical across rebuilds, so the attached bar isn't re-attached each frame.
+  late final HarborBar _charter = HarborBar.overlay(
     debugLabel: 'charter pill',
     hitTestBehavior: HitTestBehavior.translucent,
     child: _CharterPill(boat: widget.boat),
@@ -493,15 +495,15 @@ class _TabStripState extends State<_TabStrip> {
       );
     }
 
-    // The charter pill is moored from here, deep inside the page's scroll
-    // view: it joins the page's bottom docks like any other.
-    return HarborPontoon(
+    // The charter pill is attached from here, deep inside the page's scroll
+    // view: it joins the page's bottom bars like any other.
+    return HarborAttachedBar(
       edge: HarborEdge.bottom,
-      dock: _charter,
+      bar: _charter,
       child: SizedBox(
         key: const ValueKey<String>('logbook tabs'),
         height: _TabStrip.height,
-        child: HarborMooringLine(
+        child: HarborClear.rowInsets(
           child: Row(
             children: <Widget>[
               tab(_LogbookTab.logbook, 'Logbook', Icons.menu_book_rounded),
@@ -541,8 +543,8 @@ class _SortStrip extends StatelessWidget {
     return SizedBox(
       key: const ValueKey<String>('sort strip'),
       height: _SortStrip.height,
-      // A horizontal fairway of chips, so they run edge to edge on a narrow phone.
-      child: HarborFairway.box(
+      // A horizontal scroll view of chips, so they run edge to edge on a narrow phone.
+      child: HarborScrollView.box(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: <Widget>[
@@ -557,7 +559,7 @@ class _SortStrip extends StatelessWidget {
   }
 }
 
-// #14: the charter pill, a pontoon's dock.
+// #14: the charter pill, an attached bar.
 
 class _CharterPill extends StatelessWidget {
   const _CharterPill({required this.boat});
@@ -567,7 +569,7 @@ class _CharterPill extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12, top: 4),
-    // Only as tall as the pill: a dock is measured, and a bare Center would
+    // Only as tall as the pill: a bar is measured, and a bare Center would
     // claim the whole page.
     child: Center(
       heightFactor: 1,
@@ -578,9 +580,9 @@ class _CharterPill extends StatelessWidget {
         elevation: 6,
         child: InkWell(
           customBorder: const StadiumBorder(),
-          onTap: () => HarborFlares.raise(
+          onTap: () => HarborToasts.show(
             context,
-            slot: HarborFlareSlot.low,
+            slot: HarborToastSlot.low,
             builder: (final BuildContext context) => SignalFlag(
               message: '${boat.captain} will meet you at the ${boat.homePort} quay',
               icon: Icons.sailing_rounded,
@@ -644,18 +646,18 @@ class _LogbookSection extends StatelessWidget {
   ];
 
   @override
-  Widget build(final BuildContext context) => HarborMooringLine(
+  Widget build(final BuildContext context) => HarborClear.rowInsets(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         const SizedBox(height: 8),
         const LogbookNote(
-          pattern: 'Open water hero · title handoff · sliver docks · horizontal fairway · pontoon',
+          pattern: 'Hero under the bars · title handoff · sliver bars · horizontal scroll view · attached bar',
           tryThis:
               'Scroll up: the boat sails under the frosted header and its name fades into the header as it passes '
               'beneath. The tabs and the sort strip pin under the header, one below the other. The voyage pill '
               'sticks until its voyage scrolls away. Swipe the crew from edge to edge, and find the charter pill '
-              'moored from inside the tab strip: the last cargo run docks just above it.',
+              'attached from inside the tab strip: the last cargo run rests just above it.',
         ),
         const _SectionTitle(title: 'Longest voyage', icon: Icons.explore_rounded),
         DecoratedBox(
@@ -742,13 +744,13 @@ class _CrewSection extends StatelessWidget {
   Widget build(final BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      const HarborMooringLine(
+      const HarborClear.rowInsets(
         child: _SectionTitle(title: 'Crew aboard', icon: Icons.groups_rounded),
       ),
       SizedBox(
         height: 150,
-        // Edge to edge; the mooring line pads both ends.
-        child: HarborFairway(
+        // Edge to edge; the row insets pad both ends.
+        child: HarborScrollView(
           key: const ValueKey<String>('crew carousel'),
           scrollDirection: Axis.horizontal,
           slivers: <Widget>[
@@ -795,7 +797,7 @@ class _CrewCard extends StatelessWidget {
   );
 }
 
-// The cargo runs: a grid of voyage tiles on the mooring line.
+// The cargo runs: a grid of voyage tiles on the row insets.
 
 @immutable
 class _Voyage {
@@ -858,7 +860,7 @@ class _VoyageTile extends StatelessWidget {
     borderRadius: BorderRadius.circular(12),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
-      onTap: () => HarborFlares.raise(
+      onTap: () => HarborToasts.show(
         context,
         builder: (final BuildContext context) =>
             SignalFlag(message: 'Voyage ${voyage.number}: ${voyage.crates} crates of ${voyage.cargo.toLowerCase()}'),

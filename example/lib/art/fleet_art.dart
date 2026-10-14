@@ -14,8 +14,10 @@ class SailorArt extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(final BuildContext context) =>
-      SizedBox.square(dimension: size, child: CustomPaint(painter: _SailorPainter(color)));
+  Widget build(final BuildContext context) => SizedBox.square(
+    dimension: size,
+    child: CustomPaint(painter: _SailorPainter(color)),
+  );
 }
 
 class _SailorPainter extends CustomPainter {
@@ -95,7 +97,8 @@ class VoyageChartArt extends StatelessWidget {
   final Color ink;
 
   @override
-  Widget build(final BuildContext context) => CustomPaint(painter: _VoyagePainter(seed, ink), child: const SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      CustomPaint(painter: _VoyagePainter(seed, ink), child: const SizedBox.expand());
 }
 
 class _VoyagePainter extends CustomPainter {

@@ -25,7 +25,9 @@ class HarborShowcase extends StatefulWidget {
 }
 
 class _HarborShowcaseState extends State<HarborShowcase> {
-  final Map<PhonePart, GlobalKey> _parts = <PhonePart, GlobalKey>{for (final PhonePart p in PhonePart.values) p: GlobalKey(debugLabel: p.name)};
+  final Map<PhonePart, GlobalKey> _parts = <PhonePart, GlobalKey>{
+    for (final PhonePart p in PhonePart.values) p: GlobalKey(debugLabel: p.name),
+  };
   final GlobalKey _stage = GlobalKey(debugLabel: 'stage');
 
   static const double _captionHeight = 112;
@@ -44,7 +46,10 @@ class _HarborShowcaseState extends State<HarborShowcase> {
               Expanded(
                 child: Row(
                   children: <Widget>[
-                    SizedBox(width: _sceneWidth, child: ClipRect(child: _Left(time: t))),
+                    SizedBox(
+                      width: _sceneWidth,
+                      child: ClipRect(child: _Left(time: t)),
+                    ),
                     Expanded(
                       child: CustomPaint(
                         key: _stage,
@@ -52,7 +57,11 @@ class _HarborShowcaseState extends State<HarborShowcase> {
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: FittedBox(child: _Bezel(child: ShowcasePhone(time: t, parts: _parts))),
+                            child: FittedBox(
+                              child: _Bezel(
+                                child: ShowcasePhone(time: t, parts: _parts),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -98,7 +107,9 @@ class _Left extends StatelessWidget {
     final ShowcaseChapter now = ShowcaseTimeline.chapterAt(time);
     final int index = chapters.indexOf(now);
     final double fade = ShowcaseTimeline.ease(time, now.start, now.start + 0.5);
-    if (index <= 0 || fade >= 1 || ShowcasePlate.shows(now) == ShowcasePlate.shows(chapters[index - 1]) && !ShowcasePlate.shows(now)) {
+    if (index <= 0 ||
+        fade >= 1 ||
+        ShowcasePlate.shows(now) == ShowcasePlate.shows(chapters[index - 1]) && !ShowcasePlate.shows(now)) {
       return _for(now, time);
     }
     return Stack(
@@ -165,7 +176,12 @@ class _OutlinePainter extends CustomPainter {
     return <_Outline>[
       (part: PhonePart.composer, label: 'composer\nafloat', left: false, covered: false),
       // The tab bar is still laid out where it was: the keyboard covers it, as the tide covers a jetty on pilings.
-      (part: PhonePart.tabBar, label: up ? 'tab bar\non pilings,\nunder it' : 'tab bar\non pilings', left: true, covered: up),
+      (
+        part: PhonePart.tabBar,
+        label: up ? 'tab bar\non pilings,\nunder it' : 'tab bar\non pilings',
+        left: true,
+        covered: up,
+      ),
       if (up) (part: PhonePart.keyboard, label: 'keyboard', left: false, covered: false),
     ];
   }
@@ -195,7 +211,13 @@ class _OutlinePainter extends CustomPainter {
       final TextPainter text = TextPainter(
         text: TextSpan(
           text: outline.label,
-          style: const TextStyle(fontFamily: 'Georgia', fontSize: 15, height: 1.15, fontWeight: FontWeight.w700, color: Palette.night),
+          style: const TextStyle(
+            fontFamily: 'Georgia',
+            fontSize: 15,
+            height: 1.15,
+            fontWeight: FontWeight.w700,
+            color: Palette.night,
+          ),
         ),
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
@@ -206,11 +228,18 @@ class _OutlinePainter extends CustomPainter {
       final double y = (rect.center.dy - height / 2).clamp(8.0, size.height - height - 8);
       final Rect tag = Rect.fromLTWH(x, y, width, height);
       final Offset from = outline.left ? tag.centerRight : tag.centerLeft;
-      final Offset to = Offset(outline.left ? rect.left : rect.right, rect.center.dy.clamp(rect.top + 6, rect.bottom - 6));
+      final Offset to = Offset(
+        outline.left ? rect.left : rect.right,
+        rect.center.dy.clamp(rect.top + 6, rect.bottom - 6),
+      );
       canvas
-        ..drawLine(from, to, Paint()
-          ..color = Palette.brass
-          ..strokeWidth = 2)
+        ..drawLine(
+          from,
+          to,
+          Paint()
+            ..color = Palette.brass
+            ..strokeWidth = 2,
+        )
         ..drawRRect(RRect.fromRectAndRadius(tag, const Radius.circular(7)), Paint()..color = Palette.brass);
       text.paint(canvas, tag.topLeft + const Offset(8, 5));
     }

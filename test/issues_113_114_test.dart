@@ -12,17 +12,27 @@ final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
 
 void main() {
   group('#113 countsWhileCovered', () {
-    Future<HarborFlareEntry> raiseThenCover(final WidgetTester tester, {required final bool counts, final bool hold = false}) async {
+    Future<HarborToastEntry> raiseThenCover(
+      final WidgetTester tester, {
+      required final bool counts,
+      final bool hold = false,
+    }) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(MaterialApp(
-        navigatorKey: _navigator,
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-        home: Harbor(body: Builder(builder: (final BuildContext context) {
-          page = context;
-          return const SizedBox.expand();
-        })),
-      ));
-      final HarborFlareEntry entry = HarborFlares.raise(
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          navigatorKey: _navigator,
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
+            body: Builder(
+              builder: (final BuildContext context) {
+                page = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      final HarborToastEntry entry = HarborToasts.show(
         page,
         countsWhileCovered: counts,
         builder: (final BuildContext _) => const Text('saved'),
@@ -33,24 +43,28 @@ void main() {
       if (hold) {
         entry.hold();
       }
-      unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => const Harbor(body: Text('next page')))));
+      unawaited(
+        _navigator.currentState!.push(
+          MaterialPageRoute<void>(builder: (final BuildContext _) => const HarborFrame(body: Text('next page'))),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 3));
       return entry;
     }
 
     testWidgets('positive control: by default its time stops under the covering page', (final tester) async {
-      final HarborFlareEntry entry = await raiseThenCover(tester, counts: false);
+      final HarborToastEntry entry = await raiseThenCover(tester, counts: false);
       expect(entry.showing.value, isTrue);
     });
 
     testWidgets('with it, the time runs under the covering page and the flare is gone on return', (final tester) async {
-      final HarborFlareEntry entry = await raiseThenCover(tester, counts: true);
+      final HarborToastEntry entry = await raiseThenCover(tester, counts: true);
       expect(entry.showing.value, isFalse);
     });
 
     testWidgets('a hold still stops it', (final tester) async {
-      final HarborFlareEntry entry = await raiseThenCover(tester, counts: true, hold: true);
+      final HarborToastEntry entry = await raiseThenCover(tester, counts: true, hold: true);
       expect(entry.showing.value, isTrue);
     });
   });
@@ -58,19 +72,29 @@ void main() {
   group('#114 Harbor(dockHinge:)', () {
     const HarborTrialDevice dual = HarborTrialDevice.dualScreenOpen; // 540 | 34 hinge | 540
 
-    Future<BuildContext> page(final WidgetTester tester, {final HarborHinge? hinge, final HarborHinge? dockHinge}) async {
+    Future<BuildContext> page(
+      final WidgetTester tester, {
+      final HarborHinge? hinge,
+      final HarborHinge? dockHinge,
+    }) async {
       late BuildContext inside;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-          home: Harbor(
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
             hinge: hinge,
-            dockHinge: dockHinge,
-            bottom: const <HarborDock>[HarborDock.quay(child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity))],
-            body: Builder(builder: (final BuildContext context) {
-              inside = context;
-              return const SizedBox.expand();
-            }),
+            barHinge: dockHinge,
+            bottom: const <HarborBar>[
+              HarborBar.solid(
+                child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity),
+              ),
+            ],
+            body: Builder(
+              builder: (final BuildContext context) {
+                inside = context;
+                return const SizedBox.expand();
+              },
+            ),
           ),
         ),
         device: dual,
@@ -79,7 +103,13 @@ void main() {
     }
 
     Future<Rect> sheet(final WidgetTester tester, final BuildContext page) async {
-      unawaited(showHarborSheet<void>(page, builder: (final BuildContext _) => const HarborSheet(body: SizedBox(key: ValueKey<String>('sheet'), height: 100))));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext _) =>
+              const HarborSheet(body: SizedBox(key: ValueKey<String>('sheet'), height: 100)),
+        ),
+      );
       await tester.pumpAndSettle();
       return tester.getRect(find.byKey(const ValueKey<String>('sheet')));
     }

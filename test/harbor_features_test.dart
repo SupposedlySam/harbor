@@ -7,15 +7,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-Widget _bar(final String label, final double height) => SizedBox(
-  key: ValueKey<String>(label),
-  height: height,
-  width: double.infinity,
-  child: Text(label),
-);
+Widget _bar(final String label, final double height) =>
+    SizedBox(key: ValueKey<String>(label), height: height, width: double.infinity, child: Text(label));
 
-Widget _app(final Widget home, {final HarborCoast coast = HarborCoast.ambient, final EdgeInsetsDirectional? margin}) => MaterialApp(
-  builder: (final BuildContext context, final Widget? child) => HarborSea(coast: coast, margin: margin, child: child!),
+Widget _app(
+  final Widget home, {
+  final HarborSystemEdges coast = HarborSystemEdges.ambient,
+  final EdgeInsetsDirectional? margin,
+}) => MaterialApp(
+  builder: (final BuildContext context, final Widget? child) =>
+      HarborRoot(systemEdges: coast, margin: margin, child: child!),
   home: Material(child: home),
 );
 
@@ -26,14 +27,18 @@ Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.b
 
 void main() {
   testWidgets('a sliver dock first in a fairway takes the status bar and pins there', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          body: HarborFairway(
+        HarborFrame(
+          body: HarborScrollView(
             slivers: <Widget>[
-              HarborSliverDock(child: _bar('dock', 48)),
-              HarborSliverDock(child: _bar('tabs', 40)),
-              SliverList.builder(itemCount: 50, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50)),
+              HarborSliverBar(child: _bar('dock', 48)),
+              HarborSliverBar(child: _bar('tabs', 40)),
+              SliverList.builder(
+                itemCount: 50,
+                itemBuilder: (final BuildContext c, final int i) =>
+                    SizedBox(key: ValueKey<String>('row$i'), height: 50),
+              ),
             ],
           ),
         ),
@@ -49,15 +54,18 @@ void main() {
   });
 
   testWidgets('a sliver dock under a pier pins below the pier', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-          body: HarborFairway(
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          body: HarborScrollView(
             slivers: <Widget>[
               const SliverToBoxAdapter(child: SizedBox(height: 200)),
-              HarborSliverDock(child: _bar('tabs', 40)),
-              SliverList.builder(itemCount: 50, itemBuilder: (final BuildContext c, final int i) => const SizedBox(height: 50)),
+              HarborSliverBar(child: _bar('tabs', 40)),
+              SliverList.builder(
+                itemCount: 50,
+                itemBuilder: (final BuildContext c, final int i) => const SizedBox(height: 50),
+              ),
             ],
           ),
         ),
@@ -68,20 +76,23 @@ void main() {
     expect(_rect(tester, 'tabs').top, _rect(tester, 'header').bottom);
   });
 
-  testWidgets('a horizontal fairway pads both ends by the mooring line and runs to the frame edge', (final tester) async {
-    await tester.pumpSeaTrial(
+  testWidgets('a horizontal fairway pads both ends by the mooring line and runs to the frame edge', (
+    final tester,
+  ) async {
+    await tester.pumpHarborTrial(
       _app(
-        HarborFairway(
+        HarborScrollView(
           slivers: <Widget>[
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 100,
-                child: HarborFairway(
+                child: HarborScrollView(
                   scrollDirection: Axis.horizontal,
                   slivers: <Widget>[
                     SliverList.builder(
                       itemCount: 20,
-                      itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('card$i'), width: 120),
+                      itemBuilder: (final BuildContext c, final int i) =>
+                          SizedBox(key: ValueKey<String>('card$i'), width: 120),
                     ),
                   ],
                 ),
@@ -100,15 +111,19 @@ void main() {
   });
 
   testWidgets('a horizontal fairway clears a side cutout plus the margin in landscape', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
         Center(
           child: SizedBox(
             height: 100,
-            child: HarborFairway(
+            child: HarborScrollView(
               scrollDirection: Axis.horizontal,
               slivers: <Widget>[
-                SliverList.builder(itemCount: 20, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('card$i'), width: 120)),
+                SliverList.builder(
+                  itemCount: 20,
+                  itemBuilder: (final BuildContext c, final int i) =>
+                      SizedBox(key: ValueKey<String>('card$i'), width: 120),
+                ),
               ],
             ),
           ),
@@ -121,36 +136,41 @@ void main() {
   });
 
   testWidgets('a dark dock keeps its ground; a withdrawn one gives it back', (final tester) async {
-    final ValueNotifier<HarborDockState> state = ValueNotifier<HarborDockState>(HarborDockState.open);
-    await tester.pumpSeaTrial(
+    final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
+    await tester.pumpHarborTrial(
       _app(
-        ValueListenableBuilder<HarborDockState>(
+        ValueListenableBuilder<HarborBarState>(
           valueListenable: state,
-          builder: (final BuildContext context, final HarborDockState s, final Widget? _) => Harbor(
-            top: <HarborDock>[HarborDock.pier(key: const ValueKey<String>('h'), state: s, child: _bar('header', 50))],
-            body: const HarborMoored(child: SizedBox.expand(key: ValueKey<String>('body'))),
+          builder: (final BuildContext context, final HarborBarState s, final Widget? _) => HarborFrame(
+            top: <HarborBar>[HarborBar.overlay(key: const ValueKey<String>('h'), state: s, child: _bar('header', 50))],
+            body: const HarborClear(child: SizedBox.expand(key: ValueKey<String>('body'))),
           ),
         ),
       ),
     );
     expect(_rect(tester, 'body').top, 62 + 50);
-    state.value = HarborDockState.dark;
+    state.value = HarborBarState.dark;
     await tester.pumpAndSettle();
     expect(_rect(tester, 'body').top, 62 + 50);
-    state.value = HarborDockState.withdrawn;
+    state.value = HarborBarState.withdrawn;
     await tester.pumpAndSettle();
     expect(_rect(tester, 'body').top, 62);
   });
 
   testWidgets('a hold policy keeps the ground until the dock has gone', (final tester) async {
-    final ValueNotifier<HarborDockState> state = ValueNotifier<HarborDockState>(HarborDockState.open);
-    await tester.pumpSeaTrial(
+    final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
+    await tester.pumpHarborTrial(
       _app(
-        ValueListenableBuilder<HarborDockState>(
+        ValueListenableBuilder<HarborBarState>(
           valueListenable: state,
-          builder: (final BuildContext context, final HarborDockState s, final Widget? _) => Harbor(
-            bottom: <HarborDock>[
-              HarborDock.quay(key: const ValueKey<String>('s'), state: s, duration: const Duration(milliseconds: 200), child: _bar('strip', 60)),
+          builder: (final BuildContext context, final HarborBarState s, final Widget? _) => HarborFrame(
+            bottom: <HarborBar>[
+              HarborBar.solid(
+                key: const ValueKey<String>('s'),
+                state: s,
+                duration: const Duration(milliseconds: 200),
+                child: _bar('strip', 60),
+              ),
             ],
             body: const SizedBox.expand(key: ValueKey<String>('body')),
           ),
@@ -158,7 +178,7 @@ void main() {
       ),
     );
     final double resting = _rect(tester, 'body').bottom;
-    state.value = HarborDockState.withdrawn;
+    state.value = HarborBarState.withdrawn;
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(_rect(tester, 'body').bottom, resting);
@@ -167,16 +187,24 @@ void main() {
   });
 
   group('A dock given an animation style', () {
-    Future<(ValueNotifier<HarborDockState>, double)> pumpStrip(final WidgetTester tester, final AnimationStyle style) async {
-      final ValueNotifier<HarborDockState> state = ValueNotifier<HarborDockState>(HarborDockState.open);
+    Future<(ValueNotifier<HarborBarState>, double)> pumpStrip(
+      final WidgetTester tester,
+      final AnimationStyle style,
+    ) async {
+      final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
       addTearDown(state.dispose);
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          ValueListenableBuilder<HarborDockState>(
+          ValueListenableBuilder<HarborBarState>(
             valueListenable: state,
-            builder: (final BuildContext context, final HarborDockState s, final Widget? _) => Harbor(
-              bottom: <HarborDock>[
-                HarborDock.quay(state: s, extentPolicy: HarborExtentPolicy.follow, animationStyle: style, child: _bar('strip', 60)),
+            builder: (final BuildContext context, final HarborBarState s, final Widget? _) => HarborFrame(
+              bottom: <HarborBar>[
+                HarborBar.solid(
+                  state: s,
+                  extentPolicy: HarborExtentPolicy.follow,
+                  animationStyle: style,
+                  child: _bar('strip', 60),
+                ),
               ],
               body: const SizedBox.expand(key: ValueKey<String>('body')),
             ),
@@ -187,7 +215,7 @@ void main() {
     }
 
     testWidgets('withdraws over its reverse duration and curve, and returns over its duration', (final tester) async {
-      final (ValueNotifier<HarborDockState> state, double resting) = await pumpStrip(
+      final (ValueNotifier<HarborBarState> state, double resting) = await pumpStrip(
         tester,
         const AnimationStyle(
           duration: Duration(milliseconds: 100),
@@ -195,51 +223,51 @@ void main() {
           reverseCurve: Curves.linear,
         ),
       );
-      state.value = HarborDockState.withdrawn;
+      state.value = HarborBarState.withdrawn;
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       expect(_rect(tester, 'body').bottom, closeTo((resting + 874) / 2, 1));
       await tester.pumpAndSettle();
       expect(_rect(tester, 'body').bottom, 874);
-      state.value = HarborDockState.open;
+      state.value = HarborBarState.open;
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(_rect(tester, 'body').bottom, resting);
     });
 
     testWidgets('of no animation withdraws at once', (final tester) async {
-      final (ValueNotifier<HarborDockState> state, double resting) = await pumpStrip(tester, AnimationStyle.noAnimation);
+      final (ValueNotifier<HarborBarState> state, double resting) = await pumpStrip(tester, AnimationStyle.noAnimation);
       expect(resting, lessThan(874), reason: 'positive control: the strip takes its ground');
-      state.value = HarborDockState.withdrawn;
+      state.value = HarborBarState.withdrawn;
       await tester.pump();
       expect(_rect(tester, 'body').bottom, 874);
     });
   });
 
   testWidgets('a dock that withdraws at high tide leaves while the keyboard is up', (final tester) async {
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          bodyClearsTide: false,
-          bottom: <HarborDock>[HarborDock.pier(withdrawsAtHighTide: true, child: _bar('tools', 50))],
+        HarborFrame(
+          bodyClearsKeyboard: false,
+          bottom: <HarborBar>[HarborBar.overlay(withdrawsAtHighTide: true, child: _bar('tools', 50))],
           body: const SizedBox.expand(),
         ),
       ),
     );
     expect(tester.getSize(find.byType(HarborDockSlot).first).height, greaterThan(0));
-    await trial.raiseTide();
+    await trial.showKeyboard();
     final RenderBox frame = tester.renderObject<RenderBox>(find.byType(HarborDockSlot).first);
     expect(frame.size.height, 0);
   });
 
   testWidgets('a flare goes to the port on top and clears its footer', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
+        HarborFrame(
+          isPage: true,
           debugLabel: 'page',
-          bottom: <HarborDock>[HarborDock.quay(child: _bar('nav', 56))],
+          bottom: <HarborBar>[HarborBar.solid(child: _bar('nav', 56))],
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -249,7 +277,12 @@ void main() {
         ),
       ),
     );
-    HarborFlares.raise(pageContext, slot: HarborFlareSlot.low, builder: (final BuildContext c) => _bar('toast', 30), duration: null);
+    HarborToasts.show(
+      pageContext,
+      slot: HarborToastSlot.low,
+      builder: (final BuildContext c) => _bar('toast', 30),
+      duration: null,
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'toast').bottom, lessThanOrEqualTo(_rect(tester, 'nav').top));
   });
@@ -257,19 +290,27 @@ void main() {
   testWidgets('an anchored buoy sits above its anchor in a dock, overlapping it', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          bottom: <HarborDock>[
-            HarborDock.quay(
+        HarborFrame(
+          bottom: <HarborBar>[
+            HarborBar.solid(
               child: SizedBox(
                 height: 56,
-                child: Center(child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(key: ValueKey<String>('button'), width: 40, height: 40))),
+                child: Center(
+                  child: HarborAnchorPoint(
+                    anchor: anchor,
+                    child: const SizedBox(key: ValueKey<String>('button'), width: 40, height: 40),
+                  ),
+                ),
               ),
             ),
           ],
-          buoys: <HarborBuoy>[
-            HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 4, overlap: 10), child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30)),
+          floats: <HarborFloat>[
+            HarborFloat(
+              placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 4, overlap: 10),
+              child: const SizedBox(key: ValueKey<String>('bubble'), width: 100, height: 30),
+            ),
           ],
           body: const SizedBox.expand(),
         ),
@@ -282,18 +323,25 @@ void main() {
     expect(bubble.center.dx, button.center.dx);
   });
 
-  testWidgets('an anchored buoy at the start of its anchor sits on the right under right-to-left', (final tester) async {
+  testWidgets('an anchored buoy at the start of its anchor sits on the right under right-to-left', (
+    final tester,
+  ) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
         Directionality(
           textDirection: TextDirection.rtl,
-          child: Harbor(
-            buoys: <HarborBuoy>[
-              HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.start), child: _box('start', 60, 30)),
+          child: HarborFrame(
+            floats: <HarborFloat>[
+              HarborFloat(
+                placement: HarborAnchored(anchor, side: HarborAnchorSide.start),
+                child: _box('start', 60, 30),
+              ),
             ],
-            body: Center(child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40))),
+            body: Center(
+              child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40)),
+            ),
           ),
         ),
       ),
@@ -304,10 +352,15 @@ void main() {
 
   test('a buoy side named before or after is the start or the end', () {
     expect(
-      <HarborAnchorSide>[HarborAnchorSide.before, HarborAnchorSide.after],
+      <HarborAnchorSide>[HarborAnchorSide.start, HarborAnchorSide.end],
       <HarborAnchorSide>[HarborAnchorSide.start, HarborAnchorSide.end],
     );
-    expect(HarborAnchorSide.values.map((final HarborAnchorSide side) => side.name), <String>['above', 'below', 'start', 'end']);
+    expect(HarborAnchorSide.values.map((final HarborAnchorSide side) => side.name), <String>[
+      'above',
+      'below',
+      'start',
+      'end',
+    ]);
   });
 
   testWidgets('an anchored buoy whose anchor is not in the tree takes no taps', (final tester) async {
@@ -315,16 +368,24 @@ void main() {
     addTearDown(anchor.dispose);
     int pageTaps = 0;
     int bubbleTaps = 0;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          buoys: <HarborBuoy>[
-            HarborBuoy(
+        HarborFrame(
+          floats: <HarborFloat>[
+            HarborFloat(
               placement: HarborAnchored(anchor, side: HarborAnchorSide.above),
-              child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => bubbleTaps++, child: _box('bubble', 100, 30)),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => bubbleTaps++,
+                child: _box('bubble', 100, 30),
+              ),
             ),
           ],
-          body: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => pageTaps++, child: const SizedBox.expand()),
+          body: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => pageTaps++,
+            child: const SizedBox.expand(),
+          ),
         ),
       ),
     );
@@ -341,13 +402,17 @@ void main() {
     addTearDown(anchored.dispose);
     int pageTaps = 0;
     int bubbleTaps = 0;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          buoys: <HarborBuoy>[
-            HarborBuoy(
+        HarborFrame(
+          floats: <HarborFloat>[
+            HarborFloat(
               placement: HarborAnchored(anchor, side: HarborAnchorSide.above),
-              child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => bubbleTaps++, child: _box('bubble', 100, 30)),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => bubbleTaps++,
+                child: _box('bubble', 100, 30),
+              ),
             ),
           ],
           body: GestureDetector(
@@ -377,19 +442,28 @@ void main() {
     expect(bubbleTaps, 1);
   });
 
-  testWidgets('an anchored buoy aligned to the end lines up with its anchor\'s right edge, moved by crossOffset', (final tester) async {
+  testWidgets('an anchored buoy aligned to the end lines up with its anchor\'s right edge, moved by crossOffset', (
+    final tester,
+  ) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          buoys: <HarborBuoy>[
-            HarborBuoy(
-              placement: HarborAnchored(anchor, side: HarborAnchorSide.below, crossAlignment: HarborCrossAlignment.end, crossOffset: 6),
+        HarborFrame(
+          floats: <HarborFloat>[
+            HarborFloat(
+              placement: HarborAnchored(
+                anchor,
+                side: HarborAnchorSide.below,
+                crossAlignment: HarborCrossAlignment.end,
+                crossOffset: 6,
+              ),
               child: _box('menu', 160, 30),
             ),
           ],
-          body: Center(child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40))),
+          body: Center(
+            child: HarborAnchorPoint(anchor: anchor, child: _box('button', 40, 40)),
+          ),
         ),
       ),
     );
@@ -403,10 +477,15 @@ void main() {
     addTearDown(anchor.dispose);
     final ScrollController scroll = ScrollController();
     addTearDown(scroll.dispose);
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          buoys: <HarborBuoy>[HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.below), child: _box('menu', 200, 120))],
+        HarborFrame(
+          floats: <HarborFloat>[
+            HarborFloat(
+              placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
+              child: _box('menu', 200, 120),
+            ),
+          ],
           body: ListView.builder(
             controller: scroll,
             itemCount: 40,
@@ -425,15 +504,19 @@ void main() {
   });
 
   group('A portal buoy', () {
-    Widget page({required final OverlayPortalController menu, required final Alignment rowAt, final TextDirection? direction}) {
-      final Widget harbor = Harbor(
-        bottom: <HarborDock>[HarborDock.quay(child: _bar('nav', 56))],
+    Widget page({
+      required final OverlayPortalController menu,
+      required final Alignment rowAt,
+      final TextDirection? direction,
+    }) {
+      final Widget harbor = HarborFrame(
+        bottom: <HarborBar>[HarborBar.solid(child: _bar('nav', 56))],
         body: Align(
           alignment: rowAt,
-          child: HarborPortalBuoy(
+          child: HarborPopover(
             placement: const HarborAnchored(null, side: HarborAnchorSide.below),
             controller: menu,
-            buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+            popoverBuilder: (final BuildContext context) => _box('menu', 200, 120),
             child: _bar('row', 48),
           ),
         ),
@@ -443,7 +526,7 @@ void main() {
 
     testWidgets('opens below its row when the menu fits there', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
-      await tester.pumpSeaTrial(page(menu: menu, rowAt: Alignment.topCenter));
+      await tester.pumpHarborTrial(page(menu: menu, rowAt: Alignment.topCenter));
       menu.show();
       await tester.pump();
       expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
@@ -452,52 +535,60 @@ void main() {
 
     testWidgets('opened from a row near the bottom, flips above it, clear of the bottom dock', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
+      final HarborTrial trial = await tester.pumpHarborTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
       menu.show();
       await tester.pump();
       final Rect row = _rect(tester, 'row');
       expect(_rect(tester, 'menu').bottom, row.top - 8);
       expect(_rect(tester, 'menu').bottom, lessThanOrEqualTo(_rect(tester, 'nav').top));
-      expect(find.byKey(const ValueKey<String>('menu')), isInClearWater(trial.clearWaterAround(find.byKey(const ValueKey<String>('row')))));
+      expect(
+        find.byKey(const ValueKey<String>('menu')),
+        isInRoom(trial.roomAround(find.byKey(const ValueKey<String>('row')))),
+      );
     });
 
-    testWidgets('opened from a row near the bottom with the keyboard up, flips above it, clear of the keyboard', (final tester) async {
+    testWidgets('opened from a row near the bottom with the keyboard up, flips above it, clear of the keyboard', (
+      final tester,
+    ) async {
       final OverlayPortalController menu = OverlayPortalController();
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
-      await trial.raiseTide();
+      final HarborTrial trial = await tester.pumpHarborTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
+      await trial.showKeyboard();
       menu.show();
       await tester.pump();
       final Rect row = _rect(tester, 'row');
-      expect(row.bottom, trial.waterline);
+      expect(row.bottom, trial.keyboardTop);
       expect(_rect(tester, 'menu').bottom, row.top - 8);
-      expect(find.byKey(const ValueKey<String>('menu')), isInClearWater(trial.clearWaterAround(find.byKey(const ValueKey<String>('row')))));
+      expect(
+        find.byKey(const ValueKey<String>('menu')),
+        isInRoom(trial.roomAround(find.byKey(const ValueKey<String>('row')))),
+      );
     });
 
     testWidgets('follows its row as the keyboard rises while it is open', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
+      final HarborTrial trial = await tester.pumpHarborTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
       menu.show();
       await tester.pump();
-      await trial.raiseTide();
+      await trial.showKeyboard();
       expect(_rect(tester, 'menu').bottom, _rect(tester, 'row').top - 8);
-      expect(_rect(tester, 'menu').bottom, lessThanOrEqualTo(trial.waterline));
+      expect(_rect(tester, 'menu').bottom, lessThanOrEqualTo(trial.keyboardTop));
     });
 
     testWidgets('follows its row as the list scrolls, in the same frame', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       final ScrollController scroll = ScrollController();
       addTearDown(scroll.dispose);
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
+          HarborFrame(
             body: ListView.builder(
               controller: scroll,
               itemCount: 40,
               itemBuilder: (final BuildContext context, final int i) => i == 3
-                  ? HarborPortalBuoy(
+                  ? HarborPopover(
                       placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                       controller: menu,
-                      buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+                      popoverBuilder: (final BuildContext context) => _box('menu', 200, 120),
                       child: _box('row', 300, 48),
                     )
                   : const SizedBox(height: 48),
@@ -518,17 +609,21 @@ void main() {
       final OverlayPortalController menu = OverlayPortalController();
       int menuTaps = 0;
       int pageTaps = 0;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
+          HarborFrame(
             body: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => pageTaps++,
               child: Center(
-                child: HarborPortalBuoy(
+                child: HarborPopover(
                   placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: menu,
-                  buoyBuilder: (final BuildContext context) => GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => menuTaps++, child: _box('menu', 200, 120)),
+                  popoverBuilder: (final BuildContext context) => GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => menuTaps++,
+                    child: _box('menu', 200, 120),
+                  ),
                   child: _bar('row', 48),
                 ),
               ),
@@ -545,15 +640,15 @@ void main() {
 
     testWidgets('too tall for either side, is clamped into the clear water', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bottom: <HarborDock>[HarborDock.quay(child: _bar('nav', 56))],
+          HarborFrame(
+            bottom: <HarborBar>[HarborBar.solid(child: _bar('nav', 56))],
             body: Center(
-              child: HarborPortalBuoy(
+              child: HarborPopover(
                 placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                 controller: menu,
-                buoyBuilder: (final BuildContext context) => _box('menu', 200, 600),
+                popoverBuilder: (final BuildContext context) => _box('menu', 200, 600),
                 child: _bar('row', 48),
               ),
             ),
@@ -562,24 +657,30 @@ void main() {
       );
       menu.show();
       await tester.pump();
-      final Rect water = trial.clearWaterAround(find.byKey(const ValueKey<String>('row')));
+      final Rect water = trial.roomAround(find.byKey(const ValueKey<String>('row')));
       expect(_rect(tester, 'menu').bottom, water.bottom - 8);
-      expect(find.byKey(const ValueKey<String>('menu')), isInClearWater(water));
+      expect(find.byKey(const ValueKey<String>('menu')), isInRoom(water));
     });
 
-    testWidgets('anchored to a HarborAnchor elsewhere, sits by that anchor rather than its own child', (final tester) async {
+    testWidgets('anchored to a HarborAnchor elsewhere, sits by that anchor rather than its own child', (
+      final tester,
+    ) async {
       final OverlayPortalController menu = OverlayPortalController();
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            top: <HarborDock>[HarborDock.quay(child: HarborAnchorPoint(anchor: anchor, child: _bar('header', 50)))],
+          HarborFrame(
+            top: <HarborBar>[
+              HarborBar.solid(
+                child: HarborAnchorPoint(anchor: anchor, child: _bar('header', 50)),
+              ),
+            ],
             body: Center(
-              child: HarborPortalBuoy(
+              child: HarborPopover(
                 placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
                 controller: menu,
-                buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+                popoverBuilder: (final BuildContext context) => _box('menu', 200, 120),
                 child: _bar('row', 48),
               ),
             ),
@@ -593,16 +694,16 @@ void main() {
 
     testWidgets('at the end of its anchor sits on the left under right-to-left', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
           Directionality(
             textDirection: TextDirection.rtl,
-            child: Harbor(
+            child: HarborFrame(
               body: Center(
-                child: HarborPortalBuoy(
+                child: HarborPopover(
                   placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                   controller: menu,
-                  buoyBuilder: (final BuildContext context) => _box('menu', 60, 30),
+                  popoverBuilder: (final BuildContext context) => _box('menu', 60, 30),
                   child: _box('button', 40, 40),
                 ),
               ),
@@ -615,19 +716,21 @@ void main() {
       expect(_rect(tester, 'menu').right, _rect(tester, 'button').left - 8);
     });
 
-    testWidgets('at the end of its anchor that does not fit on the left flips to the right under right-to-left', (final tester) async {
+    testWidgets('at the end of its anchor that does not fit on the left flips to the right under right-to-left', (
+      final tester,
+    ) async {
       final OverlayPortalController menu = OverlayPortalController();
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
           Directionality(
             textDirection: TextDirection.rtl,
-            child: Harbor(
+            child: HarborFrame(
               body: Align(
                 alignment: Alignment.centerLeft,
-                child: HarborPortalBuoy(
+                child: HarborPopover(
                   placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                   controller: menu,
-                  buoyBuilder: (final BuildContext context) => _box('menu', 60, 30),
+                  popoverBuilder: (final BuildContext context) => _box('menu', 60, 30),
                   child: _box('button', 40, 40),
                 ),
               ),
@@ -651,15 +754,15 @@ void main() {
       }) => _app(
         Directionality(
           textDirection: direction,
-          child: Harbor(
+          child: HarborFrame(
             body: Padding(
               padding: const EdgeInsetsDirectional.symmetric(horizontal: 40, vertical: 100),
               child: Align(
                 alignment: buttonAt,
-                child: HarborPortalBuoy(
+                child: HarborPopover(
                   placement: HarborAnchored(null, side: side, crossAlignment: crossAlignment, crossOffset: crossOffset),
                   controller: menu,
-                  buoyBuilder: (final BuildContext context) => _box('menu', 200, 120),
+                  popoverBuilder: (final BuildContext context) => _box('menu', 200, 120),
                   child: _box('button', 40, 40),
                 ),
               ),
@@ -670,7 +773,9 @@ void main() {
 
       testWidgets('to the start lines up with its anchor\'s left edge', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
-        await tester.pumpSeaTrial(aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborCrossAlignment.start));
+        await tester.pumpHarborTrial(
+          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborCrossAlignment.start),
+        );
         menu.show();
         await tester.pump();
         expect(_rect(tester, 'button').left, 40);
@@ -680,18 +785,30 @@ void main() {
 
       testWidgets('to the start lines up with its anchor\'s right edge under right-to-left', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
-        await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, crossAlignment: HarborCrossAlignment.start, direction: TextDirection.rtl),
+        await tester.pumpHarborTrial(
+          aligned(
+            menu: menu,
+            buttonAt: AlignmentDirectional.topStart,
+            crossAlignment: HarborCrossAlignment.start,
+            direction: TextDirection.rtl,
+          ),
         );
         menu.show();
         await tester.pump();
         expect(_rect(tester, 'menu').right, _rect(tester, 'button').right);
       });
 
-      testWidgets('to the end lines up with its anchor\'s right edge, moved by crossOffset in reading order', (final tester) async {
+      testWidgets('to the end lines up with its anchor\'s right edge, moved by crossOffset in reading order', (
+        final tester,
+      ) async {
         final OverlayPortalController menu = OverlayPortalController();
-        await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborCrossAlignment.end, crossOffset: -12),
+        await tester.pumpHarborTrial(
+          aligned(
+            menu: menu,
+            buttonAt: AlignmentDirectional.topEnd,
+            crossAlignment: HarborCrossAlignment.end,
+            crossOffset: -12,
+          ),
         );
         menu.show();
         await tester.pump();
@@ -700,7 +817,7 @@ void main() {
 
       testWidgets('crossOffset follows the reading order under right-to-left', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           aligned(
             menu: menu,
             buttonAt: AlignmentDirectional.topStart,
@@ -714,21 +831,28 @@ void main() {
         expect(_rect(tester, 'menu').right, _rect(tester, 'button').right - 12);
       });
 
-      testWidgets('to the start of an anchor at the water\'s right edge is still held inside the clear water', (final tester) async {
+      testWidgets('to the start of an anchor at the water\'s right edge is still held inside the clear water', (
+        final tester,
+      ) async {
         final OverlayPortalController menu = OverlayPortalController();
-        final HarborSeaTrial trial = await tester.pumpSeaTrial(
+        final HarborTrial trial = await tester.pumpHarborTrial(
           aligned(menu: menu, buttonAt: AlignmentDirectional.topEnd, crossAlignment: HarborCrossAlignment.start),
         );
         menu.show();
         await tester.pump();
-        final Rect water = trial.clearWaterAround(find.byKey(const ValueKey<String>('button')));
+        final Rect water = trial.roomAround(find.byKey(const ValueKey<String>('button')));
         expect(_rect(tester, 'menu').left, water.right - 8 - 200);
       });
 
       testWidgets('beside its anchor, to the start lines up with its top edge', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
-        await tester.pumpSeaTrial(
-          aligned(menu: menu, buttonAt: AlignmentDirectional.topStart, side: HarborAnchorSide.end, crossAlignment: HarborCrossAlignment.start),
+        await tester.pumpHarborTrial(
+          aligned(
+            menu: menu,
+            buttonAt: AlignmentDirectional.topStart,
+            side: HarborAnchorSide.end,
+            crossAlignment: HarborCrossAlignment.start,
+          ),
         );
         menu.show();
         await tester.pump();
@@ -743,36 +867,38 @@ void main() {
         required final List<String> events,
         final bool consumeOutsideTaps = false,
         final FocusNode? anchorFocus,
-      }) => Harbor(
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const SizedBox(height: 100),
-              HarborPortalBuoy(
-                placement: const HarborAnchored(null, side: HarborAnchorSide.end),
-                controller: menu,
-                consumeOutsideTaps: consumeOutsideTaps,
-                onDismiss: () {
-                  events.add('dismissed');
-                  menu.hide();
-                },
-                buoyBuilder: (final BuildContext context) => SizedBox(
-                  width: 200,
-                  height: 120,
-                  child: TextButton(autofocus: true, onPressed: () => events.add('item'), child: const Text('Item')),
-                ),
-                child: TextButton(focusNode: anchorFocus, onPressed: menu.toggle, child: const Text('Open')),
+      }) => HarborFrame(
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const SizedBox(height: 100),
+            HarborPopover(
+              placement: const HarborAnchored(null, side: HarborAnchorSide.end),
+              controller: menu,
+              consumeOutsideTaps: consumeOutsideTaps,
+              onDismiss: () {
+                events.add('dismissed');
+                menu.hide();
+              },
+              popoverBuilder: (final BuildContext context) => SizedBox(
+                width: 200,
+                height: 120,
+                child: TextButton(autofocus: true, onPressed: () => events.add('item'), child: const Text('Item')),
               ),
-              const SizedBox(height: 200),
-              TextButton(onPressed: () => events.add('below'), child: const Text('Below')),
-            ],
-          ),
-        );
+              child: TextButton(focusNode: anchorFocus, onPressed: menu.toggle, child: const Text('Open')),
+            ),
+            const SizedBox(height: 200),
+            TextButton(onPressed: () => events.add('below'), child: const Text('Below')),
+          ],
+        ),
+      );
 
-      testWidgets('by a tap outside it that, with consumeOutsideTaps, does not reach what is under it', (final tester) async {
+      testWidgets('by a tap outside it that, with consumeOutsideTaps, does not reach what is under it', (
+        final tester,
+      ) async {
         final OverlayPortalController menu = OverlayPortalController();
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
+        await tester.pumpHarborTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
         await tester.tap(find.text('Open'));
         await tester.pump();
         expect(find.text('Item'), findsOneWidget, reason: 'positive control: the menu is up');
@@ -786,10 +912,12 @@ void main() {
         expect(events, <String>['dismissed', 'below'], reason: 'positive control: with the menu gone the tap lands');
       });
 
-      testWidgets('by a tap outside it that, by default, also reaches what is under it, as a MenuAnchor\'s does', (final tester) async {
+      testWidgets('by a tap outside it that, by default, also reaches what is under it, as a MenuAnchor\'s does', (
+        final tester,
+      ) async {
         final OverlayPortalController menu = OverlayPortalController();
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events)));
+        await tester.pumpHarborTrial(_app(dismissible(menu: menu, events: events)));
         menu.show();
         await tester.pump();
         await tester.tap(find.text('Below'));
@@ -800,7 +928,7 @@ void main() {
       testWidgets('not by a tap on its anchor or inside it', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
+        await tester.pumpHarborTrial(_app(dismissible(menu: menu, events: events, consumeOutsideTaps: true)));
         menu.show();
         await tester.pump();
         await tester.tap(find.text('Item'));
@@ -816,7 +944,7 @@ void main() {
       testWidgets('by Escape while focus is in it', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(_app(dismissible(menu: menu, events: events)));
+        await tester.pumpHarborTrial(_app(dismissible(menu: menu, events: events)));
         menu.show();
         await tester.pump();
         await tester.pump();
@@ -831,7 +959,7 @@ void main() {
         final FocusNode anchorFocus = FocusNode();
         addTearDown(anchorFocus.dispose);
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           _app(
             Actions(
               actions: <Type, Action<Intent>>{
@@ -854,27 +982,31 @@ void main() {
         await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.escape);
         await tester.pump();
-        expect(events, <String>['outer', 'dismissed'], reason: 'positive control: while the menu is up, Escape closes it and stops there');
+        expect(events, <String>[
+          'outer',
+          'dismissed',
+        ], reason: 'positive control: while the menu is up, Escape closes it and stops there');
       });
 
       testWidgets('keeps the state of its child and its buoy when onDismiss is set or cleared', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         final ValueNotifier<bool> closes = ValueNotifier<bool>(true);
         addTearDown(closes.dispose);
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           _app(
-            Harbor(
+            HarborFrame(
               body: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   const SizedBox(height: 100),
                   ValueListenableBuilder<bool>(
                     valueListenable: closes,
-                    builder: (final BuildContext context, final bool closes, final Widget? _) => HarborPortalBuoy(
+                    builder: (final BuildContext context, final bool closes, final Widget? _) => HarborPopover(
                       placement: const HarborAnchored(null, side: HarborAnchorSide.end),
                       controller: menu,
                       onDismiss: closes ? menu.hide : null,
-                      buoyBuilder: (final BuildContext context) => const SizedBox(width: 200, height: 60, child: TextField(key: ValueKey<String>('filter'))),
+                      popoverBuilder: (final BuildContext context) =>
+                          const SizedBox(width: 200, height: 60, child: TextField(key: ValueKey<String>('filter'))),
                       child: const SizedBox(width: 200, child: TextField(key: ValueKey<String>('query'))),
                     ),
                   ),
@@ -896,7 +1028,10 @@ void main() {
         await tester.pump();
         expect(find.text('in the child'), findsOneWidget);
         expect(find.text('in the buoy'), findsOneWidget);
-        expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key, const ValueKey<String>('query'));
+        expect(
+          FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key,
+          const ValueKey<String>('query'),
+        );
         expect(page.willHandlePopInternally, isFalse, reason: 'without onDismiss, back is the page\'s again');
 
         closes.value = true;
@@ -904,19 +1039,24 @@ void main() {
         await tester.pump();
         expect(find.text('in the child'), findsOneWidget);
         expect(find.text('in the buoy'), findsOneWidget);
-        expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key, const ValueKey<String>('query'));
+        expect(
+          FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextField>()?.key,
+          const ValueKey<String>('query'),
+        );
         expect(page.willHandlePopInternally, isTrue);
       });
 
-      testWidgets('in a dialog, with the dialog, by a tap on its barrier, as a MenuAnchor in a dialog is', (final tester) async {
+      testWidgets('in a dialog, with the dialog, by a tap on its barrier, as a MenuAnchor in a dialog is', (
+        final tester,
+      ) async {
         final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
         final OverlayPortalController menu = OverlayPortalController();
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           MaterialApp(
             navigatorKey: navigator,
-            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-            home: const Harbor(body: SizedBox.expand()),
+            builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+            home: const HarborFrame(body: SizedBox.expand()),
           ),
         );
         unawaited(
@@ -924,14 +1064,15 @@ void main() {
             context: navigator.currentContext!,
             builder: (final BuildContext _) => Center(
               child: Material(
-                child: HarborPortalBuoy(
+                child: HarborPopover(
                   placement: const HarborAnchored(null, side: HarborAnchorSide.below),
                   controller: menu,
                   onDismiss: () {
                     events.add('menu dismissed');
                     menu.hide();
                   },
-                  buoyBuilder: (final BuildContext _) => const ColoredBox(color: Color(0xFF000000), child: SizedBox(width: 100, height: 60)),
+                  popoverBuilder: (final BuildContext _) =>
+                      const ColoredBox(color: Color(0xFF000000), child: SizedBox(width: 100, height: 60)),
                   child: const Text('Open'),
                 ),
               ),
@@ -953,16 +1094,22 @@ void main() {
         final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
         final OverlayPortalController menu = OverlayPortalController();
         final List<String> events = <String>[];
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           MaterialApp(
             navigatorKey: navigator,
-            builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-            home: const Harbor(body: Center(child: Text('home'))),
+            builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+            home: const HarborFrame(body: Center(child: Text('home'))),
           ),
         );
-        unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
-          builder: (final BuildContext _) => Material(child: dismissible(menu: menu, events: events)),
-        )));
+        unawaited(
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (final BuildContext _) => Material(
+                child: dismissible(menu: menu, events: events),
+              ),
+            ),
+          ),
+        );
         await tester.pumpAndSettle();
         menu.show();
         await tester.pump();
@@ -984,20 +1131,17 @@ void main() {
       final OverlayPortalController menu = OverlayPortalController();
       final ValueNotifier<Alignment> rowAt = ValueNotifier<Alignment>(Alignment.topCenter);
       addTearDown(rowAt.dispose);
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
+          HarborFrame(
             body: ValueListenableBuilder<Alignment>(
               valueListenable: rowAt,
               builder: (final BuildContext context, final Alignment at, final Widget? _) => Align(
                 alignment: at,
-                child: HarborPortalBuoy(
+                child: HarborPopover(
                   controller: menu,
-                  buoyBuilder: (final BuildContext context) => SizedBox(
-                    width: 200,
-                    height: 120,
-                    child: Text(HarborPortalBuoy.sideOf(context).name),
-                  ),
+                  popoverBuilder: (final BuildContext context) =>
+                      SizedBox(width: 200, height: 120, child: Text(HarborPopover.sideOf(context).name)),
                   child: _bar('row', 48),
                 ),
               ),
@@ -1021,19 +1165,23 @@ void main() {
 
   testWidgets('a lifted beacon rises clear of a breakwater sheet and settles back', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
-              return const HarborLighthouseRegion(
+              return const HarborKeepInSightRegion(
                 child: Stack(
                   children: <Widget>[
                     Positioned(
                       top: 700,
                       left: 100,
-                      child: HarborBeacon(lift: true, clearance: 20, child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40)),
+                      child: HarborKeepInSight(
+                        lift: true,
+                        clearance: 20,
+                        child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40),
+                      ),
                     ),
                   ],
                 ),
@@ -1043,12 +1191,14 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      breakwater: true,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        coversPage: true,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     final Rect boat = _rect(tester, 'boat');
@@ -1056,14 +1206,16 @@ void main() {
     expect(boat.bottom, lessThanOrEqualTo(sheet.top - 20 + 1));
   });
 
-  testWidgets('a lighthouse region lifts over its duration and settles back over its reverse duration', (final tester) async {
+  testWidgets('a lighthouse region lifts over its duration and settles back over its reverse duration', (
+    final tester,
+  ) async {
     final ValueNotifier<bool> boatIn = ValueNotifier<bool>(false);
     addTearDown(boatIn.dispose);
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          bottom: <HarborDock>[HarborDock.pier(child: _bar('tabs', 50))],
-          body: HarborLighthouseRegion(
+        HarborFrame(
+          bottom: <HarborBar>[HarborBar.overlay(child: _bar('tabs', 50))],
+          body: HarborKeepInSightRegion(
             animationStyle: const AnimationStyle(
               duration: Duration(milliseconds: 100),
               curve: Curves.linear,
@@ -1079,7 +1231,7 @@ void main() {
                     Positioned(
                       top: 800,
                       left: 100,
-                      child: HarborBeacon(lift: true, clearance: 0, child: _box('boat', 60, 40)),
+                      child: HarborKeepInSight(lift: true, clearance: 0, child: _box('boat', 60, 40)),
                     ),
                 ],
               ),
@@ -1108,13 +1260,15 @@ void main() {
 
   testWidgets('a beacon reports how much of it the header covers', (final tester) async {
     final List<double> reports = <double>[];
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-          body: HarborFairway(
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          body: HarborScrollView(
             slivers: <Widget>[
-              SliverToBoxAdapter(child: HarborBeacon(onObscured: reports.add, child: const SizedBox(height: 100))),
+              SliverToBoxAdapter(
+                child: HarborKeepInSight(onObscured: reports.add, child: const SizedBox(height: 100)),
+              ),
               const SliverToBoxAdapter(child: SizedBox(height: 2000)),
             ],
           ),
@@ -1129,10 +1283,12 @@ void main() {
   });
 
   testWidgets('a title-safe coast keeps a TV page inside its band', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        const Harbor(body: HarborMoored(child: SizedBox.expand(key: ValueKey<String>('page')))),
-        coast: const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)),
+        const HarborFrame(
+          body: HarborClear(child: SizedBox.expand(key: ValueKey<String>('page'))),
+        ),
+        coast: const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)),
       ),
       device: HarborTrialDevice.television,
     );
@@ -1140,10 +1296,12 @@ void main() {
   });
 
   testWidgets('a scale model lays out at its reference size and re-bases the coast', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) =>
-            HarborScaleModel(referenceSize: const Size(1200, 675), child: HarborSea(child: child!)),
+        builder: (final BuildContext context, final Widget? child) => HarborScaledScreen(
+          referenceSize: const Size(1200, 675),
+          child: HarborRoot(child: child!),
+        ),
         home: Builder(
           builder: (final BuildContext context) => Text(
             '${MediaQuery.sizeOf(context)} ${MediaQuery.paddingOf(context)}',
@@ -1159,9 +1317,9 @@ void main() {
 
   testWidgets('a draggable sheet rests at its fraction of the space above the keyboard', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1171,18 +1329,24 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        header: _bar('sheetHeader', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: <Widget>[
-            SliverList.builder(itemCount: 40, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('item$i'), height: 50)),
-          ],
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          header: _bar('sheetHeader', 40),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: <Widget>[
+              SliverList.builder(
+                itemCount: 40,
+                itemBuilder: (final BuildContext c, final int i) =>
+                    SizedBox(key: ValueKey<String>('item$i'), height: 50),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     final Rect header = _rect(tester, 'sheetHeader');
     // Half of the space between the status bar and the bottom.
@@ -1193,9 +1357,9 @@ void main() {
 
   testWidgets('a content-sized sheet footer clears the home indicator once', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1205,26 +1369,28 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      builder: (final BuildContext context) => HarborSheet(
-        header: _bar('sheetHeader', 40),
-        footer: _bar('footer', 48),
-        body: const SizedBox(key: ValueKey<String>('content'), height: 120),
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        builder: (final BuildContext context) => HarborSheet(
+          header: _bar('sheetHeader', 40),
+          footer: _bar('footer', 48),
+          body: const SizedBox(key: ValueKey<String>('content'), height: 120),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'footer').bottom, 874 - 34);
     expect(_rect(tester, 'content').bottom, lessThanOrEqualTo(_rect(tester, 'footer').top + 0.5));
   });
 
   testWidgets('a dry dock runs to the screen edge, whatever its minimum', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           minimum: const EdgeInsetsDirectional.only(bottom: 16),
-          bottom: <HarborDock>[
-            HarborDock.quay(tide: HarborTideStance.dryDock, minimum: 24, child: _bar('tray', 120)),
+          bottom: <HarborBar>[
+            HarborBar.solid(keyboard: HarborKeyboardStance.reserves, minimum: 24, child: _bar('tray', 120)),
           ],
           body: const SizedBox.expand(),
         ),
@@ -1234,10 +1400,10 @@ void main() {
   });
 
   testWidgets('a floating dock never dips while a short keyboard comes in', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          bottom: <HarborDock>[HarborDock.quay(tide: HarborTideStance.float, child: _bar('composer', 56))],
+        HarborFrame(
+          bottom: <HarborBar>[HarborBar.solid(keyboard: HarborKeyboardStance.rides, child: _bar('composer', 56))],
           body: const SizedBox.expand(),
         ),
       ),
@@ -1265,9 +1431,9 @@ void main() {
 
   testWidgets('a content-sized sheet with a header has no gap above its footer', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1277,23 +1443,23 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      builder: (final BuildContext context) => HarborSheet(
-        header: _bar('sheetHeader', 60),
-        footer: _bar('footer', 48),
-        // The fairway runs under the header pier, so it shrink-wraps to the
-        // header, its wake and its rows: no more.
-        body: HarborFairway.box(
-          shrinkWrap: true,
-          child: Column(
-            children: <Widget>[
-              for (int i = 0; i < 3; i++) SizedBox(key: ValueKey<String>('row $i'), height: 56),
-            ],
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        builder: (final BuildContext context) => HarborSheet(
+          header: _bar('sheetHeader', 60),
+          footer: _bar('footer', 48),
+          // The fairway runs under the header pier, so it shrink-wraps to the
+          // header, its wake and its rows: no more.
+          body: HarborScrollView.box(
+            shrinkWrap: true,
+            child: Column(
+              children: <Widget>[for (int i = 0; i < 3; i++) SizedBox(key: ValueKey<String>('row $i'), height: 56)],
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'row 0').top, _rect(tester, 'sheetHeader').bottom + 12);
     expect(_rect(tester, 'row 2').bottom, _rect(tester, 'footer').top);
@@ -1301,11 +1467,11 @@ void main() {
   });
 
   testWidgets('a sticky pill sticks below the header until its card scrolls away', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-          body: const HarborFairway(
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          body: const HarborScrollView(
             slivers: <Widget>[
               SliverToBoxAdapter(child: SizedBox(height: 100)),
               SliverToBoxAdapter(
@@ -1335,49 +1501,61 @@ void main() {
 
   testWidgets('a centered control overlaps a breakwater by no more than its budget', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
-              return const HarborCenter(overlapBudget: 12, child: SizedBox(key: ValueKey<String>('controls'), width: 100, height: 200));
+              return const HarborCenter(
+                overlapBudget: 12,
+                child: SizedBox(key: ValueKey<String>('controls'), width: 100, height: 200),
+              );
             },
           ),
         ),
       ),
     );
     expect(_rect(tester, 'controls').center.dy, 874 / 2);
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      breakwater: true,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 420)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        coversPage: true,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 420)),
+      ),
+    );
     await tester.pumpAndSettle();
     final Rect sheet = tester.getRect(find.byType(HarborSheet));
     expect(_rect(tester, 'controls').bottom, lessThanOrEqualTo(sheet.top + 12 + 0.5));
   });
 
   testWidgets('open water under a pier with a wake is not faded; only fairways are', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(), child: _bar('header', 50))],
-          body: HarborOpenWater(builder: (final BuildContext c, final HarborWatersData w) => const ColoredBox(color: Colors.red)),
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(edgeEffect: const HarborEdgeEffect.fade(), child: _bar('header', 50))],
+          body: Builder(
+            builder: (final BuildContext c) => ColoredBox(
+              color: Colors.red,
+              child: SizedBox(height: HarborRoom.of(c).frameSize.height),
+            ),
+          ),
         ),
       ),
     );
-    expect(find.byType(HarborWakeMask), findsNothing);
+    expect(find.byType(HarborFadeMask), findsNothing);
   });
 
-  testWidgets('a component harbor reports its port\'s frame size, which the keyboard does not shrink', (final tester) async {
+  testWidgets('a component harbor reports its port\'s frame size, which the keyboard does not shrink', (
+    final tester,
+  ) async {
     late BuildContext inner;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
-          body: Harbor(
+        HarborFrame(
+          isPage: true,
+          body: HarborFrame(
             body: Builder(
               builder: (final BuildContext context) {
                 inner = context;
@@ -1388,16 +1566,16 @@ void main() {
         ),
       ),
     );
-    await trial.raiseTide();
-    expect(HarborWaters.of(inner).frameSize, const Size(402, 874));
+    await trial.showKeyboard();
+    expect(HarborRoom.of(inner).frameSize, const Size(402, 874));
   });
 
   testWidgets('a non-modal sheet closes from its own builder context, leaving the page', (final tester) async {
     late BuildContext pageContext;
     late BuildContext sheetContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1407,14 +1585,16 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) {
-        sheetContext = context;
-        return const HarborSheet(body: SizedBox(key: ValueKey<String>('sheet body'), height: 100));
-      },
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext context) {
+          sheetContext = context;
+          return const HarborSheet(body: SizedBox(key: ValueKey<String>('sheet body'), height: 100));
+        },
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('sheet body')), findsOneWidget);
     HarborSheet.close(sheetContext);
@@ -1424,15 +1604,17 @@ void main() {
   });
 
   testWidgets('a fairway can start in open water under a translucent header', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(length: 10), child: _bar('header', 50))],
-          body: HarborFairway(
-            startsInOpenWater: true,
+        HarborFrame(
+          top: <HarborBar>[
+            HarborBar.overlay(edgeEffect: const HarborEdgeEffect.fade(length: 10), child: _bar('header', 50)),
+          ],
+          body: HarborScrollView(
+            startsUnderBars: true,
             slivers: <Widget>[
               const SliverToBoxAdapter(child: SizedBox(key: ValueKey<String>('hero'), height: 300)),
-              HarborSliverDock(child: _bar('tabs', 40)),
+              HarborSliverBar(child: _bar('tabs', 40)),
               const SliverToBoxAdapter(child: SizedBox(height: 2000)),
             ],
           ),
@@ -1447,13 +1629,13 @@ void main() {
   });
 
   testWidgets('a sticky pill sticks below sliver docks pinned in its fairway', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-          body: HarborFairway(
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          body: HarborScrollView(
             slivers: <Widget>[
-              HarborSliverDock(child: _bar('tabs', 40)),
+              HarborSliverBar(child: _bar('tabs', 40)),
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
               const SliverToBoxAdapter(
                 child: SizedBox(
@@ -1477,16 +1659,19 @@ void main() {
 
   testWidgets('ensureVisible on a scrolled horizontal fairway keeps the target clear of its end', (final tester) async {
     final List<GlobalKey> keys = List<GlobalKey>.generate(20, (final int _) => GlobalKey());
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
         Center(
           child: SizedBox(
             height: 100,
-            child: HarborFairway(
+            child: HarborScrollView(
               scrollDirection: Axis.horizontal,
               revealMargin: 24,
               slivers: <Widget>[
-                SliverList.builder(itemCount: 20, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: keys[i], width: 120)),
+                SliverList.builder(
+                  itemCount: 20,
+                  itemBuilder: (final BuildContext c, final int i) => SizedBox(key: keys[i], width: 120),
+                ),
               ],
             ),
           ),
@@ -1495,7 +1680,10 @@ void main() {
       ),
     );
     for (final int i in <int>[4, 6, 8, 10]) {
-      await Scrollable.ensureVisible(keys[i].currentContext!, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+      await Scrollable.ensureVisible(
+        keys[i].currentContext!,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
       await tester.pumpAndSettle();
       expect(tester.getRect(find.byKey(keys[i])).right, lessThanOrEqualTo(402 - 16 - 24 + 0.5));
     }
@@ -1506,17 +1694,17 @@ void main() {
     addTearDown(focus.dispose);
     final ScrollController controller = ScrollController();
     addTearDown(controller.dispose);
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
-          bottom: <HarborDock>[HarborDock.quay(child: _bar('footer', 60))],
-          body: HarborFairway(
+        HarborFrame(
+          isPage: true,
+          bottom: <HarborBar>[HarborBar.solid(child: _bar('footer', 60))],
+          body: HarborScrollView(
             controller: controller,
             slivers: <Widget>[
               const SliverToBoxAdapter(child: SizedBox(height: 600)),
               SliverToBoxAdapter(
-                child: HarborBeacon(
+                child: HarborKeepInSight(
                   keepInSight: true,
                   onlyWhileFocused: true,
                   clearance: 16,
@@ -1534,22 +1722,22 @@ void main() {
     await tester.pump();
     focus.requestFocus();
     await tester.pump();
-    await trial.raiseTide();
+    await trial.showKeyboard();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(_rect(tester, 'field').bottom, lessThanOrEqualTo(trial.waterline - 16 + 0.5));
+    expect(_rect(tester, 'field').bottom, lessThanOrEqualTo(trial.keyboardTop - 16 + 0.5));
   });
 
   group('focus moving into a beacon kept in sight with the keyboard up', () {
-    Future<HarborSeaTrial> pumpForm(final WidgetTester tester, final FocusNode first, final FocusNode second) =>
-        tester.pumpSeaTrial(
+    Future<HarborTrial> pumpForm(final WidgetTester tester, final FocusNode first, final FocusNode second) =>
+        tester.pumpHarborTrial(
           _app(
-            Harbor(
-              body: HarborFairway(
+            HarborFrame(
+              body: HarborScrollView(
                 slivers: <Widget>[
                   SliverToBoxAdapter(child: TextField(focusNode: first)),
                   const SliverToBoxAdapter(child: SizedBox(height: 520)),
                   SliverToBoxAdapter(
-                    child: HarborBeacon(
+                    child: HarborKeepInSight(
                       keepInSight: true,
                       onlyWhileFocused: true,
                       clearance: 16,
@@ -1579,13 +1767,13 @@ void main() {
         final FocusNode second = FocusNode();
         addTearDown(first.dispose);
         addTearDown(second.dispose);
-        final HarborSeaTrial trial = await pumpForm(tester, first, second);
+        final HarborTrial trial = await pumpForm(tester, first, second);
         first.requestFocus();
         await tester.pump();
-        await trial.raiseTide(settle: true);
+        await trial.showKeyboard(settle: true);
         expect(
           tester.getRect(find.byKey(const ValueKey<String>('submit'), skipOffstage: false)).top,
-          greaterThan(trial.waterline),
+          greaterThan(trial.keyboardTop),
           reason: 'it starts under the keyboard',
         );
 
@@ -1593,46 +1781,59 @@ void main() {
         await tester.pumpAndSettle();
         expect(second.hasPrimaryFocus, isTrue);
         final Finder group = find.byKey(const ValueKey<String>('group'));
-        expect(group, isInClearWater(trial.clearWaterAround(group)));
-        expect(_rect(tester, 'submit').bottom, moreOrLessEquals(trial.waterline - 16, epsilon: 0.5));
+        expect(group, isInRoom(trial.roomAround(group)));
+        expect(_rect(tester, 'submit').bottom, moreOrLessEquals(trial.keyboardTop - 16, epsilon: 0.5));
       });
     }
   });
 
   testWidgets('a flare skips a new port embedded in a page', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
+        HarborFrame(
+          isPage: true,
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
               return const Align(
                 alignment: Alignment.topLeft,
-                child: SizedBox(width: 120, height: 80, child: Harbor(newPort: true, coast: HarborCoast.none, body: SizedBox.expand())),
+                child: SizedBox(
+                  width: 120,
+                  height: 80,
+                  child: HarborFrame(isPage: true, systemEdges: HarborSystemEdges.none, body: SizedBox.expand()),
+                ),
               );
             },
           ),
         ),
       ),
     );
-    HarborFlares.raise(pageContext, slot: HarborFlareSlot.middle, builder: (final BuildContext c) => _bar('flag', 20), duration: null);
+    HarborToasts.show(
+      pageContext,
+      slot: HarborToastSlot.middle,
+      builder: (final BuildContext c) => _bar('flag', 20),
+      duration: null,
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').center.dy, closeTo(874 / 2, 60));
   });
 
   testWidgets('content that starts in open water keeps the coast it starts under', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 52))],
-          body: const HarborFairway(
-            startsInOpenWater: true,
+        HarborFrame(
+          isPage: true,
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 52))],
+          body: const HarborScrollView(
+            startsUnderBars: true,
             slivers: <Widget>[
               SliverToBoxAdapter(
-                child: HarborMoored(bars: false, edges: <HarborEdge>{HarborEdge.top}, child: SizedBox(key: ValueKey<String>('title'), height: 30)),
+                child: HarborClear(
+                  bars: false,
+                  edges: <HarborEdge>{HarborEdge.top},
+                  child: SizedBox(key: ValueKey<String>('title'), height: 30),
+                ),
               ),
             ],
           ),
@@ -1642,104 +1843,125 @@ void main() {
     expect(_rect(tester, 'title').top, 62);
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.none, HarborSheetBarrier.dismissible]) {
-    testWidgets('the page lays out against a breakwater sheet where it is drawn, in every frame of its slide (${barrier.name})', (final tester) async {
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
+    HarborSheetBarrier.none,
+    HarborSheetBarrier.dismissible,
+  ]) {
+    testWidgets(
+      'the page lays out against a breakwater sheet where it is drawn, in every frame of its slide (${barrier.name})',
+      (final tester) async {
+        late BuildContext pageContext;
+        await tester.pumpHarborTrial(
+          _app(
+            HarborFrame(
+              body: Builder(
+                builder: (final BuildContext context) {
+                  pageContext = context;
+                  return const HarborClear(
+                    edges: <HarborEdge>{HarborEdge.bottom},
+                    child: SizedBox.expand(key: ValueKey<String>('page')),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        // Clear of the home indicator with no sheet up.
+        final double clear = _rect(tester, 'page').bottom;
+        void expectPageMeetsSheet(final String when) {
+          final double sheetTop = tester.getRect(find.byType(HarborSheet)).top;
+          expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
+        }
+
+        unawaited(
+          showHarborSheet<void>(
+            pageContext,
+            coversPage: true,
+            barrier: barrier,
+            builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
+          ),
+        );
+        for (int frame = 0; frame < 8; frame++) {
+          await tester.pump(const Duration(milliseconds: 40));
+          expectPageMeetsSheet('opening, frame $frame');
+        }
+        await tester.pumpAndSettle();
+        expect(_rect(tester, 'page').bottom, 874 - 300);
+        closeHarborSheet(tester.element(find.byType(HarborSheet)));
+        for (int frame = 0; frame < 5; frame++) {
+          await tester.pump(const Duration(milliseconds: 40));
+          expectPageMeetsSheet('closing, frame $frame');
+        }
+        await tester.pumpAndSettle();
+        expect(_rect(tester, 'page').bottom, clear);
+      },
+    );
+  }
+
+  testWidgets(
+    'the page lays out against a draggable breakwater sheet where it is drawn, as it slides in and is dragged',
+    (final tester) async {
       late BuildContext pageContext;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
+          HarborFrame(
             body: Builder(
               builder: (final BuildContext context) {
                 pageContext = context;
-                return const HarborMoored(edges: <HarborEdge>{HarborEdge.bottom}, child: SizedBox.expand(key: ValueKey<String>('page')));
+                return const HarborClear(
+                  edges: <HarborEdge>{HarborEdge.bottom},
+                  child: SizedBox.expand(key: ValueKey<String>('page')),
+                );
               },
             ),
           ),
         ),
       );
-      // Clear of the home indicator with no sheet up.
       final double clear = _rect(tester, 'page').bottom;
       void expectPageMeetsSheet(final String when) {
-        final double sheetTop = tester.getRect(find.byType(HarborSheet)).top;
+        final double sheetTop = _rect(tester, 'handle').top;
         expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
       }
 
-      unawaited(showHarborSheet<void>(
-        pageContext,
-        breakwater: true,
-        barrier: barrier,
-        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
-      ));
-      for (int frame = 0; frame < 8; frame++) {
+      unawaited(
+        showHarborSheet<void>(
+          pageContext,
+          coversPage: true,
+          barrier: HarborSheetBarrier.none,
+          builder: (final BuildContext context) => HarborSheet.draggable(
+            header: _bar('handle', 40),
+            builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+              controller: controller,
+              slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+            ),
+          ),
+        ),
+      );
+      // The first frame measures the sheet; it follows from the next one on.
+      await tester.pump();
+      for (int frame = 0; frame < 6; frame++) {
         await tester.pump(const Duration(milliseconds: 40));
         expectPageMeetsSheet('opening, frame $frame');
       }
       await tester.pumpAndSettle();
-      expect(_rect(tester, 'page').bottom, 874 - 300);
-      closeHarborSheet(tester.element(find.byType(HarborSheet)));
-      for (int frame = 0; frame < 5; frame++) {
-        await tester.pump(const Duration(milliseconds: 40));
-        expectPageMeetsSheet('closing, frame $frame');
+      final TestGesture drag = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey<String>('handle'))),
+      );
+      for (int step = 0; step < 4; step++) {
+        await drag.moveBy(const Offset(0, -30));
+        await tester.pump();
+        expectPageMeetsSheet('dragged up, step $step');
       }
+      await drag.up();
       await tester.pumpAndSettle();
-      expect(_rect(tester, 'page').bottom, clear);
-    });
-  }
-
-  testWidgets('the page lays out against a draggable breakwater sheet where it is drawn, as it slides in and is dragged', (final tester) async {
-    late BuildContext pageContext;
-    await tester.pumpSeaTrial(
-      _app(
-        Harbor(
-          body: Builder(
-            builder: (final BuildContext context) {
-              pageContext = context;
-              return const HarborMoored(edges: <HarborEdge>{HarborEdge.bottom}, child: SizedBox.expand(key: ValueKey<String>('page')));
-            },
-          ),
-        ),
-      ),
-    );
-    final double clear = _rect(tester, 'page').bottom;
-    void expectPageMeetsSheet(final String when) {
-      final double sheetTop = _rect(tester, 'handle').top;
-      expect(_rect(tester, 'page').bottom, closeTo(math.min(clear, sheetTop), 0.5), reason: when);
-    }
-
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      breakwater: true,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        header: _bar('handle', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
-        ),
-      ),
-    ));
-    // The first frame measures the sheet; it follows from the next one on.
-    await tester.pump();
-    for (int frame = 0; frame < 6; frame++) {
-      await tester.pump(const Duration(milliseconds: 40));
-      expectPageMeetsSheet('opening, frame $frame');
-    }
-    await tester.pumpAndSettle();
-    final TestGesture drag = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey<String>('handle'))));
-    for (int step = 0; step < 4; step++) {
-      await drag.moveBy(const Offset(0, -30));
-      await tester.pump();
-      expectPageMeetsSheet('dragged up, step $step');
-    }
-    await drag.up();
-    await tester.pumpAndSettle();
-  });
+    },
+  );
 
   testWidgets('a draggable breakwater sheet reports its resting height, not the screen', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1749,25 +1971,27 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      breakwater: true,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        coversPage: true,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(MediaQuery.paddingOf(pageContext).bottom, closeTo((874 - 62) * 0.5, 2));
   });
 
   testWidgets('a draggable sheet paints its surface only as tall as it is dragged', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1777,19 +2001,25 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        surface: const ColoredBox(key: ValueKey<String>('surface'), color: Colors.blue),
-        header: _bar('sheetHeader', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: <Widget>[
-            SliverList.builder(itemCount: 40, itemBuilder: (final BuildContext c, final int i) => ColoredBox(key: ValueKey<String>('item$i'), color: Colors.white, child: const SizedBox(height: 50))),
-          ],
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          surface: const ColoredBox(key: ValueKey<String>('surface'), color: Colors.blue),
+          header: _bar('sheetHeader', 40),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: <Widget>[
+              SliverList.builder(
+                itemCount: 40,
+                itemBuilder: (final BuildContext c, final int i) =>
+                    ColoredBox(key: ValueKey<String>('item$i'), color: Colors.white, child: const SizedBox(height: 50)),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'surface').top, closeTo(_rect(tester, 'sheetHeader').top, 1));
     expect(find.byKey(const ValueKey<String>('item0')).hitTestable(), findsOneWidget);
@@ -1797,11 +2027,11 @@ void main() {
 
   testWidgets('a sheet carries the text style of the page that opened it', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
         DefaultTextStyle(
           style: const TextStyle(fontSize: 21, color: Colors.teal),
-          child: Harbor(
+          child: HarborFrame(
             body: Builder(
               builder: (final BuildContext context) {
                 pageContext = context;
@@ -1812,11 +2042,14 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) => const HarborSheet(body: Text('lyrics', key: ValueKey<String>('lyrics'))),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext context) =>
+            const HarborSheet(body: Text('lyrics', key: ValueKey<String>('lyrics'))),
+      ),
+    );
     await tester.pumpAndSettle();
     final BuildContext lyrics = tester.element(find.byKey(const ValueKey<String>('lyrics')));
     expect(DefaultTextStyle.of(lyrics).style.fontSize, 21);
@@ -1825,9 +2058,9 @@ void main() {
 
   testWidgets('a draggable sheet hauls up by its header', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1837,16 +2070,18 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        header: _bar('handle', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          header: _bar('handle', 40),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     final double rest = _rect(tester, 'handle').top;
     await tester.drag(find.byKey(const ValueKey<String>('handle')), const Offset(0, -200));
@@ -1858,9 +2093,9 @@ void main() {
 
   testWidgets('a content-sized sheet never runs into the status bar', (final tester) async {
     late BuildContext pageContext;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
+        HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -1870,28 +2105,30 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      builder: (final BuildContext context) => HarborSheet(
-        maxExtentFraction: 1.0,
-        header: _bar('sheetHeader', 40),
-        body: HarborFairway.box(shrinkWrap: true, child: const SizedBox(height: 3000)),
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        builder: (final BuildContext context) => HarborSheet(
+          maxExtentFraction: 1.0,
+          header: _bar('sheetHeader', 40),
+          body: HarborScrollView.box(shrinkWrap: true, child: const SizedBox(height: 3000)),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
-    await trial.raiseTide();
+    await trial.showKeyboard();
     expect(_rect(tester, 'sheetHeader').top, greaterThanOrEqualTo(62 - 0.5));
   });
 
   testWidgets('a flare raised in a nested harbor clears that harbor\'s header too', (final tester) async {
     late BuildContext tabContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
-          bottom: <HarborDock>[HarborDock.quay(child: _bar('nav', 56))],
-          body: Harbor(
-            top: <HarborDock>[HarborDock.pier(child: _bar('tab header', 80))],
+        HarborFrame(
+          isPage: true,
+          bottom: <HarborBar>[HarborBar.solid(child: _bar('nav', 56))],
+          body: HarborFrame(
+            top: <HarborBar>[HarborBar.overlay(child: _bar('tab header', 80))],
             body: Builder(
               builder: (final BuildContext context) {
                 tabContext = context;
@@ -1902,39 +2139,51 @@ void main() {
         ),
       ),
     );
-    HarborFlares.raise(tabContext, slot: HarborFlareSlot.top, builder: (final BuildContext c) => _bar('flag', 20), duration: null);
+    HarborToasts.show(
+      tabContext,
+      slot: HarborToastSlot.top,
+      builder: (final BuildContext c) => _bar('flag', 20),
+      duration: null,
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').top, greaterThanOrEqualTo(_rect(tester, 'tab header').bottom));
   });
 
   testWidgets('a chart overlay above the sea charts the harbors beneath it', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborChartOverlay(child: HarborSea(child: child!)),
-        home: Harbor(top: <HarborDock>[HarborDock.pier(debugLabel: 'header', child: _bar('header', 50))], body: const SizedBox.expand()),
+        builder: (final BuildContext context, final Widget? child) =>
+            HarborInspectorOverlay(child: HarborRoot(child: child!)),
+        home: HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(debugLabel: 'header', child: _bar('header', 50))],
+          body: const SizedBox.expand(),
+        ),
       ),
     );
     await tester.pump();
-    final BuildContext overlay = tester.element(find.byType(HarborSea));
-    final List<HarborChartEntry> chart = HarborChart.snapshot(overlay);
-    expect(chart.expand((final HarborChartEntry e) => e.docks).any((final HarborDockRecord d) => d.label == 'header'), isTrue);
+    final BuildContext overlay = tester.element(find.byType(HarborRoot));
+    final List<HarborInspectorEntry> chart = HarborInspector.snapshot(overlay);
+    expect(
+      chart.expand((final HarborInspectorEntry e) => e.bars).any((final HarborBarRecord d) => d.label == 'header'),
+      isTrue,
+    );
   });
 
   testWidgets('a sea inside a harbor keeps its own tide and flares', (final tester) async {
     late BuildContext inside;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          newPort: true,
-          bottom: <HarborDock>[HarborDock.quay(child: _bar('outer nav', 56))],
+        HarborFrame(
+          isPage: true,
+          bottom: <HarborBar>[HarborBar.solid(child: _bar('outer nav', 56))],
           body: Center(
             child: SizedBox(
               width: 200,
               height: 300,
               child: MediaQuery(
                 data: const MediaQueryData(size: Size(200, 300), viewInsets: EdgeInsets.only(bottom: 120)),
-                child: HarborSea(
-                  child: Harbor(
+                child: HarborRoot(
+                  child: HarborFrame(
                     body: Builder(
                       builder: (final BuildContext context) {
                         inside = context;
@@ -1950,20 +2199,25 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(HarborTide.of(inside).height, 120);
-    HarborFlares.raise(inside, slot: HarborFlareSlot.top, builder: (final BuildContext c) => _bar('inner flag', 20), duration: null);
+    expect(HarborKeyboard.of(inside).height, 120);
+    HarborToasts.show(
+      inside,
+      slot: HarborToastSlot.top,
+      builder: (final BuildContext c) => _bar('inner flag', 20),
+      duration: null,
+    );
     await tester.pumpAndSettle();
-    final Rect stage = tester.getRect(find.byType(HarborSea).last);
+    final Rect stage = tester.getRect(find.byType(HarborRoot).last);
     expect(stage.contains(_rect(tester, 'inner flag').center), isTrue);
   });
 
   testWidgets('a translucent dock with a backdrop lets taps through its empty ground', (final tester) async {
     int taps = 0;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: const <HarborDock>[
-            HarborDock.pier(
+        HarborFrame(
+          top: const <HarborBar>[
+            HarborBar.overlay(
               hitTestBehavior: HitTestBehavior.translucent,
               backdrop: ColoredBox(color: Colors.brown),
               child: SizedBox(height: 60),
@@ -1978,7 +2232,7 @@ void main() {
   });
 
   testWidgets('a sticky pill sticks at the docks under a scale', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
         home: Center(
           child: SizedBox(
@@ -1990,17 +2244,20 @@ void main() {
                 height: 874,
                 child: MediaQuery(
                   data: const MediaQueryData(size: Size(402, 874)),
-                  child: HarborSea(
-                    child: Harbor(
-                      top: <HarborDock>[HarborDock.pier(child: _bar('header', 100))],
-                      body: const HarborFairway(
+                  child: HarborRoot(
+                    child: HarborFrame(
+                      top: <HarborBar>[HarborBar.overlay(child: _bar('header', 100))],
+                      body: const HarborScrollView(
                         slivers: <Widget>[
                           SliverToBoxAdapter(
                             child: SizedBox(
                               height: 600,
                               child: Column(
                                 children: <Widget>[
-                                  HarborSticky(gap: 0, child: SizedBox(key: ValueKey<String>('pill'), height: 20, width: 80)),
+                                  HarborSticky(
+                                    gap: 0,
+                                    child: SizedBox(key: ValueKey<String>('pill'), height: 20, width: 80),
+                                  ),
                                   Expanded(child: SizedBox()),
                                 ],
                               ),
@@ -2024,22 +2281,22 @@ void main() {
   });
 
   testWidgets('a harbor that paints its own wake keeps its fairways from fading twice', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          wakePainter: HarborWakeMask.alphaWake,
-          top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(), child: _bar('header', 50))],
-          body: const HarborFairway(slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))]),
+        HarborFrame(
+          edgeEffectPainter: HarborFadeMask.alphaFade,
+          top: <HarborBar>[HarborBar.overlay(edgeEffect: const HarborEdgeEffect.fade(), child: _bar('header', 50))],
+          body: const HarborScrollView(slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))]),
         ),
       ),
     );
-    final Iterable<HarborWakeMask> masks = tester.widgetList<HarborWakeMask>(find.byType(HarborWakeMask));
-    expect(masks.where((final HarborWakeMask m) => m.wakes.isNotEmpty), hasLength(1));
+    final Iterable<HarborFadeMask> masks = tester.widgetList<HarborFadeMask>(find.byType(HarborFadeMask));
+    expect(masks.where((final HarborFadeMask m) => m.bands.isNotEmpty), hasLength(1));
   });
 
   testWidgets('a breakwater sheet covers the page under a scale', (final tester) async {
     late BuildContext pageContext;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
         home: Center(
           child: SizedBox(
@@ -2051,17 +2308,18 @@ void main() {
                 height: 874,
                 child: MediaQuery(
                   data: const MediaQueryData(size: Size(402, 874)),
-                  child: HarborSea(
+                  child: HarborRoot(
                     child: Navigator(
                       onGenerateRoute: (final RouteSettings _) => PageRouteBuilder<void>(
-                        pageBuilder: (final BuildContext c, final Animation<double> a, final Animation<double> b) => Harbor(
-                          body: Builder(
-                            builder: (final BuildContext context) {
-                              pageContext = context;
-                              return const SizedBox.expand();
-                            },
-                          ),
-                        ),
+                        pageBuilder: (final BuildContext c, final Animation<double> a, final Animation<double> b) =>
+                            HarborFrame(
+                              body: Builder(
+                                builder: (final BuildContext context) {
+                                  pageContext = context;
+                                  return const SizedBox.expand();
+                                },
+                              ),
+                            ),
                       ),
                     ),
                   ),
@@ -2072,25 +2330,29 @@ void main() {
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      pageContext,
-      breakwater: true,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        pageContext,
+        coversPage: true,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(MediaQuery.paddingOf(pageContext).bottom, closeTo(300, 1));
   });
 
-  testWidgets('a horizontal box fairway in a column is as tall as its row and keeps its ends clear', (final tester) async {
+  testWidgets('a horizontal box fairway in a column is as tall as its row and keeps its ends clear', (
+    final tester,
+  ) async {
     final ValueNotifier<double> chipHeight = ValueNotifier<double>(40);
     addTearDown(chipHeight.dispose);
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        HarborMoored(
+        HarborClear(
           child: Column(
             children: <Widget>[
-              HarborFairway.box(
+              HarborScrollView.box(
                 key: const ValueKey<String>('chips'),
                 scrollDirection: Axis.horizontal,
                 child: ValueListenableBuilder<double>(
@@ -2124,15 +2386,15 @@ void main() {
   testWidgets('the steady coast holds the home indicator while the keyboard is up', (final tester) async {
     late BuildContext footer;
     late BuildContext underQuay;
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
           body: Column(
             children: <Widget>[
               Expanded(
-                child: Harbor(
-                  bottom: <HarborDock>[HarborDock.quay(child: _bar('tabs', 40))],
+                child: HarborFrame(
+                  bottom: <HarborBar>[HarborBar.solid(child: _bar('tabs', 40))],
                   body: Builder(
                     builder: (final BuildContext context) {
                       underQuay = context;
@@ -2152,20 +2414,20 @@ void main() {
         ),
       ),
     );
-    expect(HarborWaters.steadyCoastOf(footer, HarborEdge.bottom), 34);
-    expect(HarborWaters.steadyCoastOf(footer, HarborEdge.top), 62, reason: 'the coast alone, not the header');
-    expect(HarborWaters.steadyCoastOf(underQuay, HarborEdge.bottom), 0, reason: 'the quay absorbed it');
-    await trial.raiseTide();
-    expect(HarborWaters.of(footer).coast.bottom, 0, reason: 'the live coast goes as the keyboard comes in');
-    expect(HarborWaters.steadyCoastOf(footer, HarborEdge.bottom), 34);
+    expect(HarborRoom.steadySystemEdgeOf(footer, HarborEdge.bottom), 34);
+    expect(HarborRoom.steadySystemEdgeOf(footer, HarborEdge.top), 62, reason: 'the coast alone, not the header');
+    expect(HarborRoom.steadySystemEdgeOf(underQuay, HarborEdge.bottom), 0, reason: 'the quay absorbed it');
+    await trial.showKeyboard();
+    expect(HarborRoom.of(footer).systemEdges.bottom, 0, reason: 'the live coast goes as the keyboard comes in');
+    expect(HarborRoom.steadySystemEdgeOf(footer, HarborEdge.bottom), 34);
   });
 
   testWidgets('the steady coast is cast off with its edge', (final tester) async {
     late BuildContext castOff;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          body: HarborCastOff(
+        HarborFrame(
+          body: HarborHandled(
             edges: const <HarborEdge>{HarborEdge.bottom},
             child: Builder(
               builder: (final BuildContext context) {
@@ -2177,18 +2439,22 @@ void main() {
         ),
       ),
     );
-    expect(HarborWaters.steadyCoastOf(castOff, HarborEdge.top), 62, reason: 'positive control');
-    expect(HarborWaters.steadyCoastOf(castOff, HarborEdge.bottom), 0);
+    expect(HarborRoom.steadySystemEdgeOf(castOff, HarborEdge.top), 62, reason: 'positive control');
+    expect(HarborRoom.steadySystemEdgeOf(castOff, HarborEdge.bottom), 0);
   });
 
   testWidgets('a fairway keeps its minimum at an end nothing covers', (final tester) async {
     Future<double> lastRowBottom(final HarborTrialDevice device) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          HarborFairway(
+          HarborScrollView(
             minimum: const EdgeInsetsDirectional.only(bottom: 16),
             slivers: <Widget>[
-              SliverList.builder(itemCount: 30, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50)),
+              SliverList.builder(
+                itemCount: 30,
+                itemBuilder: (final BuildContext c, final int i) =>
+                    SizedBox(key: ValueKey<String>('row$i'), height: 50),
+              ),
             ],
           ),
         ),
@@ -2204,13 +2470,17 @@ void main() {
   });
 
   testWidgets('a fairway sliver keeps its minimum at an end nothing covers', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
         CustomScrollView(
           slivers: <Widget>[
-            HarborFairwaySliver(
+            HarborSliverClear(
               minimum: const EdgeInsetsDirectional.only(bottom: 16),
-              sliver: SliverList.builder(itemCount: 30, itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50)),
+              sliver: SliverList.builder(
+                itemCount: 30,
+                itemBuilder: (final BuildContext c, final int i) =>
+                    SizedBox(key: ValueKey<String>('row$i'), height: 50),
+              ),
             ),
           ],
         ),
@@ -2222,30 +2492,36 @@ void main() {
     expect(_rect(tester, 'row29').bottom, 667 - 16);
   });
 
-  testWidgets('a footer moored on the bottom alone clears the coast and the keyboard, not the header', (final tester) async {
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+  testWidgets('a footer moored on the bottom alone clears the coast and the keyboard, not the header', (
+    final tester,
+  ) async {
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-          bodyClearsTide: false,
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          bodyClearsKeyboard: false,
           body: Align(
             alignment: Alignment.bottomCenter,
-            child: HarborMoored(edges: const <HarborEdge>{HarborEdge.bottom}, child: _bar('footer', 40)),
+            child: HarborClear(edges: const <HarborEdge>{HarborEdge.bottom}, child: _bar('footer', 40)),
           ),
         ),
       ),
     );
     expect(_rect(tester, 'footer').bottom, 874 - 34);
-    await trial.raiseTide();
-    expect(_rect(tester, 'footer').bottom, trial.waterline);
+    await trial.showKeyboard();
+    expect(_rect(tester, 'footer').bottom, trial.keyboardTop);
     expect(_rect(tester, 'footer').height, 40);
   });
 
   group('insets take EdgeInsetsGeometry, resolved against the reading direction', () {
-    Widget rtl(final Widget home, {final HarborCoast coast = HarborCoast.ambient, final EdgeInsetsGeometry? margin}) => MaterialApp(
+    Widget rtl(
+      final Widget home, {
+      final HarborSystemEdges coast = HarborSystemEdges.ambient,
+      final EdgeInsetsGeometry? margin,
+    }) => MaterialApp(
       builder: (final BuildContext context, final Widget? child) => Directionality(
         textDirection: TextDirection.rtl,
-        child: HarborSea(coast: coast, margin: margin, child: child!),
+        child: HarborRoot(systemEdges: coast, margin: margin, child: child!),
       ),
       home: Material(child: home),
     );
@@ -2255,18 +2531,20 @@ void main() {
     );
 
     testWidgets("the sea's mooring line keeps a physical left on the left", (final tester) async {
-      await tester.pumpSeaTrial(rtl(HarborMooringLine(child: _bar('row', 40)), margin: const EdgeInsets.only(left: 24)));
+      await tester.pumpHarborTrial(
+        rtl(HarborClear.rowInsets(child: _bar('row', 40)), margin: const EdgeInsets.only(left: 24)),
+      );
       expect(_rect(tester, 'row').left, 24);
       expect(_rect(tester, 'row').right, 402);
     });
 
     testWidgets("a harbor's margin and minimum keep a physical side where they say", (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         rtl(
-          Harbor(
+          HarborFrame(
             margin: const EdgeInsets.only(right: 12),
             minimum: const EdgeInsets.only(left: 30),
-            body: HarborMoored(mooringLine: true, child: _bar('form', 40)),
+            body: HarborClear(rowInsets: true, child: _bar('form', 40)),
           ),
         ),
       );
@@ -2275,8 +2553,14 @@ void main() {
     });
 
     testWidgets("a fairway's padding and minimum keep a physical side where they say", (final tester) async {
-      await tester.pumpSeaTrial(
-        rtl(HarborFairway(padding: const EdgeInsets.only(left: 12), minimum: const EdgeInsets.only(bottom: 16), slivers: <Widget>[rows()])),
+      await tester.pumpHarborTrial(
+        rtl(
+          HarborScrollView(
+            padding: const EdgeInsets.only(left: 12),
+            minimum: const EdgeInsets.only(bottom: 16),
+            slivers: <Widget>[rows()],
+          ),
+        ),
         device: HarborTrialDevice.iPhoneSE,
       );
       expect(_rect(tester, 'row0').left, 12);
@@ -2287,11 +2571,15 @@ void main() {
     });
 
     testWidgets('a fairway sliver takes the same', (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         rtl(
           CustomScrollView(
             slivers: <Widget>[
-              HarborFairwaySliver(padding: const EdgeInsets.only(left: 12), minimum: const EdgeInsets.only(bottom: 16), sliver: rows()),
+              HarborSliverClear(
+                padding: const EdgeInsets.only(left: 12),
+                minimum: const EdgeInsets.only(bottom: 16),
+                sliver: rows(),
+              ),
             ],
           ),
         ),
@@ -2305,11 +2593,11 @@ void main() {
 
     testWidgets("paddingOf resolves its extra and minimum the way it resolves what it returns", (final tester) async {
       late EdgeInsets padding;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         rtl(
           Builder(
             builder: (final BuildContext context) {
-              padding = HarborFairway.paddingOf(
+              padding = HarborScrollView.paddingOf(
                 context,
                 extra: const EdgeInsets.only(left: 5),
                 minimum: const EdgeInsetsDirectional.only(bottom: 16).add(const EdgeInsets.only(bottom: 4)),
@@ -2323,14 +2611,24 @@ void main() {
       expect(padding, const EdgeInsets.only(left: 5, top: 20, bottom: 20));
     });
 
-    testWidgets("a moored widget's minimum and extra, and clearanceOf, keep a physical side where they say", (final tester) async {
+    testWidgets("a moored widget's minimum and extra, and clearanceOf, keep a physical side where they say", (
+      final tester,
+    ) async {
       late EdgeInsetsDirectional clearance;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         rtl(
           Builder(
             builder: (final BuildContext context) {
-              clearance = HarborMoored.clearanceOf(context, minimum: const EdgeInsets.only(left: 30), extra: const EdgeInsets.only(right: 6));
-              return HarborMoored(minimum: const EdgeInsets.only(left: 30), extra: const EdgeInsets.only(right: 6), child: _bar('form', 40));
+              clearance = HarborClear.clearanceOf(
+                context,
+                minimum: const EdgeInsets.only(left: 30),
+                padding: const EdgeInsets.only(right: 6),
+              );
+              return HarborClear(
+                minimum: const EdgeInsets.only(left: 30),
+                padding: const EdgeInsets.only(right: 6),
+                child: _bar('form', 40),
+              );
             },
           ),
         ),
@@ -2341,9 +2639,9 @@ void main() {
     });
 
     testWidgets('a fixed coast and a fixed title-safe band keep a physical side where they say', (final tester) async {
-      Future<EdgeInsets> paddingUnder(final HarborCoast coast) async {
+      Future<EdgeInsets> paddingUnder(final HarborSystemEdges coast) async {
         late EdgeInsets padding;
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           rtl(
             Builder(
               builder: (final BuildContext context) {
@@ -2357,15 +2655,20 @@ void main() {
         return padding;
       }
 
-      expect(await paddingUnder(const HarborCoast.fixed(EdgeInsets.only(left: 40))), const EdgeInsets.only(left: 40));
       expect(
-        await paddingUnder(const HarborCoast.titleSafe(HarborTitleSafe.fixed(EdgeInsets.only(left: 40)))),
+        await paddingUnder(const HarborSystemEdges.fixed(EdgeInsets.only(left: 40))),
+        const EdgeInsets.only(left: 40),
+      );
+      expect(
+        await paddingUnder(const HarborSystemEdges.titleSafe(HarborTitleSafe.fixed(EdgeInsets.only(left: 40)))),
         const EdgeInsets.only(left: 40, top: 62, bottom: 34),
       );
     });
 
     testWidgets('a directional inset still follows the reading direction', (final tester) async {
-      await tester.pumpSeaTrial(rtl(HarborMooringLine(child: _bar('row', 40)), margin: const EdgeInsetsDirectional.only(start: 24)));
+      await tester.pumpHarborTrial(
+        rtl(HarborClear.rowInsets(child: _bar('row', 40)), margin: const EdgeInsetsDirectional.only(start: 24)),
+      );
       expect(_rect(tester, 'row').right, 402 - 24);
       expect(_rect(tester, 'row').left, 0);
     });

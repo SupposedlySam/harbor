@@ -15,27 +15,35 @@ final HarborTrialDevice _tall = _dual.copyWith(
   name: 'dual screen tall',
   size: const Size(720, 1114),
   displayFeatures: const <DisplayFeature>[
-    DisplayFeature(bounds: Rect.fromLTRB(0, 540, 720, 574), type: DisplayFeatureType.hinge, state: DisplayFeatureState.postureFlat),
+    DisplayFeature(
+      bounds: Rect.fromLTRB(0, 540, 720, 574),
+      type: DisplayFeatureType.hinge,
+      state: DisplayFeatureState.postureFlat,
+    ),
   ],
 );
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
-Widget _bar(final String key, final double height) => SizedBox(key: ValueKey<String>(key), height: height, width: double.infinity);
+Widget _bar(final String key, final double height) =>
+    SizedBox(key: ValueKey<String>(key), height: height, width: double.infinity);
 
 Future<void> _page(
   final WidgetTester tester, {
   required final HarborTrialDevice device,
   final HarborHinge? hinge,
   final TextDirection direction = TextDirection.ltr,
-  final List<HarborDock> start = const <HarborDock>[],
-}) => tester.pumpSeaTrial(
+  final List<HarborBar> start = const <HarborBar>[],
+}) => tester.pumpHarborTrial(
   MaterialApp(
-    builder: (final BuildContext context, final Widget? child) => Directionality(textDirection: direction, child: HarborSea(child: child!)),
-    home: Harbor(
+    builder: (final BuildContext context, final Widget? child) => Directionality(
+      textDirection: direction,
+      child: HarborRoot(child: child!),
+    ),
+    home: HarborFrame(
       hinge: hinge,
-      top: <HarborDock>[HarborDock.pier(child: _bar('header', 56))],
-      bottom: <HarborDock>[HarborDock.quay(child: _bar('tabs', 56))],
+      top: <HarborBar>[HarborBar.overlay(child: _bar('header', 56))],
+      bottom: <HarborBar>[HarborBar.solid(child: _bar('tabs', 56))],
       start: start,
       body: const SizedBox.expand(key: ValueKey<String>('body')),
     ),
@@ -80,7 +88,11 @@ void main() {
     await _page(
       tester,
       device: _tall,
-      start: const <HarborDock>[HarborDock.quay(child: SizedBox(key: ValueKey<String>('rail'), width: 72, height: double.infinity))],
+      start: const <HarborBar>[
+        HarborBar.solid(
+          child: SizedBox(key: ValueKey<String>('rail'), width: 72, height: double.infinity),
+        ),
+      ],
     );
     expect(_rect(tester, 'rail').top, 0);
     expect(_rect(tester, 'rail').bottom, 540);
@@ -88,15 +100,18 @@ void main() {
   });
 
   testWidgets('a harbor smaller than the screen does not read the hinge', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
         home: Align(
           alignment: Alignment.topLeft,
           child: SizedBox(
             width: 800,
             height: 600,
-            child: Harbor(bottom: <HarborDock>[HarborDock.quay(child: _bar('tabs', 56))], body: const SizedBox.expand()),
+            child: HarborFrame(
+              bottom: <HarborBar>[HarborBar.solid(child: _bar('tabs', 56))],
+              body: const SizedBox.expand(),
+            ),
           ),
         ),
       ),

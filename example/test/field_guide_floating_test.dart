@@ -30,7 +30,7 @@ Future<void> _pumpEntry(final WidgetTester tester, final Widget entry, {final bo
     MaterialApp(
       theme: Palette.theme(),
       builder: (final BuildContext context, final Widget? child) =>
-          HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+          HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
       home: entry,
     ),
   );
@@ -95,10 +95,11 @@ Future<void> _tapStage(final WidgetTester tester, final String key) async {
   expect(tester.takeException(), isNull, reason: key);
 }
 
-Future<void> _setTide(final WidgetTester tester, {required final bool high}) async {
+Future<void> _setKeyboard(final WidgetTester tester, {required final bool shown}) async {
   final IconButton button = tester.widget<IconButton>(_key('tide toggle'));
-  final bool isHigh = button.tooltip == 'Lower the tide';
-  if (isHigh != high) {
+  // The button offers to hide the keyboard while it is shown.
+  final bool isShown = (button.icon as Icon).icon == Icons.keyboard_hide_rounded;
+  if (isShown != shown) {
     await _tap(tester, 'tide toggle');
   }
   await tester.pump(_step);
@@ -180,20 +181,20 @@ Future<void> _settle(final WidgetTester tester) async {
   await tester.pump(_step);
 }
 
-Future<void> _openBreakwater(final WidgetTester tester) async {
-  await _tapStage(tester, 'open breakwater sheet');
+Future<void> _openCoversPage(final WidgetTester tester) async {
+  await _tapStage(tester, 'open coversPage sheet');
   await tester.pump(_step);
-  // The cover reaches the harbor a frame after the sheet settles.
+  // The cover reaches the frame a drawn frame after the sheet settles.
   await tester.pump(_step);
 }
 
 /// A barrier that dims the page under a sheet.
 Finder _dimmed() => find.byWidgetPredicate((final Widget w) => w is ModalBarrier && (w.color?.a ?? 0) > 0);
 
-/// Raises the tide and waits for a beacon to follow it: it reveals a few
-/// frames after the keyboard settles, then scrolls there.
-Future<void> _raiseTideForBeacon(final WidgetTester tester) async {
-  await _setTide(tester, high: true);
+/// Shows the keyboard and waits for HarborKeepInSight to follow it: it reveals
+/// a few frames after the keyboard settles, then scrolls there.
+Future<void> _showKeyboardForKeepInSight(final WidgetTester tester) async {
+  await _setKeyboard(tester, shown: true);
   for (int i = 0; i < 8; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
@@ -206,7 +207,7 @@ Rect _offstageRect(final WidgetTester tester, final String key) =>
 double _headerTitleOpacity(final WidgetTester tester) =>
     tester.widget<Opacity>(find.ancestor(of: _key('header title'), matching: find.byType(Opacity)).first).opacity;
 
-/// Opens the breakwater sheet over the lift and waits for the region to ease
+/// Opens the coversPage sheet over the lift and waits for the region to ease
 /// up: the sheet reports its painted top a frame after it settles.
 Future<void> _openLiftSheet(final WidgetTester tester) async {
   await _tapStage(tester, 'open lift sheet');
@@ -222,22 +223,22 @@ void main() {
         .map((final GuideEntry e) => e.className)
         .toList();
     expect(names(GuideGroup.floating), <String>[
-      'HarborBuoy',
-      'HarborBuoy.anchored',
-      'HarborBuoy(modal: true)',
-      'HarborPortalBuoy',
-      'HarborFlares.raise',
+      'HarborFloat',
+      'HarborFloat + HarborAnchored',
+      'HarborFloat(modal: true)',
+      'HarborPopover',
+      'HarborToasts.show',
     ]);
     expect(names(GuideGroup.sheets), <String>[
       'HarborSheet',
       'HarborSheet.draggable',
-      'showHarborSheet(breakwater: true)',
-      'showHarborDialog(inheritClearWater:)',
+      'showHarborSheet(coversPage: true)',
+      'showHarborDialog(inheritRoom:)',
     ]);
     expect(names(GuideGroup.lighthouse), <String>[
-      'HarborBeacon(keepInSight:)',
-      'HarborBeacon(onObscured:)',
-      'HarborLighthouseRegion',
+      'HarborKeepInSight(keepInSight:)',
+      'HarborKeepInSight(onObscured:)',
+      'HarborKeepInSightRegion',
     ]);
   });
 
@@ -255,19 +256,19 @@ void main() {
   // -------------------------------------------------------------------------
   // What each page shows of the phone
 
-  // Under each page's own focus, what opens or raises a thing on the stage is in view, and so is
+  // Under each page's own focus, what opens or shows a thing on the stage is in view, and so is
   // every part of the phone the thing's behaviour moves.
   for (final (String id, List<String> keys) page in <(String, List<String>)>[
-    ('buoy', <String>['free buoy', 'buoy tab bar']),
-    ('buoy-anchored', <String>['anchor button', 'anchored buoy', 'anchored header', 'draggable anchor']),
-    ('buoy-modal', <String>['call the launch', 'modal buoy', 'modal header', 'modal tab bar']),
-    ('buoy-portal', <String>['stage row 0', 'portal tab bar']),
-    ('signals', <String>['raise top', 'raise low', 'open flares sheet', 'flares tab bar']),
+    ('buoy', <String>['free float', 'float tab bar']),
+    ('buoy-anchored', <String>['anchor button', 'anchored float', 'anchored header', 'draggable anchor']),
+    ('buoy-modal', <String>['call the launch', 'modal float', 'modal header', 'modal tab bar']),
+    ('buoy-portal', <String>['stage row 0', 'popover tab bar']),
+    ('signals', <String>['show top', 'show low', 'open toasts sheet', 'toasts tab bar']),
     ('sheet', <String>['open sheet']),
     ('sheet-draggable', <String>['open draggable sheet']),
-    ('sheet-breakwater', <String>['open breakwater sheet']),
+    ('sheet-breakwater', <String>['open coversPage sheet']),
     ('dialog', <String>['open dialog', 'office header', 'office footer']),
-    ('lighthouse-reveal', <String>['reveal', 'reveal header', 'beacon field']),
+    ('lighthouse-reveal', <String>['reveal', 'reveal header', 'kept field']),
     ('beacon-obscured', <String>['obscured header', 'header title', 'covered readout', 'hero title']),
     ('lighthouse-region', <String>['open lift sheet', 'lift boat']),
   ]) {
@@ -295,18 +296,18 @@ void main() {
   });
 
   testWidgets(
-    'HarborBeacon(keepInSight:): under the page’s own focus, reveal, the field and the keyboard are in view',
+    'HarborKeepInSight(keepInSight:): under the page’s own focus, reveal, the field and the keyboard are in view',
     (final WidgetTester tester) async {
       await _pumpEntry(tester, _page('lighthouse-reveal'), wholePhone: false);
-      await _tapStage(tester, 'beacon field');
-      await _raiseTideForBeacon(tester);
+      await _tapStage(tester, 'kept field');
+      await _showKeyboardForKeepInSight(tester);
       _expectInView(tester, 'reveal');
-      _expectInView(tester, 'beacon field');
+      _expectInView(tester, 'kept field');
       expect(_keyboardTop(tester), lessThan(tester.getRect(_key('stage')).bottom));
     },
   );
 
-  testWidgets('HarborLighthouseRegion: under the page’s own focus, the open sheet and the lifted boat are in view', (
+  testWidgets('HarborKeepInSightRegion: under the page’s own focus, the open sheet and the lifted boat are in view', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-region'), wholePhone: false);
@@ -316,19 +317,19 @@ void main() {
     _expectInView(tester, 'lift boat');
   });
 
-  testWidgets('showHarborSheet(breakwater: true): under the page’s own focus, the button and the sheet are in view', (
+  testWidgets('showHarborSheet(coversPage: true): under the page’s own focus, the button and the sheet are in view', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet-breakwater'), wholePhone: false);
-    await _openBreakwater(tester);
-    _expectInView(tester, 'open breakwater sheet');
-    _expectInView(tester, 'breakwater sheet header');
+    await _openCoversPage(tester);
+    _expectInView(tester, 'open coversPage sheet');
+    _expectInView(tester, 'coversPage sheet header');
   });
 
   // -------------------------------------------------------------------------
-  // HarborBuoy
+  // HarborFloat
 
-  testWidgets('HarborBuoy: each alignment places the buoy there in the clear water, margin in from its edges', (
+  testWidgets('HarborFloat: each alignment places the float there in the room, margin in from its edges', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy'));
@@ -343,22 +344,22 @@ void main() {
     };
     for (final MapEntry<String, Alignment> alignment in alignments.entries) {
       await _tap(tester, 'alignment: ${alignment.key}');
-      // The clear water runs from the header down to the tab bar, edge to edge.
-      final Rect water = Rect.fromLTRB(
+      // The room runs from the header down to the tab bar, edge to edge.
+      final Rect room = Rect.fromLTRB(
         _frameLeft(tester),
         _headerBottom(tester),
         _frameRight(tester),
-        _rect(tester, 'buoy tab bar').top,
+        _rect(tester, 'float tab bar').top,
       ).deflate(16 * s);
-      final Rect buoy = _rect(tester, 'free buoy');
-      final Rect expected = alignment.value.inscribe(buoy.size, water);
+      final Rect buoy = _rect(tester, 'free float');
+      final Rect expected = alignment.value.inscribe(buoy.size, room);
       expect(buoy.left, _near(expected.left), reason: alignment.key);
       expect(buoy.top, _near(expected.top), reason: alignment.key);
       expect(_code(tester), contains('alignment: Alignment.${alignment.key},'));
     }
   });
 
-  testWidgets('HarborBuoy: margin sets how far the buoy keeps from the tab bar and the edge', (
+  testWidgets('HarborFloat: margin sets how far the float keeps from the tab bar and the edge', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy'));
@@ -366,81 +367,85 @@ void main() {
     for (final double margin in <double>[0, 16, 48]) {
       await _slide(tester, 'margin', margin);
       expect(
-        _rect(tester, 'free buoy').bottom,
-        _near(_rect(tester, 'buoy tab bar').top - margin * s),
+        _rect(tester, 'free float').bottom,
+        _near(_rect(tester, 'float tab bar').top - margin * s),
         reason: '$margin',
       );
-      expect(_rect(tester, 'free buoy').right, _near(_frameRight(tester) - margin * s), reason: '$margin');
+      expect(_rect(tester, 'free float').right, _near(_frameRight(tester) - margin * s), reason: '$margin');
       expect(_code(tester), contains('margin: const EdgeInsets.all(${margin.toStringAsFixed(0)}),'));
     }
   });
 
-  testWidgets('HarborBuoy: without the header, the buoy clears only the status bar', (final WidgetTester tester) async {
-    await _pumpEntry(tester, _page('buoy'));
-    final double s = _scale(tester);
-    await _tap(tester, 'alignment: topCenter');
-    expect(_rect(tester, 'free buoy').top, _near(_headerBottom(tester) + 16 * s));
-    expect(_code(tester), contains('top: [HarborDock.pier(child: Header())],'));
-
-    await _tap(tester, 'toggle header (pier)');
-    expect(find.byType(StageHeader), findsNothing);
-    expect(_rect(tester, 'free buoy').top, _near(_frameTop(tester) + (62 + 16) * s));
-    expect(_code(tester), isNot(contains('HarborDock.pier')));
-
-    await _tap(tester, 'toggle header (pier)');
-    expect(_rect(tester, 'free buoy').top, _near(_headerBottom(tester) + 16 * s));
-  });
-
-  testWidgets('HarborBuoy: without the tab bar, the buoy clears the home indicator', (final WidgetTester tester) async {
-    await _pumpEntry(tester, _page('buoy'));
-    final double s = _scale(tester);
-    expect(_code(tester), contains('bottom: [HarborDock.quay(child: TabBar())],'));
-
-    await _tap(tester, 'toggle tab bar (quay)');
-    expect(_key('buoy tab bar'), findsNothing);
-    expect(_rect(tester, 'free buoy').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
-    expect(_code(tester), isNot(contains('HarborDock.quay')));
-
-    await _tap(tester, 'toggle tab bar (quay)');
-    expect(_rect(tester, 'free buoy').bottom, _near(_rect(tester, 'buoy tab bar').top - 16 * s));
-  });
-
-  testWidgets('HarborBuoy: the keyboard becomes the floor of the clear water at high tide', (
+  testWidgets('HarborFloat: without the header, the float clears only the status bar', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy'));
     final double s = _scale(tester);
-    await _setTide(tester, high: true);
-    expect(_rect(tester, 'free buoy').bottom, _near(_keyboardTop(tester) - 16 * s));
-    await _setTide(tester, high: false);
+    await _tap(tester, 'alignment: topCenter');
+    expect(_rect(tester, 'free float').top, _near(_headerBottom(tester) + 16 * s));
+    expect(_code(tester), contains('top: [HarborBar.overlay(child: Header())],'));
+
+    await _tap(tester, 'toggle header (overlay)');
+    expect(find.byType(StageHeader), findsNothing);
+    expect(_rect(tester, 'free float').top, _near(_frameTop(tester) + (62 + 16) * s));
+    expect(_code(tester), isNot(contains('HarborBar.overlay')));
+
+    await _tap(tester, 'toggle header (overlay)');
+    expect(_rect(tester, 'free float').top, _near(_headerBottom(tester) + 16 * s));
+  });
+
+  testWidgets('HarborFloat: without the tab bar, the float clears the home indicator', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy'));
+    final double s = _scale(tester);
+    expect(_code(tester), contains('bottom: [HarborBar.solid(child: TabBar())],'));
+
+    await _tap(tester, 'toggle tab bar (solid)');
+    expect(_key('float tab bar'), findsNothing);
+    expect(_rect(tester, 'free float').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
+    expect(_code(tester), isNot(contains('HarborBar.solid')));
+
+    await _tap(tester, 'toggle tab bar (solid)');
+    expect(_rect(tester, 'free float').bottom, _near(_rect(tester, 'float tab bar').top - 16 * s));
+  });
+
+  testWidgets('HarborFloat: the keyboard becomes the floor of the room while it is shown', (
+    final WidgetTester tester,
+  ) async {
+    await _pumpEntry(tester, _page('buoy'));
+    final double s = _scale(tester);
+    await _setKeyboard(tester, shown: true);
+    expect(_rect(tester, 'free float').bottom, _near(_keyboardTop(tester) - 16 * s));
+    await _setKeyboard(tester, shown: false);
     expect(tester.getRect(find.byType(KeyboardArt)).height, 0);
-    expect(_rect(tester, 'free buoy').bottom, _near(_rect(tester, 'buoy tab bar').top - 16 * s));
+    expect(_rect(tester, 'free float').bottom, _near(_rect(tester, 'float tab bar').top - 16 * s));
   });
 
   // -------------------------------------------------------------------------
-  // HarborBuoy.anchored
+  // HarborFloat + HarborAnchored
 
-  testWidgets('HarborBuoy.anchored: by default the bubble sits gap above the dock button, centered on it', (
+  testWidgets('HarborAnchored: by default the bubble sits gap above the bar button, centered on it', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
     final double s = _scale(tester);
     final Rect button = _rect(tester, 'anchor button');
-    expect(_rect(tester, 'anchored buoy').bottom, _near(button.top - 8 * s));
-    expect(_rect(tester, 'anchored buoy').center.dx, _near(button.center.dx));
-    expect(_selected(tester, 'anchor: dock button'), isTrue);
+    expect(_rect(tester, 'anchored float').bottom, _near(button.top - 8 * s));
+    expect(_rect(tester, 'anchored float').center.dx, _near(button.center.dx));
+    expect(_selected(tester, 'anchor: bar button'), isTrue);
     expect(_code(tester), contains('HarborAnchored(\n        launch,'));
     expect(_code(tester), contains('side: HarborAnchorSide.above,'));
   });
 
-  testWidgets('HarborBuoy.anchored: each side puts the bubble gap away on that side of the boat', (
+  testWidgets('HarborAnchored: each side puts the bubble gap away on that side of the boat', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
     final double s = _scale(tester);
     await _tap(tester, 'anchor: draggable boat');
     expect(_code(tester), contains('HarborAnchored(\n        boat,'));
-    Rect bubble() => _rect(tester, 'anchored buoy');
+    Rect bubble() => _rect(tester, 'anchored float');
     final Rect boat = _rect(tester, 'draggable anchor');
 
     await _tap(tester, 'side: below');
@@ -461,13 +466,13 @@ void main() {
     expect(bubble().center.dx, _near(boat.center.dx));
   });
 
-  testWidgets('HarborBuoy.anchored: gap sets the distance from the anchor', (final WidgetTester tester) async {
+  testWidgets('HarborAnchored: gap sets the distance from the anchor', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
     final double s = _scale(tester);
     for (final double gap in <double>[0, 24, 32]) {
       await _slide(tester, 'gap', gap);
       expect(
-        _rect(tester, 'anchored buoy').bottom,
+        _rect(tester, 'anchored float').bottom,
         _near(_rect(tester, 'anchor button').top - gap * s),
         reason: '$gap',
       );
@@ -475,18 +480,18 @@ void main() {
     }
   });
 
-  testWidgets('HarborBuoy.anchored: overlap pulls the bubble back over its anchor', (final WidgetTester tester) async {
+  testWidgets('HarborAnchored: overlap pulls the bubble back over its anchor', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
     final double s = _scale(tester);
     await _slide(tester, 'overlap', 6);
-    expect(_rect(tester, 'anchored buoy').bottom, _near(_rect(tester, 'anchor button').top - (8 - 6) * s));
+    expect(_rect(tester, 'anchored float').bottom, _near(_rect(tester, 'anchor button').top - (8 - 6) * s));
     // Past the gap, the bubble's foot sits over the button.
     await _slide(tester, 'overlap', 20);
-    expect(_rect(tester, 'anchored buoy').bottom, _near(_rect(tester, 'anchor button').top + (20 - 8) * s));
+    expect(_rect(tester, 'anchored float').bottom, _near(_rect(tester, 'anchor button').top + (20 - 8) * s));
     expect(_code(tester), contains('overlap: 20,'));
   });
 
-  testWidgets('HarborBuoy.anchored: dragging the boat anchors the bubble to it; the dock button takes it back', (
+  testWidgets('HarborAnchored: dragging the boat anchors the bubble to it; the bar button takes it back', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
@@ -499,19 +504,19 @@ void main() {
     expect(boat.center.dx, lessThan(before.center.dx));
     expect(boat.center.dy, greaterThan(before.center.dy));
     expect(_selected(tester, 'anchor: draggable boat'), isTrue);
-    expect(_rect(tester, 'anchored buoy').bottom, _near(boat.top - 8 * s));
-    expect(_rect(tester, 'anchored buoy').center.dx, _near(boat.center.dx));
+    expect(_rect(tester, 'anchored float').bottom, _near(boat.top - 8 * s));
+    expect(_rect(tester, 'anchored float').center.dx, _near(boat.center.dx));
 
     await _tapStage(tester, 'anchor button');
-    expect(_selected(tester, 'anchor: dock button'), isTrue);
-    expect(_rect(tester, 'anchored buoy').bottom, _near(_rect(tester, 'anchor button').top - 8 * s));
+    expect(_selected(tester, 'anchor: bar button'), isTrue);
+    expect(_rect(tester, 'anchored float').bottom, _near(_rect(tester, 'anchor button').top - 8 * s));
 
     await _tap(tester, 'anchor: draggable boat');
-    await _tap(tester, 'anchor: dock button');
-    expect(_rect(tester, 'anchored buoy').bottom, _near(_rect(tester, 'anchor button').top - 8 * s));
+    await _tap(tester, 'anchor: bar button');
+    expect(_rect(tester, 'anchored float').bottom, _near(_rect(tester, 'anchor button').top - 8 * s));
   });
 
-  testWidgets('HarborBuoy.anchored: dragged into the header, the bubble above it stops margin below the header', (
+  testWidgets('HarborAnchored: dragged into the header, the bubble above it stops margin below the header', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
@@ -519,12 +524,12 @@ void main() {
     await tester.drag(_key('draggable anchor'), Offset(0, -tester.getRect(_key('stage')).height));
     await tester.pump();
     await tester.pump(_step);
-    expect(_rect(tester, 'anchored buoy').top, _near(_rect(tester, 'anchored header').bottom + 8 * s));
+    expect(_rect(tester, 'anchored float').top, _near(_rect(tester, 'anchored header').bottom + 8 * s));
     // So it overlaps the boat rather than going under the header.
-    expect(_rect(tester, 'anchored buoy').bottom, greaterThan(_rect(tester, 'draggable anchor').top));
+    expect(_rect(tester, 'anchored float').bottom, greaterThan(_rect(tester, 'draggable anchor').top));
   });
 
-  testWidgets('HarborBuoy.anchored: dragged to the left edge, the bubble below it stops margin in from the edge', (
+  testWidgets('HarborAnchored: dragged to the left edge, the bubble below it stops margin in from the edge', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-anchored'));
@@ -535,231 +540,227 @@ void main() {
     await tester.pump(_step);
     final Rect boat = _rect(tester, 'draggable anchor');
     expect(boat.left, _near(_frameLeft(tester)));
-    expect(_rect(tester, 'anchored buoy').left, _near(_frameLeft(tester) + 8 * s));
-    expect(_rect(tester, 'anchored buoy').top, _near(boat.bottom + 8 * s));
-    expect(_rect(tester, 'anchored buoy').center.dx, greaterThan(boat.center.dx));
+    expect(_rect(tester, 'anchored float').left, _near(_frameLeft(tester) + 8 * s));
+    expect(_rect(tester, 'anchored float').top, _near(boat.bottom + 8 * s));
+    expect(_rect(tester, 'anchored float').center.dx, greaterThan(boat.center.dx));
   });
 
   // -------------------------------------------------------------------------
-  // HarborPortalBuoy
+  // HarborPopover
 
-  testWidgets('HarborPortalBuoy: the menu opened from the first row sits gap below it', (
-    final WidgetTester tester,
-  ) async {
+  testWidgets('HarborPopover: the menu opened from the first row sits gap below it', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('buoy-portal'));
     final double s = _scale(tester);
     await _tapStage(tester, 'stage row 0');
     final Rect row = _rect(tester, 'stage row 0');
-    expect(_rect(tester, 'portal buoy').top, _near(row.bottom + 8 * s));
+    expect(_rect(tester, 'popover').top, _near(row.bottom + 8 * s));
     expect(_code(tester), contains('side: HarborAnchorSide.below,'));
   });
 
-  testWidgets('HarborPortalBuoy: the menu opened from the last row flips above it, clear of the tab bar', (
+  testWidgets('HarborPopover: the menu opened from the last row flips above it, clear of the tab bar', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-portal'));
     final double s = _scale(tester);
-    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _scrollStage(tester, 'popover stage', double.infinity);
     await _tapStage(tester, 'stage row 11');
     final Rect row = _rect(tester, 'stage row 11');
-    expect(_rect(tester, 'portal buoy').bottom, _near(row.top - 8 * s));
-    expect(_rect(tester, 'portal buoy').bottom, _atMost(_rect(tester, 'portal tab bar').top));
+    expect(_rect(tester, 'popover').bottom, _near(row.top - 8 * s));
+    expect(_rect(tester, 'popover').bottom, _atMost(_rect(tester, 'popover tab bar').top));
   });
 
-  testWidgets('HarborPortalBuoy: with the keyboard up, the menu from the last row in sight flips above the keyboard', (
+  testWidgets('HarborPopover: with the keyboard up, the menu from the last row in sight flips above the keyboard', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-portal'));
     final double s = _scale(tester);
-    await _setTide(tester, high: true);
-    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _setKeyboard(tester, shown: true);
+    await _scrollStage(tester, 'popover stage', double.infinity);
     await _tapStage(tester, 'stage row 11');
     final Rect row = _rect(tester, 'stage row 11');
     expect(row.bottom, _atMost(_keyboardTop(tester)));
-    expect(_rect(tester, 'portal buoy').bottom, _near(row.top - 8 * s));
-    expect(_rect(tester, 'portal buoy').bottom, _atMost(_keyboardTop(tester)));
+    expect(_rect(tester, 'popover').bottom, _near(row.top - 8 * s));
+    expect(_rect(tester, 'popover').bottom, _atMost(_keyboardTop(tester)));
   });
 
-  testWidgets('HarborPortalBuoy: without flips, the menu below the last row is held clear of the tab bar instead', (
+  testWidgets('HarborPopover: without flips, the menu below the last row is held clear of the tab bar instead', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-portal'));
     final double s = _scale(tester);
     await _tap(tester, 'toggle flips');
     expect(_code(tester), contains('flips: false,'));
-    await _scrollStage(tester, 'portal stage', double.infinity);
+    await _scrollStage(tester, 'popover stage', double.infinity);
     await _tapStage(tester, 'stage row 11');
-    expect(_rect(tester, 'portal buoy').bottom, _near(_rect(tester, 'portal tab bar').top - 8 * s));
+    expect(_rect(tester, 'popover').bottom, _near(_rect(tester, 'popover tab bar').top - 8 * s));
   });
 
   // -------------------------------------------------------------------------
-  // HarborBuoy(modal: true)
+  // HarborFloat(modal: true)
 
-  testWidgets('HarborBuoy(modal: true): hides the buoy listed before it and is centered in the clear water', (
+  testWidgets('HarborFloat(modal: true): hides the float listed before it and is centered in the room', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
-    expect(_key('modal buoy'), findsOneWidget);
+    expect(_key('modal float'), findsOneWidget);
     expect(_key('listed first'), findsNothing);
-    final Rect water = Rect.fromLTRB(
+    final Rect room = Rect.fromLTRB(
       _frameLeft(tester),
       _rect(tester, 'modal header').bottom,
       _frameRight(tester),
       _rect(tester, 'modal tab bar').top,
     );
-    expect(_rect(tester, 'modal buoy').center.dy, _near(water.center.dy));
-    expect(_rect(tester, 'modal buoy').center.dx, _near(water.center.dx));
-    expect(find.text('HarborBuoy(modal: true)'), findsWidgets);
+    expect(_rect(tester, 'modal float').center.dy, _near(room.center.dy));
+    expect(_rect(tester, 'modal float').center.dx, _near(room.center.dx));
+    expect(find.text('HarborFloat(modal: true)'), findsWidgets);
     expect(
       _code(tester),
-      contains('HarborBuoy(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'),
+      contains('HarborFloat(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'),
     );
   });
 
-  testWidgets('HarborBuoy(modal: true): not modal, both buoys float, the first at the bottom center', (
+  testWidgets('HarborFloat(modal: true): not modal, both floats stay up, the first at the bottom center', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
     final double s = _scale(tester);
     await _tap(tester, 'toggle modal');
-    expect(_key('modal buoy'), findsOneWidget);
+    expect(_key('modal float'), findsOneWidget);
     expect(_key('listed first'), findsOneWidget);
     expect(_rect(tester, 'listed first').bottom, _near(_rect(tester, 'modal tab bar').top - 16 * s));
     expect(_rect(tester, 'listed first').center.dx, _near((_frameLeft(tester) + _frameRight(tester)) / 2));
-    expect(find.text('Not modal: the buoys before me stay up.'), findsOneWidget);
-    expect(_code(tester), contains('HarborBuoy(child: QuickActions()), // floats beside it'));
+    expect(find.text('Not modal: the floats before me stay up.'), findsOneWidget);
+    expect(_code(tester), contains('HarborFloat(child: QuickActions()), // floats beside it'));
 
     await _tap(tester, 'toggle modal');
     expect(_key('listed first'), findsNothing);
   });
 
-  testWidgets('HarborBuoy(modal: true): taking the launch down brings the first buoy back', (
+  testWidgets('HarborFloat(modal: true): taking the launch down brings the first float back', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
     await _tap(tester, 'toggle launch up');
-    expect(_key('modal buoy'), findsNothing);
+    expect(_key('modal float'), findsNothing);
     expect(_key('listed first'), findsOneWidget);
     expect(_code(tester), isNot(contains('QuickActions')));
 
     await _tap(tester, 'toggle launch up');
-    expect(_key('modal buoy'), findsOneWidget);
+    expect(_key('modal float'), findsOneWidget);
     expect(_key('listed first'), findsNothing);
     expect(_code(tester), contains('QuickActions'));
   });
 
-  testWidgets('HarborBuoy(modal: true): Stand down and Call the launch take it down and up again', (
+  testWidgets('HarborFloat(modal: true): Stand down and Call the launch take it down and up again', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
     await _tapStage(tester, 'launch away');
-    expect(_key('modal buoy'), findsNothing);
+    expect(_key('modal float'), findsNothing);
     expect(_key('listed first'), findsOneWidget);
     expect(_switchedOn(tester, 'toggle launch up'), isFalse);
 
     await _tapStage(tester, 'call the launch');
-    expect(_key('modal buoy'), findsOneWidget);
+    expect(_key('modal float'), findsOneWidget);
     expect(_key('listed first'), findsNothing);
     expect(_switchedOn(tester, 'toggle launch up'), isTrue);
   });
 
   // -------------------------------------------------------------------------
-  // HarborFlares.raise
+  // HarborToasts.show
 
-  testWidgets('HarborFlares.raise: each slot lands at its place in the page’s clear water', (
-    final WidgetTester tester,
-  ) async {
+  testWidgets('HarborToasts.show: each slot lands at its place in the page’s room', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
-    for (final HarborFlareSlot slot in HarborFlareSlot.values) {
-      await _tapStage(tester, 'raise ${slot.name}');
-      final Rect water = Rect.fromLTRB(
+    for (final HarborToastSlot slot in HarborToastSlot.values) {
+      await _tapStage(tester, 'show ${slot.name}');
+      final Rect room = Rect.fromLTRB(
         _frameLeft(tester),
         _headerBottom(tester),
         _frameRight(tester),
-        _rect(tester, 'flares tab bar').top,
+        _rect(tester, 'toasts tab bar').top,
       ).deflate(16 * s);
-      final Rect flare = _rect(tester, 'flare');
-      final Rect expected = slot.alignment.inscribe(flare.size, water);
-      expect(flare.top, _near(expected.top), reason: slot.name);
-      expect(flare.center.dx, _near(expected.center.dx), reason: slot.name);
+      final Rect toast = _rect(tester, 'toast');
+      final Rect expected = slot.alignment.inscribe(toast.size, room);
+      expect(toast.top, _near(expected.top), reason: slot.name);
+      expect(toast.center.dx, _near(expected.center.dx), reason: slot.name);
       expect(find.text('${slot.name} · topmost'), findsOneWidget);
-      expect(_code(tester), contains('slot: HarborFlareSlot.${slot.name},'));
-      expect(_code(tester), contains('target: HarborFlareTarget.topmost,'));
+      expect(_code(tester), contains('slot: HarborToastSlot.${slot.name},'));
+      expect(_code(tester), contains('target: HarborToastTarget.topmost,'));
       await tester.pump(const Duration(seconds: 4));
       await tester.pump(_step);
     }
   });
 
-  testWidgets('HarborFlares.raise: a flare is lowered after four seconds', (final WidgetTester tester) async {
+  testWidgets('HarborToasts.show: a toast hides after four seconds', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('signals'));
-    await _tapStage(tester, 'raise middle');
+    await _tapStage(tester, 'show middle');
     await tester.pump(const Duration(seconds: 3));
-    expect(_key('flare'), findsOneWidget);
+    expect(_key('toast'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(_step);
-    expect(_key('flare'), findsNothing);
+    expect(_key('toast'), findsNothing);
   });
 
-  testWidgets('HarborFlares.raise: sent to the sea, it clears only the coast, over the header and tab bar', (
+  testWidgets('HarborToasts.show: sent to the root, it clears only the system edges, over the header and tab bar', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
-    await _tap(tester, 'target: sea');
-    expect(_code(tester), contains('target: HarborFlareTarget.sea,'));
+    await _tap(tester, 'target: root');
+    expect(_code(tester), contains('target: HarborToastTarget.root,'));
 
-    await _tapStage(tester, 'raise top');
-    expect(_rect(tester, 'flare').top, _near(_frameTop(tester) + (62 + 16) * s));
-    expect(_rect(tester, 'flare').top, lessThan(_headerBottom(tester)));
-    expect(find.text('top · sea'), findsOneWidget);
+    await _tapStage(tester, 'show top');
+    expect(_rect(tester, 'toast').top, _near(_frameTop(tester) + (62 + 16) * s));
+    expect(_rect(tester, 'toast').top, lessThan(_headerBottom(tester)));
+    expect(find.text('top · root'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
 
-    await _tapStage(tester, 'raise low');
-    expect(_rect(tester, 'flare').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
-    expect(_rect(tester, 'flare').bottom, greaterThan(_rect(tester, 'flares tab bar').top));
+    await _tapStage(tester, 'show low');
+    expect(_rect(tester, 'toast').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
+    expect(_rect(tester, 'toast').bottom, greaterThan(_rect(tester, 'toasts tab bar').top));
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
   });
 
-  testWidgets('HarborFlares.raise: raised from a sheet, topmost lands in the sheet’s clear water', (
+  testWidgets('HarborToasts.show: shown from a sheet, topmost lands in the sheet’s room', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
-    await _tapStage(tester, 'open flares sheet');
+    await _tapStage(tester, 'open toasts sheet');
     await tester.pump(_step);
 
-    // Below the sheet's header and its 12-point wake.
-    await _tapStage(tester, 'sheet raise top');
-    expect(_rect(tester, 'flare').top, _near(_rect(tester, 'flares sheet header').bottom + (12 + 16) * s));
+    // Below the sheet's header and its 12-point fade.
+    await _tapStage(tester, 'sheet show top');
+    expect(_rect(tester, 'toast').top, _near(_rect(tester, 'toasts sheet header').bottom + (12 + 16) * s));
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
 
-    // Above the footer's dock, which starts 10 above its marker.
-    await _tapStage(tester, 'sheet raise low');
-    expect(_rect(tester, 'flare').bottom, _near(_rect(tester, 'flares sheet footer').top - (10 + 16) * s));
+    // Above the footer's bar, which starts 10 above its marker.
+    await _tapStage(tester, 'sheet show low');
+    expect(_rect(tester, 'toast').bottom, _near(_rect(tester, 'toasts sheet footer').top - (10 + 16) * s));
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
-    await _popStage(tester, 'flares sheet header');
+    await _popStage(tester, 'toasts sheet header');
   });
 
-  testWidgets('HarborFlares.raise: raised from a sheet to the sea, it lands over the sheet’s footer', (
+  testWidgets('HarborToasts.show: shown from a sheet to the root, it lands over the sheet’s footer', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('signals'));
     final double s = _scale(tester);
-    await _tap(tester, 'target: sea');
-    await _tapStage(tester, 'open flares sheet');
+    await _tap(tester, 'target: root');
+    await _tapStage(tester, 'open toasts sheet');
     await tester.pump(_step);
-    await _tapStage(tester, 'sheet raise low');
-    expect(_rect(tester, 'flare').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
-    expect(_rect(tester, 'flare').bottom, greaterThan(_rect(tester, 'flares sheet footer').top));
-    expect(find.text('low · sea'), findsOneWidget);
+    await _tapStage(tester, 'sheet show low');
+    expect(_rect(tester, 'toast').bottom, _near(_frameBottom(tester) - (34 + 16) * s));
+    expect(_rect(tester, 'toast').bottom, greaterThan(_rect(tester, 'toasts sheet footer').top));
+    expect(find.text('low · root'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(_step);
-    await _popStage(tester, 'flares sheet header');
+    await _popStage(tester, 'toasts sheet header');
   });
 
   // -------------------------------------------------------------------------
@@ -792,7 +793,7 @@ void main() {
     final double s = _scale(tester);
     await _tapStage(tester, 'open sheet');
     await tester.pump(_step);
-    // The footer's dock starts 12 above its button.
+    // The footer's bar starts 12 above its button.
     expect(_rect(tester, 'sheet body').bottom, _near(_rect(tester, 'sheet footer').top - 12 * s));
     await _popStage(tester, 'sheet footer');
   });
@@ -817,7 +818,7 @@ void main() {
     await _tap(tester, 'toggle header');
     expect(_key('sheet header'), findsNothing);
     // The body now starts at the sheet's top, and the sheet is shorter by
-    // just the header and its wake: the rows stay where they were.
+    // just the header and its fade: the rows stay where they were.
     expect(tester.getRect(find.byType(HarborSheet)).top, _near(_rect(tester, 'sheet body').top));
     expect(tester.getRect(find.byType(HarborSheet)).top, greaterThan(header.top));
     expect(_rect(tester, 'sheet body').top, _near(bodyTop));
@@ -846,83 +847,86 @@ void main() {
     await _popStage(tester, 'sheet footer');
   });
 
-  testWidgets('HarborSheet: footerTide float rides the keyboard, footerMinimum above it', (
+  testWidgets('HarborSheet: footerKeyboard: rides follows the keyboard, footerMinimum above it', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet'));
     final double s = _scale(tester);
     await _tapStage(tester, 'open sheet');
     await tester.pump(_step);
-    expect(_selected(tester, 'footerTide: float'), isTrue);
-    await _setTide(tester, high: true);
+    expect(_selected(tester, 'footerKeyboard: rides'), isTrue);
+    await _setKeyboard(tester, shown: true);
     await tester.pump(_step);
     expect(_rect(tester, 'sheet footer').bottom, _near(_keyboardTop(tester) - 16 * s));
     expect(_rect(tester, 'sheet header').top, _atLeast(_frameTop(tester) + 62 * s));
-    await _setTide(tester, high: false);
+    await _setKeyboard(tester, shown: false);
     expect(_rect(tester, 'sheet footer').bottom, _near(_frameBottom(tester) - 34 * s));
     await _popStage(tester, 'sheet footer');
   });
 
-  testWidgets('HarborSheet: footerTide pilings stays put and the keyboard covers it; the body stays above', (
+  testWidgets('HarborSheet: footerKeyboard: stays holds still and the keyboard covers it; the body stays above', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet'));
     await _tapStage(tester, 'open sheet');
     await tester.pump(_step);
-    await _tap(tester, 'footerTide: pilings');
-    expect(_code(tester), contains('footerTide: HarborTideStance.pilings,'));
-    final Rect low = _rect(tester, 'sheet footer');
-    await _setTide(tester, high: true);
+    await _tap(tester, 'footerKeyboard: stays');
+    expect(_code(tester), contains('footerKeyboard: HarborKeyboardStance.stays,'));
+    final Rect hidden = _rect(tester, 'sheet footer');
+    await _setKeyboard(tester, shown: true);
     await tester.pump(_step);
-    expect(_rect(tester, 'sheet footer').top, _near(low.top));
+    expect(_rect(tester, 'sheet footer').top, _near(hidden.top));
     expect(_rect(tester, 'sheet footer').top, greaterThan(_keyboardTop(tester)));
     expect(_rect(tester, 'sheet body').bottom, _atMost(_keyboardTop(tester)));
-    await _setTide(tester, high: false);
-    expect(_rect(tester, 'sheet footer').top, _near(low.top));
+    await _setKeyboard(tester, shown: false);
+    expect(_rect(tester, 'sheet footer').top, _near(hidden.top));
     await _popStage(tester, 'sheet footer');
   });
 
-  testWidgets('HarborSheet: footerTide dryDock holds the keyboard\'s ground with a tray the keyboard takes over', (
+  testWidgets(
+    'HarborSheet: footerKeyboard: reserves holds the keyboard\'s ground with a tray the keyboard takes over',
+    (final WidgetTester tester) async {
+      await _pumpEntry(tester, _page('sheet'));
+      await _tapStage(tester, 'open sheet');
+      await tester.pump(_step);
+      await _tap(tester, 'footerKeyboard: reserves');
+      expect(_code(tester), contains('footerKeyboard: HarborKeyboardStance.reserves,'));
+      expect(_code(tester), contains('HarborKeyboardSpace(child: FlagTray())'));
+      expect(tester.widget<Text>(_key('hint')).data!, startsWith('reserves:'));
+      // The tray runs to the screen's edge: no system edge and no minimum under it.
+      expect(_rect(tester, 'flag tray').bottom, _near(_frameBottom(tester)));
+      // Once the keyboard has been up, the tray is exactly its height.
+      await _setKeyboard(tester, shown: true);
+      await tester.pump(_step);
+      await _setKeyboard(tester, shown: false);
+      await tester.pump(_step);
+      final Rect tray = _rect(tester, 'flag tray');
+      final Rect button = _rect(tester, 'sheet footer');
+      expect(button.bottom, _atMost(tray.top));
+
+      await _setKeyboard(tester, shown: true);
+      await tester.pump(_step);
+      expect(tray.top, _near(_keyboardTop(tester)), reason: 'the keyboard covers the tray exactly');
+      expect(_rect(tester, 'sheet footer').top, _near(button.top), reason: 'the button above it holds still');
+      expect(_rect(tester, 'sheet body').bottom, _atMost(button.top));
+      await _setKeyboard(tester, shown: false);
+      await tester.pump(_step);
+      expect(_rect(tester, 'sheet footer').top, _near(button.top));
+      expect(_rect(tester, 'flag tray').top, _near(tray.top));
+      await _popStage(tester, 'sheet footer');
+    },
+  );
+
+  testWidgets('HarborSheet: the hint says what to look for at each footerKeyboard stance', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet'));
-    await _tapStage(tester, 'open sheet');
-    await tester.pump(_step);
-    await _tap(tester, 'footerTide: dryDock');
-    expect(_code(tester), contains('footerTide: HarborTideStance.dryDock,'));
-    expect(_code(tester), contains('HarborDryDock(child: FlagTray())'));
-    expect(tester.widget<Text>(_key('hint')).data!, startsWith('dryDock:'));
-    // The tray runs to the screen's edge: no coast and no minimum under it.
-    expect(_rect(tester, 'flag tray').bottom, _near(_frameBottom(tester)));
-    // Once the keyboard has been up, the tray is exactly its height.
-    await _setTide(tester, high: true);
-    await tester.pump(_step);
-    await _setTide(tester, high: false);
-    await tester.pump(_step);
-    final Rect tray = _rect(tester, 'flag tray');
-    final Rect button = _rect(tester, 'sheet footer');
-    expect(button.bottom, _atMost(tray.top));
-
-    await _setTide(tester, high: true);
-    await tester.pump(_step);
-    expect(tray.top, _near(_keyboardTop(tester)), reason: 'the keyboard covers the tray exactly');
-    expect(_rect(tester, 'sheet footer').top, _near(button.top), reason: 'the button above it holds still');
-    expect(_rect(tester, 'sheet body').bottom, _atMost(button.top));
-    await _setTide(tester, high: false);
-    await tester.pump(_step);
-    expect(_rect(tester, 'sheet footer').top, _near(button.top));
-    expect(_rect(tester, 'flag tray').top, _near(tray.top));
-    await _popStage(tester, 'sheet footer');
-  });
-
-  testWidgets('HarborSheet: the hint says what to look for at each footerTide', (final WidgetTester tester) async {
-    await _pumpEntry(tester, _page('sheet'));
-    expect(tester.widget<Text>(_key('hint')).data!, startsWith('float:'));
-    await _tap(tester, 'footerTide: pilings');
-    expect(tester.widget<Text>(_key('hint')).data!, startsWith('pilings:'));
+    expect(tester.widget<Text>(_key('hint')).data!, startsWith('rides:'));
+    await _tap(tester, 'footerKeyboard: stays');
+    expect(tester.widget<Text>(_key('hint')).data!, startsWith('stays:'));
     expect(_key('flag tray'), findsNothing);
-    await _tap(tester, 'footerTide: dryDock');
-    expect(tester.widget<Text>(_key('hint')).data!, startsWith('dryDock:'));
+    await _tap(tester, 'footerKeyboard: reserves');
+    expect(tester.widget<Text>(_key('hint')).data!, startsWith('reserves:'));
   });
 
   testWidgets('HarborSheet: rows sets how tall the body is, and the sheet grows with it', (
@@ -964,10 +968,10 @@ void main() {
     expect(_code(tester), contains('maxExtentFraction: 0.50,'));
 
     // With the keyboard up, it is half of what is left above the keyboard.
-    await _setTide(tester, high: true);
+    await _setKeyboard(tester, shown: true);
     await tester.pump(_step);
     expect(_keyboardTop(tester) - tester.getRect(find.byType(HarborSheet)).top, _near(0.5 * (_sheetSpace - 336) * s));
-    await _setTide(tester, high: false);
+    await _setKeyboard(tester, shown: false);
     await _popStage(tester, 'sheet footer');
   });
 
@@ -1093,34 +1097,34 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // showHarborSheet(breakwater: true)
+  // showHarborSheet(coversPage: true)
 
-  testWidgets('showHarborSheet(breakwater: true): the list’s last row comes to rest above the sheet', (
+  testWidgets('showHarborSheet(coversPage: true): the list’s last row comes to rest above the sheet', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet-breakwater'));
-    expect(_code(tester), contains('breakwater: true,'));
-    await _openBreakwater(tester);
-    expect(find.textContaining('breakwater: true. Scroll the list'), findsOneWidget);
-    await _scrollStage(tester, 'breakwater list', double.infinity);
-    expect(_rect(tester, 'stage row 13').bottom, _near(_rect(tester, 'breakwater sheet header').top));
-    await _popStage(tester, 'breakwater sheet header');
+    expect(_code(tester), contains('coversPage: true,'));
+    await _openCoversPage(tester);
+    expect(find.textContaining('coversPage: true. Scroll the list'), findsOneWidget);
+    await _scrollStage(tester, 'coversPage list', double.infinity);
+    expect(_rect(tester, 'stage row 13').bottom, _near(_rect(tester, 'coversPage sheet header').top));
+    await _popStage(tester, 'coversPage sheet header');
   });
 
-  testWidgets('showHarborSheet(breakwater: false): the list’s last row stays under the sheet', (
+  testWidgets('showHarborSheet(coversPage: false): the list’s last row stays under the sheet', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet-breakwater'));
     final double s = _scale(tester);
-    await _tap(tester, 'toggle breakwater');
-    expect(_code(tester), contains('breakwater: false,'));
-    await _openBreakwater(tester);
-    expect(find.textContaining('breakwater: false. Scroll the list'), findsOneWidget);
-    await _scrollStage(tester, 'breakwater list', double.infinity);
+    await _tap(tester, 'toggle coversPage');
+    expect(_code(tester), contains('coversPage: false,'));
+    await _openCoversPage(tester);
+    expect(find.textContaining('coversPage: false. Scroll the list'), findsOneWidget);
+    await _scrollStage(tester, 'coversPage list', double.infinity);
     // The list ends at the home indicator, as if the sheet weren't there.
     expect(_rect(tester, 'stage row 13').bottom, _near(_frameBottom(tester) - 34 * s));
-    expect(_rect(tester, 'stage row 13').bottom, greaterThan(_rect(tester, 'breakwater sheet header').top));
-    await _popStage(tester, 'breakwater sheet header');
+    expect(_rect(tester, 'stage row 13').bottom, greaterThan(_rect(tester, 'coversPage sheet header').top));
+    await _popStage(tester, 'coversPage sheet header');
   });
 
   testWidgets('showHarborSheet(barrier: none): the page stays live under the sheet, undimmed', (
@@ -1129,14 +1133,14 @@ void main() {
     await _pumpEntry(tester, _page('sheet-breakwater'));
     expect(_selected(tester, 'barrier: none'), isTrue);
     expect(_code(tester), contains('barrier: HarborSheetBarrier.none,'));
-    await _openBreakwater(tester);
+    await _openCoversPage(tester);
     expect(_dimmed(), findsNothing);
     await tester.drag(_key('stage row 1'), const Offset(0, -80));
     await tester.pump();
     await tester.pump(_step);
-    expect(_stageScroll(tester, 'breakwater list').pixels, greaterThan(0));
-    expect(_key('breakwater sheet header'), findsOneWidget);
-    await _popStage(tester, 'breakwater sheet header');
+    expect(_stageScroll(tester, 'coversPage list').pixels, greaterThan(0));
+    expect(_key('coversPage sheet header'), findsOneWidget);
+    await _popStage(tester, 'coversPage sheet header');
   });
 
   testWidgets('showHarborSheet(barrier: dismissible): dims the page, and a tap on it closes the sheet', (
@@ -1145,14 +1149,14 @@ void main() {
     await _pumpEntry(tester, _page('sheet-breakwater'));
     await _tap(tester, 'barrier: dismissible');
     expect(_code(tester), contains('barrier: HarborSheetBarrier.dismissible,'));
-    await _openBreakwater(tester);
+    await _openCoversPage(tester);
     expect(_dimmed(), findsOneWidget);
     // The barrier takes the tap, not the row under it.
     await tester.tapAt(tester.getCenter(_key('stage row 1')));
     await tester.pump();
     await tester.pump(_step);
     await tester.pump(_step);
-    expect(_key('breakwater sheet header'), findsNothing);
+    expect(_key('coversPage sheet header'), findsNothing);
     expect(_dimmed(), findsNothing);
   });
 
@@ -1162,25 +1166,25 @@ void main() {
     await _pumpEntry(tester, _page('sheet-breakwater'));
     await _tap(tester, 'barrier: clear');
     expect(_code(tester), contains('barrier: HarborSheetBarrier.clear,'));
-    await _openBreakwater(tester);
+    await _openCoversPage(tester);
     expect(_dimmed(), findsNothing);
     // The barrier takes the tap, not the row under it.
     await tester.tapAt(tester.getCenter(_key('stage row 1')));
     await tester.pump();
     await tester.pump(_step);
     await tester.pump(_step);
-    expect(_key('breakwater sheet header'), findsNothing);
+    expect(_key('coversPage sheet header'), findsNothing);
   });
 
   // -------------------------------------------------------------------------
-  // showHarborDialog(inheritClearWater:)
+  // showHarborDialog(inheritRoom:)
 
-  testWidgets('showHarborDialog(inheritClearWater: true): stays between the header and the composer', (
+  testWidgets('showHarborDialog(inheritRoom: true): stays between the header and the composer', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('dialog'));
     final double s = _scale(tester);
-    expect(_code(tester), contains('inheritClearWater: true,'));
+    expect(_code(tester), contains('inheritRoom: true,'));
     await _tapStage(tester, 'open dialog');
     expect(_rect(tester, 'call box').top, _near(_rect(tester, 'office header').bottom + 10 * s));
     expect(_rect(tester, 'call box').bottom, _near(_rect(tester, 'office footer').top - 10 * s));
@@ -1188,13 +1192,13 @@ void main() {
     expect(_key('call box'), findsNothing);
   });
 
-  testWidgets('showHarborDialog(inheritClearWater: false): sees only the coast, covering the header and composer', (
+  testWidgets('showHarborDialog(inheritRoom: false): sees only the system edges, covering the header and composer', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('dialog'));
     final double s = _scale(tester);
-    await _tap(tester, 'toggle inheritClearWater');
-    expect(_code(tester), contains('inheritClearWater: false,'));
+    await _tap(tester, 'toggle inheritRoom');
+    expect(_code(tester), contains('inheritRoom: false,'));
     await _tapStage(tester, 'open dialog');
     expect(_rect(tester, 'call box').top, _near(_frameTop(tester) + (62 + 10) * s));
     expect(_rect(tester, 'call box').bottom, _near(_frameBottom(tester) - (34 + 10) * s));
@@ -1203,89 +1207,89 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // HarborBeacon(keepInSight:)
+  // HarborKeepInSight(keepInSight:)
 
-  testWidgets('HarborBeacon(keepInSight:): tapping the field focuses it', (final WidgetTester tester) async {
+  testWidgets('HarborKeepInSight(keepInSight:): tapping the field focuses it', (final WidgetTester tester) async {
     await _pumpEntry(tester, _page('lighthouse-reveal'));
-    expect(find.text('Tap me, then raise the tide'), findsOneWidget);
-    await _tapStage(tester, 'beacon field');
-    expect(find.text('HarborBeacon field'), findsOneWidget);
+    expect(find.text('Tap me, then show the keyboard'), findsOneWidget);
+    await _tapStage(tester, 'kept field');
+    expect(find.text('HarborKeepInSight field'), findsOneWidget);
   });
 
-  testWidgets('HarborBeacon(keepInSight:): the focused field is kept clearance above the rising keyboard', (
+  testWidgets('HarborKeepInSight(keepInSight:): the focused field is kept clearance above the rising keyboard', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-reveal'));
     final double s = _scale(tester);
     expect(_code(tester), contains('keepInSight: true,'));
-    await _tapStage(tester, 'beacon field');
-    await _raiseTideForBeacon(tester);
-    expect(_stageScroll(tester, 'reveal fairway').pixels, greaterThan(0));
-    expect(_rect(tester, 'beacon field').bottom, _near(_keyboardTop(tester) - 16 * s));
-    await _setTide(tester, high: false);
+    await _tapStage(tester, 'kept field');
+    await _showKeyboardForKeepInSight(tester);
+    expect(_stageScroll(tester, 'reveal scroll view').pixels, greaterThan(0));
+    expect(_rect(tester, 'kept field').bottom, _near(_keyboardTop(tester) - 16 * s));
+    await _setKeyboard(tester, shown: false);
   });
 
-  testWidgets('HarborBeacon(keepInSight:): clearance sets how far above the keyboard the field is kept', (
+  testWidgets('HarborKeepInSight(keepInSight:): clearance sets how far above the keyboard the field is kept', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-reveal'));
     final double s = _scale(tester);
     await _slide(tester, 'clearance', 40);
     expect(_code(tester), contains('clearance: 40,'));
-    expect(_code(tester), contains('HarborLighthouse.reveal(fieldContext, clearance: 40);'));
-    await _tapStage(tester, 'beacon field');
-    await _raiseTideForBeacon(tester);
-    expect(_rect(tester, 'beacon field').bottom, _near(_keyboardTop(tester) - 40 * s));
-    await _setTide(tester, high: false);
+    expect(_code(tester), contains('HarborKeepInSight.reveal(fieldContext, clearance: 40);'));
+    await _tapStage(tester, 'kept field');
+    await _showKeyboardForKeepInSight(tester);
+    expect(_rect(tester, 'kept field').bottom, _near(_keyboardTop(tester) - 40 * s));
+    await _setKeyboard(tester, shown: false);
   });
 
-  testWidgets('HarborBeacon(keepInSight: false): the field is left under the keyboard until reveal', (
+  testWidgets('HarborKeepInSight(keepInSight: false): the field is left under the keyboard until reveal', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-reveal'));
     final double s = _scale(tester);
     await _tap(tester, 'toggle keepInSight');
     expect(_code(tester), contains('keepInSight: false,'));
-    await _tapStage(tester, 'beacon field');
-    await _raiseTideForBeacon(tester);
-    expect(_stageScroll(tester, 'reveal fairway').pixels, 0);
-    expect(_offstageRect(tester, 'beacon field').top, greaterThan(_keyboardTop(tester)));
+    await _tapStage(tester, 'kept field');
+    await _showKeyboardForKeepInSight(tester);
+    expect(_stageScroll(tester, 'reveal scroll view').pixels, 0);
+    expect(_offstageRect(tester, 'kept field').top, greaterThan(_keyboardTop(tester)));
 
     // Revealed by hand, with the same clearance.
     await _tapStage(tester, 'reveal');
     await tester.pump(_step);
-    expect(_rect(tester, 'beacon field').bottom, _near(_keyboardTop(tester) - 16 * s));
-    await _setTide(tester, high: false);
+    expect(_rect(tester, 'kept field').bottom, _near(_keyboardTop(tester) - 16 * s));
+    await _setKeyboard(tester, shown: false);
   });
 
-  testWidgets('HarborBeacon(onlyWhileFocused: true): a field without focus is not brought into sight', (
+  testWidgets('HarborKeepInSight(onlyWhileFocused: true): a field without focus is not brought into sight', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-reveal'));
     expect(_code(tester), contains('onlyWhileFocused: true,'));
-    await _raiseTideForBeacon(tester);
-    expect(_stageScroll(tester, 'reveal fairway').pixels, 0);
-    expect(_offstageRect(tester, 'beacon field').top, greaterThan(_keyboardTop(tester)));
-    await _setTide(tester, high: false);
+    await _showKeyboardForKeepInSight(tester);
+    expect(_stageScroll(tester, 'reveal scroll view').pixels, 0);
+    expect(_offstageRect(tester, 'kept field').top, greaterThan(_keyboardTop(tester)));
+    await _setKeyboard(tester, shown: false);
   });
 
-  testWidgets('HarborBeacon(onlyWhileFocused: false): the field is brought into sight with or without focus', (
+  testWidgets('HarborKeepInSight(onlyWhileFocused: false): the field is brought into sight with or without focus', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-reveal'));
     final double s = _scale(tester);
     await _tap(tester, 'toggle onlyWhileFocused');
     expect(_code(tester), contains('onlyWhileFocused: false,'));
-    expect(find.text('Tap me, then raise the tide'), findsOneWidget);
-    await _raiseTideForBeacon(tester);
-    expect(_rect(tester, 'beacon field').bottom, _near(_keyboardTop(tester) - 16 * s));
-    await _setTide(tester, high: false);
+    expect(find.text('Tap me, then show the keyboard'), findsOneWidget);
+    await _showKeyboardForKeepInSight(tester);
+    expect(_rect(tester, 'kept field').bottom, _near(_keyboardTop(tester) - 16 * s));
+    await _setKeyboard(tester, shown: false);
   });
 
   // -------------------------------------------------------------------------
-  // HarborBeacon(onObscured:)
+  // HarborKeepInSight(onObscured:)
 
-  testWidgets('HarborBeacon(onObscured:): in clear water it reports 0 and the header title is hidden', (
+  testWidgets('HarborKeepInSight(onObscured:): in the room it reports 0 and the header title is hidden', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('beacon-obscured'));
@@ -1295,14 +1299,14 @@ void main() {
     expect(_headerTitleOpacity(tester), 0);
   });
 
-  testWidgets('HarborBeacon(onObscured:): half under the header, it reports how much is covered', (
+  testWidgets('HarborKeepInSight(onObscured:): half under the header, it reports how much is covered', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('beacon-obscured'));
     final double s = _scale(tester);
-    await _scrollStage(tester, 'hero fairway', 150);
+    await _scrollStage(tester, 'hero scroll view', 150);
     final Rect title = _rect(tester, 'hero title');
-    // The clear water starts below the header's 12-point wake.
+    // The room starts below the header's 12-point fade.
     final double covered = (_rect(tester, 'obscured header').bottom + 12 * s - title.top) / title.height;
     expect(covered, inExclusiveRange(0.1, 0.99));
     expect(_textOf(tester, 'covered readout'), 'covered ${(covered * 100).round()}%');
@@ -1310,39 +1314,39 @@ void main() {
     expect(_headerTitleOpacity(tester), moreOrLessEquals(covered, epsilon: 0.02));
   });
 
-  testWidgets('HarborBeacon(onObscured:): fully under the header, it reports 100% and hands off the title', (
+  testWidgets('HarborKeepInSight(onObscured:): fully under the header, it reports 100% and hands off the title', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('beacon-obscured'));
-    await _scrollStage(tester, 'hero fairway', 280);
+    await _scrollStage(tester, 'hero scroll view', 280);
     expect(_rect(tester, 'hero title').bottom, _atMost(_rect(tester, 'obscured header').bottom));
     expect(find.text('covered 100%'), findsNWidgets(2));
     expect(_headerTitleOpacity(tester), 1);
 
-    await _scrollStage(tester, 'hero fairway', 0);
+    await _scrollStage(tester, 'hero scroll view', 0);
     expect(find.text('covered 0%'), findsNWidgets(2));
     expect(_headerTitleOpacity(tester), 0);
   });
 
-  testWidgets('HarborBeacon(onObscured:): startsInOpenWater runs the hero under the header; off, it starts below', (
+  testWidgets('HarborKeepInSight(onObscured:): startsUnderBars runs the hero under the header; off, it starts below', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('beacon-obscured'));
     final double s = _scale(tester);
     // The title sits 16 above the bottom of the 300-point hero.
     expect(_rect(tester, 'hero title').bottom, _near(_frameTop(tester) + (300 - 16) * s));
-    expect(_code(tester), contains('startsInOpenWater: true,'));
+    expect(_code(tester), contains('startsUnderBars: true,'));
 
-    await _tap(tester, 'toggle startsInOpenWater');
-    expect(_code(tester), contains('startsInOpenWater: false,'));
+    await _tap(tester, 'toggle startsUnderBars');
+    expect(_code(tester), contains('startsUnderBars: false,'));
     expect(_rect(tester, 'hero title').bottom, _near(_rect(tester, 'obscured header').bottom + (12 + 300 - 16) * s));
     expect(find.text('covered 0%'), findsNWidgets(2));
   });
 
   // -------------------------------------------------------------------------
-  // HarborLighthouseRegion
+  // HarborKeepInSightRegion
 
-  testWidgets('HarborLighthouseRegion: at rest it already lifts the boat clearance clear of the home indicator', (
+  testWidgets('HarborKeepInSightRegion: at rest it already lifts the boat clearance clear of the home indicator', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-region'));
@@ -1352,7 +1356,7 @@ void main() {
     expect(_code(tester), contains('lift: true,'));
   });
 
-  testWidgets('HarborLighthouseRegion: lifts the boat clearance clear of a breakwater sheet, and back down', (
+  testWidgets('HarborKeepInSightRegion: lifts the boat clearance clear of a coversPage sheet, and back down', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-region'));
@@ -1367,7 +1371,7 @@ void main() {
     expect(_rect(tester, 'lift boat').bottom, _near(restingBottom));
   });
 
-  testWidgets('HarborLighthouseRegion: without lift, the boat sits where it is placed, under the sheet', (
+  testWidgets('HarborKeepInSightRegion: without lift, the boat sits where it is placed, under the sheet', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-region'));
@@ -1383,7 +1387,7 @@ void main() {
     await _popStage(tester, 'lift sheet header');
   });
 
-  testWidgets('HarborLighthouseRegion: clearance sets how far clear the boat is lifted', (
+  testWidgets('HarborKeepInSightRegion: clearance sets how far clear the boat is lifted', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-region'));
@@ -1402,7 +1406,7 @@ void main() {
     await _popStage(tester, 'lift sheet header');
   });
 
-  testWidgets('HarborLighthouseRegion: holdPosition keeps the boat where it is until it is let go', (
+  testWidgets('HarborKeepInSightRegion: holdPosition keeps the boat where it is until it is let go', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('lighthouse-region'));

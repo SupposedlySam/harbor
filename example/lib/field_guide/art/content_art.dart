@@ -42,11 +42,24 @@ void _rope(final Canvas canvas, final Offset a, final Offset b, {final double sa
   }
 }
 
-void _text(final Canvas canvas, final String text, final Offset center, {final double size = 9, final Color color = _chartInk, final FontWeight weight = FontWeight.w600, final bool italic = false}) {
+void _text(
+  final Canvas canvas,
+  final String text,
+  final Offset center, {
+  final double size = 9,
+  final Color color = _chartInk,
+  final FontWeight weight = FontWeight.w600,
+  final bool italic = false,
+}) {
   final TextPainter painter = TextPainter(
     text: TextSpan(
       text: text,
-      style: TextStyle(color: color, fontSize: size, fontWeight: weight, fontStyle: italic ? FontStyle.italic : FontStyle.normal),
+      style: TextStyle(
+        color: color,
+        fontSize: size,
+        fontWeight: weight,
+        fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+      ),
     ),
     textDirection: TextDirection.ltr,
   )..layout();
@@ -62,14 +75,25 @@ void _lateralMark(final Canvas canvas, final Offset waterlineAt, final double he
   final Rect float = Rect.fromCenter(center: waterlineAt, width: w * 1.5, height: height * 0.28);
   canvas.drawOval(float, Paint()..color = dark);
   // The body.
-  final Rect body = Rect.fromLTRB(waterlineAt.dx - w / 2, waterlineAt.dy - height * 0.7, waterlineAt.dx + w / 2, waterlineAt.dy - height * 0.06);
+  final Rect body = Rect.fromLTRB(
+    waterlineAt.dx - w / 2,
+    waterlineAt.dy - height * 0.7,
+    waterlineAt.dx + w / 2,
+    waterlineAt.dy - height * 0.06,
+  );
   canvas
     ..drawRect(body, Paint()..color = color)
-    ..drawRect(Rect.fromLTWH(body.left, body.top, body.width * 0.28, body.height), Paint()..color = Colors.white.withValues(alpha: 0.22));
+    ..drawRect(
+      Rect.fromLTWH(body.left, body.top, body.width * 0.28, body.height),
+      Paint()..color = Colors.white.withValues(alpha: 0.22),
+    );
   // The topmark: a can for red, a cone for green.
   final double top = body.top - height * 0.08;
   if (red) {
-    canvas.drawRect(Rect.fromLTRB(body.left + w * 0.1, top - height * 0.2, body.right - w * 0.1, top), Paint()..color = color);
+    canvas.drawRect(
+      Rect.fromLTRB(body.left + w * 0.1, top - height * 0.2, body.right - w * 0.1, top),
+      Paint()..color = color,
+    );
   } else {
     final Path cone = Path()
       ..moveTo(waterlineAt.dx, top - height * 0.24)
@@ -128,7 +152,10 @@ class _MooredPainter extends CustomPainter {
       ..drawRect(Rect.fromLTRB(0, deck, w, deck + h * 0.025), Paint()..color = const Color(0xFF1F4E79))
       ..restore();
     // Cabin, windows and mast.
-    final RRect cabin = RRect.fromRectAndRadius(Rect.fromLTRB(w * 0.36, deck - h * 0.09, w * 0.6, deck), const Radius.circular(4));
+    final RRect cabin = RRect.fromRectAndRadius(
+      Rect.fromLTRB(w * 0.36, deck - h * 0.09, w * 0.6, deck),
+      const Radius.circular(4),
+    );
     canvas.drawRRect(cabin, Paint()..color = const Color(0xFFE9E2D0));
     for (double x = w * 0.39; x < w * 0.57; x += w * 0.06) {
       canvas.drawRRect(
@@ -141,7 +168,10 @@ class _MooredPainter extends CustomPainter {
     for (final double x in <double>[0.3, 0.47, 0.64]) {
       final Offset hang = Offset(w * x, deck + 1);
       canvas.drawLine(hang, hang + Offset(0, h * 0.04), _stroke(Palette.rope, 1.2));
-      final RRect fender = RRect.fromRectAndRadius(Rect.fromCenter(center: hang + Offset(0, h * 0.09), width: w * 0.035, height: h * 0.1), Radius.circular(w * 0.02));
+      final RRect fender = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: hang + Offset(0, h * 0.09), width: w * 0.035, height: h * 0.1),
+        Radius.circular(w * 0.02),
+      );
       canvas
         ..drawRRect(fender, Paint()..color = const Color(0xFF1E5AA8))
         ..drawRRect(fender.deflate(1.5).shift(const Offset(-1, 0)), Paint()..color = const Color(0xFF3B7DD8));
@@ -162,7 +192,8 @@ class MooringLineArt extends StatelessWidget {
   const MooringLineArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const CustomPaint(painter: _MooringLinePainter(), child: SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      const CustomPaint(painter: _MooringLinePainter(), child: SizedBox.expand());
 }
 
 class _MooringLinePainter extends CustomPainter {
@@ -210,7 +241,10 @@ class _MooringLinePainter extends CustomPainter {
         ..drawPath(boat.shift(const Offset(2, 3)), Paint()..color = Colors.black.withValues(alpha: 0.2))
         ..drawPath(boat, Paint()..color = hull)
         ..drawRRect(
-          RRect.fromRectAndRadius(Rect.fromLTWH(cx - beam * 0.32, stern + len * 0.12, beam * 0.64, len * 0.32), const Radius.circular(3)),
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(cx - beam * 0.32, stern + len * 0.12, beam * 0.64, len * 0.32),
+            const Radius.circular(3),
+          ),
           Paint()..color = Palette.sail,
         );
       // Two short lines from the stern quarters to the mooring line.
@@ -253,8 +287,14 @@ class _FairwayPainter extends CustomPainter {
       ..drawRect(Rect.fromLTRB(w * 0.18, horizon - h * 0.03, w * 0.46, horizon + 2), stone)
       ..drawRect(Rect.fromLTRB(w * 0.54, horizon - h * 0.03, w * 0.82, horizon + 2), stone);
     canvas
-      ..drawRect(Rect.fromLTRB(w * 0.445, horizon - h * 0.12, w * 0.46, horizon - h * 0.03), Paint()..color = Palette.buoyRed)
-      ..drawRect(Rect.fromLTRB(w * 0.54, horizon - h * 0.12, w * 0.555, horizon - h * 0.03), Paint()..color = _channelGreen);
+      ..drawRect(
+        Rect.fromLTRB(w * 0.445, horizon - h * 0.12, w * 0.46, horizon - h * 0.03),
+        Paint()..color = Palette.buoyRed,
+      )
+      ..drawRect(
+        Rect.fromLTRB(w * 0.54, horizon - h * 0.12, w * 0.555, horizon - h * 0.03),
+        Paint()..color = _channelGreen,
+      );
     // Pairs of marks, nearer and larger toward the viewer.
     final Offset vanish = Offset(w * 0.5, horizon);
     for (int i = 0; i < 5; i++) {
@@ -280,7 +320,10 @@ class _FairwayPainter extends CustomPainter {
       ..close();
     canvas
       ..drawPath(boat, Paint()..color = Palette.sail)
-      ..drawRect(Rect.fromLTRB(w * 0.485, by - h * 0.04, w * 0.515, by + h * 0.02), Paint()..color = const Color(0xFF1F4E79));
+      ..drawRect(
+        Rect.fromLTRB(w * 0.485, by - h * 0.04, w * 0.515, by + h * 0.02),
+        Paint()..color = const Color(0xFF1F4E79),
+      );
     // Its wake, spreading behind.
     final Paint wake = _stroke(Palette.foam.withValues(alpha: 0.7), 1.4);
     canvas
@@ -298,7 +341,8 @@ class FairwaySliverArt extends StatelessWidget {
   const FairwaySliverArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const CustomPaint(painter: _FairwaySliverPainter(), child: SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      const CustomPaint(painter: _FairwaySliverPainter(), child: SizedBox.expand());
 }
 
 class _FairwaySliverPainter extends CustomPainter {
@@ -348,7 +392,8 @@ class SliverDockArt extends StatelessWidget {
   const SliverDockArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const CustomPaint(painter: _SliverDockPainter(), child: SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      const CustomPaint(painter: _SliverDockPainter(), child: SizedBox.expand());
 }
 
 class _SliverDockPainter extends CustomPainter {
@@ -366,9 +411,18 @@ class _SliverDockPainter extends CustomPainter {
     // The floating stage: a deck on a pontoon hull.
     final Rect stage = Rect.fromLTRB(w * 0.56, waterline - h * 0.07, w * 0.96, waterline + h * 0.05);
     canvas
-      ..drawRect(Rect.fromLTRB(stage.left, waterline - h * 0.02, stage.right, stage.bottom), Paint()..color = const Color(0xFF37474F))
-      ..drawRect(Rect.fromLTRB(stage.left, stage.top, stage.right, waterline - h * 0.02), Paint()..color = Palette.plank)
-      ..drawRect(Rect.fromLTRB(stage.left, stage.top, stage.right, stage.top + 2.5), Paint()..color = Palette.plankLight);
+      ..drawRect(
+        Rect.fromLTRB(stage.left, waterline - h * 0.02, stage.right, stage.bottom),
+        Paint()..color = const Color(0xFF37474F),
+      )
+      ..drawRect(
+        Rect.fromLTRB(stage.left, stage.top, stage.right, waterline - h * 0.02),
+        Paint()..color = Palette.plank,
+      )
+      ..drawRect(
+        Rect.fromLTRB(stage.left, stage.top, stage.right, stage.top + 2.5),
+        Paint()..color = Palette.plankLight,
+      );
     // Guide piles the stage slides up and down on.
     Scenery.pile(canvas, Offset(stage.left + w * 0.04, h * 0.3), h, width: w * 0.022);
     Scenery.pile(canvas, Offset(stage.right - w * 0.04, h * 0.3), h, width: w * 0.022);
@@ -433,7 +487,10 @@ class _StickyPainter extends CustomPainter {
       ..clipPath(hull)
       ..drawRect(Rect.fromLTRB(0, 0, w, waterline), Paint()..color = const Color(0xFF1F4E79))
       ..drawRect(Rect.fromLTRB(0, waterline, w, h), Paint()..color = _antifouling)
-      ..drawRect(Rect.fromLTRB(0, waterline - 3, w, waterline + 2), Paint()..color = Colors.white.withValues(alpha: 0.85));
+      ..drawRect(
+        Rect.fromLTRB(0, waterline - 3, w, waterline + 2),
+        Paint()..color = Colors.white.withValues(alpha: 0.85),
+      );
     // Hull plating seams.
     final Paint seam = _stroke(Colors.black.withValues(alpha: 0.18), 1);
     for (double y = waterline + h * 0.12; y < h; y += h * 0.12) {
@@ -454,11 +511,17 @@ class _StickyPainter extends CustomPainter {
       canvas
         ..drawOval(shell, Paint()..color = const Color(0xFFE6E0D2))
         ..drawOval(shell.deflate(r * 0.25), Paint()..color = const Color(0xFFBDB5A3))
-        ..drawOval(Rect.fromCenter(center: Offset(x, y), width: r * 0.7, height: r * 0.5), Paint()..color = const Color(0xFF5D5446));
+        ..drawOval(
+          Rect.fromCenter(center: Offset(x, y), width: r * 0.7, height: r * 0.5),
+          Paint()..color = const Color(0xFF5D5446),
+        );
       for (int p = 0; p < 6; p++) {
         final double a = p * math.pi / 3;
-        canvas.drawLine(Offset(x, y) + Offset(math.cos(a), math.sin(a) * 0.85) * r * 0.4,
-            Offset(x, y) + Offset(math.cos(a), math.sin(a) * 0.85) * r, _stroke(const Color(0xFF9E9583), 0.7));
+        canvas.drawLine(
+          Offset(x, y) + Offset(math.cos(a), math.sin(a) * 0.85) * r * 0.4,
+          Offset(x, y) + Offset(math.cos(a), math.sin(a) * 0.85) * r,
+          _stroke(const Color(0xFF9E9583), 0.7),
+        );
       }
     }
     // Bubbles drifting by.
@@ -504,7 +567,11 @@ class _CenterPainter extends CustomPainter {
     for (int d = 0; d < 360; d += 5) {
       final double a = d * math.pi / 180;
       final double inner = d % 30 == 0 ? r * 0.84 : r * 0.9;
-      canvas.drawLine(c + Offset(math.sin(a), -math.cos(a)) * inner, c + Offset(math.sin(a), -math.cos(a)) * r, _stroke(_chartInk, 0.7));
+      canvas.drawLine(
+        c + Offset(math.sin(a), -math.cos(a)) * inner,
+        c + Offset(math.sin(a), -math.cos(a)) * r,
+        _stroke(_chartInk, 0.7),
+      );
     }
     // The points: four long, four medium, eight short.
     void point(final double angle, final double length, final double width, final Color light, final Color dark) {
@@ -523,7 +590,13 @@ class _CenterPainter extends CustomPainter {
       }
     }
     for (int i = 0; i < 4; i++) {
-      point(i * math.pi / 2, r * 0.82, r * 0.1, i == 0 ? Palette.buoyRed : const Color(0xFFE8DDBE), i == 0 ? const Color(0xFF9C2B22) : _chartInk);
+      point(
+        i * math.pi / 2,
+        r * 0.82,
+        r * 0.1,
+        i == 0 ? Palette.buoyRed : const Color(0xFFE8DDBE),
+        i == 0 ? const Color(0xFF9C2B22) : _chartInk,
+      );
     }
     _text(canvas, 'N', c + Offset(0, -r * 1.12 + 2), size: 11, weight: FontWeight.w800);
     // The ship, held in the middle.
@@ -536,7 +609,10 @@ class _CenterPainter extends CustomPainter {
     canvas
       ..drawCircle(c, r * 0.24, Paint()..color = _chartPaper)
       ..drawPath(ship, Paint()..color = const Color(0xFF1F4E79))
-      ..drawRect(Rect.fromCenter(center: c + Offset(0, r * 0.06), width: r * 0.08, height: r * 0.08), Paint()..color = Palette.sail);
+      ..drawRect(
+        Rect.fromCenter(center: c + Offset(0, r * 0.06), width: r * 0.08, height: r * 0.08),
+        Paint()..color = Palette.sail,
+      );
   }
 
   @override
@@ -589,7 +665,14 @@ class _OpenWaterPainter extends CustomPainter {
     canvas
       ..drawPath(land, Paint()..color = const Color(0xFFF2D98D))
       ..drawPath(land, _stroke(const Color(0xFF8C6D2C), 1.2));
-    _text(canvas, 'HARBOR', Offset(w * 0.2, h * 0.07), size: 9, weight: FontWeight.w800, color: const Color(0xFF6B5320));
+    _text(
+      canvas,
+      'HARBOR',
+      Offset(w * 0.2, h * 0.07),
+      size: 9,
+      weight: FontWeight.w800,
+      color: const Color(0xFF6B5320),
+    );
     // Soundings: the deeper, the further out.
     final math.Random random = math.Random(4);
     for (int i = 0; i < 34; i++) {
@@ -639,9 +722,18 @@ class _CastOffPainter extends CustomPainter {
     final double bh = h * 0.22;
     final Paint iron = Paint()..color = const Color(0xFF263238);
     canvas
-      ..drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(base.dx - w * 0.04, base.dy - bh, base.dx + w * 0.04, base.dy), const Radius.circular(4)), iron)
+      ..drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(base.dx - w * 0.04, base.dy - bh, base.dx + w * 0.04, base.dy),
+          const Radius.circular(4),
+        ),
+        iron,
+      )
       ..drawOval(Rect.fromCenter(center: base - Offset(0, bh), width: w * 0.13, height: h * 0.07), iron)
-      ..drawOval(Rect.fromCenter(center: base - Offset(0, bh + 2), width: w * 0.1, height: h * 0.04), Paint()..color = const Color(0xFF455A64));
+      ..drawOval(
+        Rect.fromCenter(center: base - Offset(0, bh + 2), width: w * 0.1, height: h * 0.04),
+        Paint()..color = const Color(0xFF455A64),
+      );
     // The eye, lifted clear above the bollard's head.
     final Rect eye = Rect.fromCenter(center: base - Offset(0, bh + h * 0.2), width: w * 0.16, height: h * 0.09);
     canvas
@@ -674,7 +766,13 @@ class _CastOffPainter extends CustomPainter {
     final Paint gap = _stroke(Palette.foam.withValues(alpha: 0.7), 1.4);
     for (int i = 0; i < 3; i++) {
       final double x = w * (0.55 + i * 0.05);
-      canvas.drawArc(Rect.fromLTWH(x, y + h * 0.1 + i * 3, w * 0.08, h * 0.05), math.pi * 1.1, math.pi * 0.8, false, gap);
+      canvas.drawArc(
+        Rect.fromLTWH(x, y + h * 0.1 + i * 3, w * 0.08, h * 0.05),
+        math.pi * 1.1,
+        math.pi * 0.8,
+        false,
+        gap,
+      );
     }
   }
 
@@ -717,7 +815,13 @@ class _MakeWayPainter extends CustomPainter {
       ..drawRect(Rect.fromLTRB(0, wl - h * 0.01, w, h), Paint()..color = _antifouling)
       ..restore();
     // Containers, stacked in colored rows.
-    const List<Color> boxes = <Color>[Color(0xFFE2463A), Color(0xFF2F7CF6), Color(0xFFE9B949), Color(0xFF2E9E57), Color(0xFF8E24AA)];
+    const List<Color> boxes = <Color>[
+      Color(0xFFE2463A),
+      Color(0xFF2F7CF6),
+      Color(0xFFE9B949),
+      Color(0xFF2E9E57),
+      Color(0xFF8E24AA),
+    ];
     final math.Random random = math.Random(8);
     final double cw = w * 0.055;
     final double ch = h * 0.05;
@@ -731,10 +835,19 @@ class _MakeWayPainter extends CustomPainter {
     // The bridge aft.
     canvas
       ..drawRect(Rect.fromLTRB(w * 0.72, wl - h * 0.34, w * 0.82, wl - h * 0.12), Paint()..color = Palette.sail)
-      ..drawRect(Rect.fromLTRB(w * 0.72, wl - h * 0.32, w * 0.82, wl - h * 0.29), Paint()..color = const Color(0xFF2F4858))
+      ..drawRect(
+        Rect.fromLTRB(w * 0.72, wl - h * 0.32, w * 0.82, wl - h * 0.29),
+        Paint()..color = const Color(0xFF2F4858),
+      )
       ..drawRect(Rect.fromLTRB(w * 0.76, wl - h * 0.42, w * 0.79, wl - h * 0.34), Paint()..color = Palette.buoyRed);
     // The bow wave.
-    canvas.drawArc(Rect.fromLTWH(w * 0.02, wl - h * 0.02, w * 0.14, h * 0.08), math.pi * 0.5, math.pi * 0.9, false, _stroke(Colors.white, 2));
+    canvas.drawArc(
+      Rect.fromLTWH(w * 0.02, wl - h * 0.02, w * 0.14, h * 0.08),
+      math.pi * 0.5,
+      math.pi * 0.9,
+      false,
+      _stroke(Colors.white, 2),
+    );
     // The sailboat, small and heeling, in the foreground right, bearing off.
     final Offset s = Offset(w * 0.8, h * 0.88);
     final double sl = w * 0.12;
@@ -824,18 +937,28 @@ class _PontoonPainter extends CustomPainter {
       ..drawRect(Rect.fromLTRB(left, deckBottom, right, waterline - r * 0.6), Paint()..color = const Color(0xFF546E7A))
       ..drawRect(Rect.fromLTRB(left, deckTop, right, deckBottom), Paint()..color = Palette.plank);
     for (double x = left; x < right; x += 8) {
-      canvas.drawLine(Offset(x, deckTop), Offset(x, deckBottom), _stroke(Palette.plankDark.withValues(alpha: 0.5), 0.8));
+      canvas.drawLine(
+        Offset(x, deckTop),
+        Offset(x, deckBottom),
+        _stroke(Palette.plankDark.withValues(alpha: 0.5), 0.8),
+      );
     }
     canvas.drawRect(Rect.fromLTRB(left, deckTop, right, deckTop + 2), Paint()..color = Palette.plankLight);
     // Guide piles through hoops, so it rises and falls in place.
     for (final double x in <double>[left + w * 0.05, right - w * 0.05]) {
       Scenery.pile(canvas, Offset(x, h * 0.2), h, width: w * 0.024);
-      canvas.drawRect(Rect.fromCenter(center: Offset(x, deckTop + 2), width: w * 0.045, height: h * 0.035), _stroke(const Color(0xFF263238), 1.6));
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset(x, deckTop + 2), width: w * 0.045, height: h * 0.035),
+        _stroke(const Color(0xFF263238), 1.6),
+      );
     }
     // A cleat on the deck, tied to a bollard on the quay.
     final Offset cleat = Offset(left + w * 0.12, deckTop);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromCenter(center: cleat - const Offset(0, 2), width: w * 0.05, height: 4), const Radius.circular(2)),
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: cleat - const Offset(0, 2), width: w * 0.05, height: 4),
+        const Radius.circular(2),
+      ),
       Paint()..color = const Color(0xFF263238),
     );
     final Offset bollard = Offset(w * 0.14, quayTop);

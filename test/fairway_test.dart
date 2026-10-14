@@ -14,7 +14,7 @@ Widget _bar(final String label, final double height) =>
 
 Widget _app(final Widget home, {final String? restorationScopeId}) => MaterialApp(
   restorationScopeId: restorationScopeId,
-  builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
   home: Material(child: home),
 );
 
@@ -59,15 +59,15 @@ void main() {
   group('keyboardDismissBehavior', () {
     Future<FocusNode> pumpFocusedField(
       final WidgetTester tester,
-      final HarborFairway Function(Widget field) fairway,
+      final HarborScrollView Function(Widget field) fairway,
     ) async {
       final FocusNode focus = FocusNode();
       addTearDown(focus.dispose);
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
           ScrollConfiguration(
             behavior: const _DismissOnDrag(),
-            child: Harbor(body: fairway(TextField(focusNode: focus))),
+            child: HarborFrame(body: fairway(TextField(focusNode: focus))),
           ),
         ),
       );
@@ -82,7 +82,7 @@ void main() {
     testWidgets('left unset, follows the scroll behavior above the fairway', (final tester) async {
       final FocusNode focus = await pumpFocusedField(
         tester,
-        (final Widget field) => HarborFairway(
+        (final Widget field) => HarborScrollView(
           slivers: <Widget>[
             SliverToBoxAdapter(child: field),
             const SliverToBoxAdapter(child: SizedBox(height: 2000)),
@@ -95,7 +95,7 @@ void main() {
     testWidgets('given, overrides the scroll behavior above the fairway', (final tester) async {
       final FocusNode focus = await pumpFocusedField(
         tester,
-        (final Widget field) => HarborFairway(
+        (final Widget field) => HarborScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
           slivers: <Widget>[
             SliverToBoxAdapter(child: field),
@@ -110,7 +110,7 @@ void main() {
       final FocusNode focus = await pumpFocusedField(
         tester,
         (final Widget field) =>
-            HarborFairway.box(child: Column(children: <Widget>[field, const SizedBox(height: 2000)])),
+            HarborScrollView.box(child: Column(children: <Widget>[field, const SizedBox(height: 2000)])),
       );
       expect(focus.hasFocus, isFalse);
     });
@@ -119,29 +119,29 @@ void main() {
   group('reverse', () {
     // A chat: a header pier on top, a composer pier that floats on the
     // keyboard, and the newest message at the bottom.
-    Widget chat({final List<Widget> before = const <Widget>[]}) => Harbor(
-      bodyClearsTide: false,
-      top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-      bottom: <HarborDock>[HarborDock.pier(tide: HarborTideStance.float, child: _bar('composer', 60))],
-      body: HarborFairway(reverse: true, slivers: <Widget>[...before, _rows('message', count: 40)]),
+    Widget chat({final List<Widget> before = const <Widget>[]}) => HarborFrame(
+      bodyClearsKeyboard: false,
+      top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+      bottom: <HarborBar>[HarborBar.overlay(keyboard: HarborKeyboardStance.rides, child: _bar('composer', 60))],
+      body: HarborScrollView(reverse: true, slivers: <Widget>[...before, _rows('message', count: 40)]),
     );
 
     testWidgets('rests the newest message on the composer and the oldest below the header', (final tester) async {
-      await tester.pumpSeaTrial(_app(chat()));
+      await tester.pumpHarborTrial(_app(chat()));
       expect(_rect(tester, 'message0').bottom, _rect(tester, 'composer').top);
       await _scrollBy(tester, 5000);
       expect(_rect(tester, 'message39').top, _headerBottom);
     });
 
     testWidgets('keeps the newest message on the composer as it rides the keyboard', (final tester) async {
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(chat()));
-      await trial.raiseTide(settle: true);
-      expect(_rect(tester, 'composer').bottom, trial.waterline);
+      final HarborTrial trial = await tester.pumpHarborTrial(_app(chat()));
+      await trial.showKeyboard(settle: true);
+      expect(_rect(tester, 'composer').bottom, trial.keyboardTop);
       expect(_rect(tester, 'message0').bottom, _rect(tester, 'composer').top);
     });
 
     testWidgets('pins a sliver dock at the composer, the leading end', (final tester) async {
-      await tester.pumpSeaTrial(_app(chat(before: <Widget>[HarborSliverDock(child: _bar('day', 30))])));
+      await tester.pumpHarborTrial(_app(chat(before: <Widget>[HarborSliverBar(child: _bar('day', 30))])));
       expect(_rect(tester, 'day').bottom, _rect(tester, 'composer').top);
       await _scrollBy(tester, 600);
       expect(_rect(tester, 'day').bottom, _rect(tester, 'composer').top);
@@ -155,9 +155,9 @@ void main() {
     );
     int idOf(final String name) => tester.state<_RemembersState>(find.byKey(ValueKey<String>('$name state'))).id;
     Widget page(final List<String> order) =>
-        _app(Harbor(body: HarborFairway(slivers: <Widget>[for (final String name in order) sliver(name)])));
+        _app(HarborFrame(body: HarborScrollView(slivers: <Widget>[for (final String name in order) sliver(name)])));
 
-    await tester.pumpSeaTrial(page(<String>['first', 'second']));
+    await tester.pumpHarborTrial(page(<String>['first', 'second']));
     final (int first, int second) = (idOf('first'), idOf('second'));
     await tester.pumpWidget(
       Directionality(
@@ -170,10 +170,10 @@ void main() {
 
   group("the rest of CustomScrollView's parameters", () {
     testWidgets('reach the scroll view and its viewport', (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            body: HarborFairway(
+          HarborFrame(
+            body: HarborScrollView(
               scrollBehavior: const _DismissOnDrag(),
               paintOrder: SliverPaintOrder.lastIsTop,
               dragStartBehavior: DragStartBehavior.down,
@@ -196,10 +196,10 @@ void main() {
     });
 
     testWidgets('reach the scroll view of a box fairway', (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            body: HarborFairway.box(
+          HarborFrame(
+            body: HarborScrollView.box(
               scrollBehavior: const _DismissOnDrag(),
               dragStartBehavior: DragStartBehavior.down,
               restorationId: 'form',
@@ -217,10 +217,10 @@ void main() {
     });
 
     testWidgets('restorationId brings the scroll position back after a restart', (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            body: HarborFairway(restorationId: 'list', slivers: <Widget>[_rows('row', count: 60)]),
+          HarborFrame(
+            body: HarborScrollView(restorationId: 'list', slivers: <Widget>[_rows('row', count: 60)]),
           ),
           restorationScopeId: 'app',
         ),
@@ -236,14 +236,14 @@ void main() {
   group('center and anchor', () {
     const Key newer = ValueKey<String>('newer');
 
-    Widget page(final List<Widget> slivers, {final Key? center = newer, final double anchor = 0.0}) => Harbor(
-      top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-      bottom: <HarborDock>[HarborDock.quay(child: _bar('tabs', 60))],
-      body: HarborFairway(center: center, anchor: anchor, slivers: slivers),
+    Widget page(final List<Widget> slivers, {final Key? center = newer, final double anchor = 0.0}) => HarborFrame(
+      top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+      bottom: <HarborBar>[HarborBar.solid(child: _bar('tabs', 60))],
+      body: HarborScrollView(center: center, anchor: anchor, slivers: slivers),
     );
 
     testWidgets('rest the center sliver clear of the header, and both ends clear of the docks', (final tester) async {
-      await tester.pumpSeaTrial(_app(page(<Widget>[_rows('older'), _rows('newer', key: newer)])));
+      await tester.pumpHarborTrial(_app(page(<Widget>[_rows('older'), _rows('newer', key: newer)])));
       expect(_rect(tester, 'newer0').top, moreOrLessEquals(_headerBottom));
       expect(_rect(tester, 'older0').bottom, moreOrLessEquals(_headerBottom));
       await _scrollBy(tester, 5000);
@@ -253,11 +253,11 @@ void main() {
     });
 
     testWidgets("pin a sliver dock after the center at the header's face", (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
           page(<Widget>[
             _rows('older'),
-            HarborSliverDock(key: newer, child: _bar('day', 30)),
+            HarborSliverBar(key: newer, child: _bar('day', 30)),
             _rows('later', count: 40),
           ]),
         ),
@@ -269,7 +269,7 @@ void main() {
     });
 
     testWidgets('reveal rows on either side of the center clear of the header', (final tester) async {
-      await tester.pumpSeaTrial(_app(page(<Widget>[_rows('older'), _rows('newer', key: newer)])));
+      await tester.pumpHarborTrial(_app(page(<Widget>[_rows('older'), _rows('newer', key: newer)])));
       // Grows away from the center, toward the header.
       expect(_rect(tester, 'older2').top, lessThan(0));
       await Scrollable.ensureVisible(tester.element(find.byKey(const ValueKey<String>('older2'))));
@@ -284,18 +284,18 @@ void main() {
     });
 
     testWidgets('anchor is a fraction of the water between the docks', (final tester) async {
-      await tester.pumpSeaTrial(_app(page(<Widget>[_rows('row')], center: null, anchor: 0.5)));
+      await tester.pumpHarborTrial(_app(page(<Widget>[_rows('row')], center: null, anchor: 0.5)));
       expect(_rect(tester, 'row0').top, moreOrLessEquals(_headerBottom + (_quayTop - _headerBottom) / 2));
     });
 
     testWidgets('anchored at the end, keep the center on the composer as it rides the keyboard', (final tester) async {
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
-            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-            bottom: <HarborDock>[HarborDock.pier(tide: HarborTideStance.float, child: _bar('composer', 60))],
-            body: HarborFairway(
+          HarborFrame(
+            bodyClearsKeyboard: false,
+            top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+            bottom: <HarborBar>[HarborBar.overlay(keyboard: HarborKeyboardStance.rides, child: _bar('composer', 60))],
+            body: HarborScrollView(
               center: newer,
               anchor: 1.0,
               slivers: <Widget>[
@@ -308,19 +308,19 @@ void main() {
       );
       expect(_rect(tester, 'older0').bottom, moreOrLessEquals(_rect(tester, 'composer').top));
       expect(_rect(tester, 'newer0').top, moreOrLessEquals(_rect(tester, 'composer').top));
-      await trial.raiseTide(settle: true);
-      expect(_rect(tester, 'composer').bottom, trial.waterline);
+      await trial.showKeyboard(settle: true);
+      expect(_rect(tester, 'composer').bottom, trial.keyboardTop);
       expect(_rect(tester, 'older0').bottom, moreOrLessEquals(_rect(tester, 'composer').top));
     });
 
     testWidgets('reversed, rest the center on the composer and both ends clear of the docks', (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
-            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-            bottom: <HarborDock>[HarborDock.pier(tide: HarborTideStance.float, child: _bar('composer', 60))],
-            body: HarborFairway(
+          HarborFrame(
+            bodyClearsKeyboard: false,
+            top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+            bottom: <HarborBar>[HarborBar.overlay(keyboard: HarborKeyboardStance.rides, child: _bar('composer', 60))],
+            body: HarborScrollView(
               reverse: true,
               center: newer,
               slivers: <Widget>[
@@ -340,7 +340,7 @@ void main() {
     });
 
     testWidgets('a center that names none of the slivers asserts', (final tester) async {
-      await tester.pumpSeaTrial(_app(page(<Widget>[_rows('row')], center: const ValueKey<String>('missing'))));
+      await tester.pumpHarborTrial(_app(page(<Widget>[_rows('row')], center: const ValueKey<String>('missing'))));
       expect(tester.takeException(), isAssertionError);
     });
   });

@@ -94,6 +94,10 @@ void flares(BuildContext context, HarborAnchor anchor) {
   // An anchored flare: its old side was below, as a HarborAnchored's is.
   HarborFlares.raise(context, anchor: anchor, builder: (_) => const SizedBox());
   HarborFlares.raise(context, anchor: anchor, side: HarborBuoySide.above, builder: (_) => const SizedBox());
+  // reachesCoast did nothing by an anchor since 0.6.3, and asserts with a HarborAnchored placement, so
+  // it goes, whatever it was given.
+  HarborFlares.raise(context, anchor: anchor, reachesCoast: true, builder: (_) => const SizedBox());
+  HarborFlares.raise(context, anchor: anchor, gap: 4, reachesCoast: false, builder: (_) => const SizedBox());
   HarborFlares.raise(
     context,
     anchor: anchor,

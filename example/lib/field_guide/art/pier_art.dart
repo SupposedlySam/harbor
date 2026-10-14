@@ -45,7 +45,11 @@ class _PierPainter extends CustomPainter {
     final Rect deck = Rect.fromLTRB(w * 0.12, deckTop, deckEnd, deckBottom);
     canvas.drawRect(deck, Paint()..color = Palette.plank);
     for (double x = deck.left; x < deck.right; x += 7) {
-      canvas.drawLine(Offset(x, deckTop), Offset(x, deckBottom), Paint()..color = Palette.plankDark.withValues(alpha: 0.5));
+      canvas.drawLine(
+        Offset(x, deckTop),
+        Offset(x, deckBottom),
+        Paint()..color = Palette.plankDark.withValues(alpha: 0.5),
+      );
     }
     canvas.drawRect(Rect.fromLTRB(deck.left, deckTop, deck.right, deckTop + 2.5), Paint()..color = Palette.plankLight);
     // Rails and a lamp at the end.

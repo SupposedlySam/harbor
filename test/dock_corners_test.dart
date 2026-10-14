@@ -10,39 +10,46 @@ import 'package:harbor_test/harbor_test.dart';
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
-Widget _line(final String key) => HarborMooringLine(child: SizedBox(key: ValueKey<String>(key), height: 40, width: double.infinity));
+Widget _line(final String key) => HarborClear.rowInsets(
+  child: SizedBox(key: ValueKey<String>(key), height: 40, width: double.infinity),
+);
 
 Widget _page({
-  final List<HarborDock> start = const <HarborDock>[],
-  final List<HarborDock> end = const <HarborDock>[],
+  final List<HarborBar> start = const <HarborBar>[],
+  final List<HarborBar> end = const <HarborBar>[],
   final TextDirection direction = TextDirection.ltr,
   final Widget? header,
 }) => MaterialApp(
   builder: (final c, final child) => Directionality(
     textDirection: direction,
-    child: HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+    child: HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
   ),
-  home: Harbor(
-    top: <HarborDock>[HarborDock.pier(child: header ?? _line('title'))],
-    bottom: <HarborDock>[HarborDock.quay(child: _line('tabs'))],
+  home: HarborFrame(
+    top: <HarborBar>[HarborBar.overlay(child: header ?? _line('title'))],
+    bottom: <HarborBar>[HarborBar.solid(child: _line('tabs'))],
     start: start,
     end: end,
-    body: const HarborMooringLine(child: SizedBox(key: ValueKey<String>('row'), height: 40, width: double.infinity)),
+    body: const HarborClear.rowInsets(
+      child: SizedBox(key: ValueKey<String>('row'), height: 40, width: double.infinity),
+    ),
   ),
 );
 
-HarborDock _rail(final double width, {final HarborDockState state = HarborDockState.open}) =>
-    HarborDock.quay(state: state, duration: Duration.zero, child: SizedBox(key: const ValueKey<String>('rail'), width: width));
+HarborBar _rail(final double width, {final HarborBarState state = HarborBarState.open}) => HarborBar.solid(
+  state: state,
+  duration: Duration.zero,
+  child: SizedBox(key: const ValueKey<String>('rail'), width: width),
+);
 
 void main() {
   testWidgets('positive control: with no side docks, a header lines up with the margin', (final tester) async {
-    await tester.pumpSeaTrial(_page());
+    await tester.pumpHarborTrial(_page());
     expect(_rect(tester, 'title').left, 16);
     expect(_rect(tester, 'title').right, 402 - 16);
   });
 
   testWidgets('a header moored beside a rail lines up with the body, past the rail', (final tester) async {
-    await tester.pumpSeaTrial(_page(start: <HarborDock>[_rail(80)]));
+    await tester.pumpHarborTrial(_page(start: <HarborBar>[_rail(80)]));
     expect(_rect(tester, 'rail').left, 0);
     expect(_rect(tester, 'title').left, 80 + 16);
     expect(_rect(tester, 'title').left, _rect(tester, 'row').left, reason: 'lined up with the body');
@@ -51,17 +58,19 @@ void main() {
   });
 
   testWidgets('the header runs between the rails, not under them', (final tester) async {
-    await tester.pumpSeaTrial(_page(
-      start: <HarborDock>[_rail(80)],
-      end: <HarborDock>[_rail(40)],
-      header: const SizedBox(key: ValueKey<String>('band'), height: 40, width: double.infinity),
-    ));
+    await tester.pumpHarborTrial(
+      _page(
+        start: <HarborBar>[_rail(80)],
+        end: <HarborBar>[_rail(40)],
+        header: const SizedBox(key: ValueKey<String>('band'), height: 40, width: double.infinity),
+      ),
+    );
     expect(_rect(tester, 'band').left, 80);
     expect(_rect(tester, 'band').right, 402 - 40);
   });
 
   testWidgets('on a phone on its side the rail takes the coast, and the header clears both', (final tester) async {
-    await tester.pumpSeaTrial(_page(start: <HarborDock>[_rail(80)]), device: HarborTrialDevice.iPhone17Landscape);
+    await tester.pumpHarborTrial(_page(start: <HarborBar>[_rail(80)]), device: HarborTrialDevice.iPhone17Landscape);
     final double rail = _rect(tester, 'rail').right;
     expect(_rect(tester, 'title').left, rail + 16);
     expect(_rect(tester, 'title').left, _rect(tester, 'row').left);
@@ -69,32 +78,36 @@ void main() {
   });
 
   testWidgets('right to left, a start rail is on the right and the header clears it there', (final tester) async {
-    await tester.pumpSeaTrial(_page(start: <HarborDock>[_rail(80)], direction: TextDirection.rtl));
+    await tester.pumpHarborTrial(_page(start: <HarborBar>[_rail(80)], direction: TextDirection.rtl));
     expect(_rect(tester, 'rail').right, 402);
     expect(_rect(tester, 'title').right, 402 - 80 - 16);
     expect(_rect(tester, 'title').left, 16);
   });
 
   testWidgets('an end rail is cleared on its side', (final tester) async {
-    await tester.pumpSeaTrial(_page(end: <HarborDock>[_rail(72)]));
+    await tester.pumpHarborTrial(_page(end: <HarborBar>[_rail(72)]));
     expect(_rect(tester, 'title').right, 402 - 72 - 16);
     expect(_rect(tester, 'title').left, 16);
   });
 
   testWidgets('a withdrawn rail gives its ground back to the header too', (final tester) async {
-    await tester.pumpSeaTrial(_page(start: <HarborDock>[_rail(80, state: HarborDockState.withdrawn)]));
+    await tester.pumpHarborTrial(_page(start: <HarborBar>[_rail(80, state: HarborBarState.withdrawn)]));
     expect(_rect(tester, 'title').left, 16);
   });
 
-  testWidgets('beside a rail, a header is not handed the coast the rail took, and keeps the other side\'s', (final tester) async {
+  testWidgets('beside a rail, a header is not handed the coast the rail took, and keeps the other side\'s', (
+    final tester,
+  ) async {
     late EdgeInsets padding;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _page(
-        start: <HarborDock>[_rail(80)],
-        header: Builder(builder: (final c) {
-          padding = MediaQuery.paddingOf(c);
-          return const SizedBox(height: 40, width: double.infinity);
-        }),
+        start: <HarborBar>[_rail(80)],
+        header: Builder(
+          builder: (final c) {
+            padding = MediaQuery.paddingOf(c);
+            return const SizedBox(height: 40, width: double.infinity);
+          },
+        ),
       ),
       device: HarborTrialDevice.iPhone17Landscape,
     );
@@ -102,14 +115,18 @@ void main() {
     expect(padding.right, 62);
   });
 
-  testWidgets('positive control: with no rail, the header is handed the side coast on both sides', (final tester) async {
+  testWidgets('positive control: with no rail, the header is handed the side coast on both sides', (
+    final tester,
+  ) async {
     late EdgeInsets padding;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _page(
-        header: Builder(builder: (final c) {
-          padding = MediaQuery.paddingOf(c);
-          return const SizedBox(height: 40, width: double.infinity);
-        }),
+        header: Builder(
+          builder: (final c) {
+            padding = MediaQuery.paddingOf(c);
+            return const SizedBox(height: 40, width: double.infinity);
+          },
+        ),
       ),
       device: HarborTrialDevice.iPhone17Landscape,
     );

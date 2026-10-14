@@ -12,31 +12,29 @@ import '../game/settings.dart';
 import '../field_guide/field_guide.dart';
 import '../game/widgets.dart';
 
-/// The Harbor Office: the harbor master's desk. A pier header over a
-/// fairway of grouped rows on the mooring line: the switches (chart,
+/// The Harbor Office: the harbor master's desk. An overlay header over a
+/// scroll view of grouped rows on the row insets: the switches (inspector,
 /// right-to-left, TV), the paperwork (sheets and a pushed page), the signal
 /// locker and a postcard of the harbor in a fixed frame.
 class OfficeTab extends StatelessWidget {
   const OfficeTab({super.key});
 
   @override
-  Widget build(final BuildContext context) => Harbor(
+  Widget build(final BuildContext context) => HarborFrame(
     debugLabel: 'harbor office',
-    top: const <HarborDock>[
-      HarborDock.pier(
+    top: const <HarborBar>[
+      HarborBar.overlay(
         debugLabel: 'office header',
-        wake: HarborWake.fade(length: 12, blurSigma: 20),
+        edgeEffect: HarborEdgeEffect.fade(length: 12, blurSigma: 20),
         backdrop: PierPlanks(),
         child: PierHeader(title: 'Harbor Office', subtitle: 'The harbor master is in', leading: FieldGuideButton()),
       ),
     ],
-    body: HarborFairway(
+    body: HarborScrollView(
       key: const ValueKey<String>('office fairway'),
       padding: const EdgeInsetsDirectional.only(top: 8, bottom: 24),
       slivers: <Widget>[
-        SliverList.list(
-          children: const <Widget>[_SwitchesGroup(), _PaperworkGroup(), _FlareGroup(), _PostcardGroup()],
-        ),
+        SliverList.list(children: const <Widget>[_SwitchesGroup(), _PaperworkGroup(), _FlareGroup(), _PostcardGroup()]),
       ],
     ),
   );
@@ -44,7 +42,7 @@ class OfficeTab extends StatelessWidget {
 
 // ─── Groups ─────────────────────────────────────────────────────────────────
 
-/// A titled group of rows on the mooring line, on a ledger card.
+/// A titled group of rows on the row insets, on a ledger card.
 class _LedgerGroup extends StatelessWidget {
   const _LedgerGroup({required this.title, required this.children, this.note});
 
@@ -53,7 +51,7 @@ class _LedgerGroup extends StatelessWidget {
   final List<Widget> children;
 
   @override
-  Widget build(final BuildContext context) => HarborMooringLine(
+  Widget build(final BuildContext context) => HarborClear.rowInsets(
     child: Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
@@ -122,17 +120,17 @@ class _SwitchesGroup extends StatelessWidget {
     return _LedgerGroup(
       title: 'Switches',
       note: const LogbookNote(
-        pattern: 'Switches: chart, right-to-left, TV',
+        pattern: 'Switches: inspector, right-to-left, TV',
         tryThis:
-            'Raise the chart to see every dock\'s ground, the clear water and the tide. '
-            'Flip to right-to-left and watch start and end trade sides. TV mode moors the '
-            'whole harbor in a 1200×675 scale model.',
+            'Switch on the inspector to see every bar\'s ground, the room and the keyboard. '
+            'Flip to right-to-left and watch start and end trade sides. TV mode lays the '
+            'whole app out on a 1200×675 scaled screen.',
       ),
       children: <Widget>[
         SwitchListTile(
           key: const ValueKey<String>('chart switch'),
           secondary: const Icon(Icons.map_rounded, color: Palette.brass),
-          title: const Text('Harbor chart', style: TextStyle(color: Palette.foam)),
+          title: const Text('Harbor inspector', style: TextStyle(color: Palette.foam)),
           subtitle: Text('Who holds which edge', style: TextStyle(color: Palette.foam.withValues(alpha: 0.7))),
           value: settings.chart,
           onChanged: (final bool value) => settings.chart = value,
@@ -150,7 +148,7 @@ class _SwitchesGroup extends StatelessWidget {
           secondary: const Icon(Icons.tv_rounded, color: Palette.brass),
           title: const Text('Lighthouse TV', style: TextStyle(color: Palette.foam)),
           subtitle: Text(
-            'Scale model with a title-safe coast',
+            'A scaled screen with a title-safe band',
             style: TextStyle(color: Palette.foam.withValues(alpha: 0.7)),
           ),
           value: settings.tv,
@@ -201,11 +199,11 @@ class _PaperworkGroup extends StatelessWidget {
   );
 }
 
-/// #28: flares by slot, and a flare that outlives its page.
+/// #28: toasts by slot, and a toast that outlives its page.
 class _FlareGroup extends StatelessWidget {
   const _FlareGroup();
 
-  void _raise(final BuildContext context, final HarborFlareSlot slot, final String message) => HarborFlares.raise(
+  void _raise(final BuildContext context, final HarborToastSlot slot, final String message) => HarborToasts.show(
     context,
     slot: slot,
     builder: (final BuildContext context) => SignalFlag(message: message),
@@ -215,9 +213,9 @@ class _FlareGroup extends StatelessWidget {
   Widget build(final BuildContext context) => _LedgerGroup(
     title: 'Signal locker',
     note: const LogbookNote(
-      pattern: 'Flares by slot',
+      pattern: 'Toasts by slot',
       tryThis:
-          'Raise a flag at each slot: they float in the clear water, past the header and the '
+          'Raise a flag at each slot: they show in the room, past the header and the '
           'tab bar. "Raise and leave" opens the signal tower, raises a low flag there and '
           'shuts it at once: the flag moves to the page now on top and keeps flying.',
     ),
@@ -229,13 +227,13 @@ class _FlareGroup extends StatelessWidget {
           runSpacing: 8,
           alignment: WrapAlignment.center,
           children: <Widget>[
-            _FlagButton(label: 'Top', onPressed: () => _raise(context, HarborFlareSlot.top, 'Fog on the top deck')),
-            _FlagButton(label: 'High', onPressed: () => _raise(context, HarborFlareSlot.high, 'Gulls sighted aloft')),
+            _FlagButton(label: 'Top', onPressed: () => _raise(context, HarborToastSlot.top, 'Fog on the top deck')),
+            _FlagButton(label: 'High', onPressed: () => _raise(context, HarborToastSlot.high, 'Gulls sighted aloft')),
             _FlagButton(
               label: 'Middle',
-              onPressed: () => _raise(context, HarborFlareSlot.middle, 'Steady as she goes'),
+              onPressed: () => _raise(context, HarborToastSlot.middle, 'Steady as she goes'),
             ),
-            _FlagButton(label: 'Low', onPressed: () => _raise(context, HarborFlareSlot.low, 'Cargo stowed below')),
+            _FlagButton(label: 'Low', onPressed: () => _raise(context, HarborToastSlot.low, 'Cargo stowed below')),
             _FlagButton(
               key: const ValueKey<String>('raise and leave'),
               label: 'Raise and leave',
@@ -272,7 +270,7 @@ class _FlagButton extends StatelessWidget {
   );
 }
 
-/// #29: a postcard of the harbor, a fixed frame with no coast and no tide.
+/// #29: a postcard of the harbor, a fixed frame with no system edges and no keyboard.
 class _PostcardGroup extends StatelessWidget {
   const _PostcardGroup();
 
@@ -280,10 +278,10 @@ class _PostcardGroup extends StatelessWidget {
   Widget build(final BuildContext context) => const _LedgerGroup(
     title: 'Postcard',
     note: LogbookNote(
-      pattern: 'A fixed frame with no coast or tide',
+      pattern: 'A fixed frame with no system edges or keyboard',
       tryThis:
-          'This postcard is a whole harbor (a pier header, a quay footer and a fairway) in a '
-          '300×200 frame with HarborCoast.none. Turn the phone, raise the keyboard, try any '
+          'This postcard is a whole frame (an overlay header, a solid footer and a scroll view) in a '
+          '300×200 box with HarborSystemEdges.none. Turn the phone, raise the keyboard, try any '
           'device: it lays out the same every time.',
     ),
     children: <Widget>[
@@ -295,7 +293,7 @@ class _PostcardGroup extends StatelessWidget {
   );
 }
 
-/// A miniature harbor in a 300×200 frame that ignores the coast and the tide.
+/// A miniature frame in a 300×200 box that ignores the system edges and the keyboard.
 class HarborPostcard extends StatelessWidget {
   const HarborPostcard({super.key});
 
@@ -309,22 +307,22 @@ class HarborPostcard extends StatelessWidget {
       key: const ValueKey<String>('postcard frame'),
       width: 300,
       height: 200,
-      child: Harbor(
-        // A new port: no outer docks or wakes reach in. Flares still fly on the
-        // page, the topmost route-level port, not in this embedded frame.
-        newPort: true,
-        coast: HarborCoast.none,
+      child: HarborFrame(
+        // A page: no outer bars or edge effects reach in. Toasts still show on the
+        // page, the topmost route-level page, not in this embedded frame.
+        isPage: true,
+        systemEdges: HarborSystemEdges.none,
         margin: const EdgeInsetsDirectional.symmetric(horizontal: 12),
         debugLabel: 'postcard',
-        top: const <HarborDock>[
-          HarborDock.pier(
+        top: const <HarborBar>[
+          HarborBar.overlay(
             debugLabel: 'postcard header',
-            wake: HarborWake.fade(length: 8),
+            edgeEffect: HarborEdgeEffect.fade(length: 8),
             backdrop: PierPlanks(),
             child: SizedBox(
               key: ValueKey<String>('postcard header'),
               height: 30,
-              child: HarborMooringLine(
+              child: HarborClear.rowInsets(
                 child: Center(
                   child: Text(
                     'Greetings from Gullhaven',
@@ -335,8 +333,8 @@ class HarborPostcard extends StatelessWidget {
             ),
           ),
         ],
-        bottom: const <HarborDock>[
-          HarborDock.quay(
+        bottom: const <HarborBar>[
+          HarborBar.solid(
             debugLabel: 'postcard footer',
             backdrop: QuayStones(),
             child: SizedBox(
@@ -350,14 +348,14 @@ class HarborPostcard extends StatelessWidget {
         body: Stack(
           children: <Widget>[
             const Positioned.fill(child: Sea(mood: SeaMood.calm)),
-            HarborFairway(
+            HarborScrollView(
               primary: false,
               slivers: <Widget>[
                 SliverList.builder(
                   itemCount: 6,
                   itemBuilder: (final BuildContext context, final int i) {
                     final Boat boat = Fleet.boats[i];
-                    return HarborMooringLine(
+                    return HarborClear.rowInsets(
                       child: SizedBox(
                         height: 30,
                         child: Row(
@@ -410,7 +408,7 @@ void showCargoManifest(final BuildContext context) => unawaited(
         debugLabel: 'cargo manifest',
         surface: const Sailcloth(),
         header: const SheetHeader(title: 'Cargo manifest'),
-        footer: HarborMooringLine(
+        footer: HarborClear.rowInsets(
           child: Padding(
             key: const ValueKey<String>('cargo footer'),
             padding: const EdgeInsets.only(top: 12),
@@ -434,9 +432,9 @@ void showCargoManifest(final BuildContext context) => unawaited(
                     icon: Icons.inventory_rounded,
                     onPressed: () {
                       HarborSheet.close(context);
-                      HarborFlares.raise(
+                      HarborToasts.show(
                         context,
-                        slot: HarborFlareSlot.low,
+                        slot: HarborToastSlot.low,
                         builder: (final BuildContext context) => const SignalFlag(message: 'Cargo loaded, cast off!'),
                       );
                     },
@@ -446,16 +444,16 @@ void showCargoManifest(final BuildContext context) => unawaited(
             ),
           ),
         ),
-        body: HarborFairway.box(
+        body: HarborScrollView.box(
           shrinkWrap: true,
-          child: HarborMooringLine(
+          child: HarborClear.rowInsets(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 const LogbookNote(
                   pattern: 'Content-sized sheet',
                   tryThis:
-                      'The header is a pier, the footer a quay that floats on the tide. Tap the field: '
+                      'The header is an overlay bar, the footer a solid bar that rides the keyboard. Tap the field: '
                       'the footer rides the keyboard, and when room runs out the crates scroll '
                       'instead of spilling over. The home indicator is cleared once, by the footer.',
                 ),
@@ -529,7 +527,7 @@ class _CharterBoardState extends State<_CharterBoard> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           const SheetHeader(key: ValueKey<String>('charter header'), title: 'Charter board'),
-          HarborMooringLine(
+          HarborClear.rowInsets(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: TextField(
@@ -547,15 +545,15 @@ class _CharterBoardState extends State<_CharterBoard> {
           ),
         ],
       ),
-      builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+      builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
         controller: controller,
         slivers: <Widget>[
           const SliverToBoxAdapter(
-            child: HarborMooringLine(
+            child: HarborClear.rowInsets(
               child: LogbookNote(
                 pattern: 'Draggable sheet, heights above the keyboard',
                 tryThis:
-                    'It rests at half the water and hauls up to 0.88. Tap the search: the sheet\'s '
+                    'It rests at half the room and hauls up to 0.88. Tap the search: the sheet\'s '
                     'heights become fractions of the space above the keyboard, so it never hides '
                     'under it. Drag it low to send it away.',
               ),
@@ -567,9 +565,9 @@ class _CharterBoardState extends State<_CharterBoard> {
               boat: boats[i],
               onTap: () {
                 HarborSheet.close(context);
-                HarborFlares.raise(
+                HarborToasts.show(
                   context,
-                  slot: HarborFlareSlot.low,
+                  slot: HarborToastSlot.low,
                   builder: (final BuildContext context) => SignalFlag(message: '${boats[i].name} is chartered!'),
                 );
               },
@@ -596,18 +594,18 @@ const List<String> _rules = <String>[
   'Children under ten may row only with a grown sailor aboard.',
 ];
 
-/// A new port whose header is a quay: the rules start below it rather than
+/// A page whose header is a solid bar: the rules start below it rather than
 /// sailing under it, and the "I agree" button keeps 16 off a bare bottom edge.
 class HarborRulesPage extends StatelessWidget {
   const HarborRulesPage({super.key});
 
   @override
   Widget build(final BuildContext context) => HarborPage(
-    child: Harbor(
-      newPort: true,
+    child: HarborFrame(
+      isPage: true,
       debugLabel: 'harbor rules',
-      top: const <HarborDock>[
-        HarborDock.quay(
+      top: const <HarborBar>[
+        HarborBar.solid(
           debugLabel: 'rules header',
           backdrop: PierPlanks(),
           child: PierHeader(key: ValueKey<String>('rules header'), title: 'Harbor rules', showBack: true),
@@ -619,26 +617,26 @@ class HarborRulesPage extends StatelessWidget {
           children: <Widget>[
             Expanded(
               // The button below keeps clear of the bottom, so the rules don't.
-              child: HarborCastOff(
+              child: HarborHandled(
                 edges: const <HarborEdge>{HarborEdge.bottom},
-                tide: true,
-                child: HarborFairway(
+                clearsKeyboard: true,
+                child: HarborScrollView(
                   padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
                   slivers: <Widget>[
                     const SliverToBoxAdapter(
-                      child: HarborMooringLine(
+                      child: HarborClear.rowInsets(
                         child: LogbookNote(
-                          pattern: 'Quay header, moored text, a minimum off a bare edge',
+                          pattern: 'Solid header, HarborClear text, a minimum off a bare edge',
                           tryThis:
-                              'The header is a quay, so the rules start below it, like a Column. The '
-                              '"I agree" button is moored to the bottom with a 16 minimum: on a phone '
+                              'The header is a solid bar, so the rules start below it, like a Column. The '
+                              '"I agree" button keeps clear of the bottom with a 16 minimum: on a phone '
                               'with no home indicator it still keeps off the edge.',
                         ),
                       ),
                     ),
                     SliverList.builder(
                       itemCount: _rules.length,
-                      itemBuilder: (final BuildContext context, final int i) => HarborMooringLine(
+                      itemBuilder: (final BuildContext context, final int i) => HarborClear.rowInsets(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Row(
@@ -663,20 +661,20 @@ class HarborRulesPage extends StatelessWidget {
                 ),
               ),
             ),
-            HarborMoored(
+            HarborClear(
               edges: const <HarborEdge>{HarborEdge.bottom},
               minimum: const EdgeInsetsDirectional.only(bottom: 16),
-              extra: const EdgeInsetsDirectional.only(top: 8),
-              child: HarborMooringLine(
+              padding: const EdgeInsetsDirectional.only(top: 8),
+              child: HarborClear.rowInsets(
                 child: BrassAction(
                   key: const ValueKey<String>('i agree'),
                   label: 'I agree',
                   icon: Icons.handshake_rounded,
                   onPressed: () {
                     Navigator.of(context).maybePop();
-                    HarborFlares.raise(
+                    HarborToasts.show(
                       context,
-                      slot: HarborFlareSlot.low,
+                      slot: HarborToastSlot.low,
                       builder: (final BuildContext context) => const SignalFlag(message: 'Welcome aboard, sailor!'),
                     );
                   },
@@ -692,8 +690,8 @@ class HarborRulesPage extends StatelessWidget {
 
 // ─── #28 Raise and leave ──────────────────────────────────────────────────────
 
-/// The signal tower: raises a low flare as soon as it opens, then shuts at
-/// once. The flare moves to the page now on top and keeps flying.
+/// The signal tower: shows a low toast as soon as it opens, then shuts at
+/// once. The toast moves to the page now on top and keeps showing.
 class _SignalTowerPage extends StatefulWidget {
   const _SignalTowerPage();
 
@@ -709,9 +707,9 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
       if (!mounted) {
         return;
       }
-      HarborFlares.raise(
+      HarborToasts.show(
         context,
-        slot: HarborFlareSlot.low,
+        slot: HarborToastSlot.low,
         duration: const Duration(seconds: 4),
         builder: (final BuildContext context) =>
             const SignalFlag(key: ValueKey<String>('tower signal'), message: 'Raised in the tower, still flying'),
@@ -722,11 +720,11 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
 
   @override
   Widget build(final BuildContext context) => const HarborPage(
-    child: Harbor(
-      newPort: true,
+    child: HarborFrame(
+      isPage: true,
       debugLabel: 'signal tower',
-      top: <HarborDock>[
-        HarborDock.pier(
+      top: <HarborBar>[
+        HarborBar.overlay(
           backdrop: PierPlanks(),
           child: PierHeader(title: 'Signal tower', showBack: true),
         ),
@@ -741,8 +739,8 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
 
 // ─── #30 Chandlery ────────────────────────────────────────────────────────────
 
-/// Opens the chandlery: a sheet with a component harbor inside, whose own
-/// pier header sits below the sheet's.
+/// Opens the chandlery: a sheet with a component frame inside, whose own
+/// overlay header sits below the sheet's.
 void showChandlery(final BuildContext context) => unawaited(
   showHarborSheet<void>(
     context,
@@ -751,7 +749,7 @@ void showChandlery(final BuildContext context) => unawaited(
         debugLabel: 'chandlery',
         surface: Sailcloth(),
         // A hairline rather than a fade, so the shop's own header sits flush below.
-        headerWake: HarborWake.hairline(),
+        headerEdgeEffect: HarborEdgeEffect.hairline(),
         header: SheetHeader(key: ValueKey<String>('chandlery sheet header'), title: 'Chandlery'),
         body: SizedBox(height: 420, child: _Chandlery()),
       ),
@@ -792,8 +790,8 @@ enum _Shelf {
   final List<String> goods;
 }
 
-/// The shop inside the chandlery sheet: a component harbor (not a new port)
-/// that sees the sheet's header as coast.
+/// The shop inside the chandlery sheet: a component frame (not a page)
+/// that sees the sheet's header as a system edge.
 class _Chandlery extends StatefulWidget {
   const _Chandlery();
 
@@ -805,17 +803,17 @@ class _ChandleryState extends State<_Chandlery> {
   _Shelf _shelf = _Shelf.ropes;
 
   @override
-  Widget build(final BuildContext context) => Harbor(
+  Widget build(final BuildContext context) => HarborFrame(
     debugLabel: 'chandlery shop',
-    top: <HarborDock>[
-      HarborDock.pier(
+    top: <HarborBar>[
+      HarborBar.overlay(
         debugLabel: 'shelf chips',
-        wake: const HarborWake.fade(length: 10),
+        edgeEffect: const HarborEdgeEffect.fade(length: 10),
         backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.85)),
         child: SizedBox(
           key: const ValueKey<String>('chandlery shelves'),
           height: 52,
-          child: HarborFairway(
+          child: HarborScrollView(
             scrollDirection: Axis.horizontal,
             primary: false,
             slivers: <Widget>[
@@ -839,22 +837,22 @@ class _ChandleryState extends State<_Chandlery> {
         ),
       ),
     ],
-    body: HarborFairway(
+    body: HarborScrollView(
       primary: false,
       slivers: <Widget>[
         const SliverToBoxAdapter(
-          child: HarborMooringLine(
+          child: HarborClear.rowInsets(
             child: LogbookNote(
-              pattern: 'A component harbor nested in a sheet',
+              pattern: 'A component frame nested in a sheet',
               tryThis:
-                  'The shop is a Harbor of its own, not a new port, so it sees the sheet\'s header '
-                  'as coast: its shelf chips dock right below it. Scroll the goods under the chips.',
+                  'The shop is a HarborFrame of its own, not a page, so it sees the sheet\'s header '
+                  'as a system edge: its shelf chips sit right below it. Scroll the goods under the chips.',
             ),
           ),
         ),
         SliverList.builder(
           itemCount: _shelf.goods.length,
-          itemBuilder: (final BuildContext context, final int i) => HarborMooringLine(
+          itemBuilder: (final BuildContext context, final int i) => HarborClear.rowInsets(
             child: ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(_shelf.icon, color: Palette.brass),

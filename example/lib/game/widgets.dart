@@ -6,9 +6,9 @@ import '../art/boats.dart';
 import '../art/palette.dart';
 import 'fleet.dart';
 
-/// The header every page docks at its top: a title on a plank, with an
+/// The header every page puts in a bar at its top: a title on a plank, with an
 /// optional way back and a tool at the end. It never pads for the status bar
-/// itself; the dock it sits in does.
+/// itself; the bar it sits in does.
 class PierHeader extends StatelessWidget {
   const PierHeader({
     super.key,
@@ -34,7 +34,12 @@ class PierHeader extends StatelessWidget {
     final Widget titleBlock = Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Palette.foam), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Palette.foam),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         if (subtitle != null)
           Text(
             subtitle!,
@@ -49,14 +54,15 @@ class PierHeader extends StatelessWidget {
         ? titleBlock
         : ValueListenableBuilder<double>(
             valueListenable: opacity,
-            builder: (final BuildContext context, final double value, final Widget? child) => Opacity(opacity: value, child: child),
+            builder: (final BuildContext context, final double value, final Widget? child) =>
+                Opacity(opacity: value, child: child),
             child: titleBlock,
           );
     // At least 52 tall, and as tall as the title block needs: the title sizes
     // the plank, and the way back and the tool sit on it either side.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 52),
-      child: HarborMooringLine(
+      child: HarborClear.rowInsets(
         child: Stack(
           alignment: Alignment.center,
           children: <Widget>[
@@ -65,7 +71,10 @@ class PierHeader extends StatelessWidget {
               child: Center(heightFactor: 1, child: middle),
             ),
             Positioned.fill(
-              child: NavigationToolbar(leading: leading ?? (showBack ? const BackPlankButton() : null), trailing: trailing),
+              child: NavigationToolbar(
+                leading: leading ?? (showBack ? const BackPlankButton() : null),
+                trailing: trailing,
+              ),
             ),
           ],
         ),
@@ -150,7 +159,10 @@ class _LogbookNoteState extends State<LogbookNote> {
         children: <Widget>[
           Icon(Icons.menu_book_rounded, color: Palette.plankDark, size: 16),
           SizedBox(width: 6),
-          Text('Logbook', style: TextStyle(fontWeight: FontWeight.w700, color: Palette.plankDark)),
+          Text(
+            'Logbook',
+            style: TextStyle(fontWeight: FontWeight.w700, color: Palette.plankDark),
+          ),
         ],
       ),
     ),
@@ -173,7 +185,10 @@ class _LogbookNoteState extends State<LogbookNote> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(widget.pattern, style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.plankDark)),
+              Text(
+                widget.pattern,
+                style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.plankDark),
+              ),
               const SizedBox(height: 4),
               Text(widget.tryThis, style: const TextStyle(color: Color(0xFF4E342E), height: 1.3)),
             ],
@@ -184,7 +199,7 @@ class _LogbookNoteState extends State<LogbookNote> {
   );
 }
 
-/// A signal flag: what a raised flare shows.
+/// A signal flag: what a toast shows.
 class SignalFlag extends StatelessWidget {
   const SignalFlag({super.key, required this.message, this.icon = Icons.flag_rounded});
 
@@ -202,7 +217,9 @@ class SignalFlag extends StatelessWidget {
         children: <Widget>[
           Icon(icon, color: Palette.brass, size: 18),
           const SizedBox(width: 8),
-          Flexible(child: Text(message, style: const TextStyle(color: Palette.foam))),
+          Flexible(
+            child: Text(message, style: const TextStyle(color: Palette.foam)),
+          ),
         ],
       ),
     ),
@@ -219,12 +236,15 @@ class BoatRow extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => InkWell(
     onTap: onTap,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: <Widget>[
-            SizedBox(width: 64, child: BoatArt(kind: boat.kind, hull: boat.hull, flag: boat.flag, bob: false)),
+            SizedBox(
+              width: 64,
+              child: BoatArt(kind: boat.kind, hull: boat.hull, flag: boat.flag, bob: false),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -238,7 +258,10 @@ class BoatRow extends StatelessWidget {
                 ],
               ),
             ),
-            Text('${boat.voyages}⚓', style: const TextStyle(color: Palette.brass, fontWeight: FontWeight.w700)),
+            Text(
+              '${boat.voyages}⚓',
+              style: const TextStyle(color: Palette.brass, fontWeight: FontWeight.w700),
+            ),
           ],
         ),
       ),
@@ -283,10 +306,12 @@ class SheetHeader extends StatelessWidget {
       ),
       SizedBox(
         height: 48,
-        child: HarborMooringLine(
+        child: HarborClear.rowInsets(
           child: NavigationToolbar(
             middle: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Palette.foam)),
-            trailing: trailing ?? BrassButton(icon: Icons.close_rounded, tooltip: 'Close', onPressed: () => HarborSheet.close(context)),
+            trailing:
+                trailing ??
+                BrassButton(icon: Icons.close_rounded, tooltip: 'Close', onPressed: () => HarborSheet.close(context)),
           ),
         ),
       ),

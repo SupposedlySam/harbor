@@ -13,21 +13,32 @@ final HarborTrialDevice _tall = _dual.copyWith(
   name: 'dual screen tall',
   size: const Size(720, 1114),
   displayFeatures: const <DisplayFeature>[
-    DisplayFeature(bounds: Rect.fromLTRB(0, 540, 720, 574), type: DisplayFeatureType.hinge, state: DisplayFeatureState.postureFlat),
+    DisplayFeature(
+      bounds: Rect.fromLTRB(0, 540, 720, 574),
+      type: DisplayFeatureType.hinge,
+      state: DisplayFeatureState.postureFlat,
+    ),
   ],
 );
-const HarborTrialDevice _tablet = HarborTrialDevice(name: 'tablet', size: Size(1024, 768), coast: EdgeInsets.only(top: 24, bottom: 20), tideHeight: 300);
+const HarborTrialDevice _tablet = HarborTrialDevice(
+  name: 'tablet',
+  size: Size(1024, 768),
+  systemEdges: EdgeInsets.only(top: 24, bottom: 20),
+  keyboardHeight: 300,
+);
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
 final Map<String, MediaQueryData> _seen = <String, MediaQueryData>{};
 HarborPanesMode? _mode;
 
-Widget _pane(final String key) => Builder(builder: (final BuildContext context) {
-  _seen[key] = MediaQuery.of(context);
-  _mode = HarborPanes.modeOf(context);
-  return SizedBox.expand(key: ValueKey<String>(key));
-});
+Widget _pane(final String key) => Builder(
+  builder: (final BuildContext context) {
+    _seen[key] = MediaQuery.of(context);
+    _mode = HarborPanes.modeOf(context);
+    return SizedBox.expand(key: ValueKey<String>(key));
+  },
+);
 
 Future<void> _pump(
   final WidgetTester tester, {
@@ -38,10 +49,19 @@ Future<void> _pump(
   final double minTallHeight = double.infinity,
 }) {
   _seen.clear();
-  return tester.pumpSeaTrial(
+  return tester.pumpHarborTrial(
     MaterialApp(
-      builder: (final BuildContext context, final Widget? child) => Directionality(textDirection: direction, child: HarborSea(child: child!)),
-      home: HarborPanes(start: _pane('list'), end: _pane('detail'), priority: priority, hinge: hinge, minTallHeight: minTallHeight),
+      builder: (final BuildContext context, final Widget? child) => Directionality(
+        textDirection: direction,
+        child: HarborRoot(child: child!),
+      ),
+      home: HarborPanes(
+        start: _pane('list'),
+        end: _pane('detail'),
+        priority: priority,
+        hinge: hinge,
+        minTallHeight: minTallHeight,
+      ),
     ),
     device: device,
   );
@@ -61,7 +81,9 @@ void main() {
     expect(_rect(tester, 'detail'), const Rect.fromLTRB(0, 0, 540, 720));
   });
 
-  testWidgets('each pane is a screen of its own: its size, the coast on its outer edges, no hinge', (final tester) async {
+  testWidgets('each pane is a screen of its own: its size, the coast on its outer edges, no hinge', (
+    final tester,
+  ) async {
     await _pump(tester, device: _dual);
     final MediaQueryData list = _seen['list']!;
     expect(list.size, const Size(540, 720));
@@ -94,7 +116,9 @@ void main() {
     expect(find.byKey(const ValueKey<String>('list')), findsNothing);
   });
 
-  testWidgets('with a policy that keeps off nothing, the hinge does not split it: the width does', (final tester) async {
+  testWidgets('with a policy that keeps off nothing, the hinge does not split it: the width does', (
+    final tester,
+  ) async {
     await _pump(tester, device: _dual, hinge: HarborHinge.never);
     expect(_rect(tester, 'list'), const Rect.fromLTRB(0, 0, 557, 720));
   });
@@ -106,12 +130,19 @@ void main() {
   });
 
   testWidgets('a pane can be a harbor with docks of its own', (final tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
         home: const HarborPanes(
-          start: Harbor(bottom: <HarborDock>[HarborDock.quay(child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity))], body: SizedBox.expand()),
-          end: Harbor(body: SizedBox.expand()),
+          start: HarborFrame(
+            bottom: <HarborBar>[
+              HarborBar.solid(
+                child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity),
+              ),
+            ],
+            body: SizedBox.expand(),
+          ),
+          end: HarborFrame(body: SizedBox.expand()),
         ),
       ),
       device: _dual,

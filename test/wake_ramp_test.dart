@@ -12,7 +12,7 @@ import 'package:harbor/harbor.dart';
 const double _height = 200;
 
 /// The mask's alpha down the middle column, one value per logical pixel row, from 0 to 1.
-Future<List<double>> _alphaColumn(final WidgetTester tester, final Map<HarborEdge, HarborWakeBand> wakes) async {
+Future<List<double>> _alphaColumn(final WidgetTester tester, final Map<HarborEdge, HarborFadeBand> wakes) async {
   final GlobalKey boundary = GlobalKey();
   await tester.pumpWidget(
     Directionality(
@@ -24,7 +24,10 @@ Future<List<double>> _alphaColumn(final WidgetTester tester, final Map<HarborEdg
           child: SizedBox(
             width: 10,
             height: _height,
-            child: HarborWakeMask(wakes: wakes, child: const ColoredBox(color: Color(0xFFFFFFFF))),
+            child: HarborFadeMask(
+              bands: wakes,
+              child: const ColoredBox(color: Color(0xFFFFFFFF)),
+            ),
           ),
         ),
       ),
@@ -55,25 +58,26 @@ double _straight(final int y, final double dockEdge, final double wakeEnd, final
 
 void main() {
   // Passes on the code before #70 too: it pins the ramp the defaults must keep.
-  testWidgets('a band at its defaults draws the ramp fades always had: clear, a quarter at the dock, opaque at the end', (
-    final tester,
-  ) async {
-    final List<double> alpha = await _alphaColumn(tester, <HarborEdge, HarborWakeBand>{
-      HarborEdge.top: const HarborWakeBand(dockEdge: 40, wakeEnd: 80),
-      HarborEdge.bottom: const HarborWakeBand(dockEdge: 20, wakeEnd: 60),
-    });
-    for (int y = 0; y < _height; y++) {
-      final double expected = y < _height / 2
-          ? _straight(y, 40, 80, 0.25)
-          : _straight(_height.toInt() - 1 - y, 20, 60, 0.25);
-      expect(alpha[y], moreOrLessEquals(expected, epsilon: 2 / 255), reason: 'row $y');
-    }
-  });
+  testWidgets(
+    'a band at its defaults draws the ramp fades always had: clear, a quarter at the dock, opaque at the end',
+    (final tester) async {
+      final List<double> alpha = await _alphaColumn(tester, <HarborEdge, HarborFadeBand>{
+        HarborEdge.top: const HarborFadeBand(barFace: 40, fadeEnd: 80),
+        HarborEdge.bottom: const HarborFadeBand(barFace: 20, fadeEnd: 60),
+      });
+      for (int y = 0; y < _height; y++) {
+        final double expected = y < _height / 2
+            ? _straight(y, 40, 80, 0.25)
+            : _straight(_height.toInt() - 1 - y, 20, 60, 0.25);
+        expect(alpha[y], moreOrLessEquals(expected, epsilon: 2 / 255), reason: 'row $y');
+      }
+    },
+  );
 
   testWidgets("a band's dockOpacity is the opacity at the dock's face, on either edge", (final tester) async {
-    final List<double> alpha = await _alphaColumn(tester, <HarborEdge, HarborWakeBand>{
-      HarborEdge.top: const HarborWakeBand(dockEdge: 40, wakeEnd: 80, dockOpacity: 0.6),
-      HarborEdge.bottom: const HarborWakeBand(dockEdge: 20, wakeEnd: 60, dockOpacity: 1.0),
+    final List<double> alpha = await _alphaColumn(tester, <HarborEdge, HarborFadeBand>{
+      HarborEdge.top: const HarborFadeBand(barFace: 40, fadeEnd: 80, faceOpacity: 0.6),
+      HarborEdge.bottom: const HarborFadeBand(barFace: 20, fadeEnd: 60, faceOpacity: 1.0),
     });
     for (int y = 0; y < _height; y++) {
       final double expected = y < _height / 2
@@ -86,9 +90,9 @@ void main() {
   });
 
   testWidgets("a band's curve shapes the ramp out to the wake's end", (final tester) async {
-    final List<double> alpha = await _alphaColumn(tester, <HarborEdge, HarborWakeBand>{
-      HarborEdge.top: const HarborWakeBand(dockEdge: 40, wakeEnd: 160, curve: Curves.easeIn),
-      HarborEdge.bottom: const HarborWakeBand(dockEdge: 0, wakeEnd: 30, curve: Curves.easeOut),
+    final List<double> alpha = await _alphaColumn(tester, <HarborEdge, HarborFadeBand>{
+      HarborEdge.top: const HarborFadeBand(barFace: 40, fadeEnd: 160, curve: Curves.easeIn),
+      HarborEdge.bottom: const HarborFadeBand(barFace: 0, fadeEnd: 30, curve: Curves.easeOut),
     });
     double curved(final Curve curve, final double t) => 0.25 + 0.75 * curve.transform(t);
     // Halfway along the top ramp (row 100 of 40..160), an ease-in is well under a straight line.
@@ -101,10 +105,10 @@ void main() {
     expect(alpha[_height.toInt() - 11], greaterThan(_straight(10, 0, 30, 0.25) + 0.1));
   });
 
-  testWidgets('HarborWake.fade carries its ramp onto the band it measures, and leaves the defaults unset', (
+  testWidgets('HarborEdgeEffect.fade carries its ramp onto the band it measures, and leaves the defaults unset', (
     final tester,
   ) async {
-    Future<HarborWakeBand> bandOf(final HarborWake wake, {final bool nested = false}) async {
+    Future<HarborFadeBand> bandOf(final HarborEdgeEffect wake, {final bool nested = false}) async {
       final GlobalKey body = GlobalKey();
       final Widget content = SizedBox.expand(key: body);
       await tester.pumpWidget(
@@ -112,43 +116,43 @@ void main() {
           textDirection: TextDirection.ltr,
           child: MediaQuery(
             data: const MediaQueryData(size: Size(800, 600)),
-            child: Harbor(
-              top: <HarborDock>[HarborDock.pier(wake: wake, child: const SizedBox(height: 50))],
+            child: HarborFrame(
+              top: <HarborBar>[HarborBar.overlay(edgeEffect: wake, child: const SizedBox(height: 50))],
               // A harbor inside the body hands the band on, measured from its own edge.
-              body: nested ? Harbor(body: content) : content,
+              body: nested ? HarborFrame(body: content) : content,
             ),
           ),
         ),
       );
-      return HarborWaters.of(body.currentContext!).wakes[HarborEdge.top]!;
+      return HarborRoom.of(body.currentContext!).fadeBands[HarborEdge.top]!;
     }
 
-    expect(await bandOf(const HarborWake.fade(length: 12)), const HarborWakeBand(dockEdge: 50, wakeEnd: 62));
+    expect(await bandOf(const HarborEdgeEffect.fade(length: 12)), const HarborFadeBand(barFace: 50, fadeEnd: 62));
     expect(
-      await bandOf(const HarborWake.fade(length: 12, dockOpacity: 0.6, curve: Curves.easeIn)),
-      const HarborWakeBand(dockEdge: 50, wakeEnd: 62, dockOpacity: 0.6, curve: Curves.easeIn),
+      await bandOf(const HarborEdgeEffect.fade(length: 12, faceOpacity: 0.6, curve: Curves.easeIn)),
+      const HarborFadeBand(barFace: 50, fadeEnd: 62, faceOpacity: 0.6, curve: Curves.easeIn),
     );
     expect(
-      await bandOf(const HarborWake.fade(length: 12, dockOpacity: 0.6, curve: Curves.easeIn), nested: true),
-      const HarborWakeBand(dockEdge: 50, wakeEnd: 62, dockOpacity: 0.6, curve: Curves.easeIn),
+      await bandOf(const HarborEdgeEffect.fade(length: 12, faceOpacity: 0.6, curve: Curves.easeIn), nested: true),
+      const HarborFadeBand(barFace: 50, fadeEnd: 62, faceOpacity: 0.6, curve: Curves.easeIn),
     );
   });
 
   test('a fade with a ramp of its own is a different wake, and says so', () {
-    const HarborWake plain = HarborWake.fade();
-    const HarborWake ramped = HarborWake.fade(dockOpacity: 0.5, curve: Curves.easeOut);
-    expect(plain, const HarborWake.fade(dockOpacity: 0.25, curve: Curves.linear));
+    const HarborEdgeEffect plain = HarborEdgeEffect.fade();
+    const HarborEdgeEffect ramped = HarborEdgeEffect.fade(faceOpacity: 0.5, curve: Curves.easeOut);
+    expect(plain, const HarborEdgeEffect.fade(faceOpacity: 0.25, curve: Curves.linear));
     expect(ramped, isNot(plain));
-    expect(const HarborWake.fade(dockOpacity: 0.5), isNot(plain));
-    expect(const HarborWake.fade(curve: Curves.easeOut), isNot(plain));
-    expect(ramped.hashCode, const HarborWake.fade(dockOpacity: 0.5, curve: Curves.easeOut).hashCode);
+    expect(const HarborEdgeEffect.fade(faceOpacity: 0.5), isNot(plain));
+    expect(const HarborEdgeEffect.fade(curve: Curves.easeOut), isNot(plain));
+    expect(ramped.hashCode, const HarborEdgeEffect.fade(faceOpacity: 0.5, curve: Curves.easeOut).hashCode);
     expect(plain.toString(), isNot(contains('dockOpacity')));
-    expect(ramped.toString(), allOf(contains('dockOpacity: 0.5'), contains('curve:')));
+    expect(ramped.toString(), allOf(contains('faceOpacity: 0.5'), contains('curve:')));
 
-    const HarborWakeBand band = HarborWakeBand(dockEdge: 1, wakeEnd: 2, dockOpacity: 0.5, curve: Curves.easeOut);
-    expect(band, isNot(const HarborWakeBand(dockEdge: 1, wakeEnd: 2)));
-    expect(band.hashCode, isNot(const HarborWakeBand(dockEdge: 1, wakeEnd: 2).hashCode));
-    expect(band.toString(), contains('dockOpacity: 0.5'));
-    expect(const HarborWakeBand(dockEdge: 1, wakeEnd: 2).toString(), 'HarborWakeBand(1.0 → 2.0)');
+    const HarborFadeBand band = HarborFadeBand(barFace: 1, fadeEnd: 2, faceOpacity: 0.5, curve: Curves.easeOut);
+    expect(band, isNot(const HarborFadeBand(barFace: 1, fadeEnd: 2)));
+    expect(band.hashCode, isNot(const HarborFadeBand(barFace: 1, fadeEnd: 2).hashCode));
+    expect(band.toString(), contains('faceOpacity: 0.5'));
+    expect(const HarborFadeBand(barFace: 1, fadeEnd: 2).toString(), 'HarborFadeBand(1.0 → 2.0)');
   });
 }

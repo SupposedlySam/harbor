@@ -46,7 +46,12 @@ class ShowcaseCaption extends StatelessWidget {
               if (pronounced case final String pronounced)
                 Text(
                   pronounced,
-                  style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontStyle: FontStyle.italic, color: Palette.foam.withValues(alpha: 0.8)),
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 18,
+                    fontStyle: FontStyle.italic,
+                    color: Palette.foam.withValues(alpha: 0.8),
+                  ),
                 ),
             ],
           ),

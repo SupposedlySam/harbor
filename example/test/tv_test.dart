@@ -14,18 +14,18 @@ const double _scale = 1920 / 1200;
 const double _titleSafeStart = 1200 * 0.05;
 const double _titleSafeTop = 675 * 0.05;
 
-Future<(HarborSeaTrial, HarborSettings)> _pumpTv(final WidgetTester tester) async {
+Future<(HarborTrial, HarborSettings)> _pumpTv(final WidgetTester tester) async {
   final HarborSettings settings = HarborSettings()..tv = true;
   addTearDown(settings.dispose);
-  final HarborSeaTrial trial = await tester.pumpSeaTrial(
+  final HarborTrial trial = await tester.pumpHarborTrial(
     HarborSettingsScope(
       settings: settings,
       child: MaterialApp(
         theme: Palette.theme(),
-        builder: (final BuildContext context, final Widget? child) => HarborScaleModel(
+        builder: (final BuildContext context, final Widget? child) => HarborScaledScreen(
           referenceSize: const Size(1200, 675),
-          coast: const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)),
-          child: HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 32), child: child!),
+          systemEdges: const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)),
+          child: HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 32), child: child!),
         ),
         home: const TvHarborTown(),
       ),
@@ -51,7 +51,7 @@ Rect _model(final WidgetTester tester, final Finder finder) {
 
 Finder _key(final String key) => find.byKey(ValueKey<String>(key));
 
-/// The fleet wall's heading text, inside its moored padding.
+/// The fleet wall's heading text, inside its HarborClear padding.
 Finder get _heading => find.descendant(of: _key('fleet wall heading'), matching: find.byType(Column)).first;
 
 /// Where the focused widget is, on the reference screen.
@@ -67,7 +67,7 @@ Future<void> _focusRail(final WidgetTester tester, final String item) async {
 }
 
 void main() {
-  testWidgets('the rail absorbs the title-safe coast and rests at 96', (final WidgetTester tester) async {
+  testWidgets('the rail absorbs the title-safe band and rests at 96', (final WidgetTester tester) async {
     await _pumpTv(tester);
     final Rect rail = _model(tester, _key('rail'));
     expect(rail.left, moreOrLessEquals(_titleSafeStart));
@@ -99,8 +99,8 @@ void main() {
     ScrollPosition row() => tester
         .state<ScrollableState>(find.descendant(of: _key('fleet row 0'), matching: find.byType(Scrollable)))
         .position;
-    // Clear of the resting rail plus the mooring line, and of the end's
-    // title-safe band plus the mooring line, with the 24 reveal margin.
+    // Clear of the resting rail plus the row insets, and of the end's
+    // title-safe band plus the row insets, with the 24 reveal margin.
     const double startClear = 96 + 32;
     const double endClear = 1200 - _titleSafeStart - 32;
     Future<void> step(final LogicalKeyboardKey key) async {
@@ -141,17 +141,17 @@ void main() {
   });
 
   testWidgets('a long voyage darkens the rail, which keeps its ground', (final WidgetTester tester) async {
-    final (HarborSeaTrial trial, _) = await _pumpTv(tester);
+    final (HarborTrial trial, _) = await _pumpTv(tester);
     await tester.tap(_key('rail longVoyage'));
     await _settle(tester);
     await tester.tap(_key('voyage toggle'));
     await _settle(tester);
-    final HarborDockRecord rail = trial.docksAround(_key('rail')).single;
-    expect(rail.state, HarborDockState.dark);
+    final HarborBarRecord rail = trial.barsAround(_key('rail')).single;
+    expect(rail.state, HarborBarState.dark);
     expect(rail.extent, moreOrLessEquals(96));
     await tester.tap(_key('voyage toggle'));
     await _settle(tester);
-    expect(trial.docksAround(_key('rail')).single.state, HarborDockState.open);
+    expect(trial.barsAround(_key('rail')).single.state, HarborBarState.open);
   });
 
   testWidgets('back to the phone turns TV mode off', (final WidgetTester tester) async {

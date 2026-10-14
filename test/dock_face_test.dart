@@ -13,7 +13,7 @@ Widget _bar(final String label, final double height) =>
     SizedBox(key: ValueKey<String>(label), height: height, width: double.infinity, child: Text(label));
 
 Widget _app(final Widget home) => MaterialApp(
-  builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
   home: Material(child: home),
 );
 
@@ -26,41 +26,50 @@ class _FaceReader extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    seen.add(HarborWaters.dockFaceOf(context, edge));
+    seen.add(HarborRoom.barFaceOf(context, edge));
     return const SizedBox.expand();
   }
 }
 
 void main() {
-  Future<double> faceUnder(final WidgetTester tester, final HarborWake wake) async {
+  Future<double> faceUnder(final WidgetTester tester, final HarborEdgeEffect wake) async {
     final List<double> seen = <double>[];
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(wake: wake, child: _bar('header', 50))],
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(edgeEffect: wake, child: _bar('header', 50))],
           body: _FaceReader(seen),
         ),
       ),
     );
-    expect(tester.getRect(find.byKey(const ValueKey<String>('header'))).bottom, _statusBar + 50, reason: 'positive control');
+    expect(
+      tester.getRect(find.byKey(const ValueKey<String>('header'))).bottom,
+      _statusBar + 50,
+      reason: 'positive control',
+    );
     return seen.last;
   }
 
   // Breaks if: the face is read from the docks where a fade wake rests past them.
   testWidgets("is the header's inner face under a fade wake that the content rests past", (final tester) async {
-    expect(await faceUnder(tester, const HarborWake.fade(length: 12)), _statusBar + 50);
+    expect(await faceUnder(tester, const HarborEdgeEffect.fade(length: 12)), _statusBar + 50);
   });
 
   // Breaks if: the face is read from the wake band alone, which only a fade wake has.
-  testWidgets("is the header's inner face with no wake, a hairline, or a fade that rests at the dock", (final tester) async {
-    expect(await faceUnder(tester, HarborWake.none), _statusBar + 50);
-    expect(await faceUnder(tester, const HarborWake.hairline()), _statusBar + 50);
-    expect(await faceUnder(tester, const HarborWake.fade(length: 12, restsAt: HarborRest.dockEdge)), _statusBar + 50);
+  testWidgets("is the header's inner face with no wake, a hairline, or a fade that rests at the dock", (
+    final tester,
+  ) async {
+    expect(await faceUnder(tester, HarborEdgeEffect.none), _statusBar + 50);
+    expect(await faceUnder(tester, const HarborEdgeEffect.hairline()), _statusBar + 50);
+    expect(
+      await faceUnder(tester, const HarborEdgeEffect.fade(length: 12, restsAt: HarborRest.barFace)),
+      _statusBar + 50,
+    );
   });
 
   testWidgets('is zero where nothing is docked, the coast left out', (final tester) async {
     final List<double> seen = <double>[];
-    await tester.pumpSeaTrial(_app(Harbor(body: _FaceReader(seen, edge: HarborEdge.bottom))));
+    await tester.pumpHarborTrial(_app(HarborFrame(body: _FaceReader(seen, edge: HarborEdge.bottom))));
     expect(seen.last, 0);
   });
 
@@ -69,10 +78,10 @@ void main() {
   testWidgets('its reader holds still while the keyboard rises', (final tester) async {
     final List<double> seen = <double>[];
     final List<double> keyboard = <double>[];
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(
+    final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
           body: Column(
             children: <Widget>[
               SizedBox(height: 10, child: _FaceReader(seen)),
@@ -80,7 +89,7 @@ void main() {
                 height: 10,
                 child: Builder(
                   builder: (final BuildContext context) {
-                    keyboard.add(HarborTide.of(context).height);
+                    keyboard.add(HarborKeyboard.of(context).height);
                     return const SizedBox.expand();
                   },
                 ),
@@ -92,7 +101,7 @@ void main() {
     );
     seen.clear();
     keyboard.clear();
-    await trial.raiseTide();
+    await trial.showKeyboard();
     expect(keyboard.length, greaterThan(1), reason: 'positive control: the keyboard moved over several frames');
     // At most once, for the home indicator leaving the padding, which the docks' clamp reads.
     expect(seen.length, lessThanOrEqualTo(1));
@@ -113,7 +122,7 @@ void main() {
           height: 10,
           child: Builder(
             builder: (final BuildContext context) {
-              margins.add(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin.start);
+              margins.add(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin.start);
               return const SizedBox.expand();
             },
           ),
@@ -122,14 +131,14 @@ void main() {
     );
     late StateSetter setState;
     double margin = 0;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       _app(
         StatefulBuilder(
           builder: (final BuildContext context, final StateSetter set) {
             setState = set;
-            return Harbor(
+            return HarborFrame(
               margin: EdgeInsetsDirectional.symmetric(horizontal: margin),
-              top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+              top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
               body: body,
             );
           },

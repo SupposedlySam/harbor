@@ -37,11 +37,12 @@ class _MenuState extends State<_Menu> {
       Positioned(
         left: widget.left,
         top: 200,
-        child: HarborPortalBuoy(
+        child: HarborPopover(
           placement: const HarborAnchored(null, side: HarborAnchorSide.below),
           controller: _menu,
           hinge: widget.hinge,
-          buoyBuilder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('menu'), width: 200, height: 120),
+          popoverBuilder: (final BuildContext _) =>
+              const SizedBox(key: ValueKey<String>('menu'), width: 200, height: 120),
           child: const SizedBox(key: ValueKey<String>('row button'), width: 60, height: 40),
         ),
       ),
@@ -50,10 +51,12 @@ class _MenuState extends State<_Menu> {
 }
 
 Future<void> _menu(final WidgetTester tester, {required final double left, final HarborHinge? hinge}) async {
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-      home: Harbor(body: _Menu(left: left, hinge: hinge)),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+      home: HarborFrame(
+        body: _Menu(left: left, hinge: hinge),
+      ),
     ),
     device: _dual,
   );
@@ -74,7 +77,9 @@ void main() {
       expect(_rect(tester, 'menu').left, greaterThanOrEqualTo(574 + 8));
     });
 
-    testWidgets('with a policy that keeps off nothing, it is centred on its button across the hinge', (final tester) async {
+    testWidgets('with a policy that keeps off nothing, it is centred on its button across the hinge', (
+      final tester,
+    ) async {
       await _menu(tester, left: 470, hinge: HarborHinge.never);
       expect(_rect(tester, 'menu').center.dx, _rect(tester, 'row button').center.dx);
       expect(_rect(tester, 'menu').right, greaterThan(540));
@@ -84,13 +89,17 @@ void main() {
   group('a sheet that fills the screen a hinge keeps it to', () {
     Future<BuildContext> page(final WidgetTester tester, {final HarborTrialDevice device = _dual}) async {
       late BuildContext inside;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-          home: Harbor(body: Builder(builder: (final BuildContext context) {
-            inside = context;
-            return const SizedBox.expand();
-          })),
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
+            body: Builder(
+              builder: (final BuildContext context) {
+                inside = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
         ),
         device: device,
       );
@@ -99,10 +108,12 @@ void main() {
 
     late EdgeInsets bodyPadding;
     Widget sheet(final BuildContext _) => HarborSheet(
-      body: Builder(builder: (final BuildContext context) {
-        bodyPadding = MediaQuery.paddingOf(context);
-        return const SizedBox(height: 100);
-      }),
+      body: Builder(
+        builder: (final BuildContext context) {
+          bodyPadding = MediaQuery.paddingOf(context);
+          return const SizedBox(height: 100);
+        },
+      ),
     );
 
     testWidgets('positive control: by default it is as tall as its content', (final tester) async {
@@ -111,7 +122,9 @@ void main() {
       expect(tester.getRect(find.byType(HarborSheet)).height, lessThan(300));
     });
 
-    testWidgets('with fillsScreenAtHinge it takes its screen top to bottom, the status bar as coast', (final tester) async {
+    testWidgets('with fillsScreenAtHinge it takes its screen top to bottom, the status bar as coast', (
+      final tester,
+    ) async {
       unawaited(showHarborSheet<void>(await page(tester), fillsScreenAtHinge: true, builder: sheet));
       await tester.pumpAndSettle();
       expect(tester.getRect(find.byType(HarborSheet)), const Rect.fromLTRB(0, 0, 540, 720));
@@ -119,13 +132,26 @@ void main() {
     });
 
     testWidgets('anchorPoint puts it on the other screen', (final tester) async {
-      unawaited(showHarborSheet<void>(await page(tester), fillsScreenAtHinge: true, anchorPoint: const Offset(1000, 0), builder: sheet));
+      unawaited(
+        showHarborSheet<void>(
+          await page(tester),
+          fillsScreenAtHinge: true,
+          anchorPoint: const Offset(1000, 0),
+          builder: sheet,
+        ),
+      );
       await tester.pumpAndSettle();
       expect(tester.getRect(find.byType(HarborSheet)), const Rect.fromLTRB(574, 0, 1114, 720));
     });
 
     testWidgets('with no hinge it changes nothing', (final tester) async {
-      unawaited(showHarborSheet<void>(await page(tester, device: HarborTrialDevice.iPhone17), fillsScreenAtHinge: true, builder: sheet));
+      unawaited(
+        showHarborSheet<void>(
+          await page(tester, device: HarborTrialDevice.iPhone17),
+          fillsScreenAtHinge: true,
+          builder: sheet,
+        ),
+      );
       await tester.pumpAndSettle();
       expect(tester.getRect(find.byType(HarborSheet)).height, lessThan(300));
     });

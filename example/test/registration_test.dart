@@ -9,7 +9,7 @@ import 'package:harbor_example/scenes/registration.dart';
 Widget _app() => MaterialApp(
   theme: Palette.theme(),
   builder: (final BuildContext context, final Widget? child) =>
-      HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+      HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
   home: const HarborPage(child: RegistrationPage()),
 );
 
@@ -26,8 +26,8 @@ Future<void> _tapField(final WidgetTester tester, final Key key) async {
   await tester.pump();
 }
 
-Future<HarborSeaTrial> _pumpForm(final WidgetTester tester, final HarborTrialDevice device) async {
-  final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(), device: device);
+Future<HarborTrial> _pumpForm(final WidgetTester tester, final HarborTrialDevice device) async {
+  final HarborTrial trial = await tester.pumpHarborTrial(_app(), device: device);
   await tester.pump();
   return trial;
 }
@@ -35,55 +35,55 @@ Future<HarborSeaTrial> _pumpForm(final WidgetTester tester, final HarborTrialDev
 void main() {
   for (final HarborTrialDevice device in HarborTrialDevice.phones) {
     group(device.name, () {
-      testWidgets('the footer stands on pilings while the tide covers it', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpForm(tester, device);
+      testWidgets('the footer stays put while the keyboard covers it', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpForm(tester, device);
         final Rect before = tester.getRect(_footer);
-        expect(before.bottom, device.size.height - device.coast.bottom);
+        expect(before.bottom, device.size.height - device.systemEdges.bottom);
 
         await _tapField(tester, RegistrationPage.boatNameKey);
-        await trial.raiseTide();
+        await trial.showKeyboard();
 
         expect(tester.getRect(_footer), before);
         expect(find.text('At least 8 knots'), findsNothing);
       });
 
-      testWidgets('the focused field is kept in sight above the waterline', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpForm(tester, device);
+      testWidgets('the focused field is kept in sight above the keyboard', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpForm(tester, device);
         await _tapField(tester, RegistrationPage.emailKey);
-        await trial.raiseTide();
+        await trial.showKeyboard();
 
         final Rect field = tester.getRect(find.byKey(RegistrationPage.emailKey));
-        expect(field.bottom, lessThanOrEqualTo(trial.waterline));
-        expect(field.top, greaterThanOrEqualTo(trial.clearWaterAround(_footer).top));
+        expect(field.bottom, lessThanOrEqualTo(trial.keyboardTop));
+        expect(field.top, greaterThanOrEqualTo(trial.roomAround(_footer).top));
       });
 
-      testWidgets('the footer floats on the tide while the password has focus', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpForm(tester, device);
+      testWidgets('the footer rides the keyboard while the password has focus', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpForm(tester, device);
         await _tapField(tester, RegistrationPage.passwordKey);
         expect(find.text('At least 8 knots'), findsOneWidget);
 
-        await trial.raiseTide();
+        await trial.showKeyboard();
 
-        expect(tester.getRect(_footer).bottom, trial.waterline);
+        expect(tester.getRect(_footer).bottom, trial.keyboardTop);
         final Rect field = tester.getRect(find.byKey(RegistrationPage.passwordKey));
         expect(field.bottom, lessThanOrEqualTo(tester.getRect(_footer).top));
 
-        // Back to another field: the same dock returns to its pilings.
+        // Back to another field: the same bar stays put again.
         await _tapField(tester, RegistrationPage.homePortKey);
         await tester.pump(const Duration(milliseconds: 300));
         expect(find.text('At least 8 knots'), findsNothing);
-        expect(tester.getRect(_footer).bottom, device.size.height - device.coast.bottom);
+        expect(tester.getRect(_footer).bottom, device.size.height - device.systemEdges.bottom);
       });
 
-      testWidgets('the crest shrinks as the tide comes in', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpForm(tester, device);
+      testWidgets('the crest shrinks as the keyboard comes in', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpForm(tester, device);
         expect(tester.getSize(_crest).height, 120);
 
         await _tapField(tester, RegistrationPage.boatNameKey);
-        await trial.raiseTide();
+        await trial.showKeyboard();
 
         expect(tester.getSize(_crest).height, 48);
-        expect(HarborTide.of(tester.element(_crest)).height, device.tideHeight);
+        expect(HarborKeyboard.of(tester.element(_crest)).height, device.keyboardHeight);
       });
     });
   }

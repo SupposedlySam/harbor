@@ -27,7 +27,7 @@ Future<void> _scrollBy(final WidgetTester tester, final double dy) async {
 }
 
 Widget _app(final Widget home) => MaterialApp(
-  builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
   home: Material(child: home),
 );
 
@@ -49,13 +49,13 @@ void main() {
     // Breaks if: the sliver returns its padding alone again, without casting the ends off.
     testWidgets('a reader in the sliver does not clear the header and status bar a second time', (final tester) async {
       late BuildContext item;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
+          HarborFrame(
+            top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
             body: CustomScrollView(
               slivers: <Widget>[
-                HarborFairwaySliver(sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))),
+                HarborSliverClear(sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))),
               ],
             ),
           ),
@@ -69,18 +69,18 @@ void main() {
       expect(MediaQuery.paddingOf(item).top, 0);
       expect(MediaQuery.paddingOf(item).bottom, 0);
       expect(MediaQuery.viewPaddingOf(item).top, 0);
-      expect(HarborWaters.of(item).docks.top, 0);
-      expect(HarborWaters.of(item).coast.top, 0);
+      expect(HarborRoom.of(item).bars.top, 0);
+      expect(HarborRoom.of(item).systemEdges.top, 0);
     });
 
     // Breaks if: the sliver casts off an end it was told not to clear.
     testWidgets('an end it does not clear is left to the content beneath', (final tester) async {
       late BuildContext item;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
           CustomScrollView(
             slivers: <Widget>[
-              HarborFairwaySliver(
+              HarborSliverClear(
                 clearTrailing: false,
                 sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
               ),
@@ -95,19 +95,19 @@ void main() {
     // Breaks if: the sliver casts off the keyboard it did not clear, or keeps the one it did.
     testWidgets('it casts off the keyboard with the bottom it cleared', (final tester) async {
       late BuildContext item;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
+          HarborFrame(
+            bodyClearsKeyboard: false,
             body: CustomScrollView(
               slivers: <Widget>[
-                HarborFairwaySliver(sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))),
+                HarborSliverClear(sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))),
               ],
             ),
           ),
         ),
       );
-      await trial.raiseTide();
+      await trial.showKeyboard();
       expect(MediaQuery.viewInsetsOf(item).bottom, 0);
     });
   });
@@ -115,14 +115,16 @@ void main() {
   group('With startsInOpenWater, the first sliver gets back its leading end alone (#60)', () {
     // Breaks if: open water zeroes the whole leading spacer again, the caller's padding and minimum
     // with the clearance (#74).
-    testWidgets("open water skips the leading clearance but keeps the fairway's own padding and minimum", (final tester) async {
+    testWidgets("open water skips the leading clearance but keeps the fairway's own padding and minimum", (
+      final tester,
+    ) async {
       Future<double> firstRowTop(final EdgeInsetsDirectional padding, final EdgeInsetsDirectional minimum) async {
-        await tester.pumpSeaTrial(
+        await tester.pumpHarborTrial(
           _app(
-            Harbor(
-              top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-              body: HarborFairway(
-                startsInOpenWater: true,
+            HarborFrame(
+              top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+              body: HarborScrollView(
+                startsUnderBars: true,
                 padding: padding,
                 minimum: minimum,
                 slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext _) {}))],
@@ -133,25 +135,39 @@ void main() {
         return tester.getTopLeft(find.byType(_Probe)).dy;
       }
 
-      expect(await firstRowTop(EdgeInsetsDirectional.zero, EdgeInsetsDirectional.zero), 0, reason: 'positive control: open water, no padding');
-      expect(await firstRowTop(const EdgeInsetsDirectional.only(top: 16), EdgeInsetsDirectional.zero), 16, reason: 'its own padding stays');
-      expect(await firstRowTop(EdgeInsetsDirectional.zero, const EdgeInsetsDirectional.only(top: 24)), 24, reason: 'its minimum stays');
+      expect(
+        await firstRowTop(EdgeInsetsDirectional.zero, EdgeInsetsDirectional.zero),
+        0,
+        reason: 'positive control: open water, no padding',
+      );
+      expect(
+        await firstRowTop(const EdgeInsetsDirectional.only(top: 16), EdgeInsetsDirectional.zero),
+        16,
+        reason: 'its own padding stays',
+      );
+      expect(
+        await firstRowTop(EdgeInsetsDirectional.zero, const EdgeInsetsDirectional.only(top: 24)),
+        24,
+        reason: 'its minimum stays',
+      );
     });
 
     // Breaks if: the first sliver is handed the fairway's own MediaQuery and waters again, from
     // above its cast-off, trailing end and keyboard included.
-    testWidgets('a vertical fairway hands its first sliver neither the trailing end nor the keyboard', (final tester) async {
+    testWidgets('a vertical fairway hands its first sliver neither the trailing end nor the keyboard', (
+      final tester,
+    ) async {
       final List<double> bottomPadding = <double>[];
       final List<double> keyboard = <double>[];
       late BuildContext item;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
-            top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-            bottom: <HarborDock>[HarborDock.pier(child: _bar('tabs', 50))],
-            body: HarborFairway(
-              startsInOpenWater: true,
+          HarborFrame(
+            bodyClearsKeyboard: false,
+            top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+            bottom: <HarborBar>[HarborBar.overlay(child: _bar('tabs', 50))],
+            body: HarborScrollView(
+              startsUnderBars: true,
               slivers: <Widget>[
                 SliverToBoxAdapter(
                   child: _Probe((final BuildContext c) {
@@ -167,36 +183,36 @@ void main() {
       );
       expect(tester.getTopLeft(find.byType(_Probe)).dy, 0, reason: 'positive control: it starts in open water');
       expect(MediaQuery.paddingOf(item).top, _statusBar + 50, reason: 'the leading end is given back');
-      expect(HarborWaters.of(item).docks.top, _statusBar + 50);
+      expect(HarborRoom.of(item).bars.top, _statusBar + 50);
       expect(bottomPadding.last, 0);
-      expect(HarborWaters.of(item).docks.bottom, 0);
-      expect(HarborWaters.of(item).coast.bottom, 0);
-      await trial.raiseTide();
+      expect(HarborRoom.of(item).bars.bottom, 0);
+      expect(HarborRoom.of(item).systemEdges.bottom, 0);
+      await trial.showKeyboard();
       expect(keyboard.last, 0);
     });
 
     // Breaks if: a horizontal fairway's first item is handed the trailing end's mooring line.
-    testWidgets("a horizontal fairway hands its first item the leading side's mooring line alone", (final tester) async {
+    testWidgets("a horizontal fairway hands its first item the leading side's mooring line alone", (
+      final tester,
+    ) async {
       late BuildContext item;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
+          HarborFrame(
             margin: const EdgeInsetsDirectional.symmetric(horizontal: 16),
             body: SizedBox(
               height: 100,
-              child: HarborFairway(
+              child: HarborScrollView(
                 scrollDirection: Axis.horizontal,
-                startsInOpenWater: true,
-                slivers: <Widget>[
-                  SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
-                ],
+                startsUnderBars: true,
+                slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))],
               ),
             ),
           ),
         ),
       );
-      expect(HarborWaters.of(item).margin.start, 16, reason: 'positive control: the leading end is given back');
-      expect(HarborWaters.of(item).margin.end, 0);
+      expect(HarborRoom.of(item).margin.start, 16, reason: 'positive control: the leading end is given back');
+      expect(HarborRoom.of(item).margin.end, 0);
     });
   });
 
@@ -205,16 +221,16 @@ void main() {
     const double headerFace = _statusBar + 50;
     const double tabsFace = _screen - _homeIndicator - 60;
     Widget page(final Widget body) => _app(
-      Harbor(
-        top: <HarborDock>[HarborDock.pier(child: _bar('header', 50))],
-        bottom: <HarborDock>[HarborDock.pier(child: _bar('tabs', 60))],
+      HarborFrame(
+        top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+        bottom: <HarborBar>[HarborBar.overlay(child: _bar('tabs', 60))],
         body: body,
       ),
     );
 
     // Breaks if: a coast-only fairway's ends clear the docks too.
     testWidgets('its ends rest clear of the status bar and home indicator, under the docks', (final tester) async {
-      await tester.pumpSeaTrial(page(HarborFairway(bars: false, slivers: <Widget>[_rows()])));
+      await tester.pumpHarborTrial(page(HarborScrollView(bars: false, slivers: <Widget>[_rows()])));
       expect(_rect(tester, 'row0').top, _statusBar);
       await _scrollBy(tester, -5000);
       expect(_rect(tester, 'row29').bottom, _screen - _homeIndicator);
@@ -223,9 +239,9 @@ void main() {
     // Breaks if: the fairway casts off the docks with the coast, or the coast is left in.
     testWidgets('its rows read the docks, measured from its edge, and no coast', (final tester) async {
       late BuildContext item;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         page(
-          HarborFairway(
+          HarborScrollView(
             bars: false,
             slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))],
           ),
@@ -233,22 +249,22 @@ void main() {
       );
       expect(MediaQuery.paddingOf(item).top, 50);
       expect(MediaQuery.paddingOf(item).bottom, 60);
-      expect(HarborWaters.of(item).docks.top, 50);
-      expect(HarborWaters.of(item).docks.bottom, 60);
-      expect(HarborWaters.of(item).coast.top, 0);
-      expect(HarborWaters.of(item).coast.bottom, 0);
+      expect(HarborRoom.of(item).bars.top, 50);
+      expect(HarborRoom.of(item).bars.bottom, 60);
+      expect(HarborRoom.of(item).systemEdges.top, 0);
+      expect(HarborRoom.of(item).systemEdges.bottom, 0);
     });
 
     // Breaks if: the cover is taken from the coast-only end, so a pinned header pins under the
     // status bar, behind the header.
     testWidgets("a pinned sliver dock still pins at the docks' face", (final tester) async {
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         page(
-          HarborFairway(
+          HarborScrollView(
             bars: false,
             slivers: <Widget>[
               const SliverToBoxAdapter(child: SizedBox(height: 200)),
-              HarborSliverDock(child: _bar('pinned', 40)),
+              HarborSliverBar(child: _bar('pinned', 40)),
               _rows(),
             ],
           ),
@@ -260,7 +276,7 @@ void main() {
 
     // Breaks if: reveals are widened by the coast-only ends rather than by what is over the viewport.
     testWidgets('reveals still keep clear of the header and the tab bar', (final tester) async {
-      await tester.pumpSeaTrial(page(HarborFairway(bars: false, slivers: <Widget>[_rows()])));
+      await tester.pumpHarborTrial(page(HarborScrollView(bars: false, slivers: <Widget>[_rows()])));
       // Row 14 starts at 62 + 14 * 50 = 762, under the tab bar's face at 780.
       tester.renderObject(find.byKey(const ValueKey<String>('row14'))).showOnScreen();
       await tester.pumpAndSettle();
@@ -272,17 +288,19 @@ void main() {
     });
 
     // Breaks if: a horizontal fairway clears the rail at its ends or casts it off.
-    testWidgets('a horizontal one rests under a rail, and its items read how far the rail reaches', (final tester) async {
+    testWidgets('a horizontal one rests under a rail, and its items read how far the rail reaches', (
+      final tester,
+    ) async {
       late BuildContext item;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            start: const <HarborDock>[HarborDock.pier(child: SizedBox(key: ValueKey<String>('rail'), width: 80))],
+          HarborFrame(
+            start: const <HarborBar>[HarborBar.overlay(child: SizedBox(key: ValueKey<String>('rail'), width: 80))],
             body: Align(
               alignment: Alignment.topCenter,
               child: SizedBox(
                 height: 100,
-                child: HarborFairway(
+                child: HarborScrollView(
                   scrollDirection: Axis.horizontal,
                   bars: false,
                   slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))],
@@ -295,17 +313,17 @@ void main() {
       expect(_rect(tester, 'rail').right, 80, reason: 'positive control: the rail is there');
       expect(tester.getTopLeft(find.byType(_Probe)).dx, 0);
       expect(MediaQuery.paddingOf(item).left, 80);
-      expect(HarborWaters.of(item).docks.start, 80);
+      expect(HarborRoom.of(item).bars.start, 80);
     });
 
     // Breaks if: paddingOf ignores bars.
     testWidgets('paddingOf gives the coast alone', (final tester) async {
       late EdgeInsets padding;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         page(
           Builder(
             builder: (final BuildContext context) {
-              padding = HarborFairway.paddingOf(context, bars: false);
+              padding = HarborScrollView.paddingOf(context, bars: false);
               return const SizedBox.expand();
             },
           ),
@@ -317,11 +335,11 @@ void main() {
     // Breaks if: the sliver ignores bars, or casts off the docks with the coast.
     testWidgets('so does a fairway sliver, and its sliver reads the docks', (final tester) async {
       late BuildContext item;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         page(
           CustomScrollView(
             slivers: <Widget>[
-              HarborFairwaySliver(
+              HarborSliverClear(
                 bars: false,
                 sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
               ),
@@ -331,7 +349,7 @@ void main() {
       );
       expect(tester.getTopLeft(find.byType(_Probe)).dy, _statusBar);
       expect(MediaQuery.paddingOf(item).top, 50);
-      expect(HarborWaters.of(item).coast.top, 0);
+      expect(HarborRoom.of(item).systemEdges.top, 0);
     });
   });
 
@@ -345,12 +363,12 @@ void main() {
       final tester,
     ) async {
       late BuildContext item;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
-            body: HarborFairway(
-              tide: false,
+          HarborFrame(
+            bodyClearsKeyboard: false,
+            body: HarborScrollView(
+              clearsKeyboard: false,
               slivers: <Widget>[
                 SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
                 _rows(),
@@ -360,8 +378,8 @@ void main() {
         ),
         device: phone,
       );
-      await trial.raiseTide();
-      expect(trial.waterline, keyboardTop, reason: 'positive control: the keyboard is up');
+      await trial.showKeyboard();
+      expect(trial.keyboardTop, keyboardTop, reason: 'positive control: the keyboard is up');
       expect(MediaQuery.viewInsetsOf(item).bottom, 260);
       await _scrollBy(tester, -5000);
       expect(_rect(tester, 'row29').bottom, 667);
@@ -369,11 +387,13 @@ void main() {
 
     // Breaks if: reveals still widen by the keyboard.
     testWidgets('reveals leave the keyboard out', (final tester) async {
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
-        _app(Harbor(bodyClearsTide: false, body: HarborFairway(tide: false, slivers: <Widget>[_rows()]))),
+      final HarborTrial trial = await tester.pumpHarborTrial(
+        _app(
+          HarborFrame(bodyClearsKeyboard: false, body: HarborScrollView(clearsKeyboard: false, slivers: <Widget>[_rows()])),
+        ),
         device: phone,
       );
-      await trial.raiseTide();
+      await trial.showKeyboard();
       // Row 8 is at 20 + 8 * 50 = 420, under the keyboard but on the screen.
       tester.renderObject(find.byKey(const ValueKey<String>('row8'))).showOnScreen();
       await tester.pumpAndSettle();
@@ -383,13 +403,13 @@ void main() {
     // Breaks if: paddingOf ignores tide.
     testWidgets('paddingOf leaves the keyboard out', (final tester) async {
       late EdgeInsets padding;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
+          HarborFrame(
+            bodyClearsKeyboard: false,
             body: Builder(
               builder: (final BuildContext context) {
-                padding = HarborFairway.paddingOf(context, tide: false);
+                padding = HarborScrollView.paddingOf(context, clearsKeyboard: false);
                 return const SizedBox.expand();
               },
             ),
@@ -397,21 +417,21 @@ void main() {
         ),
         device: phone,
       );
-      await trial.raiseTide();
+      await trial.showKeyboard();
       expect(padding, const EdgeInsets.only(top: 20));
     });
 
     // Breaks if: the sliver ignores tide, or casts off the keyboard it left.
     testWidgets('so does a fairway sliver, and its sliver still reads the keyboard', (final tester) async {
       late BuildContext item;
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
+      final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          Harbor(
-            bodyClearsTide: false,
+          HarborFrame(
+            bodyClearsKeyboard: false,
             body: CustomScrollView(
               slivers: <Widget>[
-                HarborFairwaySliver(
-                  tide: false,
+                HarborSliverClear(
+                  clearsKeyboard: false,
                   sliver: SliverMainAxisGroup(
                     slivers: <Widget>[
                       SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
@@ -425,7 +445,7 @@ void main() {
         ),
         device: phone,
       );
-      await trial.raiseTide();
+      await trial.showKeyboard();
       expect(MediaQuery.viewInsetsOf(item).bottom, 260);
       await _scrollBy(tester, -5000);
       expect(_rect(tester, 'row29').bottom, 667);
@@ -434,17 +454,21 @@ void main() {
 
   // The README's answer to #58, held: no per-end flags, a cast-off around the fairway.
   // Breaks if: a fairway's spacer or cover keeps a top that a cast-off above it zeroed.
-  testWidgets("in a cast-off of the top, a fairway leaves the top to the header that already cleared it", (final tester) async {
-    await tester.pumpSeaTrial(
+  testWidgets("in a cast-off of the top, a fairway leaves the top to the header that already cleared it", (
+    final tester,
+  ) async {
+    await tester.pumpHarborTrial(
       _app(
-        Harbor(
-          top: <HarborDock>[HarborDock.pier(wake: const HarborWake.fade(length: 12), child: _bar('header', 50))],
-          body: HarborCastOff(
+        HarborFrame(
+          top: <HarborBar>[
+            HarborBar.overlay(edgeEffect: const HarborEdgeEffect.fade(length: 12), child: _bar('header', 50)),
+          ],
+          body: HarborHandled(
             edges: const <HarborEdge>{HarborEdge.top},
-            child: HarborFairway(
+            child: HarborScrollView(
               slivers: <Widget>[
                 const SliverToBoxAdapter(child: SizedBox(height: 200)),
-                HarborSliverDock(child: _bar('pinned', 40)),
+                HarborSliverBar(child: _bar('pinned', 40)),
                 _rows(),
               ],
             ),

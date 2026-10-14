@@ -47,7 +47,9 @@ List<File> borrowedSources(final String example) => <File>[
   File('$example/lib/field_guide/stage.dart'),
   File('$example/lib/field_guide/entry.dart'),
   ...Directory('$example/lib/field_guide/art').listSync().whereType<File>(),
-  ...Directory('$example/lib/field_guide').listSync().whereType<File>().where((final File f) => f.path.contains('/entries_')),
+  ...Directory(
+    '$example/lib/field_guide',
+  ).listSync().whereType<File>().where((final File f) => f.path.contains('/entries_')),
 ]..sort(_byPath);
 
 int _byPath(final File a, final File b) => a.path.compareTo(b.path);
@@ -86,4 +88,5 @@ String? stampPart(final String stamp, final String part) {
 }
 
 /// Where the stamp of the committed video lives.
-File stampFile(final String example, [final ShowcaseCut cut = ShowcaseCut.phone]) => File('$example/../doc/media/${cut.directory}.stamp');
+File stampFile(final String example, [final ShowcaseCut cut = ShowcaseCut.phone]) =>
+    File('$example/../doc/media/${cut.directory}.stamp');

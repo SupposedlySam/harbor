@@ -12,16 +12,31 @@ abstract final class _Rigging {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.1;
 
-  static void label(final Canvas canvas, final String text, final Offset at, {final Color color = Palette.plankDark, final double size = 10}) {
+  static void label(
+    final Canvas canvas,
+    final String text,
+    final Offset at, {
+    final Color color = Palette.plankDark,
+    final double size = 10,
+  }) {
     final TextPainter painter = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: size, fontWeight: FontWeight.w700, fontStyle: FontStyle.italic)),
+      text: TextSpan(
+        text: text,
+        style: TextStyle(color: color, fontSize: size, fontWeight: FontWeight.w700, fontStyle: FontStyle.italic),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     painter.paint(canvas, at);
   }
 
   /// A sail as a curved triangle with seams, from [head] to [tack] to [clew].
-  static void sail(final Canvas canvas, final Offset head, final Offset tack, final Offset clew, {final double belly = 0.12}) {
+  static void sail(
+    final Canvas canvas,
+    final Offset head,
+    final Offset tack,
+    final Offset clew, {
+    final double belly = 0.12,
+  }) {
     final Offset mid = Offset.lerp(head, clew, 0.5)!;
     final Offset out = Offset(mid.dx + (clew.dx - tack.dx) * belly, mid.dy - (clew.dy - head.dy) * belly * 0.3);
     final Path path = Path()
@@ -37,10 +52,13 @@ abstract final class _Rigging {
         Paint()
           ..shader = const LinearGradient(colors: <Color>[Color(0xFFFFFFFF), Color(0xFFE3DCCB)]).createShader(bounds),
       )
-      ..drawPath(path, Paint()
-        ..color = const Color(0xFFB9AE93)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1);
+      ..drawPath(
+        path,
+        Paint()
+          ..color = const Color(0xFFB9AE93)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
     // Seams across the sail, from the luff to the leech.
     final Paint seam = Paint()
       ..color = const Color(0xFFCFC5AE)
@@ -54,7 +72,13 @@ abstract final class _Rigging {
   }
 
   /// A sailboat hull at [waterline], [length] long, its bow to the right.
-  static void hull(final Canvas canvas, final double x, final double waterline, final double length, final Color color) {
+  static void hull(
+    final Canvas canvas,
+    final double x,
+    final double waterline,
+    final double length,
+    final Color color,
+  ) {
     final double depth = length * 0.13;
     final Path path = Path()
       ..moveTo(x, waterline - depth)
@@ -65,9 +89,13 @@ abstract final class _Rigging {
       ..close();
     canvas
       ..drawPath(path, Paint()..color = color)
-      ..drawLine(Offset(x, waterline - depth), Offset(x + length, waterline - depth * 1.3), Paint()
-        ..color = Colors.white
-        ..strokeWidth = 2);
+      ..drawLine(
+        Offset(x, waterline - depth),
+        Offset(x + length, waterline - depth * 1.3),
+        Paint()
+          ..color = Colors.white
+          ..strokeWidth = 2,
+      );
   }
 }
 
@@ -102,15 +130,29 @@ class _SailSheetPainter extends CustomPainter {
     // The mainsail on the boom, and the jib on the forestay.
     final Offset boomEnd = Offset(x + length * 0.02, mastFoot.dy - h * 0.08);
     _Rigging.sail(canvas, masthead + const Offset(-2, 4), mastFoot - Offset(2, h * 0.08), boomEnd, belly: -0.1);
-    _Rigging.sail(canvas, masthead + const Offset(4, 12), Offset(x + length * 0.96, waterline - length * 0.18), Offset(x + length * 0.6, waterline - length * 0.16 - 4), belly: 0.08);
+    _Rigging.sail(
+      canvas,
+      masthead + const Offset(4, 12),
+      Offset(x + length * 0.96, waterline - length * 0.18),
+      Offset(x + length * 0.6, waterline - length * 0.16 - 4),
+      belly: 0.08,
+    );
     canvas
-      ..drawLine(mastFoot - Offset(0, h * 0.08), boomEnd, Paint()
-        ..color = const Color(0xFF5D4037)
-        ..strokeWidth = 3.4
-        ..strokeCap = StrokeCap.round)
-      ..drawLine(mastFoot, masthead, Paint()
-        ..color = const Color(0xFF6D4C41)
-        ..strokeWidth = 3.6);
+      ..drawLine(
+        mastFoot - Offset(0, h * 0.08),
+        boomEnd,
+        Paint()
+          ..color = const Color(0xFF5D4037)
+          ..strokeWidth = 3.4
+          ..strokeCap = StrokeCap.round,
+      )
+      ..drawLine(
+        mastFoot,
+        masthead,
+        Paint()
+          ..color = const Color(0xFF6D4C41)
+          ..strokeWidth = 3.6,
+      );
     _Rigging.hull(canvas, x, waterline, length, Palette.hulls[3]);
 
     // The jib sheet: from the jib's clew back to a winch on the cabin top, then its tail coiled.
@@ -128,7 +170,10 @@ class _SailSheetPainter extends CustomPainter {
           ..quadraticBezierTo((clew.dx + winch.dx) / 2, clew.dy + 8, winch.dx, winch.dy),
         sheet,
       )
-      ..drawRect(Rect.fromCenter(center: winch - const Offset(0, 3), width: 9, height: 8), Paint()..color = const Color(0xFF9E9E9E))
+      ..drawRect(
+        Rect.fromCenter(center: winch - const Offset(0, 3), width: 9, height: 8),
+        Paint()..color = const Color(0xFF9E9E9E),
+      )
       ..drawOval(Rect.fromCenter(center: winch + const Offset(-14, 2), width: 14, height: 5), sheet..strokeWidth = 1.6)
       ..drawOval(Rect.fromCenter(center: winch + const Offset(-14, 1), width: 10, height: 3.6), sheet);
     // The main sheet from the boom end down to the transom.
@@ -181,24 +226,45 @@ class _HalyardPainter extends CustomPainter {
       // Sail below the reef: bundled on the boom with reef points.
       if (reefed) {
         final Rect bundle = Rect.fromLTRB(mastX + 2, boom - 9, boomEnd.dx - 4, boom);
-        canvas.drawRRect(RRect.fromRectAndRadius(bundle, const Radius.circular(4)), Paint()..color = const Color(0xFFE3DCCB));
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(bundle, const Radius.circular(4)),
+          Paint()..color = const Color(0xFFE3DCCB),
+        );
         for (double x = bundle.left + 8; x < bundle.right - 4; x += 10) {
-          canvas.drawLine(Offset(x, bundle.top - 3), Offset(x, bundle.bottom), Paint()
-            ..color = Palette.plankDark
-            ..strokeWidth = 1);
+          canvas.drawLine(
+            Offset(x, bundle.top - 3),
+            Offset(x, bundle.bottom),
+            Paint()
+              ..color = Palette.plankDark
+              ..strokeWidth = 1,
+          );
         }
       }
       final double sailFoot = reefed ? boom - 9 : boom;
-      _Rigging.sail(canvas, Offset(mastX + 2, headY), Offset(mastX + 2, sailFoot), Offset(boomEnd.dx - (reefed ? 6 : 0), sailFoot), belly: 0.14);
+      _Rigging.sail(
+        canvas,
+        Offset(mastX + 2, headY),
+        Offset(mastX + 2, sailFoot),
+        Offset(boomEnd.dx - (reefed ? 6 : 0), sailFoot),
+        belly: 0.14,
+      );
       // Mast, boom, and the halyard: over the sheave at the masthead and down the mast to a cleat.
       canvas
-        ..drawLine(Offset(mastX, waterline - 6), sheave, Paint()
-          ..color = const Color(0xFF6D4C41)
-          ..strokeWidth = 4)
-        ..drawLine(foot, boomEnd, Paint()
-          ..color = const Color(0xFF5D4037)
-          ..strokeWidth = 3.2
-          ..strokeCap = StrokeCap.round)
+        ..drawLine(
+          Offset(mastX, waterline - 6),
+          sheave,
+          Paint()
+            ..color = const Color(0xFF6D4C41)
+            ..strokeWidth = 4,
+        )
+        ..drawLine(
+          foot,
+          boomEnd,
+          Paint()
+            ..color = const Color(0xFF5D4037)
+            ..strokeWidth = 3.2
+            ..strokeCap = StrokeCap.round,
+        )
         ..drawCircle(sheave, 3.2, Paint()..color = const Color(0xFF9E9E9E));
       final Paint halyard = Paint()
         ..color = const Color(0xFFE65100)
@@ -207,7 +273,10 @@ class _HalyardPainter extends CustomPainter {
       canvas
         ..drawLine(sheave + const Offset(2, 0), Offset(mastX + 2, headY), halyard)
         ..drawLine(sheave - const Offset(2, 0), Offset(mastX - 4, boom + 10), halyard)
-        ..drawRect(Rect.fromCenter(center: Offset(mastX - 4, boom + 12), width: 8, height: 3), Paint()..color = const Color(0xFF9E9E9E));
+        ..drawRect(
+          Rect.fromCenter(center: Offset(mastX - 4, boom + 12), width: 8, height: 3),
+          Paint()..color = const Color(0xFF9E9E9E),
+        );
       _Rigging.hull(canvas, mastX - w * 0.08, waterline, w * 0.38, reefed ? Palette.hulls[1] : Palette.hulls[0]);
     }
 
@@ -227,7 +296,8 @@ class BreakwaterArt extends StatelessWidget {
   const BreakwaterArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const CustomPaint(painter: _BreakwaterPainter(), child: SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      const CustomPaint(painter: _BreakwaterPainter(), child: SizedBox.expand());
 }
 
 class _BreakwaterPainter extends CustomPainter {
@@ -285,15 +355,24 @@ class _BreakwaterPainter extends CustomPainter {
         final double r = 7 + random.nextDouble() * 6 - layer * 2;
         final Offset c = Offset(x, wall - 4 + layer * 6 + random.nextDouble() * 4);
         canvas
-          ..drawOval(Rect.fromCenter(center: c, width: r * 2.2, height: r * 1.5), Paint()..color = Color.lerp(Palette.stone, Palette.stoneDark, random.nextDouble())!)
-          ..drawOval(Rect.fromCenter(center: c - Offset(r * 0.3, r * 0.3), width: r * 0.9, height: r * 0.5), Paint()..color = Colors.white.withValues(alpha: 0.18));
+          ..drawOval(
+            Rect.fromCenter(center: c, width: r * 2.2, height: r * 1.5),
+            Paint()..color = Color.lerp(Palette.stone, Palette.stoneDark, random.nextDouble())!,
+          )
+          ..drawOval(
+            Rect.fromCenter(center: c - Offset(r * 0.3, r * 0.3), width: r * 0.9, height: r * 0.5),
+            Paint()..color = Colors.white.withValues(alpha: 0.18),
+          );
       }
     }
     // The light at its end.
     final Offset head = Offset(end + 6, wall - 6);
     canvas
       ..drawRect(Rect.fromLTRB(head.dx - 4, head.dy - 24, head.dx + 4, head.dy), Paint()..color = Palette.buoyRed)
-      ..drawRect(Rect.fromLTRB(head.dx - 5, head.dy - 28, head.dx + 5, head.dy - 24), Paint()..color = const Color(0xFF263238))
+      ..drawRect(
+        Rect.fromLTRB(head.dx - 5, head.dy - 28, head.dx + 5, head.dy - 24),
+        Paint()..color = const Color(0xFF263238),
+      )
       ..drawCircle(head - const Offset(0, 30), 3, Paint()..color = const Color(0xFFFFE08A));
     // Spray where the swell breaks on the seaward face.
     final Paint spray = Paint()..color = Colors.white.withValues(alpha: 0.85);
@@ -343,9 +422,13 @@ class _OfficePainter extends CustomPainter {
     final Rect walls = Rect.fromLTRB(w * 0.22, h * 0.3, w * 0.78, ground - 6);
     canvas.drawRect(walls, Paint()..color = const Color(0xFFF2EEE4));
     for (double y = walls.top + 6; y < walls.bottom; y += 7) {
-      canvas.drawLine(Offset(walls.left, y), Offset(walls.right, y), Paint()
-        ..color = const Color(0xFFD6D0C2)
-        ..strokeWidth = 1);
+      canvas.drawLine(
+        Offset(walls.left, y),
+        Offset(walls.right, y),
+        Paint()
+          ..color = const Color(0xFFD6D0C2)
+          ..strokeWidth = 1,
+      );
     }
     // The roof (the header) with its eaves, and a radio mast with a wind sock.
     final Path roof = Path()
@@ -356,34 +439,67 @@ class _OfficePainter extends CustomPainter {
       ..close();
     canvas
       ..drawPath(roof, Paint()..color = const Color(0xFF2E5E4E))
-      ..drawRect(Rect.fromLTRB(walls.left - 14, walls.top - 3, walls.right + 14, walls.top + 2), Paint()..color = const Color(0xFF1F4236));
+      ..drawRect(
+        Rect.fromLTRB(walls.left - 14, walls.top - 3, walls.right + 14, walls.top + 2),
+        Paint()..color = const Color(0xFF1F4236),
+      );
     final Offset mastFoot = Offset(walls.right - 30, h * 0.12);
-    canvas.drawLine(mastFoot, mastFoot - Offset(0, h * 0.11), Paint()
-      ..color = const Color(0xFF455A64)
-      ..strokeWidth = 1.6);
+    canvas.drawLine(
+      mastFoot,
+      mastFoot - Offset(0, h * 0.11),
+      Paint()
+        ..color = const Color(0xFF455A64)
+        ..strokeWidth = 1.6,
+    );
     for (int i = 0; i < 3; i++) {
-      canvas.drawArc(Rect.fromCircle(center: mastFoot - Offset(0, h * 0.11), radius: 4.0 + i * 4), -2.4, 1.6, false, Paint()
-        ..color = Palette.buoyRed.withValues(alpha: 0.7 - i * 0.2)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2);
+      canvas.drawArc(
+        Rect.fromCircle(center: mastFoot - Offset(0, h * 0.11), radius: 4.0 + i * 4),
+        -2.4,
+        1.6,
+        false,
+        Paint()
+          ..color = Palette.buoyRed.withValues(alpha: 0.7 - i * 0.2)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
+      );
     }
     final TextPainter sign = TextPainter(
-      text: TextSpan(text: 'HARBOR MASTER', style: TextStyle(color: Palette.brass, fontSize: h * 0.05, fontWeight: FontWeight.w800, letterSpacing: 1)),
+      text: TextSpan(
+        text: 'HARBOR MASTER',
+        style: TextStyle(color: Palette.brass, fontSize: h * 0.05, fontWeight: FontWeight.w800, letterSpacing: 1),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     sign.paint(canvas, Offset(walls.center.dx - sign.width / 2, h * 0.16));
 
     // The window: frame, the room inside, the harbor master at the radio.
-    final Rect window = Rect.fromLTRB(walls.left + w * 0.06, walls.top + h * 0.08, walls.right - w * 0.06, walls.bottom - h * 0.16);
+    final Rect window = Rect.fromLTRB(
+      walls.left + w * 0.06,
+      walls.top + h * 0.08,
+      walls.right - w * 0.06,
+      walls.bottom - h * 0.16,
+    );
     canvas
       ..drawRect(window.inflate(4), Paint()..color = const Color(0xFF2E5E4E))
       ..drawRect(window, Paint()..color = const Color(0xFF263D4F));
     // Inside: a radio set on the desk with its dial lit, and a figure in a cap.
-    final Rect radio = Rect.fromLTWH(window.left + window.width * 0.56, window.bottom - window.height * 0.36, window.width * 0.32, window.height * 0.3);
+    final Rect radio = Rect.fromLTWH(
+      window.left + window.width * 0.56,
+      window.bottom - window.height * 0.36,
+      window.width * 0.32,
+      window.height * 0.3,
+    );
     canvas
       ..drawRRect(RRect.fromRectAndRadius(radio, const Radius.circular(3)), Paint()..color = const Color(0xFF5D4037))
-      ..drawCircle(radio.center + Offset(-radio.width * 0.2, 0), radio.height * 0.22, Paint()..color = const Color(0xFFFFE08A))
-      ..drawRect(Rect.fromLTWH(radio.center.dx + 2, radio.top + 5, radio.width * 0.3, radio.height * 0.18), Paint()..color = const Color(0xFF9CCC65));
+      ..drawCircle(
+        radio.center + Offset(-radio.width * 0.2, 0),
+        radio.height * 0.22,
+        Paint()..color = const Color(0xFFFFE08A),
+      )
+      ..drawRect(
+        Rect.fromLTWH(radio.center.dx + 2, radio.top + 5, radio.width * 0.3, radio.height * 0.18),
+        Paint()..color = const Color(0xFF9CCC65),
+      );
     final Offset head = Offset(window.left + window.width * 0.3, window.top + window.height * 0.42);
     canvas
       ..drawPath(
@@ -395,29 +511,57 @@ class _OfficePainter extends CustomPainter {
         Paint()..color = const Color(0xFF1A2A6C),
       )
       ..drawCircle(head, window.height * 0.13, Paint()..color = const Color(0xFFE0B48A))
-      ..drawRect(Rect.fromCenter(center: head - Offset(0, window.height * 0.1), width: window.height * 0.3, height: window.height * 0.07), Paint()..color = const Color(0xFF1A2A6C));
+      ..drawRect(
+        Rect.fromCenter(
+          center: head - Offset(0, window.height * 0.1),
+          width: window.height * 0.3,
+          height: window.height * 0.07,
+        ),
+        Paint()..color = const Color(0xFF1A2A6C),
+      );
     // Mullions over the glass and a glint.
     final Paint mullion = Paint()
       ..color = const Color(0xFF2E5E4E)
       ..strokeWidth = 3;
     canvas
       ..drawLine(Offset(window.center.dx, window.top), Offset(window.center.dx, window.bottom), mullion)
-      ..drawLine(Offset(window.left, window.center.dy - window.height * 0.2), Offset(window.right, window.center.dy - window.height * 0.2), mullion)
-      ..drawLine(window.topLeft + const Offset(8, 22), window.topLeft + const Offset(22, 8), Paint()
-        ..color = Colors.white.withValues(alpha: 0.35)
-        ..strokeWidth = 3);
+      ..drawLine(
+        Offset(window.left, window.center.dy - window.height * 0.2),
+        Offset(window.right, window.center.dy - window.height * 0.2),
+        mullion,
+      )
+      ..drawLine(
+        window.topLeft + const Offset(8, 22),
+        window.topLeft + const Offset(22, 8),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.35)
+          ..strokeWidth = 3,
+      );
     // The sill (the footer) under it, and a door and a life ring.
     canvas
-      ..drawRect(Rect.fromLTRB(window.left - 10, window.bottom + 4, window.right + 10, window.bottom + 11), Paint()..color = const Color(0xFF8A5A33))
-      ..drawCircle(Offset(walls.left + 14, walls.center.dy + 6), 8, Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4);
+      ..drawRect(
+        Rect.fromLTRB(window.left - 10, window.bottom + 4, window.right + 10, window.bottom + 11),
+        Paint()..color = const Color(0xFF8A5A33),
+      )
+      ..drawCircle(
+        Offset(walls.left + 14, walls.center.dy + 6),
+        8,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4,
+      );
     for (int i = 0; i < 4; i++) {
-      canvas.drawArc(Rect.fromCircle(center: Offset(walls.left + 14, walls.center.dy + 6), radius: 8), i * math.pi / 2, math.pi / 4, false, Paint()
-        ..color = Palette.buoyRed
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4);
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset(walls.left + 14, walls.center.dy + 6), radius: 8),
+        i * math.pi / 2,
+        math.pi / 4,
+        false,
+        Paint()
+          ..color = Palette.buoyRed
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4,
+      );
     }
     Scenery.bollard(canvas, Offset(w * 0.88, ground - 6), h * 0.06);
     Scenery.lamp(canvas, Offset(w * 0.1, ground - 6), h * 0.3, lit: false);

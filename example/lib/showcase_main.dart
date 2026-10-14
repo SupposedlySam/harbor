@@ -32,7 +32,8 @@ class _PlayerState extends State<_Player> with SingleTickerProviderStateMixin {
     color: Colors.black,
     child: AnimatedBuilder(
       animation: _clock,
-      builder: (final BuildContext context, final Widget? _) => HarborShowcase(time: _clock.value * ShowcaseTimeline.duration),
+      builder: (final BuildContext context, final Widget? _) =>
+          HarborShowcase(time: _clock.value * ShowcaseTimeline.duration),
     ),
   );
 }

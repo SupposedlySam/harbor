@@ -18,53 +18,54 @@ const Widget _child = SizedBox.shrink();
 void main() {
   group('value classes describe themselves', () {
     test('a dock names its kind and shows only what differs from the defaults', () {
-      expect(const HarborDock.pier(child: _child).toString(), 'HarborDock.pier');
+      expect(const HarborBar.overlay(child: _child).toString(), 'HarborBar.overlay');
       expect(
-        const HarborDock.quay(
-          tide: HarborTideStance.float,
-          state: HarborDockState.withdrawn,
+        const HarborBar.solid(
+          keyboard: HarborKeyboardStance.rides,
+          state: HarborBarState.withdrawn,
           minimum: 16.0,
           withdrawsAtHighTide: true,
           debugLabel: 'tab bar',
           backdrop: _child,
           child: _child,
         ).toString(),
-        'HarborDock.quay(tide: float, state: withdrawn, has backdrop, withdraws at high tide, minimum: 16.0, '
+        'HarborBar.solid(keyboard: rides, state: withdrawn, has backdrop, withdraws while the keyboard is up, minimum: 16.0, '
         'debugLabel: "tab bar")',
       );
     });
 
     test('a wake names its kind and shows its non-default sizes', () {
-      expect(HarborWake.none.toString(), 'HarborWake.none');
-      expect(const HarborWake.fade().toString(), 'HarborWake.fade');
+      expect(HarborEdgeEffect.none.toString(), 'HarborEdgeEffect.none');
+      expect(const HarborEdgeEffect.fade().toString(), 'HarborEdgeEffect.fade');
       expect(
-        const HarborWake.fade(length: 12.0, blurSigma: 8.0).toString(),
-        'HarborWake.fade(length: 12.0, blurSigma: 8.0)',
+        const HarborEdgeEffect.fade(length: 12.0, blurSigma: 8.0).toString(),
+        'HarborEdgeEffect.fade(length: 12.0, blurSigma: 8.0)',
       );
-      expect(const HarborWake.hairline(thickness: 0.5).toString(), 'HarborWake.hairline(thickness: 0.5)');
+      expect(const HarborEdgeEffect.hairline(thickness: 0.5).toString(), 'HarborEdgeEffect.hairline(thickness: 0.5)');
     });
 
     test('a coast names where it comes from', () {
-      expect(HarborCoast.ambient.toString(), 'HarborCoast.ambient');
-      expect(HarborCoast.none.toString(), 'HarborCoast.none');
+      expect(HarborSystemEdges.ambient.toString(), 'HarborSystemEdges.ambient');
+      expect(HarborSystemEdges.none.toString(), 'HarborSystemEdges.none');
       expect(
-        const HarborCoast.fixed(EdgeInsetsDirectional.only(top: 24.0), calmTide: true).toString(),
-        'HarborCoast.fixed(fixedInsets: EdgeInsets(0.0, 24.0, 0.0, 0.0), calm tide)',
+        const HarborSystemEdges.fixed(EdgeInsetsDirectional.only(top: 24.0), ignoresKeyboard: true).toString(),
+        'HarborSystemEdges.fixed(fixedInsets: EdgeInsets(0.0, 24.0, 0.0, 0.0), ignores the keyboard)',
       );
       expect(
-        const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)).toString(),
-        'HarborCoast.titleSafe(titleSafe: HarborTitleSafe.fraction(fraction: 5.0%))',
+        const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)).toString(),
+        'HarborSystemEdges.titleSafe(titleSafe: HarborTitleSafe.fraction(fraction: 5.0%))',
       );
     });
 
     test('a buoy shows how it is placed', () {
-      expect(const HarborBuoy(child: _child).toString(), 'HarborBuoy');
+      expect(const HarborFloat(child: _child).toString(), 'HarborFloat');
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'more button');
       addTearDown(anchor.dispose);
       // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
       // how a buoy given a placement describes itself.
       // ignore: deprecated_member_use_from_same_package
-      final HarborBuoy menu = HarborBuoy.anchored(
+      final HarborFloat menu = HarborFloat.anchored(
+        // ignore: deprecated_member_use_from_same_package
         anchor: anchor,
         side: HarborAnchorSide.below,
         modal: true,
@@ -73,7 +74,7 @@ void main() {
         barrierLabel: 'Close menu',
         child: _child,
       );
-      expect(menu.toStringShort(), 'HarborBuoy.anchored');
+      expect(menu.toStringShort(), 'HarborFloat.anchored');
       expect(_shown(menu), <String>[
         'anchor: ${describeIdentity(anchor)}(more button)',
         'side: below',
@@ -105,15 +106,15 @@ void main() {
 
   group('widgets describe their configuration', () {
     test('a harbor shows its docks, buoys and sizing, and nothing at its defaults', () {
-      expect(_shown(const Harbor(body: _child)), isEmpty);
+      expect(_shown(const HarborFrame(body: _child)), isEmpty);
       expect(
         _shown(
-          const Harbor(
-            top: <HarborDock>[HarborDock.pier(debugLabel: 'header', child: _child)],
-            bottom: <HarborDock>[HarborDock.quay(tide: HarborTideStance.float, child: _child)],
-            buoys: <HarborBuoy>[HarborBuoy(child: _child)],
-            newPort: true,
-            bodyClearsTide: false,
+          const HarborFrame(
+            top: <HarborBar>[HarborBar.overlay(debugLabel: 'header', child: _child)],
+            bottom: <HarborBar>[HarborBar.solid(keyboard: HarborKeyboardStance.rides, child: _child)],
+            floats: <HarborFloat>[HarborFloat(child: _child)],
+            isPage: true,
+            bodyClearsKeyboard: false,
             sizing: HarborSizing.hugBody,
             maxExtentFraction: 0.9,
             debugLabel: 'settings',
@@ -121,11 +122,11 @@ void main() {
           ),
         ),
         <String>[
-          'top: HarborDock.pier(debugLabel: "header")',
-          'bottom: HarborDock.quay(tide: float)',
-          'buoys: HarborBuoy',
-          'new port',
-          'body runs under the tide',
+          'top: HarborBar.overlay(debugLabel: "header")',
+          'bottom: HarborBar.solid(keyboard: rides)',
+          'floats: HarborFloat',
+          'page',
+          'body runs under the keyboard',
           'sizing: hugBody',
           'maxExtentFraction: 90.0%',
           'debugLabel: "settings"',
@@ -133,56 +134,56 @@ void main() {
       );
     });
 
-    test('a sea shows its coast and mooring line', () {
-      expect(_shown(const HarborSea(child: _child)), isEmpty);
+    test('a root shows its system edges and margin', () {
+      expect(_shown(const HarborRoot(child: _child)), isEmpty);
       expect(
         _shown(
-          const HarborSea(
-            coast: HarborCoast.none,
+          const HarborRoot(
+            systemEdges: HarborSystemEdges.none,
             margin: EdgeInsetsDirectional.symmetric(horizontal: 16.0),
             child: _child,
           ),
         ),
-        <String>['coast: HarborCoast.none', 'margin: EdgeInsetsDirectional(16.0, 0.0, 16.0, 0.0)'],
+        <String>['systemEdges: HarborSystemEdges.none', 'margin: EdgeInsetsDirectional(16.0, 0.0, 16.0, 0.0)'],
       );
     });
 
     test('a fairway reads as a scroll view does, plus its clearance', () {
-      expect(_shown(const HarborFairway(slivers: <Widget>[])), <String>['scrollDirection: vertical']);
+      expect(_shown(const HarborScrollView(slivers: <Widget>[])), <String>['scrollDirection: vertical']);
       expect(
         _shown(
-          const HarborFairway(
+          const HarborScrollView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
-            mooringLine: false,
+            rowInsets: false,
             bars: false,
-            tide: false,
+            clearsKeyboard: false,
             revealMargin: 24.0,
-            startsInOpenWater: true,
+            startsUnderBars: true,
             slivers: <Widget>[],
           ),
         ),
         <String>[
           'scrollDirection: horizontal',
           'shrinkWrap: shrink-wrapping',
-          'no mooring line',
+          'no row insets',
           'bars not cleared',
-          'tide ignored',
+          'keyboard ignored',
           'revealMargin: 24.0',
-          'starts in open water',
+          'starts under bars',
         ],
       );
     });
 
     test('moored content shows what it keeps clear of', () {
-      expect(_shown(const HarborMoored(child: _child)), isEmpty);
+      expect(_shown(const HarborClear(child: _child)), isEmpty);
       expect(
         _shown(
-          const HarborMoored(
+          const HarborClear(
             edges: HarborEdge.vertical,
             bars: false,
             follow: HarborFollow.resting,
-            mooringLine: true,
+            rowInsets: true,
             minimum: EdgeInsetsDirectional.only(bottom: 16.0),
             child: _child,
           ),
@@ -191,20 +192,20 @@ void main() {
           'edges: HarborEdge.top, HarborEdge.bottom',
           'bars not cleared',
           'follow: resting',
-          'mooring line',
+          'row insets',
           'minimum: EdgeInsets(0.0, 0.0, 0.0, 16.0)',
         ],
       );
     });
 
     test('a beacon, a scale model and a portal buoy show their settings', () {
-      expect(_shown(const HarborBeacon(child: _child)), isEmpty);
+      expect(_shown(const HarborKeepInSight(child: _child)), isEmpty);
       expect(
-        _shown(const HarborBeacon(edge: HarborEdge.bottom, keepInSight: true, clearance: 8.0, child: _child)),
+        _shown(const HarborKeepInSight(edge: HarborEdge.bottom, keepInSight: true, clearance: 8.0, child: _child)),
         <String>['edge: bottom', 'keep in sight', 'clearance: 8.0'],
       );
 
-      expect(_shown(const HarborScaleModel(referenceSize: Size(1200.0, 675.0), child: _child)), <String>[
+      expect(_shown(const HarborScaledScreen(referenceSize: Size(1200.0, 675.0), child: _child)), <String>[
         'referenceSize: Size(1200.0, 675.0)',
       ]);
 
@@ -212,13 +213,13 @@ void main() {
       final List<String> portal = _shown(
         // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
         // how a portal buoy given a placement describes itself.
-        HarborPortalBuoy(
+        HarborPopover(
           controller: controller,
           // ignore: deprecated_member_use_from_same_package
           side: HarborAnchorSide.below,
           // ignore: deprecated_member_use_from_same_package
           flips: false,
-          buoyBuilder: (final BuildContext context) => _child,
+          popoverBuilder: (final BuildContext context) => _child,
           child: _child,
         ),
       );
@@ -242,18 +243,18 @@ void main() {
   });
 
   testWidgets('the widget tree dump shows a mounted harbor\'s docks', (final WidgetTester tester) async {
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       const Directionality(
         textDirection: TextDirection.ltr,
-        child: HarborSea(
-          child: Harbor(
-            top: <HarborDock>[HarborDock.pier(debugLabel: 'header', child: SizedBox(height: 56.0))],
+        child: HarborRoot(
+          child: HarborFrame(
+            top: <HarborBar>[HarborBar.overlay(debugLabel: 'header', child: SizedBox(height: 56.0))],
             body: SizedBox.expand(),
           ),
         ),
       ),
     );
-    final String tree = tester.element(find.byType(Harbor).last).toStringDeep();
-    expect(tree.split('\n').first, contains('top: [HarborDock.pier(debugLabel: "header")]'));
+    final String tree = tester.element(find.byType(HarborFrame).last).toStringDeep();
+    expect(tree.split('\n').first, contains('top: [HarborBar.overlay(debugLabel: "header")]'));
   });
 }

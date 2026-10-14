@@ -26,7 +26,7 @@ Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.b
 /// Pumps a page in a harbor on [device] and returns its context, to open sheets from.
 Future<BuildContext> _page(final WidgetTester tester, final HarborTrialDevice device) async {
   late BuildContext page;
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     WidgetsApp(
       color: const Color(0xFF000000),
       pageRouteBuilder: <T>(final RouteSettings settings, final WidgetBuilder builder) => PageRouteBuilder<T>(
@@ -34,8 +34,8 @@ Future<BuildContext> _page(final WidgetTester tester, final HarborTrialDevice de
         pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) =>
             builder(context),
       ),
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-      home: Harbor(
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+      home: HarborFrame(
         body: Builder(
           builder: (final BuildContext context) {
             page = context;
@@ -65,26 +65,26 @@ Future<Map<String, EdgeInsets>> _open(
   final BuildContext page = await _page(tester, device);
   final Map<String, EdgeInsets> padding = <String, EdgeInsets>{};
   const Widget surface = SizedBox.expand(key: ValueKey<String>('surface'));
-  Widget body() => mooredBody ? HarborMoored(child: _probe('body', 100.0, padding)) : _probe('body', 100.0, padding);
+  Widget body() => mooredBody ? HarborClear(child: _probe('body', 100.0, padding)) : _probe('body', 100.0, padding);
   unawaited(
     showHarborSheet<void>(
       page,
-      keepsTopCoast: keepsTopCoast,
+      reachesTop: keepsTopCoast,
       builder: (final BuildContext context) => draggable
           ? HarborSheet.draggable(
               extent: const HarborSheetExtent(rest: 1.0, max: 1.0),
-              clearsTopCoast: clearsTopCoast ?? true,
+              clearsTopSystemEdge: clearsTopCoast ?? true,
               clearsSides: clearsSides ?? false,
               surface: surface,
               header: _probe('header', _headerHeight, padding),
               footer: _probe('footer', 40.0, padding),
-              builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
+              builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
                 controller: controller,
                 slivers: <Widget>[SliverToBoxAdapter(child: body())],
               ),
             )
           : HarborSheet(
-              clearsTopCoast: clearsTopCoast ?? true,
+              clearsTopSystemEdge: clearsTopCoast ?? true,
               clearsSides: clearsSides ?? false,
               surface: surface,
               header: _probe('header', _headerHeight, padding),
@@ -99,7 +99,7 @@ Future<Map<String, EdgeInsets>> _open(
 
 void main() {
   const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
-  final double statusBar = phone.coast.top;
+  final double statusBar = phone.systemEdges.top;
 
   group('HarborSheet(clearsTopCoast: false) with keepsTopCoast (#75)', () {
     testWidgets('a content-sized sheet: the header sits at the top of the surface and reads no top coast', (
@@ -170,8 +170,8 @@ void main() {
 
   group('HarborSheet(clearsSides:) on a phone on its side (#76)', () {
     const HarborTrialDevice landscape = HarborTrialDevice.iPhone17Landscape;
-    final double left = landscape.coast.left;
-    final double right = landscape.size.width - landscape.coast.right;
+    final double left = landscape.systemEdges.left;
+    final double right = landscape.size.width - landscape.systemEdges.right;
 
     for (final bool draggable in <bool>[false, true]) {
       testWidgets('true: header, body and footer clear the side coast and cast it off (draggable: $draggable)', (
@@ -199,7 +199,7 @@ void main() {
           expect(rect.left, 0.0, reason: part);
           expect(rect.right, landscape.size.width, reason: part);
           expect(padding[part]!.left, left, reason: part);
-          expect(padding[part]!.right, landscape.coast.right, reason: part);
+          expect(padding[part]!.right, landscape.systemEdges.right, reason: part);
         }
         expect(_rect(tester, 'surface').left, 0.0);
         expect(_rect(tester, 'surface').right, landscape.size.width);

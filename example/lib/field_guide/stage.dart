@@ -6,8 +6,8 @@ import 'package:harbor/harbor.dart';
 
 import '../art/palette.dart';
 
-/// A phone the stage pretends to be: its screen, its coast and how high its
-/// keyboard comes in. Mirrors the sea-trial devices in `package:harbor_test`.
+/// A phone the stage pretends to be: its screen, its system edges and how high
+/// its keyboard comes in. Mirrors the trial devices in `package:harbor_test`.
 @immutable
 class StageDevice {
   const StageDevice({
@@ -40,11 +40,11 @@ class StageDevice {
   /// Whether it has a Dynamic Island to draw.
   final bool island;
 
-  /// Whether it has a punch-hole camera to draw, in the top coast or, on a phone on its side, the
+  /// Whether it has a punch-hole camera to draw, in the top system edge or, on a phone on its side, the
   /// side [cutout].
   final bool camera;
 
-  /// How much of the right coast a navigation bar takes: an Android phone with three buttons, on
+  /// How much of the right system edge a navigation bar takes: an Android phone with three buttons, on
   /// its side, moves its bar there. The home indicator switch hides it, as it hides one at the
   /// bottom.
   final double sideNavigationBar;
@@ -53,7 +53,7 @@ class StageDevice {
   final bool tv;
 
   /// Its folds and hinges, open flat, as the platform reports them in `MediaQuery.displayFeatures`:
-  /// each runs top to bottom, as on the sea-trial devices. [held] folds them.
+  /// each runs top to bottom, as on the trial devices. [held] folds them.
   final List<DisplayFeature> displayFeatures;
 
   /// This device as it is held in [posture]: half open like a book (the same screen, its fold half
@@ -144,7 +144,11 @@ class StageDevice {
     coast: EdgeInsets.only(top: 24, bottom: 24),
     tideHeight: 330,
     displayFeatures: <DisplayFeature>[
-      DisplayFeature(bounds: Rect.fromLTRB(375, 0, 375, 832), type: DisplayFeatureType.fold, state: DisplayFeatureState.postureFlat),
+      DisplayFeature(
+        bounds: Rect.fromLTRB(375, 0, 375, 832),
+        type: DisplayFeatureType.fold,
+        state: DisplayFeatureState.postureFlat,
+      ),
     ],
   );
 
@@ -155,7 +159,11 @@ class StageDevice {
     coast: EdgeInsets.only(top: 24, bottom: 24),
     tideHeight: 300,
     displayFeatures: <DisplayFeature>[
-      DisplayFeature(bounds: Rect.fromLTRB(540, 0, 574, 720), type: DisplayFeatureType.hinge, state: DisplayFeatureState.postureFlat),
+      DisplayFeature(
+        bounds: Rect.fromLTRB(540, 0, 574, 720),
+        type: DisplayFeatureType.hinge,
+        state: DisplayFeatureState.postureFlat,
+      ),
     ],
   );
   static const StageDevice dualScreenCover = StageDevice(
@@ -173,7 +181,7 @@ class StageDevice {
     tv: true,
   );
 
-  /// Every sea-trial device but the television.
+  /// Every trial device but the television.
   static const List<StageDevice> phones = <StageDevice>[
     iPhone17,
     iPhoneSE,
@@ -198,11 +206,11 @@ class StageFocus {
   /// The whole screen.
   static const StageFocus whole = StageFocus._(null, 0);
 
-  /// The top [extent] points: headers, piers, the status bar.
+  /// The top [extent] points: headers, overlay bars, the status bar.
   const StageFocus.top(this.extent) : _edge = VerticalDirection.down;
 
-  /// The bottom [extent] points: quays, sheets, the keyboard. As the tide
-  /// comes in the view rises with the waterline, keeping the keyboard's top
+  /// The bottom [extent] points: solid bars, sheets, the keyboard. As the
+  /// keyboard comes in the view rises with its top, keeping the keyboard's top
   /// edge in sight and what rides it.
   const StageFocus.bottom(this.extent) : _edge = VerticalDirection.up;
 
@@ -237,8 +245,8 @@ class StageFocus {
   };
 }
 
-/// Everything the stage's controls set: device, coast switches, tide, reading
-/// direction and the chart. Listen to it to rebuild with the stage.
+/// Everything the stage's controls set: device, system edge switches, keyboard,
+/// reading direction and the inspector. Listen to it to rebuild with the stage.
 class StageSettings extends ChangeNotifier {
   StageSettings({this._device = StageDevice.iPhone17});
 
@@ -267,10 +275,10 @@ class StageSettings extends ChangeNotifier {
   /// Whether to show the whole phone even where a page focuses on part of it.
   bool get wholePhone => _wholePhone;
 
-  /// How far the tide is in, 0 (low) to 1 (high).
+  /// How far the keyboard is in, 0 (hidden) to 1 (shown).
   double get tide => _tide;
 
-  /// The keyboard's height on the stage's device at the current tide.
+  /// The keyboard's height on the stage's device, as far in as it is now.
   double get tideHeight => _device.tideHeight * _tide;
 
   set device(final StageDevice value) => _set(() {
@@ -282,7 +290,8 @@ class StageSettings extends ChangeNotifier {
       _posture = HarborPosture.flat;
     }
   });
-  set posture(final HarborPosture value) => _set(() => _posture = _device.displayFeatures.isEmpty ? HarborPosture.flat : value);
+  set posture(final HarborPosture value) =>
+      _set(() => _posture = _device.displayFeatures.isEmpty ? HarborPosture.flat : value);
   set statusBar(final bool value) => _set(() => _statusBar = value);
   set homeIndicator(final bool value) => _set(() => _homeIndicator = value);
   set rtl(final bool value) => _set(() => _rtl = value);
@@ -379,18 +388,24 @@ class StageScope extends InheritedWidget {
   bool updateShouldNotify(final StageScope oldWidget) => true;
 }
 
-/// A phone on a stand: a bezel around a pretend screen with its own sea, its
+/// A phone on a stand: a bezel around a pretend screen with its own root, its
 /// own navigator (so sheets and dialogs open inside it), a status bar and
-/// home indicator drawn over it, and a keyboard that rises with the tide.
+/// home indicator drawn over it, and a keyboard the gauge brings in.
 ///
 /// With a [focus], only that part of the phone is on the stage, drawn as big
 /// as fits; the phone fades out past the cut.
 class Stage extends StatelessWidget {
-  const Stage({super.key, required this.settings, required this.builder, this.maxHeight = 640, this.focus = StageFocus.whole});
+  const Stage({
+    super.key,
+    required this.settings,
+    required this.builder,
+    this.maxHeight = 640,
+    this.focus = StageFocus.whole,
+  });
 
   final StageSettings settings;
 
-  /// Builds what's on the stage's screen: usually a [Harbor].
+  /// Builds what's on the stage's screen: usually a [HarborFrame].
   final WidgetBuilder builder;
 
   /// The tallest the stage may be drawn on the page.
@@ -415,22 +430,27 @@ class Stage extends StatelessWidget {
           settings.tideHeight,
         );
         return LayoutBuilder(
-          builder: (final BuildContext context, final BoxConstraints constraints) =>
-              TweenAnimationBuilder<Offset>(
-                // The view glides to a new crop, and rides the tide.
-                tween: Tween<Offset>(end: Offset(target.top, target.height)),
-                duration: const Duration(milliseconds: 240),
-                curve: Curves.easeOutCubic,
-                builder: (final BuildContext context, final Offset window, final Widget? screen) =>
-                    _frame(device, window.dx, window.dy, constraints.maxWidth, screen!),
-                child: _Screen(settings: settings, builder: builder),
-              ),
+          builder: (final BuildContext context, final BoxConstraints constraints) => TweenAnimationBuilder<Offset>(
+            // The view glides to a new crop, and rides the keyboard.
+            tween: Tween<Offset>(end: Offset(target.top, target.height)),
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            builder: (final BuildContext context, final Offset window, final Widget? screen) =>
+                _frame(device, window.dx, window.dy, constraints.maxWidth, screen!),
+            child: _Screen(settings: settings, builder: builder),
+          ),
         );
       },
     );
   }
 
-  Widget _frame(final StageDevice device, final double top, final double height, final double width, final Widget screen) {
+  Widget _frame(
+    final StageDevice device,
+    final double top,
+    final double height,
+    final double width,
+    final Widget screen,
+  ) {
     final bool cutTop = top > 0.5;
     final bool cutBottom = top + height < device.size.height - 0.5;
     final double topBezel = cutTop ? 0 : _bezel;
@@ -456,7 +476,9 @@ class Stage extends StatelessWidget {
               left: 0,
               width: device.size.width * scale,
               height: device.size.height * scale,
-              child: FittedBox(child: SizedBox.fromSize(size: device.size, child: screen)),
+              child: FittedBox(
+                child: SizedBox.fromSize(size: device.size, child: screen),
+              ),
             ),
           ],
         ),
@@ -490,7 +512,12 @@ class Stage extends StatelessWidget {
           const Color(0xFF000000),
           if (cutBottom) const Color(0x00000000),
         ],
-        stops: <double>[if (cutTop) 0.0, if (cutTop) fade else 0.0, if (cutBottom) 1 - fade else 1.0, if (cutBottom) 1.0],
+        stops: <double>[
+          if (cutTop) 0.0,
+          if (cutTop) fade else 0.0,
+          if (cutBottom) 1 - fade else 1.0,
+          if (cutBottom) 1.0,
+        ],
       ).createShader(bounds),
       child: phone,
     );
@@ -518,16 +545,19 @@ class _Screen extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               Positioned.fill(
-                child: HarborSea(
-                  coast: device.tv ? const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)) : HarborCoast.ambient,
+                child: HarborRoot(
+                  systemEdges: device.tv
+                      ? const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05))
+                      : HarborSystemEdges.ambient,
                   margin: EdgeInsetsDirectional.symmetric(horizontal: device.tv ? 32 : 16),
-                  child: HarborChartOverlay(
+                  child: HarborInspectorOverlay(
                     enabled: settings.chart,
                     child: HeroControllerScope.none(
                       child: Navigator(
                         onGenerateRoute: (final RouteSettings _) => PageRouteBuilder<void>(
-                          pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) =>
-                              const _StageHome(),
+                          pageBuilder:
+                              (final BuildContext context, final Animation<double> a, final Animation<double> b) =>
+                                  const _StageHome(),
                         ),
                       ),
                     ),
@@ -587,7 +617,11 @@ class _Screen extends StatelessWidget {
                   bottom: 0,
                   width: device.sideNavigationBar,
                   child: const IgnorePointer(
-                    child: RotatedBox(key: ValueKey<String>('side navigation bar'), quarterTurns: 1, child: HomeIndicatorArt()),
+                    child: RotatedBox(
+                      key: ValueKey<String>('side navigation bar'),
+                      quarterTurns: 1,
+                      child: HomeIndicatorArt(),
+                    ),
                   ),
                 ),
               if (settings.homeIndicator && device.coast.bottom > 0 && settings.tideHeight <= 0)
@@ -612,7 +646,10 @@ class _Screen extends StatelessWidget {
                     rect: feature.bounds.shortestSide > 0 ? feature.bounds : feature.bounds.inflate(FoldArt.reach),
                     child: IgnorePointer(
                       child: feature.bounds.shortestSide > 0
-                          ? HingeArt(key: const ValueKey<String>('stage hinge'), vertical: feature.bounds.height >= feature.bounds.width)
+                          ? HingeArt(
+                              key: const ValueKey<String>('stage hinge'),
+                              vertical: feature.bounds.height >= feature.bounds.width,
+                            )
                           : FoldArt(
                               key: const ValueKey<String>('stage fold'),
                               vertical: feature.bounds.height >= feature.bounds.width,
@@ -620,8 +657,7 @@ class _Screen extends StatelessWidget {
                             ),
                     ),
                   ),
-              if (device.tv)
-                const Positioned.fill(child: IgnorePointer(child: TitleSafeGuideArt())),
+              if (device.tv) const Positioned.fill(child: IgnorePointer(child: TitleSafeGuideArt())),
             ],
           ),
         ),
@@ -638,13 +674,16 @@ class _StageHome extends StatelessWidget {
     final StageScope scope = StageScope.of(context);
     return Material(
       color: Palette.deepSea,
-      child: DefaultTextStyle.merge(style: const TextStyle(color: Palette.foam), child: scope.builder(context)),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: Palette.foam),
+        child: scope.builder(context),
+      ),
     );
   }
 }
 
-/// Reports what `MediaQuery` and the harbor's waters say where it sits, so
-/// the guide page can show the numbers under the stage.
+/// Reports what `MediaQuery` and `HarborRoom.of` say where it sits, so the
+/// guide page can show the numbers under the stage.
 class StageProbe extends StatefulWidget {
   const StageProbe({super.key, required this.label, this.child});
 
@@ -676,7 +715,7 @@ class _StageProbeState extends State<StageProbe> {
   Widget build(final BuildContext context) {
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final double insets = MediaQuery.viewInsetsOf(context).bottom;
-    final HarborWatersData waters = HarborWaters.of(context);
+    final HarborRoomData room = HarborRoom.of(context);
     final TextDirection direction = Directionality.of(context);
     String f(final double v) => v.toStringAsFixed(0);
     String box(final EdgeInsetsDirectional e) {
@@ -687,9 +726,9 @@ class _StageProbeState extends State<StageProbe> {
     final String reading =
         'padding  T ${f(padding.top)} · B ${f(padding.bottom)} · L ${f(padding.left)} · R ${f(padding.right)}\n'
         'keyboard ${f(insets)}\n'
-        'coast    ${box(waters.coast)}\n'
-        'docks    ${box(waters.docks)}\n'
-        'mooring  ${box(waters.margin)}';
+        'edges    ${box(room.systemEdges)}\n'
+        'bars     ${box(room.bars)}\n'
+        'margin   ${box(room.margin)}';
     final StageSettings? settings = _settings = StageScope.settingsOf(context);
     WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
       if (mounted) {
@@ -748,7 +787,10 @@ class _StatusBarPainter extends CustomPainter {
     final double x0 = size.width * 0.72;
     for (int i = 0; i < 4; i++) {
       final double h = 4.0 + i * 2.5;
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x0 + i * 5.0, mid + 6 - h, 3, h), const Radius.circular(1)), white);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(x0 + i * 5.0, mid + 6 - h, 3, h), const Radius.circular(1)),
+        white,
+      );
     }
     // Wi-Fi arcs.
     final Offset wifi = Offset(x0 + 30, mid + 5);
@@ -797,12 +839,14 @@ class HomeIndicatorArt extends StatelessWidget {
   );
 }
 
-/// A software keyboard, keys and all: what the tide is in an app.
+/// A software keyboard, keys and all.
 class KeyboardArt extends StatelessWidget {
   const KeyboardArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const ClipRect(child: CustomPaint(painter: _KeyboardPainter(), child: SizedBox.expand()));
+  Widget build(final BuildContext context) => const ClipRect(
+    child: CustomPaint(painter: _KeyboardPainter(), child: SizedBox.expand()),
+  );
 }
 
 class _KeyboardPainter extends CustomPainter {
@@ -811,7 +855,7 @@ class _KeyboardPainter extends CustomPainter {
   @override
   void paint(final Canvas canvas, final Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFD1D4DA));
-    // The keyboard is drawn from its top, so a low tide shows only its top rows.
+    // The keyboard is drawn from its top, so one partly in shows only its top rows.
     const double rowHeight = 54;
     const List<String> rows = <String>['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
     final double keyWidth = (size.width - 6) / 10;
@@ -826,7 +870,10 @@ class _KeyboardPainter extends CustomPainter {
           ..drawRRect(RRect.fromRectAndRadius(rect.shift(const Offset(0, 1.2)), const Radius.circular(5)), shadow)
           ..drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(5)), key);
         final TextPainter letter = TextPainter(
-          text: TextSpan(text: letters[i], style: const TextStyle(color: Colors.black87, fontSize: 22, fontFamily: 'Helvetica')),
+          text: TextSpan(
+            text: letters[i],
+            style: const TextStyle(color: Colors.black87, fontSize: 22, fontFamily: 'Helvetica'),
+          ),
           textDirection: TextDirection.ltr,
         )..layout();
         letter.paint(canvas, rect.center - Offset(letter.width / 2, letter.height / 2));
@@ -836,13 +883,22 @@ class _KeyboardPainter extends CustomPainter {
     final double y = 10 + 3 * rowHeight;
     final Paint grey = Paint()..color = const Color(0xFFABB0BA);
     canvas
-      ..drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(6, y, keyWidth * 2.4, rowHeight - 12), const Radius.circular(5)), grey)
       ..drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(12 + keyWidth * 2.4, y, size.width - keyWidth * 4.8 - 24, rowHeight - 12), const Radius.circular(5)),
+        RRect.fromRectAndRadius(Rect.fromLTWH(6, y, keyWidth * 2.4, rowHeight - 12), const Radius.circular(5)),
+        grey,
+      )
+      ..drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(12 + keyWidth * 2.4, y, size.width - keyWidth * 4.8 - 24, rowHeight - 12),
+          const Radius.circular(5),
+        ),
         key,
       )
       ..drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(size.width - 6 - keyWidth * 2.4, y, keyWidth * 2.4, rowHeight - 12), const Radius.circular(5)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(size.width - 6 - keyWidth * 2.4, y, keyWidth * 2.4, rowHeight - 12),
+          const Radius.circular(5),
+        ),
         Paint()..color = const Color(0xFF2F7CF6),
       );
   }
@@ -895,7 +951,8 @@ class HingeArt extends StatelessWidget {
   final bool vertical;
 
   @override
-  Widget build(final BuildContext context) => CustomPaint(painter: _HingePainter(vertical), child: const SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      CustomPaint(painter: _HingePainter(vertical), child: const SizedBox.expand());
 }
 
 class _HingePainter extends CustomPainter {
@@ -957,7 +1014,8 @@ class FoldArt extends StatelessWidget {
   final bool halfOpen;
 
   @override
-  Widget build(final BuildContext context) => CustomPaint(painter: _FoldPainter(vertical, halfOpen), child: const SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      CustomPaint(painter: _FoldPainter(vertical, halfOpen), child: const SizedBox.expand());
 }
 
 class _FoldPainter extends CustomPainter {
@@ -1000,5 +1058,6 @@ class _FoldPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(final _FoldPainter oldDelegate) => oldDelegate.vertical != vertical || oldDelegate.halfOpen != halfOpen;
+  bool shouldRepaint(final _FoldPainter oldDelegate) =>
+      oldDelegate.vertical != vertical || oldDelegate.halfOpen != halfOpen;
 }

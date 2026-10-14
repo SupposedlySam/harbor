@@ -9,14 +9,14 @@ import 'dock.dart';
 import 'edge.dart';
 import 'wake.dart';
 
-/// Builds one dock in its harbor: its coast padding, backdrop, frosting,
+/// Builds one bar in its frame: its system edge padding, backdrop, frosting,
 /// hairline, and its dark and withdraw animations.
 @Deprecated(
-  'HarborDockSlot is how a harbor builds a dock, and stops being exported in a later release. Read where docks '
-  'are with HarborChart.nearest(context).docks (or docksAround in harbor_test), or find the dock\'s child.',
+  'HarborDockSlot is how a harbor builds a dock, and stops being exported in a later release. Read where bars '
+  'are with HarborInspector.nearest(context).bars (or barsAround in harbor_test), or find the dock\'s child.',
 )
 class HarborDockSlot extends StatefulWidget {
-  /// Made by the harbor for each of its docks.
+  /// Made by the frame for each of its bars.
   @internal
   const HarborDockSlot({
     super.key,
@@ -29,19 +29,19 @@ class HarborDockSlot extends StatefulWidget {
     required this.onSettled,
   });
 
-  final HarborDock dock;
+  final HarborBar dock;
   final HarborEdge edge;
 
-  /// The state after claims and the tide are applied.
-  final HarborDockState state;
+  /// The state after claims and the keyboard are applied.
+  final HarborBarState state;
 
-  /// What this dock pads its child by for the coast on its edge.
+  /// What this bar pads its child by for the system edge on its edge.
   final EdgeInsetsDirectional coastPadding;
 
   /// The `MediaQuery` its child sees: its own edge absorbed, the sides left in.
   final MediaQueryData mediaQuery;
 
-  /// Whether this dock is the innermost on its edge, the one that leaves a wake.
+  /// Whether this bar is the innermost on its edge, the one that draws an edge effect.
   final bool leavesWake;
 
   /// Called when a withdraw or return animation finishes.
@@ -53,11 +53,11 @@ class HarborDockSlot extends StatefulWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<HarborDock>('dock', dock));
+    properties.add(DiagnosticsProperty<HarborBar>('dock', dock));
     properties.add(EnumProperty<HarborEdge>('edge', edge));
-    properties.add(EnumProperty<HarborDockState>('state', state));
+    properties.add(EnumProperty<HarborBarState>('state', state));
     properties.add(DiagnosticsProperty<EdgeInsetsDirectional>('coastPadding', coastPadding));
-    properties.add(FlagProperty('leavesWake', value: leavesWake, ifTrue: 'leaves wake'));
+    properties.add(FlagProperty('leavesWake', value: leavesWake, ifTrue: 'draws edge effect'));
   }
 }
 
@@ -65,14 +65,18 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   late final AnimationController _presence = AnimationController(
     vsync: this,
     duration: widget.dock.duration,
-    value: widget.state == HarborDockState.withdrawn ? 0.0 : 1.0,
+    value: widget.state == HarborBarState.withdrawn ? 0.0 : 1.0,
   );
   late final AnimationController _light = AnimationController(
     vsync: this,
     duration: widget.dock.duration,
-    value: widget.state == HarborDockState.dark ? 0.0 : 1.0,
+    value: widget.state == HarborBarState.dark ? 0.0 : 1.0,
   );
-  late final CurvedAnimation _presenceCurve = CurvedAnimation(parent: _presence, curve: _curve, reverseCurve: _reverseCurve);
+  late final CurvedAnimation _presenceCurve = CurvedAnimation(
+    parent: _presence,
+    curve: _curve,
+    reverseCurve: _reverseCurve,
+  );
   late final CurvedAnimation _lightCurve = CurvedAnimation(parent: _light, curve: _curve, reverseCurve: _reverseCurve);
 
   Curve get _curve => widget.dock.animationStyle?.curve ?? widget.dock.curve;
@@ -108,7 +112,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
     }
   }
 
-  /// The dock's own durations, or none when the platform asks for reduced motion.
+  /// The bar's own durations, or none when the platform asks for reduced motion.
   void _setDurations() {
     final bool still = MediaQuery.disableAnimationsOf(context);
     final AnimationStyle? style = widget.dock.animationStyle;
@@ -121,15 +125,15 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
     }
   }
 
-  void _apply(final HarborDockState state) {
+  void _apply(final HarborBarState state) {
     switch (state) {
-      case HarborDockState.open:
+      case HarborBarState.open:
         _presence.forward();
         _light.forward();
-      case HarborDockState.dark:
+      case HarborBarState.dark:
         _presence.forward();
         _light.reverse();
-      case HarborDockState.withdrawn:
+      case HarborBarState.withdrawn:
         _presence.reverse();
     }
   }
@@ -145,20 +149,20 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
 
   @override
   Widget build(final BuildContext context) {
-    final HarborDock dock = widget.dock;
-    final HarborWake wake = widget.leavesWake ? dock.wake : HarborWake.none;
+    final HarborBar dock = widget.dock;
+    final HarborEdgeEffect wake = widget.leavesWake ? dock.edgeEffect : HarborEdgeEffect.none;
     final double? reserved = dock.reserved;
     final Widget content = Padding(
       padding: widget.coastPadding,
       child: reserved == null
           ? MediaQuery(data: widget.mediaQuery, child: dock.child)
-          // Whatever coast it took counts toward its extent, so it reaches the larger of the two.
+          // Whatever system edge it took counts toward its extent, so it reaches the larger of the two.
           : SizedBox.square(dimension: math.max(0.0, reserved - HarborEdges.of(widget.coastPadding, widget.edge))),
     );
     final Widget dockBody = Stack(
       children: <Widget>[
         Positioned.fill(child: _Frosting(sigma: wake.blurSigma)),
-        // A backdrop is the dock's surface, never a tap target: the dock's
+        // A backdrop is the bar's surface, never a tap target: the bar's
         // hitTestBehavior alone decides whether taps stop here.
         Positioned.fill(child: IgnorePointer(child: dock.backdrop ?? const SizedBox.shrink())),
         content,
@@ -169,16 +173,16 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
       builder: (final BuildContext context, final Widget? child) {
         final double presence = _presenceCurve.value;
         final double light = _lightCurve.value;
-        final bool hidden = widget.state != HarborDockState.open;
+        final bool hidden = widget.state != HarborBarState.open;
         return _DockFrame(
           edge: widget.edge,
           kind: dock.kind,
           visualFactor: presence,
           extentFactor: _extentFactor(presence),
           restingExtent: dock.restingExtent,
-          hairline: wake.kind == HarborWakeKind.hairline ? wake : null,
-          // A dock that is dark or leaving is out of reach in every way, not only for taps:
-          // keyboard focus and screen readers skip it too. Opacity alone hid a dark dock from
+          hairline: wake.kind == HarborEdgeEffectKind.hairline ? wake : null,
+          // A bar that is dark or leaving is out of reach in every way, not only for taps:
+          // keyboard focus and screen readers skip it too. Opacity alone hid a dark bar from
           // screen readers but not from Tab, and a withdrawn one was still read out and focused.
           child: ExcludeFocus(
             excluding: hidden,
@@ -192,12 +196,14 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
           ),
         );
       },
-      child: reserved != null ? IgnorePointer(child: dockBody) : Listener(behavior: dock.hitTestBehavior, child: dockBody),
+      child: reserved != null
+          ? IgnorePointer(child: dockBody)
+          : Listener(behavior: dock.hitTestBehavior, child: dockBody),
     );
   }
 
   double _extentFactor(final double presence) {
-    final bool leaving = widget.state == HarborDockState.withdrawn;
+    final bool leaving = widget.state == HarborBarState.withdrawn;
     return switch (widget.dock.extentPolicy) {
       HarborExtentPolicy.follow => presence,
       HarborExtentPolicy.hold => leaving ? (_presence.isDismissed ? 0.0 : 1.0) : presence,
@@ -206,7 +212,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   }
 }
 
-/// Frosts the water under a dock. Always in the tree; draws nothing at zero.
+/// Frosts the content under a bar. Always in the tree; draws nothing at zero.
 class _Frosting extends StatelessWidget {
   const _Frosting({required this.sigma});
 
@@ -226,8 +232,8 @@ class _Frosting extends StatelessWidget {
   }
 }
 
-/// The render side of a dock: lays its child out at full size, sizes itself to
-/// the visible share of it, and reports how much ground it takes.
+/// The render side of a bar: lays its child out at full size, sizes itself to
+/// the visible share of it, and reports how much space it takes.
 class _DockFrame extends SingleChildRenderObjectWidget {
   const _DockFrame({
     required this.edge,
@@ -240,11 +246,11 @@ class _DockFrame extends SingleChildRenderObjectWidget {
   });
 
   final HarborEdge edge;
-  final HarborDockKind kind;
+  final HarborBarKind kind;
   final double visualFactor;
   final double extentFactor;
   final double? restingExtent;
-  final HarborWake? hairline;
+  final HarborEdgeEffect? hairline;
 
   @override
   RenderHarborDockFrame createRenderObject(final BuildContext context) => RenderHarborDockFrame(
@@ -290,9 +296,9 @@ class RenderHarborDockFrame extends RenderProxyBox {
     }
   }
 
-  HarborDockKind _kind;
-  HarborDockKind get kind => _kind;
-  set kind(final HarborDockKind value) {
+  HarborBarKind _kind;
+  HarborBarKind get kind => _kind;
+  set kind(final HarborBarKind value) {
     if (_kind != value) {
       _kind = value;
       markNeedsLayout();
@@ -323,8 +329,8 @@ class RenderHarborDockFrame extends RenderProxyBox {
     }
   }
 
-  HarborWake? _hairline;
-  set hairline(final HarborWake? value) {
+  HarborEdgeEffect? _hairline;
+  set hairline(final HarborEdgeEffect? value) {
     if (_hairline != value) {
       _hairline = value;
       markNeedsPaint();
@@ -343,13 +349,13 @@ class RenderHarborDockFrame extends RenderProxyBox {
 
   double _fullExtent = 0.0;
 
-  /// The child's full size along the dock's axis, from the last layout.
+  /// The child's full size along the bar's axis, from the last layout.
   double get fullExtent => _fullExtent;
 
-  /// How much ground the dock takes right now.
+  /// How much space the bar takes right now.
   double get extent => fullExtent * _extentFactor;
 
-  /// How much ground the dock takes at rest.
+  /// How much space the bar takes at rest.
   double get restingExtent => (_restingExtent ?? fullExtent) * _extentFactor;
 
   @override
@@ -367,7 +373,7 @@ class RenderHarborDockFrame extends RenderProxyBox {
     size = constraints.constrain(_edge.isVertical ? Size(full.width, visible) : Size(visible, full.height));
     final double hidden = (_edge.isVertical ? full.height : full.width) - visible;
     final bool ltr = _textDirection == TextDirection.ltr;
-    // Slide toward the dock's own edge as it withdraws.
+    // Slide toward the bar's own edge as it withdraws.
     _childOffset = switch (_edge) {
       HarborEdge.top => Offset(0.0, -hidden),
       HarborEdge.bottom => Offset.zero,
@@ -390,7 +396,8 @@ class RenderHarborDockFrame extends RenderProxyBox {
     return result.addWithPaintOffset(
       offset: _childOffset,
       position: position,
-      hitTest: (final BoxHitTestResult result, final Offset transformed) => child.hitTest(result, position: transformed),
+      hitTest: (final BoxHitTestResult result, final Offset transformed) =>
+          child.hitTest(result, position: transformed),
     );
   }
 
@@ -415,17 +422,19 @@ class RenderHarborDockFrame extends RenderProxyBox {
       _clip.layer = null;
       context.paintChild(child, offset + _childOffset);
     }
-    final HarborWake? hairline = _hairline;
+    final HarborEdgeEffect? hairline = _hairline;
     if (hairline != null && _visualFactor > 0) {
-      final Paint paint = Paint()..color = hairline.color ?? const HarborWake.hairline().color!;
+      final Paint paint = Paint()..color = hairline.color ?? const HarborEdgeEffect.hairline().color!;
       final bool ltr = _textDirection == TextDirection.ltr;
       final Rect box = offset & size;
       final double t = hairline.length;
       final Rect line = switch (_edge) {
         HarborEdge.top => Rect.fromLTWH(box.left, box.bottom - t, box.width, t),
         HarborEdge.bottom => Rect.fromLTWH(box.left, box.top, box.width, t),
-        HarborEdge.start => ltr ? Rect.fromLTWH(box.right - t, box.top, t, box.height) : Rect.fromLTWH(box.left, box.top, t, box.height),
-        HarborEdge.end => ltr ? Rect.fromLTWH(box.left, box.top, t, box.height) : Rect.fromLTWH(box.right - t, box.top, t, box.height),
+        HarborEdge.start =>
+          ltr ? Rect.fromLTWH(box.right - t, box.top, t, box.height) : Rect.fromLTWH(box.left, box.top, t, box.height),
+        HarborEdge.end =>
+          ltr ? Rect.fromLTWH(box.left, box.top, t, box.height) : Rect.fromLTWH(box.right - t, box.top, t, box.height),
       };
       context.canvas.drawRect(line, paint);
     }

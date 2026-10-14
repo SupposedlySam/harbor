@@ -10,13 +10,17 @@ import 'package:harbor_test/harbor_test.dart';
 
 Future<BuildContext> _app(final WidgetTester tester, {required final bool sea}) async {
   late BuildContext page;
-  await tester.pumpSeaTrial(MaterialApp(
-    builder: sea ? (final c, final child) => HarborSea(child: child!) : null,
-    home: Builder(builder: (final c) {
-      page = c;
-      return const SizedBox.expand();
-    }),
-  ));
+  await tester.pumpHarborTrial(
+    MaterialApp(
+      builder: sea ? (final c, final child) => HarborRoot(child: child!) : null,
+      home: Builder(
+        builder: (final c) {
+          page = c;
+          return const SizedBox.expand();
+        },
+      ),
+    ),
+  );
   return page;
 }
 
@@ -24,19 +28,25 @@ void main() {
   group('#98 clearsSides with no HarborSea', () {
     for (final bool sea in <bool>[false, true]) {
       for (final bool sides in <bool>[false, true]) {
-        testWidgets('the body reads the home indicator at the bottom (sea: $sea, clearsSides: $sides)', (final tester) async {
+        testWidgets('the body reads the home indicator at the bottom (sea: $sea, clearsSides: $sides)', (
+          final tester,
+        ) async {
           final BuildContext page = await _app(tester, sea: sea);
           late EdgeInsets padding;
-          unawaited(showHarborSheet<void>(
-            page,
-            builder: (final BuildContext _) => HarborSheet(
-              clearsSides: sides,
-              body: Builder(builder: (final c) {
-                padding = MediaQuery.paddingOf(c);
-                return const SizedBox(height: 100);
-              }),
+          unawaited(
+            showHarborSheet<void>(
+              page,
+              builder: (final BuildContext _) => HarborSheet(
+                clearsSides: sides,
+                body: Builder(
+                  builder: (final c) {
+                    padding = MediaQuery.paddingOf(c);
+                    return const SizedBox(height: 100);
+                  },
+                ),
+              ),
             ),
-          ));
+          );
           await tester.pumpAndSettle();
           expect(padding.bottom, 34);
         });
@@ -45,18 +55,25 @@ void main() {
 
     testWidgets('a HarborMoored over a new port, with no sea, casts off only its own edges', (final tester) async {
       late EdgeInsets padding;
-      await tester.pumpSeaTrial(MaterialApp(
-        home: HarborMoored(
-          edges: HarborEdge.horizontal,
-          bars: false,
-          tide: false,
-          // A new port reads its coast from the waters above it, as a sheet's does.
-          child: Harbor(newPort: true, body: Builder(builder: (final c) {
-            padding = MediaQuery.paddingOf(c);
-            return const SizedBox.expand();
-          })),
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          home: HarborClear(
+            edges: HarborEdge.horizontal,
+            bars: false,
+            clearsKeyboard: false,
+            // A new port reads its coast from the waters above it, as a sheet's does.
+            child: HarborFrame(
+              isPage: true,
+              body: Builder(
+                builder: (final c) {
+                  padding = MediaQuery.paddingOf(c);
+                  return const SizedBox.expand();
+                },
+              ),
+            ),
+          ),
         ),
-      ));
+      );
       expect(padding.top, 62);
       expect(padding.bottom, 34);
     });
@@ -66,26 +83,28 @@ void main() {
     Future<(BuildContext, EdgeInsets)> open(final WidgetTester tester, {required final bool clears}) async {
       final BuildContext page = await _app(tester, sea: true);
       late BuildContext inSheet;
-      unawaited(showHarborSheet<void>(
-        page,
-        keepsTopCoast: true,
-        builder: (final BuildContext _) => HarborSheet.draggable(
-          clearsTopCoast: clears,
-          extent: const HarborSheetExtent(rest: 1.0, max: 1.0),
-          builder: (final c, final controller) {
-            inSheet = c;
-            return ListView(controller: controller, children: const <Widget>[SizedBox(height: 2000)]);
-          },
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          reachesTop: true,
+          builder: (final BuildContext _) => HarborSheet.draggable(
+            clearsTopSystemEdge: clears,
+            extent: const HarborSheetExtent(rest: 1.0, max: 1.0),
+            builder: (final c, final controller) {
+              inSheet = c;
+              return ListView(controller: controller, children: const <Widget>[SizedBox(height: 2000)]);
+            },
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       return (inSheet, MediaQuery.paddingOf(inSheet));
     }
 
     Future<double> flareTop(final WidgetTester tester, final BuildContext inSheet) async {
-      HarborFlares.raise(
+      HarborToasts.show(
         inSheet,
-        slot: HarborFlareSlot.top,
+        slot: HarborToastSlot.top,
         builder: (final c) => const SizedBox(key: ValueKey<String>('flare'), height: 20, width: 60),
         duration: null,
       );
@@ -98,7 +117,7 @@ void main() {
     testWidgets('the content reads no status bar, but a flare keeps clear of it', (final tester) async {
       final (BuildContext inSheet, EdgeInsets padding) = await open(tester, clears: false);
       expect(padding.top, 0, reason: 'what clearsTopCoast: false is for');
-      expect(Harbor.of(inSheet).clearWaterInGlobal()!.top, 62);
+      expect(HarborFrame.of(inSheet).roomInGlobal()!.top, 62);
       expect(await flareTop(tester, inSheet), 62 + 16);
     });
 

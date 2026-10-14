@@ -9,10 +9,10 @@ import '../game/fleet.dart';
 import '../game/settings.dart';
 import '../game/widgets.dart';
 
-/// The rail's width at rest, title-safe coast included.
+/// The rail's width at rest, title-safe band included.
 const double _railResting = 96;
 
-/// The rail's width while it has focus, title-safe coast included.
+/// The rail's width while it has focus, title-safe band included.
 const double _railOpen = 240;
 
 /// How far a focused card keeps in from whatever covers the edge of its row.
@@ -30,8 +30,8 @@ enum TvPage {
   final IconData icon;
 }
 
-/// Lighthouse TV: Harbor Town on a television. It lives in a 1200×675 scale
-/// model with a title-safe coast, which the rail (a start pier with a resting
+/// Lighthouse TV: Harbor Town on a television. It lives in a 1200×675 scaled
+/// screen with a title-safe band, which the rail (a start overlay bar with a resting
 /// extent) absorbs. The rail opens to show its labels while it has focus;
 /// the fleet wall follows it live, the open sea lets it open over the voyage
 /// card, and a long voyage asks it to go dark.
@@ -53,11 +53,11 @@ class _TvHarborTownState extends State<TvHarborTown> {
     return HarborPage(
       child: ColoredBox(
         color: Palette.deepSea,
-        child: Harbor(
-          newPort: true,
+        child: HarborFrame(
+          isPage: true,
           debugLabel: 'lighthouse tv',
-          start: <HarborDock>[
-            HarborDock.pier(
+          start: <HarborBar>[
+            HarborBar.overlay(
               debugLabel: 'rail',
               restingExtent: _railResting,
               backdrop: const PierPlanks(postsToward: AxisDirection.right),
@@ -97,7 +97,7 @@ class _Rail extends StatelessWidget {
     required this.onBackToPhone,
   });
 
-  /// The rail's own width, inside the coast its dock absorbs.
+  /// The rail's own width, inside the system edge its bar absorbs.
   final double width;
   final bool open;
   final TvPage current;
@@ -107,7 +107,7 @@ class _Rail extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    // The dock absorbs the start coast; the title-safe band across it (top and
+    // The bar absorbs the start system edge; the title-safe band across it (top and
     // bottom) is left for the rail to keep clear of.
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     return Focus(
@@ -226,18 +226,18 @@ class _FleetWall extends StatelessWidget {
   ];
 
   @override
-  Widget build(final BuildContext context) => HarborFairway(
+  Widget build(final BuildContext context) => HarborScrollView(
     key: const ValueKey<String>('fleet wall'),
     revealMargin: _revealMargin,
     padding: const EdgeInsetsDirectional.only(bottom: 16),
     slivers: <Widget>[
       const SliverToBoxAdapter(
         // Follows the rail live: its start moves as the rail opens.
-        child: HarborMoored(
+        child: HarborClear(
           key: ValueKey<String>('fleet wall heading'),
           edges: <HarborEdge>{HarborEdge.start},
-          mooringLine: true,
-          extra: EdgeInsetsDirectional.only(end: 32),
+          rowInsets: true,
+          padding: EdgeInsetsDirectional.only(end: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -250,7 +250,7 @@ class _FleetWall extends StatelessWidget {
                 tryThis:
                     'Move with the arrow keys. Step left onto the rail and it opens: this wall '
                     'follows it live. Along a row, focus brings each card clear of the rail with a '
-                    '24 margin, thanks to the fairway\'s reveal.',
+                    '24 margin, thanks to the scroll view\'s reveal.',
               ),
             ],
           ),
@@ -258,7 +258,7 @@ class _FleetWall extends StatelessWidget {
       ),
       for (int r = 0; r < _rows.length; r++) ...<Widget>[
         SliverToBoxAdapter(
-          child: HarborMooringLine(
+          child: HarborClear.rowInsets(
             child: Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 8),
               child: Text(
@@ -271,7 +271,7 @@ class _FleetWall extends StatelessWidget {
         SliverToBoxAdapter(
           child: SizedBox(
             height: 150,
-            child: HarborFairway(
+            child: HarborScrollView(
               key: ValueKey<String>('fleet row $r'),
               scrollDirection: Axis.horizontal,
               primary: false,
@@ -308,7 +308,7 @@ class _BoatCard extends StatefulWidget {
 class _BoatCardState extends State<_BoatCard> {
   bool _focused = false;
 
-  // Focus traversal reveals the card through the fairways, which widen it by
+  // Focus traversal reveals the card through the scroll views, which widen it by
   // their reveal margin and whatever covers their edges: no reveal of its own.
   void _onFocusChange(final bool focused) => setState(() => _focused = focused);
 
@@ -331,9 +331,9 @@ class _BoatCardState extends State<_BoatCard> {
         child: InkWell(
           autofocus: widget.autofocus,
           onFocusChange: _onFocusChange,
-          onTap: () => HarborFlares.raise(
+          onTap: () => HarborToasts.show(
             context,
-            slot: HarborFlareSlot.low,
+            slot: HarborToastSlot.low,
             builder: (final BuildContext context) => SignalFlag(message: '${boat.name} hails the lighthouse'),
           ),
           child: SizedBox(
@@ -374,13 +374,13 @@ class _OpenSea extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => Stack(
     children: <Widget>[
-      // Open water: the sea runs under the rail, to the screen's edge.
+      // The background: the sea runs under the rail, to the screen's edge.
       const Positioned.fill(child: Sea(mood: SeaMood.night)),
       const PositionedDirectional(end: 80, bottom: 60, width: 120, child: LighthouseArt()),
       // At rest: the rail opens over the card rather than pushing it.
-      HarborMoored(
+      HarborClear(
         follow: HarborFollow.resting,
-        mooringLine: true,
+        rowInsets: true,
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: SizedBox(
@@ -433,15 +433,15 @@ class _LongVoyage extends StatelessWidget {
   final VoidCallback onToggle;
 
   @override
-  Widget build(final BuildContext context) => HarborMakeWay(
+  Widget build(final BuildContext context) => HarborHideBar(
     edge: HarborEdge.start,
     mode: HarborYield.dark,
     active: underway,
     child: Stack(
       children: <Widget>[
         const Positioned.fill(child: Sea(mood: SeaMood.stormy)),
-        HarborMoored(
-          mooringLine: true,
+        HarborClear(
+          rowInsets: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -452,9 +452,9 @@ class _LongVoyage extends StatelessWidget {
               const SizedBox(
                 width: 560,
                 child: LogbookNote(
-                  pattern: 'Make way: the rail goes dark',
+                  pattern: 'Hide a bar: the rail goes dark',
                   tryThis:
-                      'Set sail and this page asks the rail to make way with HarborYield.dark: it '
+                      'Set sail and this page asks the rail to hide with HarborYield.dark: it '
                       'goes dark and stops taking focus, but keeps its ground, so nothing here moves. '
                       'Make port to light it again.',
                 ),

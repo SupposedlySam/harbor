@@ -11,10 +11,10 @@ import 'scenes/open_sea.dart';
 import 'scenes/radio.dart';
 import 'scenes/shipyard.dart';
 
-/// Harbor Town: the shell. Its tab bar is a quay on pilings, so the keyboard
+/// Harbor Town: the shell. Its tab bar is a solid bar that stays, so the keyboard
 /// covers it rather than lifting it, while each tab's body ends at the
-/// waterline. The Launch button in the middle carries an anchor for the tide
-/// bonus bubble, and holding it raises a modal buoy of quick actions.
+/// keyboard's top. The Launch button in the middle carries an anchor for the tide
+/// bonus bubble, and holding it raises a modal float of quick actions.
 class HarborTown extends StatefulWidget {
   const HarborTown({super.key});
 
@@ -44,11 +44,11 @@ class _HarborTownState extends State<HarborTown> {
   @override
   Widget build(final BuildContext context) {
     return HarborPage(
-      child: Harbor(
-        newPort: true,
+      child: HarborFrame(
+        isPage: true,
         debugLabel: 'harbor town',
-        bottom: <HarborDock>[
-          HarborDock.quay(
+        bottom: <HarborBar>[
+          HarborBar.solid(
             debugLabel: 'tab bar',
             backdrop: const QuayStones(),
             child: TownTabBar(
@@ -63,26 +63,20 @@ class _HarborTownState extends State<HarborTown> {
             ),
           ),
         ],
-        buoys: <HarborBuoy>[
+        floats: <HarborFloat>[
           if (_bubble)
-            HarborBuoy(
+            HarborFloat(
               placement: HarborAnchored(_launch, side: HarborAnchorSide.above, gap: 2, overlap: 6),
               key: const ValueKey<String>('tide bonus'),
-              child: GestureDetector(
-                onTap: () => setState(() => _bubble = false),
-                child: const _TideBonusBubble(),
-              ),
+              child: GestureDetector(onTap: () => setState(() => _bubble = false), child: const _TideBonusBubble()),
             ),
           if (_quickActions)
-            HarborBuoy(
+            HarborFloat(
               placement: const HarborAligned(alignment: Alignment.bottomCenter),
               key: const ValueKey<String>('quick actions'),
               modal: true,
               onDismiss: () => setState(() => _quickActions = false),
-              child: _QuickActions(
-                onClose: () => setState(() => _quickActions = false),
-                onShipyard: _openShipyard,
-              ),
+              child: _QuickActions(onClose: () => setState(() => _quickActions = false), onShipyard: _openShipyard),
             ),
         ],
         body: IndexedStack(
@@ -94,7 +88,7 @@ class _HarborTownState extends State<HarborTown> {
   }
 }
 
-/// The tab bar on the quay.
+/// The tab bar in the solid bar.
 class TownTabBar extends StatelessWidget {
   const TownTabBar({
     super.key,
@@ -176,7 +170,10 @@ class _TideBonusBubble extends StatelessWidget {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(color: Palette.buoyRed, borderRadius: BorderRadius.circular(12)),
-        child: const Text('Tap ⚓ to launch a boat · hold for more', style: TextStyle(color: Colors.white, fontSize: 12)),
+        child: const Text(
+          'Tap ⚓ to launch a boat · hold for more',
+          style: TextStyle(color: Colors.white, fontSize: 12),
+        ),
       ),
       CustomPaint(size: const Size(14, 8), painter: _Caret()),
     ],
@@ -213,7 +210,11 @@ class _QuickActions extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          ListTile(leading: const Icon(Icons.construction_rounded), title: const Text('Open the shipyard'), onTap: onShipyard),
+          ListTile(
+            leading: const Icon(Icons.construction_rounded),
+            title: const Text('Open the shipyard'),
+            onTap: onShipyard,
+          ),
           ListTile(
             leading: const Icon(Icons.menu_book_rounded),
             title: const Text('Open the field guide'),
@@ -227,7 +228,11 @@ class _QuickActions extends StatelessWidget {
             title: const Text('Raise a flare'),
             onTap: () {
               onClose();
-              HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (final BuildContext c) => const SignalFlag(message: 'All hands on deck!'));
+              HarborToasts.show(
+                context,
+                slot: HarborToastSlot.low,
+                builder: (final BuildContext c) => const SignalFlag(message: 'All hands on deck!'),
+              );
             },
           ),
           ListTile(leading: const Icon(Icons.close_rounded), title: const Text('Close'), onTap: onClose),

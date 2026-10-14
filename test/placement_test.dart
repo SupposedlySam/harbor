@@ -22,20 +22,22 @@ Future<void> _settle(final WidgetTester tester) async {
 
 Future<BuildContext> _page(
   final WidgetTester tester, {
-  final List<HarborBuoy> buoys = const <HarborBuoy>[],
+  final List<HarborFloat> buoys = const <HarborFloat>[],
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
   final Widget? body,
   final bool harbor = true,
 }) async {
   late BuildContext page;
-  final Widget content = Builder(builder: (final BuildContext context) {
-    page = context;
-    return body ?? const SizedBox.expand();
-  });
-  await tester.pumpSeaTrial(
+  final Widget content = Builder(
+    builder: (final BuildContext context) {
+      page = context;
+      return body ?? const SizedBox.expand();
+    },
+  );
+  await tester.pumpHarborTrial(
     MaterialApp(
-      builder: harbor ? (final BuildContext context, final Widget? child) => HarborSea(child: child!) : null,
-      home: harbor ? Harbor(buoys: buoys, body: content) : content,
+      builder: harbor ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
+      home: harbor ? HarborFrame(floats: buoys, body: content) : content,
     ),
     device: device,
   );
@@ -49,7 +51,10 @@ void main() {
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
       expect(const HarborAligned(), const HarborPlacement.aligned());
-      expect(const HarborAligned(alignment: Alignment.topLeft).hashCode, const HarborAligned(alignment: Alignment.topLeft).hashCode);
+      expect(
+        const HarborAligned(alignment: Alignment.topLeft).hashCode,
+        const HarborAligned(alignment: Alignment.topLeft).hashCode,
+      );
       expect(const HarborAligned(alignment: Alignment.topLeft), isNot(const HarborAligned()));
       expect(HarborAnchored(anchor, gap: 4), HarborPlacement.anchored(anchor, gap: 4));
       expect(HarborAnchored(anchor, gap: 4).hashCode, HarborAnchored(anchor, gap: 4).hashCode);
@@ -86,18 +91,23 @@ void main() {
 
     test('a buoy and a portal buoy show their placement', () {
       expect(
-        const HarborBuoy(placement: HarborAligned(alignment: Alignment.topCenter), child: SizedBox()).toString(),
-        'HarborBuoy(placement: HarborAligned(alignment: Alignment.topCenter))',
+        const HarborFloat(
+          placement: HarborAligned(alignment: Alignment.topCenter),
+          child: SizedBox(),
+        ).toString(),
+        'HarborFloat(placement: HarborAligned(alignment: Alignment.topCenter))',
       );
       final DiagnosticPropertiesBuilder portal = DiagnosticPropertiesBuilder();
-      HarborPortalBuoy(
+      HarborPopover(
         controller: OverlayPortalController(),
         placement: const HarborAnchored(null, side: HarborAnchorSide.end),
-        buoyBuilder: (final BuildContext _) => const SizedBox(),
+        popoverBuilder: (final BuildContext _) => const SizedBox(),
         child: const SizedBox(),
       ).debugFillProperties(portal);
       expect(
-        portal.properties.where((final DiagnosticsNode p) => !p.isFiltered(DiagnosticLevel.info)).map((final DiagnosticsNode p) => p.toString()),
+        portal.properties
+            .where((final DiagnosticsNode p) => !p.isFiltered(DiagnosticLevel.info))
+            .map((final DiagnosticsNode p) => p.toString()),
         contains('placement: HarborAnchored(side: end)'),
       );
     });
@@ -107,13 +117,22 @@ void main() {
     // Before 0.7.0 an aligned buoy in a harbor took its margin off the water before splitting it
     // at the hinge, so it kept no margin off the hinge, and was centred 8 nearer it than an aligned
     // flare with no harbor, an anchored buoy or a portal buoy, which all split first.
-    testWidgets('right to left, an aligned buoy on the hinge goes to the right screen, where reading starts', (final tester) async {
-      await tester.pumpSeaTrial(
+    testWidgets('right to left, an aligned buoy on the hinge goes to the right screen, where reading starts', (
+      final tester,
+    ) async {
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) =>
-              Directionality(textDirection: TextDirection.rtl, child: HarborSea(child: child!)),
-          home: const Harbor(
-            buoys: <HarborBuoy>[HarborBuoy(placement: HarborAligned(), child: SizedBox(key: ValueKey<String>('buoy'), width: 200, height: 30))],
+          builder: (final BuildContext context, final Widget? child) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: HarborRoot(child: child!),
+          ),
+          home: const HarborFrame(
+            floats: <HarborFloat>[
+              HarborFloat(
+                placement: HarborAligned(),
+                child: SizedBox(key: ValueKey<String>('buoy'), width: 200, height: 30),
+              ),
+            ],
             body: SizedBox.expand(),
           ),
         ),
@@ -125,7 +144,16 @@ void main() {
     });
 
     testWidgets('an aligned buoy keeps its margin off the hinge as off an edge', (final tester) async {
-      await _page(tester, device: _dual, buoys: const <HarborBuoy>[HarborBuoy(placement: HarborAligned(), child: SizedBox(key: ValueKey<String>('buoy'), width: 200, height: 30))]);
+      await _page(
+        tester,
+        device: _dual,
+        buoys: const <HarborFloat>[
+          HarborFloat(
+            placement: HarborAligned(),
+            child: SizedBox(key: ValueKey<String>('buoy'), width: 200, height: 30),
+          ),
+        ],
+      );
       final Rect buoy = _rect(tester, 'buoy');
       // The left screen (reading starts there) is 0 to 540: 16 in from each side, 16 to 524.
       expect(buoy.center.dx, 270);
@@ -133,9 +161,16 @@ void main() {
     });
 
     testWidgets('an aligned buoy as wide as it may be stops 16 short of the hinge', (final tester) async {
-      await _page(tester, device: _dual, buoys: const <HarborBuoy>[
-        HarborBuoy(placement: HarborAligned(), child: SizedBox(key: ValueKey<String>('buoy'), width: double.infinity, height: 30)),
-      ]);
+      await _page(
+        tester,
+        device: _dual,
+        buoys: const <HarborFloat>[
+          HarborFloat(
+            placement: HarborAligned(),
+            child: SizedBox(key: ValueKey<String>('buoy'), width: double.infinity, height: 30),
+          ),
+        ],
+      );
       final Rect buoy = _rect(tester, 'buoy');
       expect(buoy.left, 16);
       expect(buoy.right, 524);
@@ -143,11 +178,21 @@ void main() {
 
     testWidgets('an aligned flare in a harbor and one with no harbor land in the same place', (final tester) async {
       final BuildContext inHarbor = await _page(tester, device: _dual);
-      HarborFlares.raise(inHarbor, slot: HarborFlareSlot.low, duration: null, builder: (final BuildContext _) => _box('flare'));
+      HarborToasts.show(
+        inHarbor,
+        slot: HarborToastSlot.low,
+        duration: null,
+        builder: (final BuildContext _) => _box('flare'),
+      );
       await _settle(tester);
       final Rect harbor = _rect(tester, 'flare');
       final BuildContext bare = await _page(tester, device: _dual, harbor: false);
-      HarborFlares.raise(bare, slot: HarborFlareSlot.low, duration: null, builder: (final BuildContext _) => _box('bare'));
+      HarborToasts.show(
+        bare,
+        slot: HarborToastSlot.low,
+        duration: null,
+        builder: (final BuildContext _) => _box('bare'),
+      );
       await _settle(tester);
       expect(_rect(tester, 'bare').center.dx, harbor.center.dx);
       expect(harbor.center.dx, 270);
@@ -159,25 +204,45 @@ void main() {
     setUp(() => anchor = HarborAnchor(debugLabel: 'anchor'));
     tearDown(() => anchor.dispose());
 
-    Widget anchored() => Stack(children: <Widget>[
-      Positioned(left: 100, top: 300, child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40))),
-    ]);
+    Widget anchored() => Stack(
+      children: <Widget>[
+        Positioned(
+          left: 100,
+          top: 300,
+          child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)),
+        ),
+      ],
+    );
 
     testWidgets('an anchored buoy sits below its anchor by default', (final tester) async {
-      await _page(tester, body: anchored(), buoys: <HarborBuoy>[HarborBuoy(placement: HarborAnchored(anchor), child: _box('buoy', width: 80))]);
+      await _page(
+        tester,
+        body: anchored(),
+        buoys: <HarborFloat>[HarborFloat(placement: HarborAnchored(anchor), child: _box('buoy', width: 80))],
+      );
       await tester.pump();
       final Rect buoy = _rect(tester, 'buoy');
       expect(buoy.top, 348);
       expect(buoy.center.dx, 120);
     });
 
-    testWidgets('an anchored buoy keeps its side with no room on it: held in the water, not flipped', (final tester) async {
+    testWidgets('an anchored buoy keeps its side with no room on it: held in the water, not flipped', (
+      final tester,
+    ) async {
       await _page(
         tester,
-        body: Stack(children: <Widget>[
-          Positioned(left: 100, bottom: 60, child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40))),
-        ]),
-        buoys: <HarborBuoy>[HarborBuoy(placement: HarborAnchored(anchor), child: _box('buoy', width: 80, height: 100))],
+        body: Stack(
+          children: <Widget>[
+            Positioned(
+              left: 100,
+              bottom: 60,
+              child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)),
+            ),
+          ],
+        ),
+        buoys: <HarborFloat>[
+          HarborFloat(placement: HarborAnchored(anchor), child: _box('buoy', width: 80, height: 100)),
+        ],
       );
       await tester.pump();
       // No room below an anchor ending 60 from the bottom: it is pushed up to the clear water's
@@ -186,9 +251,17 @@ void main() {
     });
 
     testWidgets('an anchored buoy honours within, as an aligned one does', (final tester) async {
-      await _page(tester, body: anchored(), buoys: <HarborBuoy>[
-        HarborBuoy(placement: HarborAnchored(anchor), within: const Rect.fromLTRB(110, 0, 400, 800), child: _box('buoy', width: 80)),
-      ]);
+      await _page(
+        tester,
+        body: anchored(),
+        buoys: <HarborFloat>[
+          HarborFloat(
+            placement: HarborAnchored(anchor),
+            within: const Rect.fromLTRB(110, 0, 400, 800),
+            child: _box('buoy', width: 80),
+          ),
+        ],
+      );
       await tester.pump();
       // Centred under the anchor it would start at 80; kept 8 inside within, it starts at 118.
       expect(_rect(tester, 'buoy').left, 118);
@@ -196,7 +269,7 @@ void main() {
 
     testWidgets('an anchored flare can overlap its anchor and move across it', (final tester) async {
       final BuildContext page = await _page(tester, body: anchored());
-      final HarborFlareEntry entry = HarborFlares.raise(
+      final HarborToastEntry entry = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor, overlap: 4, crossOffset: 10),
         duration: null,
@@ -211,9 +284,11 @@ void main() {
       expect(entry.placement, HarborAnchored(anchor, overlap: 4, crossOffset: 10));
     });
 
-    testWidgets('a flare resolves its placement in the reading direction of the page that raised it', (final tester) async {
+    testWidgets('a flare resolves its placement in the reading direction of the page that raised it', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester);
-      final HarborFlareEntry entry = HarborFlares.raise(
+      final HarborToastEntry entry = HarborToasts.show(
         page,
         placement: const HarborAligned(
           alignment: AlignmentDirectional.bottomEnd,
@@ -223,18 +298,23 @@ void main() {
         builder: (final BuildContext _) => _box('flare', width: 80),
       );
       await _settle(tester);
-      expect(entry.placement, const HarborAligned(alignment: Alignment.bottomRight, margin: EdgeInsets.only(right: 30)));
+      expect(
+        entry.placement,
+        const HarborAligned(alignment: Alignment.bottomRight, margin: EdgeInsets.only(right: 30)),
+      );
       expect(_rect(tester, 'flare').right, 402 - 30);
     });
 
-    testWidgets('a portal buoy with no placement still sits above its child, as before placements', (final tester) async {
+    testWidgets('a portal buoy with no placement still sits above its child, as before placements', (
+      final tester,
+    ) async {
       final OverlayPortalController menu = OverlayPortalController();
       await _page(
         tester,
         body: Center(
-          child: HarborPortalBuoy(
+          child: HarborPopover(
             controller: menu,
-            buoyBuilder: (final BuildContext _) => _box('menu', width: 80),
+            popoverBuilder: (final BuildContext _) => _box('menu', width: 80),
             child: _box('row', width: 120, height: 40),
           ),
         ),
@@ -250,10 +330,10 @@ void main() {
       await _page(
         tester,
         body: Center(
-          child: HarborPortalBuoy(
+          child: HarborPopover(
             controller: menu,
             placement: const HarborAnchored(null),
-            buoyBuilder: (final BuildContext _) => _box('menu', width: 80),
+            popoverBuilder: (final BuildContext _) => _box('menu', width: 80),
             child: _box('row', width: 120, height: 40),
           ),
         ),
@@ -271,10 +351,10 @@ void main() {
           tester,
           body: Align(
             alignment: Alignment.bottomCenter,
-            child: HarborPortalBuoy(
+            child: HarborPopover(
               controller: menu,
               placement: HarborAnchored(null, flips: flips),
-              buoyBuilder: (final BuildContext _) => _box('menu', width: 80, height: 200),
+              popoverBuilder: (final BuildContext _) => _box('menu', width: 80, height: 200),
               child: _box('row', width: 120, height: 40),
             ),
           ),
@@ -291,24 +371,43 @@ void main() {
       expect(kept.bottom, 874 - 34 - 8, reason: 'held below, pushed up only as far as the clear water needs');
     });
 
-    testWidgets('slot and placement are exclusive, and an anchored flare does not reach the coast', (final tester) async {
+    testWidgets('slot and placement are exclusive, and an anchored flare does not reach the coast', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester, body: anchored());
       expect(
-        () => HarborFlares.raise(page, slot: HarborFlareSlot.low, placement: const HarborAligned(), builder: (final BuildContext _) => const SizedBox()),
+        () => HarborToasts.show(
+          page,
+          slot: HarborToastSlot.low,
+          placement: const HarborAligned(),
+          builder: (final BuildContext _) => const SizedBox(),
+        ),
         throwsAssertionError,
       );
       expect(
-        () => HarborFlares.raise(page, placement: HarborAnchored(anchor), reachesCoast: true, builder: (final BuildContext _) => const SizedBox()),
+        () => HarborToasts.show(
+          page,
+          placement: HarborAnchored(anchor),
+          reachesSystemEdges: true,
+          builder: (final BuildContext _) => const SizedBox(),
+        ),
         throwsAssertionError,
       );
       expect(
-        () => HarborFlares.raise(page, placement: const HarborAnchored(null), builder: (final BuildContext _) => const SizedBox()),
+        () => HarborToasts.show(
+          page,
+          placement: const HarborAnchored(null),
+          builder: (final BuildContext _) => const SizedBox(),
+        ),
         throwsAssertionError,
       );
     });
 
     testWidgets('a buoy placed by an anchor needs one', (final tester) async {
-      await _page(tester, buoys: const <HarborBuoy>[HarborBuoy(placement: HarborAnchored(null), child: SizedBox())]);
+      await _page(
+        tester,
+        buoys: const <HarborFloat>[HarborFloat(placement: HarborAnchored(null), child: SizedBox())],
+      );
       expect(tester.takeException(), isAssertionError);
     });
   });
@@ -320,10 +419,10 @@ void main() {
     testWidgets('is handed only the coast it covers, its margin taken off', (final tester) async {
       EdgeInsets? padding;
       final BuildContext page = await _page(tester, harbor: false, device: HarborTrialDevice.iPhone17Landscape);
-      HarborFlares.raise(
+      HarborToasts.show(
         page,
         placement: const HarborAligned(margin: EdgeInsets.all(10)),
-        reachesCoast: true,
+        reachesSystemEdges: true,
         duration: null,
         builder: (final BuildContext context) {
           padding = MediaQuery.paddingOf(context);

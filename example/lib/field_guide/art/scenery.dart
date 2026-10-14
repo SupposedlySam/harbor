@@ -16,7 +16,9 @@ abstract final class Scenery {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: night ? const <Color>[Color(0xFF0A1630), Color(0xFF1F3A66)] : const <Color>[Color(0xFF8CC8EE), Color(0xFFE8F4FA)],
+          colors: night
+              ? const <Color>[Color(0xFF0A1630), Color(0xFF1F3A66)]
+              : const <Color>[Color(0xFF8CC8EE), Color(0xFFE8F4FA)],
         ).createShader(sky),
     );
     if (night) {
@@ -30,7 +32,11 @@ abstract final class Scenery {
       }
       return;
     }
-    canvas.drawCircle(Offset(size.width * 0.82, horizon * 0.28), size.height * 0.07, Paint()..color = const Color(0xFFFFE08A));
+    canvas.drawCircle(
+      Offset(size.width * 0.82, horizon * 0.28),
+      size.height * 0.07,
+      Paint()..color = const Color(0xFFFFE08A),
+    );
     cloud(canvas, Offset(size.width * 0.28, horizon * 0.25), size.height * 0.05);
     cloud(canvas, Offset(size.width * 0.6, horizon * 0.15), size.height * 0.035);
   }
@@ -82,7 +88,13 @@ abstract final class Scenery {
   }
 
   /// A grassy shore with a sandy edge, on the left or right.
-  static void shore(final Canvas canvas, final Size size, final double waterline, {required final bool fromLeft, required final double width}) {
+  static void shore(
+    final Canvas canvas,
+    final Size size,
+    final double waterline, {
+    required final bool fromLeft,
+    required final double width,
+  }) {
     final double x0 = fromLeft ? 0 : size.width - width;
     final double x1 = fromLeft ? width : size.width;
     final Path land = Path()
@@ -92,7 +104,10 @@ abstract final class Scenery {
       ..lineTo(x1 + (fromLeft ? 8 : -8), waterline + 4)
       ..close();
     canvas.drawPath(land, Paint()..color = const Color(0xFF5E8C4A));
-    canvas.drawRect(Rect.fromLTRB(x0, waterline - 3, x1 + (fromLeft ? 6 : -6), waterline + 3), Paint()..color = const Color(0xFFE3CF9A));
+    canvas.drawRect(
+      Rect.fromLTRB(x0, waterline - 3, x1 + (fromLeft ? 6 : -6), waterline + 3),
+      Paint()..color = const Color(0xFFE3CF9A),
+    );
   }
 
   /// A round timber pile from [top] down to [bottom].
@@ -100,7 +115,10 @@ abstract final class Scenery {
     final Rect pile = Rect.fromLTRB(top.dx - width / 2, top.dy, top.dx + width / 2, bottom);
     canvas
       ..drawRect(pile, Paint()..color = Palette.plankDark)
-      ..drawRect(Rect.fromLTRB(pile.left, pile.top, pile.left + width * 0.3, pile.bottom), Paint()..color = Palette.plank);
+      ..drawRect(
+        Rect.fromLTRB(pile.left, pile.top, pile.left + width * 0.3, pile.bottom),
+        Paint()..color = Palette.plank,
+      );
   }
 
   /// A dockside lamp post standing on [base], [height] tall.
@@ -124,7 +142,13 @@ abstract final class Scenery {
     final Paint iron = Paint()..color = const Color(0xFF263238);
     final double r = height * 0.55;
     canvas
-      ..drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(base.dx - r * 0.6, base.dy - height, base.dx + r * 0.6, base.dy), Radius.circular(r * 0.3)), iron)
+      ..drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(base.dx - r * 0.6, base.dy - height, base.dx + r * 0.6, base.dy),
+          Radius.circular(r * 0.3),
+        ),
+        iron,
+      )
       ..drawOval(Rect.fromCenter(center: base - Offset(0, height), width: r * 2, height: r * 0.8), iron);
   }
 
@@ -140,7 +164,10 @@ abstract final class Scenery {
       ..close();
     canvas
       ..drawPath(body, Paint()..color = hull)
-      ..drawRect(Rect.fromLTWH(center.dx - length / 2, center.dy - h / 2, length, h * 0.18), Paint()..color = Palette.sail);
+      ..drawRect(
+        Rect.fromLTWH(center.dx - length / 2, center.dy - h / 2, length, h * 0.18),
+        Paint()..color = Palette.sail,
+      );
   }
 
   /// A stone quay wall, from [top] down into the water at [waterline].
@@ -155,7 +182,12 @@ abstract final class Scenery {
         final double bw = 16 + random.nextDouble() * 10;
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(math.max(x, wall.left) + 1, y + 1, math.min(bw - 2, wall.right - math.max(x, wall.left) - 1), row - 2),
+            Rect.fromLTWH(
+              math.max(x, wall.left) + 1,
+              y + 1,
+              math.min(bw - 2, wall.right - math.max(x, wall.left) - 1),
+              row - 2,
+            ),
             const Radius.circular(2),
           ),
           Paint()..color = Color.lerp(Palette.stone, Palette.stoneDark, random.nextDouble() * 0.6)!,

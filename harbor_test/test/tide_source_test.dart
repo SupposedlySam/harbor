@@ -24,16 +24,18 @@ class _Counted extends StatelessWidget {
   }
 }
 
-Widget _app(final ValueListenable<double> source) => HarborTideSource(
+Widget _app(final ValueListenable<double> source) => HarborKeyboardSource(
   height: source,
-  child: const HarborSea(
-    child: Harbor(
-      bottom: <HarborDock>[
-        HarborDock.quay(
-          tide: HarborTideStance.float,
+  child: const HarborRoot(
+    child: HarborFrame(
+      bottom: <HarborBar>[
+        HarborBar.solid(
+          keyboard: HarborKeyboardStance.rides,
           child: SizedBox(key: ValueKey<String>('composer'), height: _composer),
         ),
-        HarborDock.quay(child: SizedBox(key: ValueKey<String>('tabs'), height: _tabs)),
+        HarborBar.solid(
+          child: SizedBox(key: ValueKey<String>('tabs'), height: _tabs),
+        ),
       ],
       body: _Counted(),
     ),
@@ -53,7 +55,7 @@ void main() {
   ) async {
     final ValueNotifier<double> source = ValueNotifier<double>(0);
     addTearDown(source.dispose);
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(source), device: _device);
+    final HarborTrial trial = await tester.pumpHarborTrial(_app(source), device: _device);
     final double screen = _device.size.height;
     expect(_rect(tester, 'composer').bottom, screen - 34 - _tabs);
     expect(_rect(tester, 'tabs').bottom, screen - 34);
@@ -62,8 +64,8 @@ void main() {
     await _follow(tester);
     expect(_rect(tester, 'composer').bottom, screen - 280, reason: 'the composer floats on the source');
     expect(_rect(tester, 'tabs').bottom, screen - 34, reason: 'the tab bar stands on pilings under it');
-    expect(trial.clearWaterAround(find.byKey(const ValueKey<String>('body'))).bottom, screen - 280 - _composer);
-    expect(HarborTide.of(tester.element(find.byKey(const ValueKey<String>('body')))).height, 280);
+    expect(trial.roomAround(find.byKey(const ValueKey<String>('body'))).bottom, screen - 280 - _composer);
+    expect(HarborKeyboard.of(tester.element(find.byKey(const ValueKey<String>('body')))).height, 280);
 
     source.value = 0;
     await _follow(tester);
@@ -73,13 +75,13 @@ void main() {
   testWidgets('the tide is the larger of the platform keyboard and the source, never their sum', (final tester) async {
     final ValueNotifier<double> source = ValueNotifier<double>(200);
     addTearDown(source.dispose);
-    final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(source), device: _device);
+    final HarborTrial trial = await tester.pumpHarborTrial(_app(source), device: _device);
     final double screen = _device.size.height;
     await _follow(tester);
     expect(_rect(tester, 'composer').bottom, screen - 200);
 
-    await trial.raiseTide(); // the platform's 336 is larger
-    expect(_rect(tester, 'composer').bottom, screen - _device.tideHeight);
+    await trial.showKeyboard(); // the platform's 336 is larger
+    expect(_rect(tester, 'composer').bottom, screen - _device.keyboardHeight);
 
     source.value = 400; // now the source is
     await _follow(tester);
@@ -87,16 +89,16 @@ void main() {
 
     source.value = 100; // and the platform again
     await _follow(tester);
-    expect(_rect(tester, 'composer').bottom, screen - _device.tideHeight);
+    expect(_rect(tester, 'composer').bottom, screen - _device.keyboardHeight);
 
-    await trial.lowerTide();
+    await trial.hideKeyboard();
     expect(_rect(tester, 'composer').bottom, screen - 100);
   });
 
   testWidgets('a source that changes rebuilds the MediaQuery, not the app under it', (final tester) async {
     final ValueNotifier<double> source = ValueNotifier<double>(0);
     addTearDown(source.dispose);
-    await tester.pumpSeaTrial(_app(source), device: _device);
+    await tester.pumpHarborTrial(_app(source), device: _device);
     final int before = _builds;
 
     source.value = 280;

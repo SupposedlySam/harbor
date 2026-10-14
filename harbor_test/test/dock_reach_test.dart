@@ -6,13 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-Widget _page(final HarborDock dock) => HarborSea(
-  child: Harbor(bottom: <HarborDock>[dock], body: const SizedBox.expand(key: ValueKey<String>('body'))),
+Widget _page(final HarborBar dock) => HarborRoot(
+  child: HarborFrame(
+    bottom: <HarborBar>[dock],
+    body: const SizedBox.expand(key: ValueKey<String>('body')),
+  ),
 );
 
 /// How far the dock's ground reaches up from the bottom of the screen.
-double _reach(final HarborSeaTrial trial, final HarborTrialDevice device) {
-  final Rect dock = trial.docksAround(find.byKey(const ValueKey<String>('body'))).single.rect;
+double _reach(final HarborTrial trial, final HarborTrialDevice device) {
+  final Rect dock = trial.barsAround(find.byKey(const ValueKey<String>('body'))).single.rect;
   expect(dock.bottom, device.size.height);
   return dock.height;
 }
@@ -28,8 +31,8 @@ void main() {
       (homeButton, 94, 94),
       (homeButton, 0, 0),
     ]) {
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
-        _page(HarborDock.quay(minimum: reach, child: const SizedBox.shrink())),
+      final HarborTrial trial = await tester.pumpHarborTrial(
+        _page(HarborBar.solid(minimum: reach, child: const SizedBox.shrink())),
         device: device,
       );
       expect(_reach(trial, device), expected, reason: '${device.name}, reach $reach');
@@ -42,14 +45,19 @@ void main() {
       (phone, 20),
       (homeButton, 94),
     ]) {
-      final HarborSeaTrial trial = await tester.pumpSeaTrial(
-        _page(HarborDock.quay(coast: HarborCoastStance.none, child: SizedBox(height: reach))),
+      final HarborTrial trial = await tester.pumpHarborTrial(
+        _page(
+          HarborBar.solid(
+            systemEdges: HarborSystemEdgeStance.none,
+            child: SizedBox(height: reach),
+          ),
+        ),
         device: device,
       );
       expect(_reach(trial, device), reach, reason: '${device.name}, reach $reach');
       // The body still keeps clear of the home indicator that a short dock leaves uncovered.
-      final double clear = trial.clearWaterAround(find.byKey(const ValueKey<String>('body'))).bottom;
-      expect(device.size.height - clear, reach > device.coast.bottom ? reach : device.coast.bottom);
+      final double clear = trial.roomAround(find.byKey(const ValueKey<String>('body'))).bottom;
+      expect(device.size.height - clear, reach > device.systemEdges.bottom ? reach : device.systemEdges.bottom);
     }
   });
 }

@@ -12,7 +12,12 @@ abstract final class _Afloat {
   static void farShore(final Canvas canvas, final Size size, final double horizon) {
     final Path land = Path()
       ..moveTo(size.width * 0.55, horizon)
-      ..quadraticBezierTo(size.width * 0.7, horizon - size.height * 0.05, size.width * 0.82, horizon - size.height * 0.03)
+      ..quadraticBezierTo(
+        size.width * 0.7,
+        horizon - size.height * 0.05,
+        size.width * 0.82,
+        horizon - size.height * 0.03,
+      )
       ..quadraticBezierTo(size.width * 0.92, horizon - size.height * 0.06, size.width, horizon - size.height * 0.02)
       ..lineTo(size.width, horizon)
       ..close();
@@ -34,13 +39,22 @@ abstract final class _Afloat {
   }
 
   /// A wobbly reflection under something floating at [x], [width] wide.
-  static void reflection(final Canvas canvas, final double x, final double waterline, final double width, final Color color) {
+  static void reflection(
+    final Canvas canvas,
+    final double x,
+    final double waterline,
+    final double width,
+    final Color color,
+  ) {
     final Paint paint = Paint()..color = color.withValues(alpha: 0.35);
     for (int i = 0; i < 4; i++) {
       final double y = waterline + 4 + i * 5.0;
       final double half = width / 2 * (1 - i * 0.18);
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTRB(x - half + (i.isEven ? 2 : -2), y, x + half, y + 2.4), const Radius.circular(1.2)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(x - half + (i.isEven ? 2 : -2), y, x + half, y + 2.4),
+          const Radius.circular(1.2),
+        ),
         paint,
       );
     }
@@ -106,7 +120,12 @@ class _CanBuoyPainter extends CustomPainter {
     final TextPainter number = TextPainter(
       text: TextSpan(
         text: '2',
-        style: TextStyle(color: Colors.white, fontSize: bh * 0.34, fontWeight: FontWeight.w800, fontFamily: 'Helvetica'),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: bh * 0.34,
+          fontWeight: FontWeight.w800,
+          fontFamily: 'Helvetica',
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -129,8 +148,20 @@ class _CanBuoyPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
     canvas
-      ..drawArc(Rect.fromCenter(center: Offset(cx, waterline), width: bw * 1.5, height: 8), 0.1, math.pi - 0.2, false, foam)
-      ..drawArc(Rect.fromCenter(center: Offset(cx, waterline + 4), width: bw * 2.1, height: 10), 0.3, math.pi - 0.6, false, foam);
+      ..drawArc(
+        Rect.fromCenter(center: Offset(cx, waterline), width: bw * 1.5, height: 8),
+        0.1,
+        math.pi - 0.2,
+        false,
+        foam,
+      )
+      ..drawArc(
+        Rect.fromCenter(center: Offset(cx, waterline + 4), width: bw * 2.1, height: 10),
+        0.3,
+        math.pi - 0.6,
+        false,
+        foam,
+      );
     Scenery.ripples(canvas, size, waterline + 10);
   }
 
@@ -189,8 +220,14 @@ class _MooringPainter extends CustomPainter {
       ..lineTo(0, h)
       ..close();
     canvas.drawPath(sand, Paint()..color = const Color(0xFFC9B27C));
-    canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.12, bed), width: 30, height: 14), Paint()..color = Palette.stoneDark);
-    canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.86, bed + 2), width: 22, height: 10), Paint()..color = Palette.stone);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(w * 0.12, bed), width: 30, height: 14),
+      Paint()..color = Palette.stoneDark,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(w * 0.86, bed + 2), width: 22, height: 10),
+      Paint()..color = Palette.stone,
+    );
     final Paint weed = Paint()
       ..color = const Color(0xFF3E7D4F)
       ..style = PaintingStyle.stroke
@@ -220,13 +257,23 @@ class _MooringPainter extends CustomPainter {
       )
       ..save()
       ..clipPath(Path()..addOval(ball))
-      ..drawRect(Rect.fromLTRB(ball.left, buoy.dy - r * 0.35, ball.right, buoy.dy + r * 0.05), Paint()..color = Palette.buoyRed)
+      ..drawRect(
+        Rect.fromLTRB(ball.left, buoy.dy - r * 0.35, ball.right, buoy.dy + r * 0.05),
+        Paint()..color = Palette.buoyRed,
+      )
       ..restore();
     // The water surface over the bottom half (seen through the surface).
-    canvas.drawRect(Rect.fromLTRB(ball.left - 2, waterline, ball.right + 2, ball.bottom + 1), Paint()..color = Palette.shallows.withValues(alpha: 0.45));
-    canvas.drawLine(Offset(0, waterline), Offset(w, waterline), Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..strokeWidth = 1.2);
+    canvas.drawRect(
+      Rect.fromLTRB(ball.left - 2, waterline, ball.right + 2, ball.bottom + 1),
+      Paint()..color = Palette.shallows.withValues(alpha: 0.45),
+    );
+    canvas.drawLine(
+      Offset(0, waterline),
+      Offset(w, waterline),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.7)
+        ..strokeWidth = 1.2,
+    );
     Scenery.ripples(canvas, size, waterline);
 
     // The anchor, dug in, off to the right.
@@ -256,7 +303,10 @@ class _MooringPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.6;
         if (i.isEven) {
-          canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-4, -2.5, 8, 5), const Radius.circular(2.5)), link);
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(const Rect.fromLTWH(-4, -2.5, 8, 5), const Radius.circular(2.5)),
+            link,
+          );
         } else {
           canvas.drawLine(const Offset(-4, 0), const Offset(4, 0), link..strokeWidth = 2);
         }
@@ -277,11 +327,20 @@ class _MooringPainter extends CustomPainter {
     canvas
       ..drawLine(crown, top, iron)
       ..drawCircle(top - Offset(0, height * 0.06), height * 0.07, iron..strokeWidth = height * 0.05)
-      ..drawLine(top + Offset(-height * 0.2, height * 0.12), top + Offset(height * 0.2, height * 0.12), iron..strokeWidth = height * 0.07);
+      ..drawLine(
+        top + Offset(-height * 0.2, height * 0.12),
+        top + Offset(height * 0.2, height * 0.12),
+        iron..strokeWidth = height * 0.07,
+      );
     final Path arms = Path()
       ..moveTo(crown.dx - height * 0.38, crown.dy - height * 0.3)
       ..quadraticBezierTo(crown.dx - height * 0.3, crown.dy + height * 0.05, crown.dx, crown.dy)
-      ..quadraticBezierTo(crown.dx + height * 0.3, crown.dy + height * 0.05, crown.dx + height * 0.38, crown.dy - height * 0.3);
+      ..quadraticBezierTo(
+        crown.dx + height * 0.3,
+        crown.dy + height * 0.05,
+        crown.dx + height * 0.38,
+        crown.dy - height * 0.3,
+      );
     canvas.drawPath(arms, iron..strokeWidth = height * 0.08);
     final Paint fluke = Paint()..color = const Color(0xFF37474F);
     for (final double s in <double>[-1, 1]) {
@@ -296,7 +355,10 @@ class _MooringPainter extends CustomPainter {
       );
     }
     // Half buried: sand over the crown.
-    canvas.drawOval(Rect.fromCenter(center: crown + Offset(0, height * 0.06), width: height * 0.9, height: height * 0.16), Paint()..color = const Color(0xFFC9B27C));
+    canvas.drawOval(
+      Rect.fromCenter(center: crown + Offset(0, height * 0.06), width: height * 0.9, height: height * 0.16),
+      Paint()..color = const Color(0xFFC9B27C),
+    );
   }
 
   @override
@@ -375,7 +437,13 @@ class _DanBuoyPainter extends CustomPainter {
       ..color = Colors.white.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
-    canvas.drawArc(Rect.fromCenter(center: Offset(cx, waterline), width: float.width * 1.6, height: 8), 0.1, math.pi - 0.2, false, foam);
+    canvas.drawArc(
+      Rect.fromCenter(center: Offset(cx, waterline), width: float.width * 1.6, height: 8),
+      0.1,
+      math.pi - 0.2,
+      false,
+      foam,
+    );
     Scenery.ripples(canvas, size, waterline + 10);
   }
 
@@ -414,8 +482,16 @@ class _LaunchPainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final double spread = 10.0 + i * 10;
       canvas
-        ..drawLine(Offset(bow.dx - w * 0.3, waterline + 2), Offset(bow.dx - w * 0.3 - w * 0.25, waterline - spread * 0.4 - 6), wake)
-        ..drawLine(Offset(bow.dx - w * 0.3, waterline + 4), Offset(bow.dx - w * 0.3 - w * 0.25, waterline + spread), wake);
+        ..drawLine(
+          Offset(bow.dx - w * 0.3, waterline + 2),
+          Offset(bow.dx - w * 0.3 - w * 0.25, waterline - spread * 0.4 - 6),
+          wake,
+        )
+        ..drawLine(
+          Offset(bow.dx - w * 0.3, waterline + 4),
+          Offset(bow.dx - w * 0.3 - w * 0.25, waterline + spread),
+          wake,
+        );
       wake.color = wake.color.withValues(alpha: 0.5 - i * 0.12);
     }
 
@@ -461,29 +537,50 @@ class _LaunchPainter extends CustomPainter {
       );
     // Wheelhouse.
     final Rect house = Rect.fromLTRB(stern + len * 0.3, waterline - h * 0.24, stern + len * 0.68, waterline - h * 0.1);
-    canvas.drawRRect(RRect.fromRectAndCorners(house, topLeft: const Radius.circular(3), topRight: const Radius.circular(8)), Paint()..color = Colors.white);
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(house, topLeft: const Radius.circular(3), topRight: const Radius.circular(8)),
+      Paint()..color = Colors.white,
+    );
     for (int i = 0; i < 3; i++) {
       canvas.drawRect(
-        Rect.fromLTWH(house.left + 4 + i * (house.width - 8) / 3, house.top + 4, (house.width - 8) / 3 - 3, house.height * 0.38),
+        Rect.fromLTWH(
+          house.left + 4 + i * (house.width - 8) / 3,
+          house.top + 4,
+          (house.width - 8) / 3 - 3,
+          house.height * 0.38,
+        ),
         Paint()..color = const Color(0xFF263238),
       );
     }
     final TextPainter label = TextPainter(
-      text: TextSpan(text: 'HARBOR MASTER', style: TextStyle(color: const Color(0xFF1E4E9C), fontSize: h * 0.045, fontWeight: FontWeight.w800)),
+      text: TextSpan(
+        text: 'HARBOR MASTER',
+        style: TextStyle(color: const Color(0xFF1E4E9C), fontSize: h * 0.045, fontWeight: FontWeight.w800),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     label.paint(canvas, Offset(stern + len * 0.12, waterline - h * 0.1 + 1));
     // The blue light on its mast, flashing.
     final Offset mast = Offset(house.center.dx, house.top);
     canvas
-      ..drawLine(mast, mast - Offset(0, h * 0.08), Paint()
-        ..color = const Color(0xFF455A64)
-        ..strokeWidth = 2)
+      ..drawLine(
+        mast,
+        mast - Offset(0, h * 0.08),
+        Paint()
+          ..color = const Color(0xFF455A64)
+          ..strokeWidth = 2,
+      )
       ..drawCircle(mast - Offset(0, h * 0.09), h * 0.07, Paint()..color = const Color(0x553D8BFF))
       ..drawCircle(mast - Offset(0, h * 0.09), h * 0.025, Paint()..color = const Color(0xFF3D8BFF));
     _Afloat.reflection(canvas, bow.dx - len / 2, waterline + 2, len * 0.8, const Color(0xFF1E4E9C));
     // Bow wave.
-    canvas.drawArc(Rect.fromCenter(center: Offset(bow.dx - len * 0.1, waterline + 2), width: len * 0.3, height: 10), 3.4, 2.4, false, wake..color = Colors.white);
+    canvas.drawArc(
+      Rect.fromCenter(center: Offset(bow.dx - len * 0.1, waterline + 2), width: len * 0.3, height: 10),
+      3.4,
+      2.4,
+      false,
+      wake..color = Colors.white,
+    );
   }
 
   @override
@@ -496,7 +593,8 @@ class SignalFlagsArt extends StatelessWidget {
   const SignalFlagsArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const CustomPaint(painter: _SignalFlagsPainter(), child: SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      const CustomPaint(painter: _SignalFlagsPainter(), child: SizedBox.expand());
 }
 
 /// One flag of the international code: how to paint it in its rectangle.
@@ -606,23 +704,33 @@ class _SignalFlagsPainter extends CustomPainter {
       ..close();
     canvas
       ..drawPath(hull, Paint()..color = const Color(0xFF263238))
-      ..drawRect(Rect.fromLTRB(0, waterline - h * 0.03, w * 0.9, waterline + 4), Paint()..color = const Color(0xFF8E2A22));
+      ..drawRect(
+        Rect.fromLTRB(0, waterline - h * 0.03, w * 0.9, waterline + 4),
+        Paint()..color = const Color(0xFF8E2A22),
+      );
     // The mast at the left, and the stem at the right.
     final Offset masthead = Offset(w * 0.12, h * 0.06);
     final Offset deck = Offset(w * 0.12, waterline - h * 0.1);
-    canvas.drawLine(deck, masthead, Paint()
-      ..color = const Color(0xFF6D4C41)
-      ..strokeWidth = 4);
+    canvas.drawLine(
+      deck,
+      masthead,
+      Paint()
+        ..color = const Color(0xFF6D4C41)
+        ..strokeWidth = 4,
+    );
     final Offset stem = Offset(w * 0.95, waterline - h * 0.15);
 
     // The halyard runs from the masthead down to the stem, sagging a little.
     final Path halyard = Path()
       ..moveTo(masthead.dx, masthead.dy)
       ..quadraticBezierTo(w * 0.55, h * 0.32, stem.dx, stem.dy);
-    canvas.drawPath(halyard, Paint()
-      ..color = const Color(0xFF5D4037)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2);
+    canvas.drawPath(
+      halyard,
+      Paint()
+        ..color = const Color(0xFF5D4037)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
 
     // Flags clipped along it, each hanging from the line, stirred by the wind.
     const List<String> hoist = <String>['K', 'C', 'A', 'E', 'D', 'U', 'F', 'N'];
@@ -643,10 +751,13 @@ class _SignalFlagsPainter extends CustomPainter {
       final Rect flag = Rect.fromLTWH(0, 1, flagW, flagH);
       _flags[hoist[i]]!(canvas, flag);
       canvas
-        ..drawRect(flag, Paint()
-          ..color = Colors.black.withValues(alpha: 0.25)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.6)
+        ..drawRect(
+          flag,
+          Paint()
+            ..color = Colors.black.withValues(alpha: 0.25)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 0.6,
+        )
         ..restore();
     }
     Scenery.ripples(canvas, size, waterline + 4);
@@ -663,7 +774,11 @@ class CanBuoyIcon extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(final BuildContext context) => SizedBox(width: size * 0.7, height: size, child: const CustomPaint(painter: _CanIconPainter()));
+  Widget build(final BuildContext context) => SizedBox(
+    width: size * 0.7,
+    height: size,
+    child: const CustomPaint(painter: _CanIconPainter()),
+  );
 }
 
 class _CanIconPainter extends CustomPainter {
@@ -676,9 +791,13 @@ class _CanIconPainter extends CustomPainter {
       ..drawRect(body, Paint()..color = Palette.buoyRed)
       ..drawOval(Rect.fromLTRB(0, 0, size.width, size.height * 0.3), Paint()..color = const Color(0xFFB8352B))
       ..drawRect(Rect.fromLTRB(0, size.height * 0.35, size.width, size.height * 0.45), Paint()..color = Colors.white)
-      ..drawLine(Offset(-2, size.height * 0.88), Offset(size.width + 2, size.height * 0.88), Paint()
-        ..color = Palette.foam
-        ..strokeWidth = 1.4);
+      ..drawLine(
+        Offset(-2, size.height * 0.88),
+        Offset(size.width + 2, size.height * 0.88),
+        Paint()
+          ..color = Palette.foam
+          ..strokeWidth = 1.4,
+      );
   }
 
   @override
@@ -695,7 +814,11 @@ class CodeFlag extends StatelessWidget {
   final double height;
 
   @override
-  Widget build(final BuildContext context) => SizedBox(width: width, height: height, child: CustomPaint(painter: _CodeFlagPainter(letter)));
+  Widget build(final BuildContext context) => SizedBox(
+    width: width,
+    height: height,
+    child: CustomPaint(painter: _CodeFlagPainter(letter)),
+  );
 }
 
 class _CodeFlagPainter extends CustomPainter {
@@ -707,9 +830,12 @@ class _CodeFlagPainter extends CustomPainter {
   void paint(final Canvas canvas, final Size size) {
     final Rect r = Offset.zero & size;
     (_SignalFlagsPainter._flags[letter] ?? _SignalFlagsPainter._flags['K']!)(canvas, r);
-    canvas.drawRect(r, Paint()
-      ..color = Colors.black26
-      ..style = PaintingStyle.stroke);
+    canvas.drawRect(
+      r,
+      Paint()
+        ..color = Colors.black26
+        ..style = PaintingStyle.stroke,
+    );
   }
 
   @override

@@ -14,7 +14,13 @@ abstract final class TopDown {
   static const List<Color> roofs = <Color>[Color(0xFFC0583A), Color(0xFFA9452E), Color(0xFF7A8A96), Color(0xFFD9774F)];
 
   /// A boat seen from above, its bow pointing along [angle] (radians, 0 = right).
-  static void boat(final Canvas canvas, final Offset center, final double length, final double angle, final Color hull) {
+  static void boat(
+    final Canvas canvas,
+    final Offset center,
+    final double length,
+    final double angle,
+    final Color hull,
+  ) {
     final double beam = length * 0.36;
     canvas
       ..save()
@@ -49,7 +55,10 @@ abstract final class TopDown {
         Paint()..color = Palette.plankLight,
       )
       ..drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(-length * 0.22, -beam * 0.24, length * 0.3, beam * 0.48), Radius.circular(beam * 0.1)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(-length * 0.22, -beam * 0.24, length * 0.3, beam * 0.48),
+          Radius.circular(beam * 0.1),
+        ),
         Paint()..color = Palette.sail,
       )
       ..restore();
@@ -127,7 +136,10 @@ abstract final class TopDown {
       ..strokeWidth = 1
       ..color = Palette.foam.withValues(alpha: 0.4);
     for (int i = 0; i < count; i++) {
-      final Offset at = Offset(area.left + random.nextDouble() * area.width, area.top + random.nextDouble() * area.height);
+      final Offset at = Offset(
+        area.left + random.nextDouble() * area.width,
+        area.top + random.nextDouble() * area.height,
+      );
       canvas.drawArc(Rect.fromCenter(center: at, width: 10, height: 4), math.pi * 1.1, math.pi * 0.8, false, wave);
     }
   }
@@ -210,7 +222,9 @@ class _HarborPainter extends CustomPainter {
     for (double y = h * 0.03; y < h * 0.3; y += h * 0.07) {
       for (double x = w * 0.02; x < w * 0.98; x += w * 0.055) {
         final double shoreY = h * 0.3 + h * 0.2 * (1 - math.pow((x / w - 0.5) * 2, 2)) * 0.97 - h * 0.08;
-        if (y > shoreY || random.nextDouble() < 0.18 || <double>[0.3, 0.5, 0.7].any((final double r) => (x / w + 0.02 - r).abs() < 0.025)) {
+        if (y > shoreY ||
+            random.nextDouble() < 0.18 ||
+            <double>[0.3, 0.5, 0.7].any((final double r) => (x / w + 0.02 - r).abs() < 0.025)) {
           continue;
         }
         final bool wide = random.nextBool();
@@ -242,7 +256,13 @@ class _HarborPainter extends CustomPainter {
     for (int i = 0; i < 6; i++) {
       final double x = w * (0.24 + i * 0.1);
       final double shoreY = h * 0.3 + h * 0.2 * (1 - math.pow((x / w - 0.5) * 2, 2)) * 0.97;
-      TopDown.boat(canvas, Offset(x, shoreY + h * 0.07), h * 0.12, math.pi / 2, Palette.hulls[i % Palette.hulls.length]);
+      TopDown.boat(
+        canvas,
+        Offset(x, shoreY + h * 0.07),
+        h * 0.12,
+        math.pi / 2,
+        Palette.hulls[i % Palette.hulls.length],
+      );
     }
     TopDown.boat(canvas, Offset(w * 0.3, h * 0.66), h * 0.13, -0.3, Palette.sail);
     // The incoming boat leaves a V of wake behind it.
@@ -396,8 +416,7 @@ class _NewPortPainter extends CustomPainter {
     final Rect all = Offset.zero & size;
     canvas.drawRect(
       all,
-      Paint()
-        ..shader = const LinearGradient(colors: <Color>[Palette.shallows, Palette.sea]).createShader(all),
+      Paint()..shader = const LinearGradient(colors: <Color>[Palette.shallows, Palette.sea]).createShader(all),
     );
     TopDown.waves(canvas, Rect.fromLTWH(w * 0.6, 0, w * 0.4, h), count: 30, seed: 8);
 
@@ -521,7 +540,11 @@ class _NewPortPainter extends CustomPainter {
         }
         final Offset at = center + Offset(math.cos(a) * rr, math.sin(a) * rr);
         final double s = r * (0.16 + random.nextDouble() * 0.06);
-        TopDown.roof(canvas, Rect.fromCenter(center: at, width: s, height: s * 0.75), TopDown.roofs[random.nextInt(TopDown.roofs.length)]);
+        TopDown.roof(
+          canvas,
+          Rect.fromCenter(center: at, width: s, height: s * 0.75),
+          TopDown.roofs[random.nextInt(TopDown.roofs.length)],
+        );
       }
     }
     // Boats tied up inside.
@@ -617,7 +640,10 @@ class _HugBodyPainter extends CustomPainter {
       )
       ..drawCircle(Offset(tip.dx, tip.dy + 3), 4, Paint()..color = const Color(0xFF263238))
       ..drawRRect(
-        RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(tip.dx, block + 4), width: 8, height: 10), const Radius.circular(2)),
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(tip.dx, block + 4), width: 8, height: 10),
+          const Radius.circular(2),
+        ),
         Paint()..color = const Color(0xFF263238),
       );
     // The spreader bar and slings, down to the skiff.

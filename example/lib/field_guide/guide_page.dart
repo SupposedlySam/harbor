@@ -9,8 +9,8 @@ import '../art/sea.dart';
 import '../game/widgets.dart';
 import 'stage.dart';
 
-/// One page of the field guide: a class, the real thing it's named after,
-/// what it does in an app, and a stage to try it on.
+/// One page of the field guide: a class, a harbour drawing that illustrates
+/// it, what it does in an app, and a stage to try it on.
 ///
 /// The entry that builds it owns its own controls' state and rebuilds this
 /// page when they change; [stage] is rebuilt with it.
@@ -31,16 +31,16 @@ class GuidePage extends StatefulWidget {
     this.settings,
   });
 
-  /// The class, as you'd write it: `HarborDock.pier`.
+  /// The class, as you'd write it: `HarborBar.overlay`.
   final String className;
 
-  /// What the thing is in a real harbor.
+  /// What the drawing shows, as an illustration of the class.
   final String realWorld;
 
   /// What it does in your app.
   final String inYourApp;
 
-  /// A drawing of the real thing.
+  /// A harbour drawing that illustrates the class.
   final Widget art;
 
   /// What's on the stage's screen.
@@ -58,17 +58,17 @@ class GuidePage extends StatefulWidget {
 
   final StageDevice device;
 
-  /// Whether the tide gauge is offered.
+  /// Whether the keyboard gauge is offered.
   final bool tide;
 
   /// The part of the phone this class is about.
   final StageFocus focus;
 
-  /// Settings to share with the entry (to read the tide, say); one is made if null.
+  /// Settings to share with the entry (to read the keyboard, say); one is made if null.
   final StageSettings? settings;
 
   /// From Material's "expanded" width up, the controls sit beside the stage; below it, on a
-  /// quay along the bottom, where a phone held upright has room for them.
+  /// solid bar along the bottom, where a phone held upright has room for them.
   static const double sideBySideWidth = 840;
 
   @override
@@ -90,10 +90,7 @@ class _GuidePageState extends State<GuidePage> {
   Widget build(final BuildContext context) {
     final bool sideBySide = MediaQuery.sizeOf(context).width >= GuidePage.sideBySideWidth;
     final List<Widget> controls = <Widget>[
-      if (widget.tryThis.isNotEmpty) ...<Widget>[
-        TryThisCard(steps: widget.tryThis),
-        const SizedBox(height: 10),
-      ],
+      if (widget.tryThis.isNotEmpty) ...<Widget>[TryThisCard(steps: widget.tryThis), const SizedBox(height: 10)],
       if (widget.controls.isNotEmpty) ...<Widget>[
         _Panel(title: widget.className, children: widget.controls),
         const SizedBox(height: 10),
@@ -103,24 +100,24 @@ class _GuidePageState extends State<GuidePage> {
       ProbeReadout(settings: _settings),
       CodeCard(code: widget.code),
     ];
-    // The page is a harbor of its own: the header is a pier over the top. On a phone the controls
-    // are a quay along the bottom, so the stage between them stays in sight while you change
-    // things; on a wide screen they are a panel beside the stage, in the body, which harbor keeps
-    // clear of the header.
+    // The page is a frame of its own: the header is an overlay bar over the top. On a phone the
+    // controls are a solid bar along the bottom, so the stage between them stays in sight while you
+    // change things; on a wide screen they are a panel beside the stage, in the body, which harbor
+    // keeps clear of the header.
     return HarborPage(
-      child: Harbor(
-        newPort: true,
+      child: HarborFrame(
+        isPage: true,
         debugLabel: 'field guide page',
-        top: <HarborDock>[
-          HarborDock.pier(
-            wake: const HarborWake.fade(length: 10, blurSigma: 14),
+        top: <HarborBar>[
+          HarborBar.overlay(
+            edgeEffect: const HarborEdgeEffect.fade(length: 10, blurSigma: 14),
             backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.7)),
             child: PierHeader(title: widget.className, subtitle: 'Field guide', showBack: true),
           ),
         ],
-        bottom: <HarborDock>[
+        bottom: <HarborBar>[
           if (!sideBySide)
-            HarborDock.quay(
+            HarborBar.solid(
               debugLabel: 'control quay',
               backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.97)),
               child: ControlQuay(children: controls),
@@ -128,8 +125,8 @@ class _GuidePageState extends State<GuidePage> {
         ],
         body: Sea(
           mood: SeaMood.night,
-          child: HarborMoored(
-            mooringLine: true,
+          child: HarborClear(
+            rowInsets: true,
             child: sideBySide
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -149,7 +146,7 @@ class _GuidePageState extends State<GuidePage> {
     );
   }
 
-  /// The plate and the stage, with the tide gauge beside the stage.
+  /// The plate and the stage, with the keyboard gauge beside the stage.
   Widget _stageColumn() => LayoutBuilder(
     builder: (final BuildContext context, final BoxConstraints body) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -200,7 +197,7 @@ class _GuidePageState extends State<GuidePage> {
   );
 }
 
-/// The controls beside the stage on a wide screen: the same as the control quay's, in a panel
+/// The controls beside the stage on a wide screen: the same as the control bar's, in a panel
 /// that scrolls on its own, with the whole page's height to use.
 class ControlPanel extends StatelessWidget {
   const ControlPanel({super.key, required this.children});
@@ -242,7 +239,7 @@ class ControlPanel extends StatelessWidget {
   );
 }
 
-/// The controls, on a quay along the bottom of the page: the class's own
+/// The controls, on a solid bar along the bottom of the page: the class's own
 /// options first, then the stage's, the readings and the code. Folds down to
 /// its handle to give the stage the rest of the page.
 class ControlQuay extends StatefulWidget {
@@ -264,7 +261,7 @@ class _ControlQuayState extends State<ControlQuay> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        // The quay's stone coping, so it reads as the dock it is.
+        // A stone coping, so it reads as the solid bar it is.
         const SizedBox(height: 10, child: QuayStones()),
         Material(
           type: MaterialType.transparency,
@@ -281,7 +278,7 @@ class _ControlQuayState extends State<ControlQuay> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'on a HarborDock.quay',
+                      'on a HarborBar.solid',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Palette.foam.withValues(alpha: 0.6)),
@@ -317,8 +314,8 @@ class _ControlQuayState extends State<ControlQuay> {
   }
 }
 
-/// The class and the real thing it's named for: a strip with the drawing and
-/// the name, that unfolds to say what it is in a harbor and in your app.
+/// The class and its illustration: a strip with the drawing and the name, that
+/// unfolds to say what the drawing shows and what the class does in your app.
 class _Plate extends StatefulWidget {
   const _Plate({required this.art, required this.className, required this.realWorld, required this.inYourApp});
 
@@ -396,7 +393,7 @@ class _PlateState extends State<_Plate> {
           children: <Widget>[
             _name(17),
             const SizedBox(height: 8),
-            _Line(icon: Icons.sailing_rounded, label: 'In the harbor', text: widget.realWorld),
+            _Line(icon: Icons.sailing_rounded, label: 'As drawn', text: widget.realWorld),
             const SizedBox(height: 6),
             _Line(icon: Icons.phone_iphone_rounded, label: 'In your app', text: widget.inYourApp),
           ],
@@ -455,7 +452,7 @@ const TextStyle _panelTitle = TextStyle(fontFamily: 'Menlo', color: Palette.bras
 class TryStep {
   const TryStep(this.action, this.watch);
 
-  /// What to do, in the controls' own words: "Switch on make way: bottom".
+  /// What to do, in the controls' own words: "Switch on hide bar: bottom".
   final String action;
 
   /// What should happen on the stage, and why it matters.
@@ -496,13 +493,19 @@ class TryThisCard extends StatelessWidget {
                 children: <Widget>[
                   SizedBox(
                     width: 22,
-                    child: Text('${i + 1}.', style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.brass, fontSize: 13)),
+                    child: Text(
+                      '${i + 1}.',
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.brass, fontSize: 13),
+                    ),
                   ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(steps[i].action, style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.foam, fontSize: 13)),
+                        Text(
+                          steps[i].action,
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: Palette.foam, fontSize: 13),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           steps[i].watch,
@@ -558,7 +561,7 @@ class _Panel extends StatelessWidget {
   );
 }
 
-/// The stage's own switches: device, coast, reading direction and the chart.
+/// The stage's own switches: device, system edges, reading direction and the inspector.
 ///
 /// Folded away at first, showing what the stage is set to, so the class's own
 /// options sit next to the phone.
@@ -586,7 +589,7 @@ class _StageControlsState extends State<StageControls> {
     if (!settings.device.tv && !settings.statusBar) 'no status bar',
     if (!settings.device.tv && !settings.homeIndicator) 'no home indicator',
     if (settings.rtl) 'right-to-left',
-    if (settings.chart) 'chart',
+    if (settings.chart) 'inspector',
     if (!widget.focus.isWhole)
       if (settings.wholePhone) 'whole phone' else widget.focus.label,
   ].join(' · ');
@@ -662,7 +665,7 @@ class _StageControlsState extends State<StageControls> {
                   onChanged: (final bool v) => settings.rtl = v,
                 ),
                 ToggleControl(
-                  label: 'HarborChartOverlay',
+                  label: 'HarborInspectorOverlay',
                   value: settings.chart,
                   onChanged: (final bool v) => settings.chart = v,
                 ),
@@ -678,9 +681,9 @@ class _StageControlsState extends State<StageControls> {
   );
 }
 
-/// The tide gauge: a striped tide staff you drag the water up and down, from
-/// low tide (keyboard down) to high tide (keyboard up), with a button that
-/// brings the tide in or out the way a keyboard slides.
+/// The keyboard gauge, drawn as a striped tide staff: drag the water up and
+/// down, from low (keyboard hidden) to high (keyboard shown), or press the
+/// button under it to bring the keyboard in or out the way a keyboard slides.
 class TideGauge extends StatefulWidget {
   const TideGauge({super.key, required this.settings, this.tide = true, this.focus = StageFocus.whole});
 
@@ -765,7 +768,7 @@ class _TideGaugeState extends State<TideGauge> with SingleTickerProviderStateMix
           width: 48,
           child: IconButton.filled(
             key: const ValueKey<String>('tide toggle'),
-            tooltip: tide > 0.5 ? 'Lower the tide' : 'Raise the tide',
+            tooltip: tide > 0.5 ? 'Hide the keyboard' : 'Show the keyboard',
             style: IconButton.styleFrom(backgroundColor: Palette.brass, foregroundColor: Palette.night),
             onPressed: _toggle,
             icon: Icon(tide > 0.5 ? Icons.keyboard_hide_rounded : Icons.keyboard_rounded),
@@ -837,8 +840,8 @@ class _TideStaffPainter extends CustomPainter {
   bool shouldRepaint(final _TideStaffPainter oldDelegate) => oldDelegate.tide != tide;
 }
 
-/// What the probes on the stage read: `MediaQuery` and the harbor's waters,
-/// where each probe sits.
+/// What the probes on the stage read: `MediaQuery` and `HarborRoom.of`, where
+/// each probe sits.
 class ProbeReadout extends StatelessWidget {
   const ProbeReadout({super.key, required this.settings});
 

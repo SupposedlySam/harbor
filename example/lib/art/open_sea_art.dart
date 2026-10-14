@@ -101,8 +101,7 @@ class VoyageChartArt extends StatelessWidget {
   final int seed;
 
   @override
-  Widget build(final BuildContext context) =>
-      CustomPaint(painter: _ChartPainter(seed), child: const SizedBox.expand());
+  Widget build(final BuildContext context) => CustomPaint(painter: _ChartPainter(seed), child: const SizedBox.expand());
 }
 
 class _ChartPainter extends CustomPainter {

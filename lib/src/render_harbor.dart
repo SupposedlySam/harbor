@@ -13,17 +13,17 @@ import 'tide.dart';
 import 'wake.dart';
 import 'waters.dart';
 
-/// How a harbor sizes itself.
+/// How a frame sizes itself.
 enum HarborSizing {
   /// It fills the space it is given, as a page does.
   fill,
 
-  /// It is as tall as its body and quays, as a content-sized sheet is.
+  /// It is as tall as its body and solid bars, as a content-sized sheet is.
   hugBody,
 }
 
-/// What a harbor hands its body during layout: the `MediaQuery` values and
-/// the waters for the body's area, computed after the docks were measured.
+/// What a frame hands its body during layout: the `MediaQuery` values and
+/// the room for the body's area, computed after the bars were measured.
 @immutable
 class HarborBodyPayload {
   const HarborBodyPayload({
@@ -37,10 +37,10 @@ class HarborBodyPayload {
   final EdgeInsets padding;
   final EdgeInsets viewPadding;
   final double viewInsetsBottom;
-  final HarborWatersData waters;
+  final HarborRoomData waters;
 
-  /// The wakes this harbor's own docks leave, for its wake painter.
-  final Map<HarborEdge, HarborWakeBand> ownWakes;
+  /// The edge effects this frame's own bars draw, for its edge effect painter.
+  final Map<HarborEdge, HarborFadeBand> ownWakes;
 
   @override
   bool operator ==(final Object other) =>
@@ -50,7 +50,7 @@ class HarborBodyPayload {
       other.viewInsetsBottom == viewInsetsBottom &&
       other.waters == waters &&
       other.ownWakes.length == ownWakes.length &&
-      other.ownWakes.entries.every((final MapEntry<HarborEdge, HarborWakeBand> e) => ownWakes[e.key] == e.value);
+      other.ownWakes.entries.every((final MapEntry<HarborEdge, HarborFadeBand> e) => ownWakes[e.key] == e.value);
 
   @override
   int get hashCode => Object.hash(padding, viewPadding, viewInsetsBottom, waters, ownWakes.length);
@@ -58,7 +58,7 @@ class HarborBodyPayload {
 
 /// The body's constraints, carrying the [HarborBodyPayload] the way a
 /// `Scaffold`'s body constraints carry its bars. Equality includes the
-/// payload, so a dock that changed size reaches the body in the same pass.
+/// payload, so a bar that changed size reaches the body in the same pass.
 class HarborBodyConstraints extends BoxConstraints {
   const HarborBodyConstraints({
     super.minWidth,
@@ -71,35 +71,34 @@ class HarborBodyConstraints extends BoxConstraints {
   final HarborBodyPayload payload;
 
   @override
-  bool operator ==(final Object other) =>
-      super == other && other is HarborBodyConstraints && other.payload == payload;
+  bool operator ==(final Object other) => super == other && other is HarborBodyConstraints && other.payload == payload;
 
   @override
   int get hashCode => Object.hash(super.hashCode, payload);
 }
 
-/// The buoy layer's constraints: the whole frame, and the water nothing covers.
+/// The float layer's constraints: the whole frame, and the room nothing covers.
 class HarborBuoyConstraints extends BoxConstraints {
-  HarborBuoyConstraints({required final Size frame, required this.clearWater, final Rect? openWater})
-    : openWater = openWater ?? clearWater,
+  HarborBuoyConstraints({required final Size frame, required this.room, final Rect? openWater})
+    : openWater = openWater ?? room,
       super.tight(frame);
 
-  /// The rectangle, in the frame's coordinates, that no dock, coast or tide covers.
-  final Rect clearWater;
+  /// The rectangle, in the frame's coordinates, that no bar, system edge or keyboard covers.
+  final Rect room;
 
-  /// The rectangle no dock or tide covers, coast included: where a flare that reaches the coast
-  /// may go.
+  /// The rectangle no bar or keyboard covers, system edges included: where a toast that reaches
+  /// the system edges may go.
   final Rect openWater;
 
   @override
   bool operator ==(final Object other) =>
-      super == other && other is HarborBuoyConstraints && other.clearWater == clearWater && other.openWater == openWater;
+      super == other && other is HarborBuoyConstraints && other.room == room && other.openWater == openWater;
 
   @override
-  int get hashCode => Object.hash(super.hashCode, clearWater, openWater);
+  int get hashCode => Object.hash(super.hashCode, room, openWater);
 }
 
-enum HarborSlotKind { body, dock, statusBar, buoys }
+enum HarborSlotKind { body, dock, statusBar, floats }
 
 class HarborParentData extends ContainerBoxParentData<RenderBox> {
   HarborSlotKind kind = HarborSlotKind.body;
@@ -107,8 +106,8 @@ class HarborParentData extends ContainerBoxParentData<RenderBox> {
 
   /// Position counted from the edge inward.
   int fromEdge = 0;
-  HarborDock? dock;
-  HarborDockState state = HarborDockState.open;
+  HarborBar? dock;
+  HarborBarState state = HarborBarState.open;
 
   @override
   String toString() => '${super.toString()}; $kind $edge #$fromEdge';
@@ -121,29 +120,29 @@ class HarborSlot extends ParentDataWidget<HarborParentData> {
       edge = HarborEdge.top,
       fromEdge = 0,
       dock = null,
-      state = HarborDockState.open;
+      state = HarborBarState.open;
 
-  /// The status bar's band at the top of the frame, over the docks and under the buoys, as
+  /// The status bar's band at the top of the frame, over the bars and under the floats, as
   /// `Scaffold` has it: what a status bar tap is hit-tested against.
   const HarborSlot.statusBar({super.key, required super.child})
     : kind = HarborSlotKind.statusBar,
       edge = HarborEdge.top,
       fromEdge = 0,
       dock = null,
-      state = HarborDockState.open;
+      state = HarborBarState.open;
 
-  const HarborSlot.buoys({super.key, required super.child})
-    : kind = HarborSlotKind.buoys,
+  const HarborSlot.floats({super.key, required super.child})
+    : kind = HarborSlotKind.floats,
       edge = HarborEdge.top,
       fromEdge = 0,
       dock = null,
-      state = HarborDockState.open;
+      state = HarborBarState.open;
 
   const HarborSlot.dock({
     super.key,
     required this.edge,
     required this.fromEdge,
-    required HarborDock this.dock,
+    required HarborBar this.dock,
     required this.state,
     required super.child,
   }) : kind = HarborSlotKind.dock;
@@ -151,8 +150,8 @@ class HarborSlot extends ParentDataWidget<HarborParentData> {
   final HarborSlotKind kind;
   final HarborEdge edge;
   final int fromEdge;
-  final HarborDock? dock;
-  final HarborDockState state;
+  final HarborBar? dock;
+  final HarborBarState state;
 
   @override
   void applyParentData(final RenderObject renderObject) {
@@ -187,19 +186,19 @@ class HarborSlot extends ParentDataWidget<HarborParentData> {
   Type get debugTypicalAncestorWidgetClass => HarborLayout;
 }
 
-/// The geometry a harbor's build hands its layout.
+/// The geometry a frame's build hands its layout.
 @immutable
 class HarborGeometry {
   const HarborGeometry({
     required this.textDirection,
-    required this.coast,
-    required this.coastSteady,
+    required this.systemEdges,
+    required this.systemEdgesSteady,
     required this.coastOnly,
     required this.coastOnlySteady,
     required this.inheritedDocks,
     required this.inheritedWakes,
-    required this.tide,
-    required this.bodyClearsTide,
+    required this.keyboard,
+    required this.bodyClearsKeyboard,
     required this.minimum,
     required this.margin,
     required this.sizing,
@@ -211,69 +210,71 @@ class HarborGeometry {
     this.screenSize = Size.zero,
   });
 
-  /// The hinges and folds this harbor's policy keeps docks off, in the screen's coordinates.
-  /// Read only by a harbor as big as the screen, whose coordinates are the screen's.
+  /// The hinges and folds this frame's policy keeps bars off, in the screen's coordinates.
+  /// Read only by a frame as big as the screen, whose coordinates are the screen's.
   final List<Rect> hinges;
 
-  /// The screen's size, to tell whether this harbor fills it.
+  /// The screen's size, to tell whether this frame fills it.
   final Size screenSize;
 
-  /// Coast cast off above this harbor that still covers its frame: kept out of the clear water,
-  /// though the docks and the body read zero there.
+  /// System edges handled above this frame that still cover it: kept out of the room, though the
+  /// bars and the body read zero there.
   final EdgeInsetsDirectional clearWaterFloor;
 
-  /// The frame size to report, for a component harbor: its port's, which the
-  /// keyboard never shrinks. Null reports this harbor's own size.
+  /// The frame size to report, for a component frame: its page's, which the
+  /// keyboard never shrinks. Null reports this frame's own size.
   final Size? frameSize;
 
   final TextDirection textDirection;
 
-  /// What the docks on each edge absorb, and the least the body keeps clear of:
-  /// the coast plus whatever docks of an outer harbor reach in.
-  final EdgeInsetsDirectional coast;
+  /// What the bars on each edge absorb, and the least the body keeps clear of:
+  /// the system edges plus whatever bars of an outer frame reach in.
+  final EdgeInsetsDirectional systemEdges;
 
-  /// [coast] as it is with the keyboard down.
-  final EdgeInsetsDirectional coastSteady;
+  /// [systemEdges] as it is with the keyboard down.
+  final EdgeInsetsDirectional systemEdgesSteady;
 
-  /// The platform's share of [coast], for the waters.
+  /// The platform's share of [systemEdges], for the room.
   final EdgeInsetsDirectional coastOnly;
 
   /// [coastOnly] as it is with the keyboard down.
   final EdgeInsetsDirectional coastOnlySteady;
 
-  /// How far an outer harbor's docks reach into this one.
+  /// How far an outer frame's bars reach into this one.
   final EdgeInsetsDirectional inheritedDocks;
-  final Map<HarborEdge, HarborWakeBand> inheritedWakes;
+  final Map<HarborEdge, HarborFadeBand> inheritedWakes;
 
-  /// How far the keyboard reaches into this harbor.
-  final double tide;
-  final bool bodyClearsTide;
+  /// How far the keyboard reaches into this frame.
+  final double keyboard;
+  final bool bodyClearsKeyboard;
 
   /// A floor under what the body keeps clear of on each edge.
   final EdgeInsetsDirectional minimum;
   final EdgeInsetsDirectional margin;
   final HarborSizing sizing;
 
-  /// The height of the screen, to place breakwaters measured from its bottom.
+  /// The height of the screen, to place page covers measured from its bottom.
   final double viewHeight;
 
-  /// For [HarborSizing.hugBody]: the most of the space above the tide the
-  /// harbor may take, or null for all of it.
+  /// For [HarborSizing.hugBody]: the most of the space above the keyboard the
+  /// frame may take, or null for all of it.
   final double? maxExtentFraction;
 
   @override
   bool operator ==(final Object other) =>
       other is HarborGeometry &&
       other.textDirection == textDirection &&
-      other.coast == coast &&
-      other.coastSteady == coastSteady &&
+      other.systemEdges == systemEdges &&
+      other.systemEdgesSteady == systemEdgesSteady &&
       other.coastOnly == coastOnly &&
       other.coastOnlySteady == coastOnlySteady &&
       other.inheritedDocks == inheritedDocks &&
       other.inheritedWakes.length == inheritedWakes.length &&
-      other.inheritedWakes.entries.every((final MapEntry<HarborEdge, HarborWakeBand> e) => inheritedWakes[e.key] == e.value) &&
-      other.tide == tide &&
-      other.bodyClearsTide == bodyClearsTide &&
+      other.inheritedWakes.entries.every(
+        (final MapEntry<HarborEdge, HarborFadeBand> e) => inheritedWakes[e.key] == e.value,
+      ) &&
+      other.keyboard == keyboard &&
+      other.bodyClearsKeyboard == bodyClearsKeyboard &&
       other.minimum == minimum &&
       other.margin == margin &&
       other.sizing == sizing &&
@@ -287,13 +288,13 @@ class HarborGeometry {
   @override
   int get hashCode => Object.hash(
     textDirection,
-    coast,
-    coastSteady,
+    systemEdges,
+    systemEdgesSteady,
     coastOnly,
     coastOnlySteady,
     inheritedDocks,
-    tide,
-    bodyClearsTide,
+    keyboard,
+    bodyClearsKeyboard,
     minimum,
     margin,
     sizing,
@@ -305,8 +306,8 @@ class HarborGeometry {
   );
 }
 
-/// Lays a harbor out: docks first, then the body with what the docks took,
-/// then the buoys in the water that is left, all in one layout pass.
+/// Lays a frame out: bars first, then the body with what the bars took,
+/// then the floats in the room that is left, all in one layout pass.
 class HarborLayout extends MultiChildRenderObjectWidget {
   const HarborLayout({super.key, required this.geometry, required this.controller, required super.children});
 
@@ -339,7 +340,9 @@ class _Placed {
 }
 
 class RenderHarbor extends RenderBox
-    with ContainerRenderObjectMixin<RenderBox, HarborParentData>, RenderBoxContainerDefaultsMixin<RenderBox, HarborParentData> {
+    with
+        ContainerRenderObjectMixin<RenderBox, HarborParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, HarborParentData> {
   RenderHarbor({required this._geometry, required this._controller}) {
     _controller.layoutBox = this;
   }
@@ -358,8 +361,8 @@ class RenderHarbor extends RenderBox
       return;
     }
     if (attached) {
-      _controller.breakwaterChanges.removeListener(_breakwaterMoved);
-      value.breakwaterChanges.addListener(_breakwaterMoved);
+      _controller.pageCoverChanges.removeListener(_breakwaterMoved);
+      value.pageCoverChanges.addListener(_breakwaterMoved);
     }
     _controller = value;
     value.layoutBox = this;
@@ -369,11 +372,11 @@ class RenderHarbor extends RenderBox
   @override
   void attach(final PipelineOwner owner) {
     super.attach(owner);
-    _controller.breakwaterChanges.addListener(_breakwaterMoved);
+    _controller.pageCoverChanges.addListener(_breakwaterMoved);
   }
 
   void _breakwaterMoved() {
-    // Told between frames, so the last frame's transforms can be read now and
+    // Told between drawn frames, so the last one's transforms can be read now and
     // the new cover reaches the very next layout.
     if (attached && hasSize && SchedulerBinding.instance.schedulerPhase != SchedulerPhase.persistentCallbacks) {
       _edgeCoverage = _edgeCoverageNow();
@@ -385,7 +388,7 @@ class RenderHarbor extends RenderBox
 
   double _edgeCoverageNow() {
     double covered = 0.0;
-    for (final double top in _controller.breakwaterTopsInGlobal) {
+    for (final double top in _controller.pageCoverTopsInGlobal) {
       final double local = globalToLocal(Offset(0.0, top)).dy;
       covered = math.max(covered, (size.height - local).clamp(0.0, size.height));
     }
@@ -394,7 +397,7 @@ class RenderHarbor extends RenderBox
 
   @override
   void detach() {
-    _controller.breakwaterChanges.removeListener(_breakwaterMoved);
+    _controller.pageCoverChanges.removeListener(_breakwaterMoved);
     super.detach();
   }
 
@@ -420,11 +423,11 @@ class RenderHarbor extends RenderBox
   @override
   Size computeDryLayout(final BoxConstraints constraints) => constraints.biggest;
 
-  /// How far this harbor's bottom sits above the screen's, measured when it
+  /// How far this frame's bottom sits above the screen's, measured when it
   /// last painted (ancestors can't be asked during layout).
   double _gapBelow = 0.0;
 
-  /// How far breakwaters that report a top edge cover this frame, measured
+  /// How far page covers that report a top edge cover this frame, measured
   /// when it last painted.
   double _edgeCoverage = 0.0;
 
@@ -433,11 +436,11 @@ class RenderHarbor extends RenderBox
 
   /// The cover to lay out against at [height]. The cover is only known after it paints, so after
   /// a turn or a fold the last measurement belongs to the old shape: used as pixels, a sheet over
-  /// 365 of portrait's 874 covered nearly all of landscape's 402 for a frame, and the page under
+  /// 365 of portrait's 874 covered nearly all of landscape's 402 for a drawn frame, and the page under
   /// it overflowed. Scaled by the change in height instead, it starts close to where the sheet
   /// will settle, and the next paint measures it exactly.
   double _breakwaterInFrame(final double height) {
-    final double coverage = _controller.breakwaterCoverage;
+    final double coverage = _controller.pageCoverage;
     final double fromBottom = coverage <= 0 ? 0.0 : math.max(0.0, coverage - _gapBelow);
     double edge = _edgeCoverage;
     if (edge > 0 && _edgeCoverageHeight > 0 && height.isFinite && (height - _edgeCoverageHeight).abs() > 0.5) {
@@ -447,7 +450,7 @@ class RenderHarbor extends RenderBox
   }
 
   void _measureEdgeCoverage() {
-    // The harbor itself may have moved under a still cover.
+    // The frame itself may have moved under a still cover.
     final double covered = _edgeCoverageNow();
     _edgeCoverageHeight = size.height;
     if ((covered - _edgeCoverage).abs() > 0.5) {
@@ -466,7 +469,7 @@ class RenderHarbor extends RenderBox
     final double gap = math.max(0.0, _geometry.viewHeight - bottom);
     if ((gap - _gapBelow).abs() > 0.5) {
       _gapBelow = gap;
-      if (_controller.breakwaterCoverage > 0) {
+      if (_controller.pageCoverage > 0) {
         SchedulerBinding.instance.addPostFrameCallback((final Duration _) {
           if (attached) {
             markNeedsLayout();
@@ -485,16 +488,20 @@ class RenderHarbor extends RenderBox
       throw FlutterError.fromParts(<DiagnosticsNode>[
         ErrorSummary('${_debugName()} was given unbounded $axis.'),
         ErrorDescription(
-          'A Harbor fills the space it is given, as a Scaffold does, so it needs bounded constraints. '
-          'This usually happens when a Harbor is placed in a scroll view, a Column or a Row.',
+          'A HarborFrame fills the space it is given, as a Scaffold does, so it needs bounded constraints. '
+          'This usually happens when a HarborFrame is placed in a scroll view, a Column or a Row.',
         ),
-        DiagnosticsProperty<BoxConstraints>('The constraints were', constraints, style: DiagnosticsTreeStyle.errorProperty),
+        DiagnosticsProperty<BoxConstraints>(
+          'The constraints were',
+          constraints,
+          style: DiagnosticsTreeStyle.errorProperty,
+        ),
         ErrorHint(
           constraints.hasBoundedWidth
-              ? 'Give the Harbor a height (a SizedBox, or Expanded in a Column), or use '
-                  'Harbor(sizing: HarborSizing.hugBody) to make it as tall as its body.'
-              : 'Give the Harbor a width, for example with a SizedBox, or Expanded in a Row. '
-                  'HarborSizing.hugBody hugs the height only; a Harbor always fills its width.',
+              ? 'Give the HarborFrame a height (a SizedBox, or Expanded in a Column), or use '
+                    'HarborFrame(sizing: HarborSizing.hugBody) to make it as tall as its body.'
+              : 'Give the HarborFrame a width, for example with a SizedBox, or Expanded in a Row. '
+                    'HarborSizing.hugBody hugs the height only; a HarborFrame always fills its width.',
         ),
       ]);
     }());
@@ -507,21 +514,22 @@ class RenderHarbor extends RenderBox
         return true;
       }
       throw FlutterError.fromParts(<DiagnosticsNode>[
-        ErrorSummary('${_debugName()} lists a quay inside a pier on its ${edge.name} edge.'),
+        ErrorSummary('${_debugName()} lists a solid bar inside an overlay bar on its ${edge.name} edge.'),
         ErrorDescription(
-          'Quays are built on the shore and piers out over the water, so the docks on an edge are '
-          'its quays first, nearest the edge, then its piers.',
+          'The body stops at a solid bar and runs under an overlay bar, so the bars on an edge are '
+          'its solid bars first, nearest the edge, then its overlay bars.',
         ),
         ErrorHint(
-          'List every quay nearer the ${edge.name} edge than the piers: '
-          '${edge == HarborEdge.bottom || edge == HarborEdge.end ? 'after' : 'before'} them in Harbor.${edge.name}.',
+          'List every solid bar nearer the ${edge.name} edge than the overlay bars: '
+          '${edge == HarborEdge.bottom || edge == HarborEdge.end ? 'after' : 'before'} them in HarborFrame.${edge.name}.',
         ),
       ]);
     }());
     return true;
   }
 
-  String _debugName() => _controller.debugLabel == null ? 'A Harbor' : 'The Harbor "${_controller.debugLabel}"';
+  String _debugName() =>
+      _controller.debugLabel == null ? 'A HarborFrame' : 'The HarborFrame "${_controller.debugLabel}"';
 
   @override
   void performLayout() {
@@ -534,12 +542,12 @@ class RenderHarbor extends RenderBox
 
     RenderBox? body;
     RenderBox? statusBar;
-    RenderBox? buoys;
+    RenderBox? floats;
     final Map<HarborEdge, List<_Placed>> byEdge = <HarborEdge, List<_Placed>>{
       for (final HarborEdge e in HarborEdge.values) e: <_Placed>[],
     };
 
-    // 1. Measure the docks: the side docks first, since they own the corners. A rail runs the
+    // 1. Measure the bars: the side bars first, since they own the corners. A rail runs the
     // frame's full height and a header or a tab bar runs between the rails, as a tablet's
     // navigation rail sits beside its app bar. A header used to run the full width, under the
     // rail, and its title had no way to know the rail was there.
@@ -557,19 +565,21 @@ class RenderHarbor extends RenderBox
       byEdge[data.edge]!.add(_Placed(child, data, extent, resting, visual));
     }
 
-    // A hinge or fold the page's policy keeps docks off, as Microsoft and Google both ask: a bar is
-    // not laid across it, but moved to one side. Only a harbor that fills the screen reads them,
+    // A hinge or fold the page's policy keeps bars off, as Microsoft and Google both ask: a bar is
+    // not laid across it, but moved to one side. Only a frame that fills the screen reads them,
     // since the display features are in the screen's coordinates.
-    final bool fillsScreen = maxHeight.isFinite &&
-        (width - g.screenSize.width).abs() < 0.5 &&
-        (maxHeight - g.screenSize.height).abs() < 0.5;
+    final bool fillsScreen =
+        maxHeight.isFinite && (width - g.screenSize.width).abs() < 0.5 && (maxHeight - g.screenSize.height).abs() < 0.5;
     Rect? verticalHinge;
     Rect? horizontalHinge;
     if (fillsScreen) {
       for (final Rect hinge in g.hinges) {
         if (hinge.top <= 0.5 && hinge.bottom >= maxHeight - 0.5 && hinge.left > 0.5 && hinge.right < width - 0.5) {
           verticalHinge ??= hinge;
-        } else if (hinge.left <= 0.5 && hinge.right >= width - 0.5 && hinge.top > 0.5 && hinge.bottom < maxHeight - 0.5) {
+        } else if (hinge.left <= 0.5 &&
+            hinge.right >= width - 0.5 &&
+            hinge.top > 0.5 &&
+            hinge.bottom < maxHeight - 0.5) {
           horizontalHinge ??= hinge;
         }
       }
@@ -583,8 +593,8 @@ class RenderHarbor extends RenderBox
           body = child;
         case HarborSlotKind.statusBar:
           statusBar = child;
-        case HarborSlotKind.buoys:
-          buoys = child;
+        case HarborSlotKind.floats:
+          floats = child;
         case HarborSlotKind.dock:
           // Unbounded along the edge's depth, as a Row or Column leaves its children. Bounding it
           // at the frame let any widget that fills what it is given (a NavigationRail, an AppBar,
@@ -600,13 +610,14 @@ class RenderHarbor extends RenderBox
       }
       child = data.nextSibling;
     }
-    // The ground the side docks hold at rest: a rail that widens over the page while it has focus
+    // The space the side bars hold at rest: a rail that widens over the page while it has focus
     // does not squeeze the header, and one that withdraws gives its corners back as it goes.
-    double sideAtRest(final HarborEdge edge) => byEdge[edge]!.fold(0.0, (final double sum, final _Placed p) => sum + p.resting);
+    double sideAtRest(final HarborEdge edge) =>
+        byEdge[edge]!.fold(0.0, (final double sum, final _Placed p) => sum + p.resting);
     final double cornerStart = math.min(sideAtRest(HarborEdge.start), width);
     final double cornerEnd = math.min(sideAtRest(HarborEdge.end), width - cornerStart);
     final bool ltr = g.textDirection == TextDirection.ltr;
-    // Between the side docks, in physical coordinates; and kept to the screen where reading starts
+    // Between the side bars, in physical coordinates; and kept to the screen where reading starts
     // when a vertical hinge falls between them.
     double runLeft = ltr ? cornerStart : cornerEnd;
     double runRight = width - (ltr ? cornerEnd : cornerStart);
@@ -621,19 +632,19 @@ class RenderHarbor extends RenderBox
     for (final RenderBox dock in verticalDocks) {
       measure(dock, BoxConstraints(minWidth: between, maxWidth: between));
     }
-    for (final List<_Placed> docks in byEdge.values) {
-      docks.sort((final _Placed a, final _Placed b) => a.data.fromEdge.compareTo(b.data.fromEdge));
+    for (final List<_Placed> bars in byEdge.values) {
+      bars.sort((final _Placed a, final _Placed b) => a.data.fromEdge.compareTo(b.data.fromEdge));
     }
 
-    // 2. Stack each edge from the edge inward. Floating docks ride the tide.
-    final double tide = g.tide;
+    // 2. Stack each edge from the edge inward. Bars that ride the keyboard rise with it.
+    final double keyboard = g.keyboard;
     final Map<HarborEdge, double> far = <HarborEdge, double>{};
     final Map<HarborEdge, double> farResting = <HarborEdge, double>{};
     final Map<HarborEdge, double> farSteady = <HarborEdge, double>{};
     final Map<HarborEdge, double> quayEnd = <HarborEdge, double>{};
     final Map<HarborEdge, double> quayEndSteady = <HarborEdge, double>{};
-    final Map<HarborEdge, HarborWake> innerWake = <HarborEdge, HarborWake>{};
-    final Map<HarborEdge, HarborDockKind> innerKind = <HarborEdge, HarborDockKind>{};
+    final Map<HarborEdge, HarborEdgeEffect> innerWake = <HarborEdge, HarborEdgeEffect>{};
+    final Map<HarborEdge, HarborBarKind> innerKind = <HarborEdge, HarborBarKind>{};
     for (final HarborEdge edge in HarborEdge.values) {
       double offset = 0.0;
       double restingOffset = 0.0;
@@ -642,15 +653,15 @@ class RenderHarbor extends RenderBox
       double quays = 0.0;
       double quaysSteady = 0.0;
       for (final _Placed dock in byEdge[edge]!) {
-        final HarborDock config = dock.data.dock!;
-        final bool floats = edge == HarborEdge.bottom && config.tide == HarborTideStance.float;
-        dock.start = floats ? math.max(offset, tide) : offset;
+        final HarborBar config = dock.data.dock!;
+        final bool floats = edge == HarborEdge.bottom && config.keyboard == HarborKeyboardStance.rides;
+        dock.start = floats ? math.max(offset, keyboard) : offset;
         dock.restingStart = restingOffset;
         dock.steadyStart = steadyOffset;
         offset = dock.start + dock.extent;
         restingOffset += dock.resting;
         steadyOffset += dock.extent;
-        if (config.kind == HarborDockKind.quay) {
+        if (config.kind == HarborBarKind.solid) {
           assert(_debugCheckQuayOutsidePiers(edge, seenPier: seenPier));
           quays = offset;
           quaysSteady = steadyOffset;
@@ -658,7 +669,7 @@ class RenderHarbor extends RenderBox
           seenPier = true;
         }
         if (dock.extent > 0) {
-          innerWake[edge] = config.wake;
+          innerWake[edge] = config.edgeEffect;
           innerKind[edge] = config.kind;
         }
       }
@@ -669,8 +680,10 @@ class RenderHarbor extends RenderBox
       quayEndSteady[edge] = quaysSteady;
     }
 
-    // 3. The body's box: inside the quays, and above the tide when it clears it.
-    final double bodyInsetBottom = g.bodyClearsTide ? math.max(quayEnd[HarborEdge.bottom]!, tide) : quayEnd[HarborEdge.bottom]!;
+    // 3. The body's box: inside the solid bars, and above the keyboard when it clears it.
+    final double bodyInsetBottom = g.bodyClearsKeyboard
+        ? math.max(quayEnd[HarborEdge.bottom]!, keyboard)
+        : quayEnd[HarborEdge.bottom]!;
     final EdgeInsetsDirectional bodyInset = EdgeInsetsDirectional.fromSTEB(
       quayEnd[HarborEdge.start]!,
       quayEnd[HarborEdge.top]!,
@@ -679,53 +692,54 @@ class RenderHarbor extends RenderBox
     );
 
     // 4. What is in the way on each edge, from the frame's edge.
-    final double breakwater = _breakwaterInFrame(maxHeight);
+    final double coversPage = _breakwaterInFrame(maxHeight);
     double wakeClearance(final HarborEdge edge) => far[edge]! > 0 ? (innerWake[edge]?.clearance ?? 0.0) : 0.0;
-    double coastOf(final EdgeInsetsDirectional coast, final HarborEdge edge) =>
-        math.max(HarborEdges.of(coast, edge), HarborEdges.of(g.minimum, edge));
+    double coastOf(final EdgeInsetsDirectional systemEdges, final HarborEdge edge) =>
+        math.max(HarborEdges.of(systemEdges, edge), HarborEdges.of(g.minimum, edge));
     final EdgeInsetsDirectional docksLive = HarborEdges.build((final HarborEdge e) {
       double v = far[e]! > 0 ? far[e]! + wakeClearance(e) : 0.0;
       if (e == HarborEdge.bottom) {
-        v = math.max(v, breakwater);
+        v = math.max(v, coversPage);
       }
       return v;
     });
-    final EdgeInsetsDirectional docksResting = HarborEdges.build(
+    final EdgeInsetsDirectional barsResting = HarborEdges.build(
       (final HarborEdge e) => farResting[e]! > 0 ? farResting[e]! + wakeClearance(e) : 0.0,
     );
     // `MediaQuery.padding` never carries the keyboard: that stays in
-    // `viewInsets`, as Flutter has it. The clear water does include it.
+    // `viewInsets`, as Flutter has it. The room does include it.
     final EdgeInsetsDirectional obstruction = HarborEdges.build(
-      (final HarborEdge e) => math.max(coastOf(g.coast, e), HarborEdges.of(docksLive, e)),
+      (final HarborEdge e) => math.max(coastOf(g.systemEdges, e), HarborEdges.of(docksLive, e)),
     );
     final EdgeInsetsDirectional obstructionWithTide = HarborEdges.build(
-      (final HarborEdge e) => e == HarborEdge.bottom ? math.max(HarborEdges.of(obstruction, e), tide) : HarborEdges.of(obstruction, e),
+      (final HarborEdge e) =>
+          e == HarborEdge.bottom ? math.max(HarborEdges.of(obstruction, e), keyboard) : HarborEdges.of(obstruction, e),
     );
     final EdgeInsetsDirectional steady = HarborEdges.build((final HarborEdge e) {
-      final double docks = farSteady[e]! > 0 ? farSteady[e]! + wakeClearance(e) : 0.0;
-      return math.max(coastOf(g.coastSteady, e), docks);
+      final double bars = farSteady[e]! > 0 ? farSteady[e]! + wakeClearance(e) : 0.0;
+      return math.max(coastOf(g.systemEdgesSteady, e), bars);
     });
     double past(final EdgeInsetsDirectional value, final HarborEdge e) =>
         math.max(0.0, HarborEdges.of(value, e) - HarborEdges.of(bodyInset, e));
 
-    final Map<HarborEdge, HarborWakeBand> ownWakes = <HarborEdge, HarborWakeBand>{};
+    final Map<HarborEdge, HarborFadeBand> ownWakes = <HarborEdge, HarborFadeBand>{};
     for (final HarborEdge e in HarborEdge.values) {
-      final HarborWake? wake = innerWake[e];
-      if (wake == null || wake.kind != HarborWakeKind.fade || far[e]! <= 0) {
+      final HarborEdgeEffect? wake = innerWake[e];
+      if (wake == null || wake.kind != HarborEdgeEffectKind.fade || far[e]! <= 0) {
         continue;
       }
-      final double dockEdge = math.max(0.0, far[e]! - HarborEdges.of(bodyInset, e));
-      ownWakes[e] = HarborWakeBand(
-        dockEdge: dockEdge,
-        wakeEnd: dockEdge + wake.length,
+      final double barFace = math.max(0.0, far[e]! - HarborEdges.of(bodyInset, e));
+      ownWakes[e] = HarborFadeBand(
+        barFace: barFace,
+        fadeEnd: barFace + wake.length,
         // A fade at its defaults leaves them to the painter, as before they were options.
-        dockOpacity: wake.dockOpacity == 0.25 ? null : wake.dockOpacity,
+        faceOpacity: wake.faceOpacity == 0.25 ? null : wake.faceOpacity,
         curve: wake.curve == Curves.linear ? null : wake.curve,
       );
     }
-    final Map<HarborEdge, HarborWakeBand> wakes = <HarborEdge, HarborWakeBand>{
-      for (final MapEntry<HarborEdge, HarborWakeBand> inherited in g.inheritedWakes.entries)
-        if (!ownWakes.containsKey(inherited.key) && HarborEdges.of(bodyInset, inherited.key) < inherited.value.wakeEnd)
+    final Map<HarborEdge, HarborFadeBand> fadeBands = <HarborEdge, HarborFadeBand>{
+      for (final MapEntry<HarborEdge, HarborFadeBand> inherited in g.inheritedWakes.entries)
+        if (!ownWakes.containsKey(inherited.key) && HarborEdges.of(bodyInset, inherited.key) < inherited.value.fadeEnd)
           inherited.key: inherited.value.measuredFrom(HarborEdges.of(bodyInset, inherited.key)),
       ...ownWakes,
     };
@@ -735,7 +749,7 @@ class RenderHarbor extends RenderBox
     final EdgeInsetsDirectional coastPast = HarborEdges.build(
       (final HarborEdge e) => past(HarborEdges.build((final HarborEdge x) => coastOf(g.coastOnly, x)), e),
     );
-    // Past the quays only: the keyboard's ground is what the steady coast holds through.
+    // Past the solid bars only: the keyboard's space is what the steady system edges hold through.
     final EdgeInsetsDirectional coastSteadyPast = HarborEdges.build(
       (final HarborEdge e) => math.max(0.0, coastOf(g.coastOnlySteady, e) - quayEnd[e]!),
     );
@@ -743,7 +757,7 @@ class RenderHarbor extends RenderBox
       (final HarborEdge e) => past(HarborEdges.max(docksLive, g.inheritedDocks), e),
     );
     final EdgeInsetsDirectional restingPast = HarborEdges.build(
-      (final HarborEdge e) => past(HarborEdges.max(docksResting, g.inheritedDocks), e),
+      (final HarborEdge e) => past(HarborEdges.max(barsResting, g.inheritedDocks), e),
     );
 
     // 5. Size the frame and lay the body out.
@@ -754,16 +768,16 @@ class RenderHarbor extends RenderBox
     HarborBodyPayload payload(final Size frame) => HarborBodyPayload(
       padding: padding.resolve(g.textDirection),
       viewPadding: viewPadding.resolve(g.textDirection),
-      viewInsetsBottom: g.bodyClearsTide ? 0.0 : math.max(0.0, tide - bodyInset.bottom),
-      waters: HarborWatersData(
-        coast: coastPast,
-        coastSteady: coastSteadyPast,
-        docks: docksPast,
-        docksResting: restingPast,
-        wakes: wakes,
+      viewInsetsBottom: g.bodyClearsKeyboard ? 0.0 : math.max(0.0, keyboard - bodyInset.bottom),
+      waters: HarborRoomData(
+        systemEdges: coastPast,
+        systemEdgesSteady: coastSteadyPast,
+        bars: docksPast,
+        barsResting: restingPast,
+        fadeBands: fadeBands,
         margin: g.margin,
         frameSize: g.frameSize ?? frame,
-        hasDocks: <HarborEdge>{
+        hasBars: <HarborEdge>{
           for (final HarborEdge e in HarborEdge.values)
             if (byEdge[e]!.isNotEmpty) e,
         },
@@ -774,11 +788,11 @@ class RenderHarbor extends RenderBox
       double cap = maxHeight.isFinite ? maxHeight : double.infinity;
       final double? fraction = g.maxExtentFraction;
       if (fraction != null && cap.isFinite) {
-        // A share of the space above the keyboard, plus the keyboard's ground, which a body that
-        // clears the tide takes inside the frame. A body that does not leaves the keyboard outside
+        // A share of the space above the keyboard, plus the keyboard's space, which a body that
+        // clears the keyboard takes inside the frame. A body that does not leaves the keyboard outside
         // the frame's height, so the share is of the whole: adding the keyboard back let a 0.9
         // sheet whose body ran under the keyboard grow past 0.9 of the screen.
-        cap = g.bodyClearsTide ? (cap - tide) * fraction + tide : cap * fraction;
+        cap = g.bodyClearsKeyboard ? (cap - keyboard) * fraction + keyboard : cap * fraction;
       }
       final double bodyMax = math.max(0.0, cap - insetV);
       if (body != null) {
@@ -816,8 +830,8 @@ class RenderHarbor extends RenderBox
       (body.parentData! as HarborParentData).offset = Offset(bodyInsetPhysical.left, bodyInsetPhysical.top);
     }
 
-    // 6. Place the docks.
-    final List<HarborDockRecord> records = <HarborDockRecord>[];
+    // 6. Place the bars.
+    final List<HarborBarRecord> records = <HarborBarRecord>[];
     for (final HarborEdge edge in HarborEdge.values) {
       for (final _Placed dock in byEdge[edge]!) {
         final Size s = dock.box.size;
@@ -829,23 +843,26 @@ class RenderHarbor extends RenderBox
         };
         dock.data.offset = offset;
         records.add(
-          HarborDockRecord(
+          HarborBarRecord(
             edge: edge,
             kind: dock.data.dock!.kind,
             rect: offset & s,
             extent: dock.extent,
             restingExtent: dock.resting,
             state: dock.data.state,
-            tide: dock.data.dock!.tide,
+            keyboard: dock.data.dock!.keyboard,
             label: dock.data.dock!.debugLabel,
           ),
         );
       }
     }
 
-    // 7. The water nothing covers, and the buoys in it.
-    final EdgeInsets physicalObstruction = HarborEdges.max(obstructionWithTide, g.clearWaterFloor).resolve(g.textDirection);
-    final Rect clearWater = Rect.fromLTRB(
+    // 7. The room nothing covers, and the floats in it.
+    final EdgeInsets physicalObstruction = HarborEdges.max(
+      obstructionWithTide,
+      g.clearWaterFloor,
+    ).resolve(g.textDirection);
+    final Rect room = Rect.fromLTRB(
       math.min(physicalObstruction.left, width),
       math.min(physicalObstruction.top, height),
       math.max(physicalObstruction.left, width - physicalObstruction.right),
@@ -855,10 +872,11 @@ class RenderHarbor extends RenderBox
       statusBar.layout(BoxConstraints(minWidth: width, maxWidth: width, maxHeight: height));
       (statusBar.parentData! as HarborParentData).offset = Offset.zero;
     }
-    if (buoys != null) {
-      // The same water with the coast left in: only the docks and the keyboard keep out of it.
+    if (floats != null) {
+      // The same room with the system edges left in: only the bars and the keyboard keep out of it.
       final EdgeInsets physicalDocks = HarborEdges.build(
-        (final HarborEdge e) => e == HarborEdge.bottom ? math.max(HarborEdges.of(docksLive, e), tide) : HarborEdges.of(docksLive, e),
+        (final HarborEdge e) =>
+            e == HarborEdge.bottom ? math.max(HarborEdges.of(docksLive, e), keyboard) : HarborEdges.of(docksLive, e),
       ).resolve(g.textDirection);
       final Rect openWater = Rect.fromLTRB(
         math.min(physicalDocks.left, width),
@@ -866,18 +884,20 @@ class RenderHarbor extends RenderBox
         math.max(physicalDocks.left, width - physicalDocks.right),
         math.max(physicalDocks.top, height - physicalDocks.bottom),
       );
-      buoys.layout(HarborBuoyConstraints(frame: size, clearWater: clearWater, openWater: openWater));
-      (buoys.parentData! as HarborParentData).offset = Offset.zero;
+      floats.layout(HarborBuoyConstraints(frame: size, room: room, openWater: openWater));
+      (floats.parentData! as HarborParentData).offset = Offset.zero;
     }
 
-    _controller.recordLayout(HarborLayoutRecord(
-      frame: Offset.zero & size,
-      body: Offset(bodyInsetPhysical.left, bodyInsetPhysical.top) & bodySize,
-      clearWater: clearWater,
-      docks: records,
-      obstruction: obstructionWithTide,
-      tide: tide,
-    ));
+    _controller.recordLayout(
+      HarborLayoutRecord(
+        frame: Offset.zero & size,
+        body: Offset(bodyInsetPhysical.left, bodyInsetPhysical.top) & bodySize,
+        room: room,
+        bars: records,
+        obstruction: obstructionWithTide,
+        keyboard: keyboard,
+      ),
+    );
   }
 
   @override

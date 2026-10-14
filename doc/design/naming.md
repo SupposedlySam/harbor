@@ -53,6 +53,17 @@ Two failures, both of which corrupt code rather than leaving it alone:
   deprecated `HarborBar.pier`, `dart fix` rewrote `HarborDock.pier(x: 1)` to **`HarborBar.HarborBar(x: 1)`**,
   with a `rename` and with a `replacedBy` alike. Any class whose named constructors change must use
   **SUB**. In this table that is `HarborDock` alone.
+- **A typedef cannot carry a fix on a named constructor's call either.** Found by the rename
+  release's goldens: `HarborCoast.fixed(z, calmTide: true)`, with `typedef HarborCoast =
+  HarborSystemEdges` and a deprecated `calmTide`, came out as `HarborSystemEdges.HarborSystemEdges(...)`,
+  and so did `HarborFairway.box(tide: false)`, `HarborWake.fade(dockOpacity: 0.5)` and the 0.7
+  placement fix of `HarborBuoy.anchored(anchor: a)`. A deprecated argument in the call makes the
+  typedef's rename land on the constructor. So **SUB** also covers any class with a named
+  constructor whose call a fix rewrites (a renamed or deprecated argument), not only renamed
+  constructors: in the release that is `HarborDock`, `HarborBuoy`, `HarborCoast`, `HarborWake` and
+  `HarborFairway`. A subclass costs one thing a typedef does not: a 0.8 variable typed with the old
+  name that holds a value the API returns (`final HarborWake w = dock.wake;`) does not compile
+  against 0.9 until `dart fix` renames its type, which it does (`test_fixes/rename_constructors.dart`).
 - **A class rename and a static rename on one expression, keyed to the old class, break it.** A
   `rename` of class `Waters` and a `rename` of `Waters.dockFaceOf` produced `Room.dockFaceOf`, which
   does not exist. Key the member's rename on the **new** class and keep the old member there as a
@@ -105,11 +116,11 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborDockState` | `HarborBarState` | T | `open`, `dark`, `withdrawn` unchanged. `HarborYield` merges into it later |
 | `HarborCoastStance` | `HarborSystemEdgeStance` | T | `live`, `steady`, `none` unchanged. Singular: a bar takes one edge |
 | `HarborExtentPolicy` | unchanged | | Plain |
-| `HarborDockRecord` | `HarborBarRecord` | T | |
+| `HarborDockRecord` | `HarborBarRecord` | **SUB** | SUB, not T, as shipped (owner review): it takes the old parameter names, so the new constructor keeps them `required` |
 | `HarborDockRecord.tide` | `keyboard` | rename | `HarborKeyboardStance` |
 | `HarborDockSlot` | — | — | Already deprecated and leaving the exports; not renamed |
 | `HarborSliverDock` | `HarborSliverBar` | T | A bar inside a scroll view. Not a `SliverAppBar` (traps) |
-| `HarborPontoon` | `HarborAttachedBar` | T | Departure, Q2 |
+| `HarborPontoon` | `HarborAttachedBar` | **SUB** | Departure, Q2. SUB, not T, as shipped (owner review): it takes the old parameter names, so the new constructor keeps them `required` |
 | `HarborPontoon.dock` | `bar` | RP | |
 | `HarborPontoonHandle` | `HarborAttachedBarHandle` | T | `.dock` → `.bar` (rename) |
 | `HarborMakeWay` | `HarborHideBar` | T | Departure, Q2 |
@@ -121,14 +132,14 @@ public member was read, and the ones without a harbour word are left out to keep
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborCoast` | `HarborSystemEdges` | T | `.fixed`, `.titleSafe`, `.ambient`, `.none`, `apply`, `features` unchanged |
+| `HarborCoast` | `HarborSystemEdges` | **SUB** | `.fixed`, `.titleSafe`, `.ambient`, `.none`, `apply`, `features` unchanged. SUB, not T, as shipped: `.fixed(calmTide:)` (§2) |
 | `HarborCoast.calmTide` | `ignoresKeyboard` | RP + rename | It is what `none` sets for goldens |
 | `HarborCoastFeature` | `HarborSystemEdgeFeature` | T | Values unchanged |
 | `HarborTitleSafe` | unchanged | — | TV vocabulary, not harbour. Folds into `HarborSystemEdges` in audit step 9 |
 | `HarborTide` | `HarborKeyboard` | T+S | The reader. Q3 |
 | `HarborTide.of` | `HarborKeyboard.of` | T | |
 | `HarborTide.isInOf` | `HarborKeyboard.isShownOf` | T+S | |
-| `HarborTideState` | `HarborKeyboardState` | T | Still an immutable snapshot, not a `State` (README note, traps) |
+| `HarborTideState` | `HarborKeyboardState` | **SUB** | Still an immutable snapshot, not a `State` (README note, traps). SUB, not T, as shipped (owner review): it takes the old parameter names, so the new constructor keeps them `required` |
 | `HarborTideState.highWater` | `settledHeight` | rename | "The last settled height in this orientation" |
 | `HarborTideState.highWaterIsEstimate` | `settledHeightIsEstimate` | rename | |
 | `HarborTideState.isIn` | `isShown` | rename | |
@@ -138,7 +149,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborTideStance` | `HarborKeyboardStance` | T+E | Q3 |
 | `HarborTideStance.float` / `pilings` / `dryDock` | `.rides` / `.stays` / `.reserves` | T+E | `rides`/`stays` from the RFC; `reserves` matches `HarborKeyboardSpace` |
 | `HarborDryDock` | `HarborKeyboardSpace` | T | |
-| `HarborDryDock.showsChildAtHighTide` | `showsChildWhileShown` | RP + rename | |
+| `HarborDryDock.showsChildAtHighTide` | `showsChildWithKeyboard` | RP + rename | As shipped; the draft's `showsChildWhileShown` read as "while the child is shown" |
 | `HarborTideSource` | `HarborKeyboardSource` | T | |
 | `HarborEdge`, `HarborEdges` | unchanged | | "Edge" keeps its meaning: a side of the frame (traps) |
 | `HarborHinge`, `HarborPosture`, `HarborPanes`, `HarborPanePriority`, `HarborPanesMode` | unchanged | | Plain |
@@ -154,15 +165,15 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborWatersData` | `HarborRoomData` | T | |
 | `HarborWatersData.coast` / `coastSteady` | `systemEdges` / `systemEdgesSteady` | rename | |
 | `HarborWatersData.docks` / `docksResting` / `hasDocks` | `bars` / `barsResting` / `hasBars` | rename | |
-| `HarborWatersData.wakes` / `wakesPainted` / `wakeOf` | `edgeEffects` / `edgeEffectsPainted` / `edgeEffectOf` | rename | Q4 |
+| `HarborWatersData.wakes` / `wakesPainted` / `wakeOf` | `fadeBands` / `fadeBandsPainted` / `fadeBandOf` | rename | Q4: they hold `HarborFadeBand`s, so they are named after fades (as shipped) |
 | `HarborWatersData.castOff` | `handled` | rename | Matches `HarborHandled` |
 | `HarborWatersData.margin`, `frameSize`, `copyWith`, `toCssVariables` | unchanged | | The CSS keys are already `--harbor-inset-*` |
 | `HarborWatersAspect` | `HarborRoomAspect` | T+E | `coast` → `systemEdges`, `docks` → `bars`; `margin`, `frame` unchanged |
 | `HarborController.clearWater` | `room` | rename | `ValueListenable<Rect>` |
 | `HarborController.clearWaterInGlobal` | `roomInGlobal` | rename | |
-| `HarborLayoutRecord.clearWater` / `docks` / `tide` | `room` / `bars` / `keyboard` | rename | `frame`, `body`, `obstruction` unchanged |
+| `HarborLayoutRecord.clearWater` / `docks` / `tide` | `room` / `bars` / `keyboard` | rename (+ RP) | `frame`, `body`, `obstruction` unchanged. The class keeps its name, so its constructor takes only the new names (breaking); the RP fix still fires on the old, undefined ones |
 | `HarborCastOff` | `HarborHandled` | T | |
-| `HarborCastOff.tide` / `docks` | `keyboard` / `bars` | RP | `edges`, `margin` unchanged |
+| `HarborCastOff.tide` / `docks` | `clearsKeyboard` / `clearsBars` | RP | `edges`, `margin` unchanged. The `clears…` family, as shipped |
 | `HarborOpenWater` | *retired here* | M | Audit step 8 retires it, and its destination exists: `Builder` + `HarborRoom.of(context)`. Deprecate it in the rename release instead of renaming it (principle 5). Not expressible as a fix: a builder parameter becomes a widget |
 | `HarborWatersWidgetBuilder` | *retired with it* | — | |
 
@@ -171,12 +182,13 @@ public member was read, and the ones without a harbour word are left out to keep
 | Old | New | Fix | Note |
 |---|---|---|---|
 | `HarborMoored` | `HarborClear` | T | Collides with today's `HarborClear` enum: Q1 sets the order |
-| `HarborMoored.tide` | `keyboard` | RP | |
+| `HarborMoored.tide` | `clearsKeyboard` | RP | A `bool` that says what it keeps clear of reads `clears…`, as `bodyClearsKeyboard` does; a bar's `keyboard:` is a stance and stays (as shipped) |
 | `HarborMoored.mooringLine` | `rowInsets` | RP | |
 | `HarborMoored.extra` | `padding` | RP | Audit step 7 decided it; it is a pure rename, so it goes here once |
-| `HarborMoored.clear` | `bars` (`bool`) | **M** | Q1. `HarborClear.coast` → `bars: false`; `HarborClear.everything` (the default) → omitted. Value-dependent, so not a fix |
+| `HarborMoored.clear` | `clearsBars` (`bool`) | **M** | Q1. `HarborClear.coast` → `clearsBars: false`; `HarborClear.everything` (the default) → omitted. Value-dependent, so `bars.yaml` handles the two literals |
+| `HarborMoored.bars` (0.8.0) | `clearsBars` | RP + rename | The `clears…` family (as shipped). And on the scroll view, the sliver, `paddingOf` and `clearanceOf` |
 | `HarborMoored.edges`, `follow`, `minimum`, `clearanceOf` | unchanged | | |
-| `HarborClear` (enum: `everything`, `coast`) | *removed*: `bars: false` | M | Q1. Gives the name to the widget. Also "one spelling for coast only" (audit step 7): the same `bars: false` as `HarborHandled` |
+| `HarborClear` (enum: `everything`, `coast`) | *removed*: `clearsBars: false` | M | Q1. Gives the name to the widget. Also "one spelling for coast only" (audit step 7): the same `clearsBars: false` as `HarborHandled` |
 | `HarborMooringLine` | `HarborClear.rowInsets` | **RB** (measured) | Goes straight to the constructor audit step 7 decided, so it is not renamed twice. `follow:` and `child:` carry over unchanged. `find.byType(HarborMooringLine)` has no equivalent: M |
 | `HarborFollow` | unchanged | | `live`, `resting` are plain |
 | `HarborCenter`, `HarborSticky` | unchanged | | |
@@ -185,10 +197,10 @@ public member was read, and the ones without a harbour word are left out to keep
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborFairway` | `HarborScrollView` | T | `.box` and `paddingOf` keep their names. Not a `ScrollView` subclass (traps) |
-| `HarborFairway.tide` | `keyboard` | RP | And on the sliver and `paddingOf` |
+| `HarborFairway` | `HarborScrollView` | **SUB** | `.box` and `paddingOf` keep their names. Not a `ScrollView` subclass (traps). SUB, not T, as shipped: `.box(tide:)` (§2) |
+| `HarborFairway.tide` | `clearsKeyboard` | RP | And on the sliver and `paddingOf` |
 | `HarborFairway.mooringLine` | `rowInsets` | RP | |
-| `HarborFairway.clear` | `bars` (`bool`) | M | As on `HarborClear`, Q1. And on the sliver and `paddingOf` |
+| `HarborFairway.clear` | `clearsBars` (`bool`) | M | As on `HarborClear`, Q1. And on the sliver and `paddingOf` |
 | `HarborFairway.wake` | `edgeEffects` | RP | Q4 |
 | `HarborFairway.startsInOpenWater` | `startsUnderBars` | RP | It starts the first sliver at the frame's edge, under the bars |
 | `HarborFairway` (every other parameter: `CustomScrollView`'s, `revealMargin`, `minimum`, `padding`) | unchanged | | |
@@ -198,16 +210,16 @@ public member was read, and the ones without a harbour word are left out to keep
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborWake` | `HarborEdgeEffect` | T | Departure, Q4. `.fade`, `.hairline`, `.none` unchanged |
+| `HarborWake` | `HarborEdgeEffect` | **SUB** | Departure, Q4. `.fade`, `.hairline`, `.none` unchanged. SUB, not T, as shipped: `.fade(dockOpacity:)` (§2) |
 | `HarborWake.dockOpacity` | `faceOpacity` | RP + rename | The opacity at the bar's face. And on `HarborWakeMask` |
 | `HarborWake.restsAt`, `length`, `blurSigma`, `color`, `curve`, `clearance`, `kind` | unchanged | | |
 | `HarborWakeKind` | `HarborEdgeEffectKind` | T | Values unchanged |
 | `HarborRest` | unchanged | | |
 | `HarborRest.wakeEnd` / `dockEdge` | `.fadeEnd` / `.barFace` | T+E | |
-| `HarborWakeBand` | `HarborFadeBand` | T | It only has length for a fade |
+| `HarborWakeBand` | `HarborFadeBand` | **SUB** | It only has length for a fade. SUB, not T, as shipped (owner review): it takes the old parameter names, so the new constructor keeps them `required` |
 | `HarborWakeBand.dockEdge` / `wakeEnd` / `dockOpacity` | `barFace` / `fadeEnd` / `faceOpacity` | RP + rename | |
 | `HarborWakePainter` | `HarborEdgeEffectPainter` | T | |
-| `HarborWakeMask` | `HarborFadeMask` | T+S | |
+| `HarborWakeMask` | `HarborFadeMask` | **SUB** | `wakes:` → `bands:`. SUB, not T, as shipped (owner review): it takes the old parameter names, so the new constructor keeps them `required`; `alphaWake` is a static of both |
 | `HarborWakeMask.alphaWake` | `HarborFadeMask.alphaFade` | T+S | |
 | `harborAlphaWake` | — | — | Already deprecated; goes with the removals |
 
@@ -215,9 +227,9 @@ public member was read, and the ones without a harbour word are left out to keep
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborBuoy` | `HarborFloat` | T | Declared in the tree. `.anchored` is deprecated by the placement work and keeps its name, so a typedef carries it |
+| `HarborBuoy` | `HarborFloat` | **SUB** | Declared in the tree. `.anchored` is deprecated by the placement work and keeps its name. SUB, not T, as shipped: the placement fix renames `.anchored(anchor:)` to the unnamed constructor (§2) |
 | `HarborBuoy` (every parameter) | unchanged | | `modal`, `barrierColor`, `barrierLabel` are reshaped by `HarborBarrier` later |
-| `HarborPortalBuoy` | `HarborPopover` | T | Opened on demand by an anchor. Decided |
+| `HarborPortalBuoy` | `HarborPopover` | **SUB** | Opened on demand by an anchor. Decided. SUB, not T, as shipped (owner review): it takes the old parameter name `buoyBuilder:`, so the new constructor keeps `popoverBuilder:` `required`; `sideOf`, `maybeSideOf` are statics of both |
 | `HarborPortalBuoy.buoyBuilder` | `popoverBuilder` | RP | As `OverlayPortal.overlayChildBuilder` names its content |
 | `HarborPortalBuoy.sideOf` / `maybeSideOf`, `flips`, `consumeOutsideTaps`, the rest | unchanged | | |
 | `HarborBuoySide`, `HarborBuoyCrossAlignment` | — | — | Renamed by the placement work to `HarborAnchorSide`, `HarborCrossAlignment` |
@@ -271,7 +283,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | Old | New | Fix | Note |
 |---|---|---|---|
 | `HarborChart` | `HarborInspector` | T | `snapshot`, `snapshotOf`, `snapshotAll`, `nearest` unchanged |
-| `HarborChartEntry` | `HarborInspectorEntry` | T | |
+| `HarborChartEntry` | `HarborInspectorEntry` | **SUB** | SUB, not T, as shipped (owner review): it takes the old parameter names, so the new constructor keeps them `required` |
 | `HarborChartEntry.clearWater` / `docks` / `tide` | `room` / `bars` / `keyboard` | rename | |
 | `HarborChartOverlay` | `HarborInspectorOverlay` | T | |
 | `ext.harbor.chart` (VM service) and its JSON keys `clearWater`, `docks`, `tide` | `ext.harbor.inspector`, `room`, `bars`, `keyboard` | M | A wire format for tools. Register both names for the deprecation window and send both key sets; tools are not reached by `dart fix` |
@@ -296,8 +308,8 @@ package name stays: it is on pub.dev, and "test" is plain.
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborSeaTrials` (extension on `WidgetTester`) | `HarborTrials` | T | Rarely written |
-| `pumpSeaTrial` | `pumpHarborTrial` | rename (`inExtension:`) | Not measured (§2) |
+| `HarborSeaTrials` (extension on `WidgetTester`) | `HarborTrials` | rename (`extension:`) | Rarely written. As shipped: an extension cannot be aliased, so the old one stays as a deprecated extension holding only `pumpSeaTrial` |
+| `pumpSeaTrial` | `pumpHarborTrial` | rename | Measured: `inExtension: 'HarborSeaTrials'` matches only the explicit `HarborSeaTrials(tester).pumpSeaTrial()`; the implicit `tester.pumpSeaTrial()` matches by its target's type, `inClass: 'WidgetTester'`. Keyed both ways |
 | `pumpSeaTrial(tideIn:)` | `keyboardShown:` | RP | |
 | `HarborSeaTrial` | `HarborTrial` | T | |
 | `HarborSeaTrial.raiseTide` / `lowerTide` | `showKeyboard` / `hideKeyboard` | rename | |
@@ -307,7 +319,7 @@ package name stays: it is on pub.dev, and "test" is plain.
 | `HarborSeaTrial.clearWaterAround` / `docksAround` | `roomAround` / `barsAround` | rename | |
 | `isInClearWater` | `isInRoom` | rename (`function:`) | |
 | `HarborTrialDevice` | unchanged | | Plain |
-| `HarborTrialDevice.coast` / `tideHeight` | `systemEdges` / `keyboardHeight` | RP + rename | |
+| `HarborTrialDevice.coast` / `tideHeight` | `systemEdges` / `keyboardHeight` | RP + rename | The class keeps its name, so its constructor and `copyWith` take only the new names, `required` (harbor_test 0.4.0 is breaking there); the RP fix fires on the old, undefined ones. The old getters stay |
 | `HarborTrialDevice.reportsCoastUnderTide` | `reportsSystemEdgesUnderKeyboard` | RP + rename | |
 | `HarborTrialDevice.coastWhen(tideIn:)` | `systemEdgesWhen(keyboardShown:)` | rename + RP | |
 | `HarborTrialDevice` presets, `phones`, `all`, `copyWith`, the rest | unchanged | | `copyWith(coast:, tideHeight:)` as above |
@@ -363,7 +375,7 @@ or with the toast and popover packages (`fluttertoast`'s `Fluttertoast`, `oktoas
   dartdoc can say so.
 
 **Mechanical traps for the release itself** (§2): `HarborDock` must be a deprecated subclass, not a
-typedef; every renamed static is kept as a deprecated forwarder on the **new** class and its fix is
+typedef, and so must `HarborBuoy`, `HarborCoast`, `HarborWake` and `HarborFairway` (found in the release); every renamed static is kept as a deprecated forwarder on the **new** class and its fix is
 keyed there; every renamed enum value is a deprecated `static const` on the new enum, keyed
 `constant:`. The existing `lib/` has no `fix_data` yet; the placement work adds the first file, and
 this release adds `lib/fix_data/rename.yaml`.
@@ -428,6 +440,53 @@ these places, each for a reason given above:
 | `HarborEdgeFade` | `HarborEdgeEffect` | Q4 |
 | `HarborRowInsets` | `HarborClear.rowInsets` | DECISIONS (audit step 7) made it a constructor; a measured `replacedBy` gets there in one step |
 | `HarborScaledFrame` | `HarborScaledScreen` | Not a kind of `HarborFrame` |
+
+### Found in the rename release
+
+What shipped differs from the tables above in these places, each measured by `test_fixes/`:
+
+- `HarborBuoy`, `HarborCoast`, `HarborWake` and `HarborFairway` are deprecated subclasses (**SUB**),
+  not typedefs (§2), as `HarborDock` is.
+- So are `HarborTideState`, `HarborWakeBand`, `HarborWakeMask`, `HarborPortalBuoy`, `HarborPontoon`,
+  `HarborDockRecord` and `HarborChartEntry` (owner review): kept on the new constructor, a renamed
+  required parameter would have to become optional beside its old name and be asserted. As
+  subclasses they carry the old names, and every new constructor keeps `required`.
+  `HarborLayoutRecord` and `HarborTrialDevice` keep their names, so their old parameter names are
+  dropped (breaking), and their `renameParameter` fixes still fire on an undefined parameter
+  (`test_fixes/rename_constructors.dart`, `rename_trials.dart`).
+- A `bool` that says what something keeps clear of is named `clears…` (owner review), as
+  `bodyClearsKeyboard`, `clearsSides` and `clearsTopSystemEdge` are: `clearsKeyboard:` and
+  `clearsBars:` on `HarborClear`, `HarborScrollView`, `HarborSliverClear`, `HarborHandled`,
+  `paddingOf` and `clearanceOf`, where the draft had `keyboard:` and kept 0.8.0's `bars:`. `bars:`
+  is deprecated with a fix, and `bars.yaml` writes `clearsBars:`. A bar's `keyboard:` is a
+  `HarborKeyboardStance` and stays.
+- The fade collections are named after fades (Q4): `fadeBands`, `fadeBandsPainted`, `fadeBandOf`,
+  `HarborFadeMask(bands:)`, and the `HarborEdgeEffectPainter`'s map. `HarborScrollView.edgeEffects`
+  is a `bool` (whether its content fades) and keeps the name.
+- Positional parameters take the new words, as they show in hovers and generated overrides:
+  `attachBar(edge, bar)`, `updateAttachedBar(handle, edge, bar)`,
+  `HarborFrameObserver.didJoin(frame)` / `didLeave(frame)`, `HarborKeepInSight.coverageOf(box, frame,
+  edge)`. An override that kept `harbor` gets `avoid_renaming_method_parameters`; no fix renames it.
+- An old parameter and its new name, both given, must agree, or it is an assert. Inside a `const`
+  constructor the check compares with `identical`, since `==` on a type with its own equality is
+  not a constant expression.
+- **Deferred to a mechanical follow-up before 1.0:** the source file names (`buoy.dart`,
+  `dock.dart`, `tide.dart`, `waters.dart`, `coast.dart`, `fairway.dart`, `moored.dart`,
+  `lighthouse.dart`, `chart.dart`, `wake.dart`, `make_way.dart`, `scale_model.dart`, ...), private and
+  internal names (`_HarborTideScope`, `HarborBuoyLayer`, ...), and test descriptions in the harbour
+  words. None is public API, so none needs a forwarder or a fix.
+- `HarborSeaTrials` is a deprecated extension of its own, and `pumpSeaTrial`'s fix is keyed on
+  both the extension and `WidgetTester` (§4).
+- Harbour words the tables left out are renamed the same way, with forwarders and fixes:
+  `HarborWaters.clearanceOf(tide:)` → `clearsKeyboard:`; `HarborMoored.clearanceOf` and
+  `HarborFairway.paddingOf` take the same renamed parameters as their widgets;
+  `HarborWatersData`'s constructor and `copyWith` take the renamed field names.
+- `bars.yaml` (0.8.0) still rewrites `clear: HarborClear.coast` and `.everything`, keyed on the new
+  classes and on `HarborFairway`, though the enum and `clear:` are gone, so a 0.7 call migrates in
+  one run. A 0.8 call that gave both (`bars: b, clear: HarborClear.coast`, read as `b && false`)
+  comes out with one `clearsBars: false`, not two arguments.
+- The placement fix of an anchored flare drops `reachesCoast:` (a no-op by an anchor since 0.6.3),
+  which would assert once the call takes a `HarborAnchored` placement.
 
 ## 7. Open questions
 

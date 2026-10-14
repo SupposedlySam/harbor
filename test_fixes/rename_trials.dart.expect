@@ -1,0 +1,26 @@
+// harbor_test's rename transforms (harbor_test/lib/fix_data.yaml, 0.4.0): sea trials became trials.
+
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:harbor_test/harbor_test.dart';
+
+Future<void> trials(WidgetTester tester) async {
+  final HarborTrial trial = await tester.pumpHarborTrial(const SizedBox(), device: HarborTrialDevice.iPhoneSE, keyboardShown: true);
+  await HarborTrials(tester).pumpHarborTrial(const SizedBox());
+  await trial.showKeyboard(settle: true);
+  await trial.hideKeyboard(pumpFor: Duration.zero);
+  await trial.setKeyboard(shown: true);
+  final bool up = trial.keyboardShown;
+  final double top = trial.keyboardTop;
+  final Rect room = trial.roomAround(find.byType(SizedBox));
+  final List<Object> bars = trial.barsAround(find.byType(SizedBox));
+  expect(find.byType(SizedBox), isInRoom(room));
+  expect(find.byType(SizedBox), isInRoom(room, tolerance: 1));
+  <Object?>[up, top, bars];
+}
+
+void devices() {
+  const HarborTrialDevice device = HarborTrialDevice(name: 'tv', size: Size(1200, 675), systemEdges: EdgeInsets.zero, keyboardHeight: 0, reportsSystemEdgesUnderKeyboard: true);
+  final HarborTrialDevice copy = device.copyWith(systemEdges: EdgeInsets.zero, keyboardHeight: 100, reportsSystemEdgesUnderKeyboard: false);
+  <Object?>[device.systemEdges, device.keyboardHeight, device.reportsSystemEdgesUnderKeyboard, copy.systemEdgesWhen(keyboardShown: true)];
+}

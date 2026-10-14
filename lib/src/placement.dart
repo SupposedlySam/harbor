@@ -5,13 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborBuoy, HarborFlares, HarborPortalBuoy;
+import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFloat, HarborToasts, HarborPopover;
 import 'hinge.dart';
 
-/// Which side of its anchor an anchored buoy or flare sits on. [start] and [end] are in reading
+/// Which side of its anchor an anchored float or toast sits on. [start] and [end] are in reading
 /// order, as in `AlignmentDirectional.centerStart`: [start] is on the right under right-to-left.
 ///
-/// Called `HarborBuoySide` through 0.6; flares and [HarborAnchorClip] take it too.
+/// Called `HarborBuoySide` through 0.6; toasts and [HarborAnchorClip] take it too.
 enum HarborAnchorSide {
   above,
   below,
@@ -32,7 +32,7 @@ enum HarborAnchorSide {
   };
 }
 
-/// How an anchored buoy or flare lines up with its anchor across its side, as a `Row`'s or
+/// How an anchored float or toast lines up with its anchor across its side, as a `Row`'s or
 /// `Column`'s `CrossAxisAlignment` lines up its children: above or below the anchor, [start] and
 /// [end] are in reading order (a dropdown under its button's leading edge); at its start or end,
 /// they are its top and bottom.
@@ -40,18 +40,18 @@ enum HarborAnchorSide {
 /// Called `HarborBuoyCrossAlignment` through 0.6.
 enum HarborCrossAlignment { start, center, end }
 
-/// Where an overlay sits in the clear water: at a point of it ([HarborAligned]) or by an anchor
-/// ([HarborAnchored]). [HarborBuoy], [HarborPortalBuoy] and [HarborFlares.raise] all take one, so a
+/// Where an overlay sits in the room: at a point of it ([HarborAligned]) or by an anchor
+/// ([HarborAnchored]). [HarborFloat], [HarborPopover] and [HarborToasts.show] all take one, so a
 /// placement written for one means the same in the others.
 ///
-/// Which water the overlay may use is the host's to say: the clear water of its harbor, kept to one
-/// screen by its [HarborHinge], and for a flare with `reachesCoast` the coast too. A placement says
-/// where in that water it sits.
+/// Which area the overlay may use is the host's to say: the room of its frame, kept to one
+/// screen by its [HarborHinge], and for a toast with `reachesSystemEdges` the system edges too. A placement
+/// says where in that area it sits.
 @immutable
 sealed class HarborPlacement with Diagnosticable {
   const HarborPlacement({required this.margin});
 
-  /// At [alignment] in the clear water. See [HarborAligned].
+  /// At [alignment] in the room. See [HarborAligned].
   const factory HarborPlacement.aligned({AlignmentGeometry alignment, EdgeInsetsGeometry margin}) = HarborAligned;
 
   /// By [anchor]. See [HarborAnchored].
@@ -66,12 +66,12 @@ sealed class HarborPlacement with Diagnosticable {
     EdgeInsetsGeometry margin,
   }) = HarborAnchored;
 
-  /// How far in from the edges of the water it is kept, a hinge's edge included; an
+  /// How far in from the edges of the area it is kept, a hinge's edge included; an
   /// [EdgeInsetsDirectional] follows the reading direction.
   final EdgeInsetsGeometry margin;
 }
 
-/// An overlay at [alignment] in the clear water, [margin] in from its edges: a floating button, a
+/// An overlay at [alignment] in the room, [margin] in from its edges: a floating button, a
 /// toast.
 final class HarborAligned extends HarborPlacement {
   const HarborAligned({this.alignment = defaultAlignment, super.margin = defaultMargin});
@@ -79,10 +79,10 @@ final class HarborAligned extends HarborPlacement {
   /// Where an aligned overlay sits when none is given: bottom centre, a toast's place.
   static const Alignment defaultAlignment = Alignment.bottomCenter;
 
-  /// How far an aligned overlay keeps in from the water's edges when no margin is given.
+  /// How far an aligned overlay keeps in from the area's edges when no margin is given.
   static const EdgeInsets defaultMargin = EdgeInsets.all(16.0);
 
-  /// The point of the water it sits at; an [AlignmentDirectional] follows the reading direction,
+  /// The point of the area it sits at; an [AlignmentDirectional] follows the reading direction,
   /// as a Material floating action button does.
   final AlignmentGeometry alignment;
 
@@ -105,10 +105,10 @@ final class HarborAligned extends HarborPlacement {
 }
 
 /// An overlay by [anchor]: on its [side], [gap] away, lined up with it by [crossAlignment], and
-/// kept inside the clear water, [margin] in from its edges. A menu under its button, a bubble over
+/// kept inside the room, [margin] in from its edges. A menu under its button, a bubble over
 /// a tab, "Copied" by the button that copied.
 ///
-/// Across its side it is kept inside the water; along it, it is never past the water's far edge.
+/// Across its side it is kept inside the area; along it, it is never past the area's far edge.
 final class HarborAnchored extends HarborPlacement {
   const HarborAnchored(
     this.anchor, {
@@ -121,14 +121,14 @@ final class HarborAnchored extends HarborPlacement {
     super.margin = defaultMargin,
   });
 
-  /// How far an anchored overlay keeps in from the water's edges when no margin is given.
+  /// How far an anchored overlay keeps in from the area's edges when no margin is given.
   static const EdgeInsets defaultMargin = EdgeInsets.all(8.0);
 
   /// The space between the anchor and an anchored overlay when no gap is given.
   static const double defaultGap = 8.0;
 
-  /// What it sits by. Null only for a [HarborPortalBuoy], which then anchors to its child; a
-  /// [HarborBuoy] and a flare need one.
+  /// What it sits by. Null only for a [HarborPopover], which then anchors to its child; a
+  /// [HarborFloat] and a toast need one.
   final HarborAnchor? anchor;
 
   /// Which side of the anchor it sits on; [HarborAnchorSide.start] and [HarborAnchorSide.end] are in
@@ -152,8 +152,8 @@ final class HarborAnchored extends HarborPlacement {
   final double crossOffset;
 
   /// Whether it goes to the opposite side of the anchor when [side] has no room and that side has.
-  /// Null takes the host's way: a [HarborPortalBuoy] flips, a [HarborBuoy] and a flare keep their
-  /// side (a flare's transition needs to know which side it is on).
+  /// Null takes the host's way: a [HarborPopover] flips, a [HarborFloat] and a toast keep their
+  /// side (a toast's transition needs to know which side it is on).
   final bool? flips;
 
   @override
@@ -173,7 +173,8 @@ final class HarborAnchored extends HarborPlacement {
           other.margin == margin;
 
   @override
-  int get hashCode => Object.hash(HarborAnchored, anchor, side, gap, overlap, crossAlignment, crossOffset, flips, margin);
+  int get hashCode =>
+      Object.hash(HarborAnchored, anchor, side, gap, overlap, crossAlignment, crossOffset, flips, margin);
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -182,14 +183,17 @@ final class HarborAnchored extends HarborPlacement {
     properties.add(EnumProperty<HarborAnchorSide>('side', side, defaultValue: HarborAnchorSide.below));
     properties.add(DoubleProperty('gap', gap, defaultValue: defaultGap));
     properties.add(DoubleProperty('overlap', overlap, defaultValue: 0.0));
-    properties.add(EnumProperty<HarborCrossAlignment>('crossAlignment', crossAlignment, defaultValue: HarborCrossAlignment.center));
+    properties.add(
+      EnumProperty<HarborCrossAlignment>('crossAlignment', crossAlignment, defaultValue: HarborCrossAlignment.center),
+    );
     properties.add(DoubleProperty('crossOffset', crossOffset, defaultValue: 0.0));
     properties.add(FlagProperty('flips', value: flips, ifTrue: 'flips', ifFalse: 'no flip'));
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: defaultMargin));
   }
 }
 
-/// The water an overlay may occupy, and the coast it covers there, from [HarborPlacementEngine.water].
+/// The area an overlay may occupy, and the system edges it covers there, from
+/// [HarborPlacementEngine.water].
 @internal
 final class HarborWater {
   const HarborWater(this.rect, [this.coastCovered = EdgeInsets.zero]);
@@ -197,8 +201,8 @@ final class HarborWater {
   /// Where the overlay may go, margin taken off.
   final Rect rect;
 
-  /// For an overlay that reaches the coast, how much of it [rect] covers on each edge: handed to its
-  /// content as `MediaQuery.padding`.
+  /// For an overlay that reaches the system edges, how much of them [rect] covers on each edge:
+  /// handed to its content as `MediaQuery.padding`.
   final EdgeInsets coastCovered;
 }
 
@@ -212,8 +216,8 @@ final class HarborLanding {
   final HarborAnchorSide? side;
 }
 
-/// Answers "where does this overlay go in the clear water?" for every host: the buoy layer, the
-/// portal buoy and a flare with no harbor around it. Each host says what water it has; the engine
+/// Answers "where does this overlay go in the room?" for every host: the float layer, the
+/// popover and a toast with no frame around it. Each host says what area it has; the engine
 /// runs the same steps in the same order for all of them.
 @internal
 abstract final class HarborPlacementEngine {
@@ -222,10 +226,10 @@ abstract final class HarborPlacementEngine {
     for (final DisplayFeature feature in hinge.keptOff(features)) feature.bounds,
   ];
 
-  /// The water an overlay placed by [placement] may occupy: [clear] (or [open], the water that
-  /// reaches over the coast, for an aligned overlay that does), kept inside [within], cut down to
-  /// one screen where [hinges] split it, and [HarborPlacement.margin] in from that screen's edges,
-  /// the hinge's included.
+  /// The area an overlay placed by [placement] may occupy: [clear] (or [open], the area that
+  /// reaches over the system edges, for an aligned overlay that does), kept inside [within], cut
+  /// down to one screen where [hinges] split it, and [HarborPlacement.margin] in from that screen's
+  /// edges, the hinge's included.
   ///
   /// The screen is the one that holds the alignment point for an aligned overlay, or the screen
   /// where reading starts when the point is on a hinge. For an anchored one it is the screen that
@@ -240,10 +244,10 @@ abstract final class HarborPlacementEngine {
     final List<Rect> hinges = const <Rect>[],
     final Offset? holding,
   }) {
-    assert(open == null || placement is HarborAligned, 'Only an aligned overlay reaches over the coast.');
+    assert(open == null || placement is HarborAligned, 'Only an aligned overlay reaches over the systemEdges.');
     final Rect base = open ?? clear;
-    // Reaching the coast, an edge of within that is the clear water's edge opens out to the coast;
-    // one set by docks holds.
+    // Reaching the system edges, an edge of within that is the room's edge opens out to the system
+    // edges; one set by bars holds.
     final Rect? bounds = within == null || open == null
         ? within
         : Rect.fromLTRB(
@@ -253,7 +257,9 @@ abstract final class HarborPlacementEngine {
             within.bottom >= clear.bottom - 0.5 ? open.bottom : within.bottom,
           );
     final Rect bounded = bounds == null || !bounds.overlaps(base) ? base : base.intersect(bounds);
-    final Rect rect = placement.margin.resolve(textDirection).deflateRect(_screen(bounded, hinges, placement, textDirection, holding));
+    final Rect rect = placement.margin
+        .resolve(textDirection)
+        .deflateRect(_screen(bounded, hinges, placement, textDirection, holding));
     if (open == null) {
       return HarborWater(rect);
     }
@@ -332,7 +338,7 @@ abstract final class HarborPlacementEngine {
   /// Aligned, it sits at its alignment in [water]. Anchored, it sits by [anchorRect] on its side,
   /// kept inside [water] across that side and never past its far edge along it. With [flips], it
   /// goes to the opposite side when its own has no room and that one has, and is never past the
-  /// water's edge at the start or end of its anchor either.
+  /// area's edge at the start or end of its anchor either.
   static HarborLanding place({
     required final HarborPlacement placement,
     required final Rect water,
@@ -383,8 +389,11 @@ abstract final class HarborPlacementEngine {
     final bool vertical = axisDirectionToAxis(direction) == Axis.vertical;
     // Across a vertical side the start is the reading start; across a horizontal one, the top.
     final bool reversed = vertical && rtl;
-    final (double low, double high, double extent) = vertical ? (at.left, at.right, size.width) : (at.top, at.bottom, size.height);
-    final double cross = switch ((placement.crossAlignment, reversed)) {
+    final (double low, double high, double extent) = vertical
+        ? (at.left, at.right, size.width)
+        : (at.top, at.bottom, size.height);
+    final double cross =
+        switch ((placement.crossAlignment, reversed)) {
           (HarborCrossAlignment.center, _) => (low + high - extent) / 2,
           (HarborCrossAlignment.start, false) || (HarborCrossAlignment.end, true) => low,
           (HarborCrossAlignment.end, false) || (HarborCrossAlignment.start, true) => high - extent,

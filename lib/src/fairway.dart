@@ -9,43 +9,45 @@ import 'edge.dart';
 import 'moored.dart';
 import 'wake.dart';
 import 'waters.dart';
+import 'renamed.dart';
 
-/// What a fairway's end on [edge] keeps clear of: everything in the way there, or without
-/// [bars] the coast alone; and at the bottom, while [tide], the keyboard.
+/// What a scroll view's end on [edge] keeps clear of: everything in the way there, or without
+/// [clearsBars] the system edges alone; and at the bottom, while [clearsKeyboard], the keyboard.
 ///
-/// Each part is read through its own aspect, so a fairway that clears the coast alone, or leaves
-/// the keyboard, does not rebuild as the keyboard moves.
+/// Each part is read through its own aspect, so a scroll view that clears the system edges alone,
+/// or leaves the keyboard, does not rebuild as the keyboard moves.
 double _endClearance(
   final BuildContext context,
   final HarborEdge edge, {
-  required final bool bars,
-  required final bool tide,
+  required final bool clearsBars,
+  required final bool clearsKeyboard,
 }) {
-  if (bars) {
-    return HarborWaters.clearanceOf(context, edge, tide: tide);
+  if (clearsBars) {
+    return HarborRoom.clearanceOf(context, edge, clearsKeyboard: clearsKeyboard);
   }
-  final double coast = HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge);
-  if (tide && edge == HarborEdge.bottom) {
-    return math.max(coast, MediaQuery.viewInsetsOf(context).bottom);
+  final double systemEdges = HarborEdges.of(
+    HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges,
+    edge,
+  );
+  if (clearsKeyboard && edge == HarborEdge.bottom) {
+    return math.max(systemEdges, MediaQuery.viewInsetsOf(context).bottom);
   }
-  return coast;
+  return systemEdges;
 }
 
-/// What `bars:` and the deprecated `clear:` say when both are given and disagree.
-const String _barsConflict = 'clear: HarborClear.everything and bars: false disagree. Give bars: alone.';
-
-/// A fairway: a scroll view whose viewport runs to the frame's edges, under
-/// the docks, while its content comes to rest clear of them at both ends.
+/// A scroll view whose viewport runs to the frame's edges, under the bars, while its content comes
+/// to rest clear of them at both ends. It is a `StatelessWidget` that builds a `CustomScrollView`,
+/// not a `ScrollView` subclass: `is ScrollView` is false, and it has no `buildSlivers`.
 ///
 /// Vertical, it keeps clear of the top and bottom (the keyboard included) and
-/// leaves the sides to its rows ([HarborMooringLine]) and to any horizontal
-/// fairway inside it, so a carousel can still run to the frame's edge.
-/// Horizontal, it keeps clear of the start and end plus the mooring line, at
+/// leaves the sides to its rows ([HarborClear.rowInsets]) and to any horizontal
+/// scroll view inside it, so a carousel can still run to the frame's edge.
+/// Horizontal, it keeps clear of the start and end plus the row insets, at
 /// both ends, and leaves the top and bottom alone.
 ///
 /// [padding] is your own spacing and is added to the clearance, never in place
 /// of it. A focused field, `Scrollable.ensureVisible` and focus traversal all
-/// reveal a row clear of the docks: the fairway widens each reveal by what
+/// reveal a row clear of the bars: the scroll view widens each reveal by what
 /// covers its trailing edge.
 ///
 /// The tree is the same whatever the insets are, so the keyboard coming and
@@ -58,8 +60,8 @@ const String _barsConflict = 'clear: HarborClear.everything and bars: false disa
 ///
 ///  * [ListView], which pads its ends by `MediaQuery.padding` when given no padding but not by the
 ///    keyboard, and [CustomScrollView], which pads nothing.
-class HarborFairway extends StatelessWidget {
-  const HarborFairway({
+class HarborScrollView extends StatelessWidget {
+  const HarborScrollView({
     super.key,
     this.scrollDirection = Axis.vertical,
     this.reverse = false,
@@ -72,17 +74,17 @@ class HarborFairway extends StatelessWidget {
     this.anchor = 0.0,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
-    this.mooringLine = true,
-    final bool bars = true,
-    @Deprecated(
-      'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.7.0.',
-    )
-    final HarborClear? clear,
-    this.tide = true,
+    final bool rowInsets = true,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
     this.revealMargin = 0.0,
-    this.wake = true,
-    this.startsInOpenWater = false,
+    final bool edgeEffects = true,
+    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final bool? wake,
+    final bool startsUnderBars = false,
+    @Deprecated('Renamed startsUnderBars. `dart fix` applies it.') final bool? startsInOpenWater,
     this.scrollCacheExtent,
     this.paintOrder = SliverPaintOrder.firstIsTop,
     this.semanticChildCount,
@@ -92,21 +94,44 @@ class HarborFairway extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
     required this.slivers,
-  }) : assert(!shrinkWrap || center == null),
+  }) : assert(
+         mooringLine == null || rowInsets || mooringLine == rowInsets,
+         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
+       ),
+       assert(
+         bars == null || clearsBars || bars == clearsBars,
+         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
+       ),
+       assert(
+         tide == null || clearsKeyboard || tide == clearsKeyboard,
+         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
+       ),
+       assert(
+         wake == null || edgeEffects || wake == edgeEffects,
+         'edgeEffects and the deprecated wake disagree. Give edgeEffects alone.',
+       ),
+       assert(
+         startsInOpenWater == null || !startsUnderBars || startsInOpenWater == startsUnderBars,
+         'startsUnderBars and the deprecated startsInOpenWater disagree. Give startsUnderBars alone.',
+       ),
+       clearsBars = bars ?? clearsBars,
+       rowInsets = mooringLine ?? rowInsets,
+       clearsKeyboard = tide ?? clearsKeyboard,
+       edgeEffects = wake ?? edgeEffects,
+       startsUnderBars = startsInOpenWater ?? startsUnderBars,
+       assert(!shrinkWrap || center == null),
        assert(anchor >= 0.0 && anchor <= 1.0),
-       assert(clear == null || bars || clear == HarborClear.coast, _barsConflict),
-       bars = bars && clear != HarborClear.coast,
        _hugsChild = false;
 
-  /// A fairway with a single box [child].
+  /// A scroll view with a single box [child].
   ///
-  /// Where the cross axis is unbounded, as a horizontal fairway's height is in
+  /// Where the cross axis is unbounded, as a horizontal scroll view's height is in
   /// a `Column`, it is as thick as [child] (a row of chips as tall as the
   /// chips), the way a `SingleChildScrollView` is. [child] then needs an
   /// intrinsic size on that axis, as it would under `IntrinsicHeight`. Given a
   /// bounded cross axis it fills it, like any scroll view. [shrinkWrap] is the
   /// main axis.
-  HarborFairway.box({
+  HarborScrollView.box({
     super.key,
     this.scrollDirection = Axis.vertical,
     this.reverse = false,
@@ -117,17 +142,17 @@ class HarborFairway extends StatelessWidget {
     this.shrinkWrap = false,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
-    this.mooringLine = true,
-    final bool bars = true,
-    @Deprecated(
-      'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.7.0.',
-    )
-    final HarborClear? clear,
-    this.tide = true,
+    final bool rowInsets = true,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
     this.revealMargin = 0.0,
-    this.wake = true,
-    this.startsInOpenWater = false,
+    final bool edgeEffects = true,
+    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final bool? wake,
+    final bool startsUnderBars = false,
+    @Deprecated('Renamed startsUnderBars. `dart fix` applies it.') final bool? startsInOpenWater,
     this.scrollCacheExtent,
     this.dragStartBehavior = DragStartBehavior.start,
     this.keyboardDismissBehavior,
@@ -135,8 +160,31 @@ class HarborFairway extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
     required final Widget child,
-  }) : assert(clear == null || bars || clear == HarborClear.coast, _barsConflict),
-       bars = bars && clear != HarborClear.coast,
+  }) : assert(
+         mooringLine == null || rowInsets || mooringLine == rowInsets,
+         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
+       ),
+       assert(
+         bars == null || clearsBars || bars == clearsBars,
+         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
+       ),
+       assert(
+         tide == null || clearsKeyboard || tide == clearsKeyboard,
+         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
+       ),
+       assert(
+         wake == null || edgeEffects || wake == edgeEffects,
+         'edgeEffects and the deprecated wake disagree. Give edgeEffects alone.',
+       ),
+       assert(
+         startsInOpenWater == null || !startsUnderBars || startsInOpenWater == startsUnderBars,
+         'startsUnderBars and the deprecated startsInOpenWater disagree. Give startsUnderBars alone.',
+       ),
+       clearsBars = bars ?? clearsBars,
+       rowInsets = mooringLine ?? rowInsets,
+       clearsKeyboard = tide ?? clearsKeyboard,
+       edgeEffects = wake ?? edgeEffects,
+       startsUnderBars = startsInOpenWater ?? startsUnderBars,
        center = null,
        anchor = 0.0,
        paintOrder = SliverPaintOrder.firstIsTop,
@@ -154,17 +202,17 @@ class HarborFairway extends StatelessWidget {
 
   /// The key of the sliver at the zero scroll offset, as on a
   /// `CustomScrollView`: the slivers before it grow away from it, toward the
-  /// leading end. Each end of the scroll still rests clear of the docks there,
-  /// and at rest the center sliver starts clear of the leading docks.
+  /// leading end. Each end of the scroll still rests clear of the bars there,
+  /// and at rest the center sliver starts clear of the leading bars.
   ///
-  /// Sliver docks after the center pin at the docks' face. Those before it
+  /// [HarborSliverBar]s after the center pin at the bars' face. Those before it
   /// grow the other way, so they pin at the trailing end of the viewport, as
-  /// they would in a `CustomScrollView`, without keeping clear of the docks.
+  /// they would in a `CustomScrollView`, without keeping clear of the bars.
   final Key? center;
 
-  /// Where the zero scroll offset sits, as a fraction of the water between the
-  /// docks rather than of the whole viewport, which runs under them: 0 rests
-  /// it clear of the leading docks, 1 at the face of the trailing docks (and
+  /// Where the zero scroll offset sits, as a fraction of the room between the
+  /// bars rather than of the whole viewport, which runs under them: 0 rests
+  /// it clear of the leading bars, 1 at the face of the trailing bars (and
   /// the keyboard). Otherwise it is a `CustomScrollView`'s anchor.
   final double anchor;
 
@@ -176,54 +224,70 @@ class HarborFairway extends StatelessWidget {
   /// The bottom of a phone with a home button, where nothing covers the end.
   final EdgeInsetsGeometry minimum;
 
-  /// For a horizontal fairway: whether the ends add the harbor's margin, so
+  /// For a horizontal scroll view: whether the ends add the frame's margin, so
   /// the first item at rest lines up with the rest of the page.
-  final bool mooringLine;
+  final bool rowInsets;
 
-  /// Whether the ends keep clear of the bars (the docks: headers, tab bars,
-  /// rails) as well as the coast. True, the default, is the coast, the docks
-  /// and the keyboard.
+  /// The old name of [rowInsets].
+  @Deprecated('Renamed rowInsets. `dart fix` applies it.')
+  bool get mooringLine => rowInsets;
+
+  /// Whether the ends keep clear of the bars (headers, tab bars, rails) as
+  /// well as the system edges. True, the default, is the system edges, the
+  /// bars and the keyboard.
   ///
-  /// False is the coast (the system edges: the status bar, the home
-  /// indicator, a cutout) alone, for a list that rests clear of the status bar
-  /// and the home indicator but under a translucent header or tab bar: the
-  /// ends cast off the coast alone, as `HarborCastOff(docks: false)` does, so
-  /// its rows still read the docks, measured from the fairway's edge. Pinned
-  /// sliver docks still pin at the docks' face, and reveals still keep clear
-  /// of everything over the viewport.
+  /// False is the system edges (the status bar, the home indicator, a cutout)
+  /// alone, for a list that rests clear of the status bar and the home
+  /// indicator but under a translucent header or tab bar: the ends mark the
+  /// system edges alone handled, as `HarborHandled(clearsBars: false)` does, so
+  /// its rows still read the bars, measured from the scroll view's edge.
+  /// Pinned [HarborSliverBar]s still pin at the bars' face, and reveals still
+  /// keep clear of everything over the viewport.
   ///
-  /// The bottom end keeps clear of the keyboard either way, unless [tide] is
+  /// The bottom end keeps clear of the keyboard either way, unless [clearsKeyboard] is
   /// false, as a reveal needs that room to bring a row above it. (This is
-  /// where a fairway differs from [HarborMoored.bars], whose false leaves the
-  /// keyboard out whatever its `tide`.)
-  final bool bars;
+  /// where a scroll view differs from [HarborClear.clearsBars], whose false leaves the
+  /// keyboard out whatever its `clearsKeyboard`.)
+  final bool clearsBars;
 
-  /// The old spelling of [bars]: [HarborClear.coast] where [bars] is false.
-  @Deprecated('Use bars. Deprecated after 0.7.0.')
-  HarborClear get clear => bars ? HarborClear.everything : HarborClear.coast;
+  /// The old name of [clearsBars].
+  @Deprecated('Renamed clearsBars. `dart fix` applies it.')
+  bool get bars => clearsBars;
 
-  /// Whether a vertical fairway keeps clear of the keyboard, as on
-  /// [HarborMoored.tide]. False leaves it to something else: a list in a host
+  /// Whether a vertical scroll view keeps clear of the keyboard, as on
+  /// [HarborClear.clearsKeyboard]. False leaves it to something else: a list in a host
   /// whose body already ends at the keyboard, or one that stays put while a
   /// keyboard opens over it. The bottom end and reveals then leave the keyboard
-  /// out, and it is not cast off, so content inside can still keep clear of it.
-  final bool tide;
+  /// out, and it is not handled, so content inside can still keep clear of it.
+  final bool clearsKeyboard;
 
-  /// Extra room kept around a revealed row, beyond what covers the edge: a TV
+  /// The old name of [clearsKeyboard].
+  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.')
+  bool get tide => clearsKeyboard;
+
+  /// Extra space kept around a revealed row, beyond what covers the edge: a TV
   /// row that keeps the focused card a step in from the rail.
   final double revealMargin;
 
-  /// Whether content fades out as it sails under a dock with a fade wake.
-  final bool wake;
+  /// Whether content fades out as it scrolls under a bar with a fade edge effect.
+  final bool edgeEffects;
 
-  /// Whether the first sliver starts at the frame's edge, under the docks, as
-  /// a hero image that runs under a translucent header does. Pinned sliver
-  /// docks still pin at the docks' face, and reveals still keep clear of them.
+  /// The old name of [edgeEffects].
+  @Deprecated('Renamed edgeEffects. `dart fix` applies it.')
+  bool get wake => edgeEffects;
+
+  /// Whether the first sliver starts at the frame's edge, under the bars, as
+  /// a hero image that runs under a translucent header does. Pinned
+  /// [HarborSliverBar]s still pin at the bars' face, and reveals still keep clear of them.
   ///
   /// The first sliver is handed back the leading end alone, so it can keep its
   /// title clear of the status bar: the trailing end, the keyboard and the
-  /// trailing mooring line stay cast off.
-  final bool startsInOpenWater;
+  /// trailing row insets stay handled.
+  final bool startsUnderBars;
+
+  /// The old name of [startsUnderBars].
+  @Deprecated('Renamed startsUnderBars. `dart fix` applies it.')
+  bool get startsInOpenWater => startsUnderBars;
 
   final ScrollCacheExtent? scrollCacheExtent;
   final SliverPaintOrder paintOrder;
@@ -260,12 +324,12 @@ class HarborFairway extends StatelessWidget {
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
-    properties.add(FlagProperty('mooringLine', value: mooringLine, ifFalse: 'no mooring line'));
-    properties.add(FlagProperty('bars', value: bars, ifFalse: 'bars not cleared'));
-    properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
+    properties.add(FlagProperty('rowInsets', value: rowInsets, ifFalse: 'no row insets'));
+    properties.add(FlagProperty('clearsBars', value: clearsBars, ifFalse: 'bars not cleared'));
+    properties.add(FlagProperty('clearsKeyboard', value: clearsKeyboard, ifFalse: 'keyboard ignored'));
     properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
-    properties.add(FlagProperty('wake', value: wake, ifFalse: 'no wake'));
-    properties.add(FlagProperty('startsInOpenWater', value: startsInOpenWater, ifTrue: 'starts in open water'));
+    properties.add(FlagProperty('edgeEffects', value: edgeEffects, ifFalse: 'no edge effects'));
+    properties.add(FlagProperty('startsUnderBars', value: startsUnderBars, ifTrue: 'starts under bars'));
     properties.add(
       EnumProperty<ScrollViewKeyboardDismissBehavior>(
         'keyboardDismissBehavior',
@@ -277,41 +341,50 @@ class HarborFairway extends StatelessWidget {
     properties.add(IntProperty('semanticChildCount', semanticChildCount, defaultValue: null));
   }
 
-  /// The scroll padding a third-party list should use to sail this fairway's
-  /// way: clearance at both ends along [axis], at least [minimum], plus
-  /// [extra]. Cast off the same edges beneath it with [HarborCastOff]
-  /// (`docks: false` where [bars] is false, and `tide: true` unless [tide] is
+  /// The scroll padding a third-party list should use to keep clear as this
+  /// scroll view does: clearance at both ends along [axis], at least [minimum], plus
+  /// [extra]. Mark the same edges handled beneath it with [HarborHandled]
+  /// (`clearsBars: false` where [clearsBars] is false, and `clearsKeyboard: true` unless [clearsKeyboard] is
   /// false).
   static EdgeInsets paddingOf(
     final BuildContext context, {
     final Axis axis = Axis.vertical,
     final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
-    final bool mooringLine = true,
-    final bool bars = true,
-    @Deprecated(
-      'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.7.0.',
-    )
-    final HarborClear? clear,
-    final bool tide = true,
+    final bool rowInsets = true,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
   }) {
-    assert(clear == null || bars || clear == HarborClear.coast, _barsConflict);
-    final bool clearsBars = bars && clear != HarborClear.coast;
+    final bool insetsRows = renamed(mooringLine, rowInsets, true, 'rowInsets', 'mooringLine');
+    final bool barsHere = renamed(bars, clearsBars, true, 'clearsBars', 'bars');
+    final bool keyboardHere = renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide');
     final TextDirection direction = Directionality.of(context);
     final EdgeInsetsDirectional extraHere = HarborEdges.resolve(extra, direction);
     final EdgeInsetsDirectional minimumHere = HarborEdges.resolve(minimum, direction);
     double end(final HarborEdge edge) {
-      double value = _endClearance(context, edge, bars: clearsBars, tide: tide);
-      if (!edge.isVertical && mooringLine) {
-        value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
+      double value = _endClearance(context, edge, clearsBars: barsHere, clearsKeyboard: keyboardHere);
+      if (!edge.isVertical && insetsRows) {
+        value += HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin, edge);
       }
       return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(extraHere, edge);
     }
 
     final EdgeInsetsDirectional padding = axis == Axis.vertical
-        ? EdgeInsetsDirectional.only(top: end(HarborEdge.top), bottom: end(HarborEdge.bottom), start: extraHere.start, end: extraHere.end)
-        : EdgeInsetsDirectional.only(start: end(HarborEdge.start), end: end(HarborEdge.end), top: extraHere.top, bottom: extraHere.bottom);
+        ? EdgeInsetsDirectional.only(
+            top: end(HarborEdge.top),
+            bottom: end(HarborEdge.bottom),
+            start: extraHere.start,
+            end: extraHere.end,
+          )
+        : EdgeInsetsDirectional.only(
+            start: end(HarborEdge.start),
+            end: end(HarborEdge.end),
+            top: extraHere.top,
+            bottom: extraHere.bottom,
+          );
     return padding.resolve(direction);
   }
 
@@ -319,78 +392,83 @@ class HarborFairway extends StatelessWidget {
   Widget build(final BuildContext context) {
     assert(
       center == null || slivers.where((final Widget s) => s.key == center).length == 1,
-      'A fairway center must be the key of exactly one of its slivers.',
+      'A HarborScrollView center must be the key of exactly one of its slivers.',
     );
     final TextDirection direction = Directionality.of(context);
     final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
     final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
-    // The docks carry the wakes; the coast and the margin are read only where
+    // The bars carry the edge effects; the system edges and the margin are read only where
     // they are used, so a carousel does not rebuild as the keyboard moves.
-    final HarborWatersData waters = HarborWaters.of(context, aspect: HarborWatersAspect.docks);
-    EdgeInsetsDirectional coast() => HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast;
+    final HarborRoomData waters = HarborRoom.of(context, aspect: HarborRoomAspect.bars);
+    EdgeInsetsDirectional systemEdges() => HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
     final bool vertical = scrollDirection == Axis.vertical;
     final HarborEdge leadingEdge = vertical
         ? (reverse ? HarborEdge.bottom : HarborEdge.top)
         : (reverse ? HarborEdge.end : HarborEdge.start);
-    double clearance(final HarborEdge edge, final bool bars) {
-      double value = _endClearance(context, edge, bars: bars, tide: tide);
-      if (!vertical && mooringLine) {
-        value += HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.margin).margin, edge);
+    double clearance(final HarborEdge edge, final bool clearsBars) {
+      double value = _endClearance(context, edge, clearsBars: clearsBars, clearsKeyboard: clearsKeyboard);
+      if (!vertical && rowInsets) {
+        value += HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin, edge);
       }
       return math.max(value, HarborEdges.of(minimum, edge)) + HarborEdges.of(padding, edge);
     }
 
     // Where each end rests, and (`All`) what is over the viewport there, which the cover and
     // reveals keep clear of whatever the ends clear.
-    final double clearLeading = clearance(leadingEdge, bars);
-    final double clearLeadingAll = bars ? clearLeading : clearance(leadingEdge, true);
+    final double clearLeading = clearance(leadingEdge, clearsBars);
+    final double clearLeadingAll = clearsBars ? clearLeading : clearance(leadingEdge, true);
     double leading = clearLeading;
     double leadingAll = clearLeadingAll;
-    final double trailing = clearance(leadingEdge.opposite, bars);
-    final double trailingAll = bars ? trailing : clearance(leadingEdge.opposite, true);
+    final double trailing = clearance(leadingEdge.opposite, clearsBars);
+    final double trailingAll = clearsBars ? trailing : clearance(leadingEdge.opposite, true);
 
-    // A sliver dock first in the fairway takes the coast on the leading edge
+    // A sliver bar first in the scroll view takes the system edge on the leading edge
     // itself, so its surface runs under the status bar.
-    final bool leadsWithDock = slivers.isNotEmpty && slivers.first is HarborSliverDock && leadingEdge == HarborEdge.top;
+    final bool leadsWithDock = slivers.isNotEmpty && slivers.first is HarborSliverBar && leadingEdge == HarborEdge.top;
     double absorbed = 0.0;
-    if (leadsWithDock && HarborEdges.of(waters.docks, HarborEdge.top) <= 0) {
-      absorbed = math.min(leading, HarborEdges.of(coast(), HarborEdge.top));
+    if (leadsWithDock && HarborEdges.of(waters.bars, HarborEdge.top) <= 0) {
+      absorbed = math.min(leading, HarborEdges.of(systemEdges(), HarborEdge.top));
       leading -= absorbed;
       leadingAll -= absorbed;
     }
 
-    // How far pinned slivers stay from the leading edge: the docks' face,
-    // not the end of their wake.
-    final HarborWakeBand? band = waters.wakes[leadingEdge];
+    // How far pinned slivers stay from the leading edge: the bars' face,
+    // not the end of their fade.
+    final HarborFadeBand? band = waters.fadeBands[leadingEdge];
     double cover = band == null
         ? leadingAll
-        : math.max(HarborWaters.clearanceOf(context, leadingEdge, tide: tide) - band.length, HarborEdges.of(coast(), leadingEdge));
+        : math.max(
+            HarborRoom.clearanceOf(context, leadingEdge, clearsKeyboard: clearsKeyboard) - band.length,
+            HarborEdges.of(systemEdges(), leadingEdge),
+          );
     cover = math.max(0.0, math.min(cover, leadingAll + absorbed) - absorbed);
 
-    final Set<HarborEdge> castOff = vertical ? HarborEdge.vertical : HarborEdge.horizontal;
+    final Set<HarborEdge> handled = vertical ? HarborEdge.vertical : HarborEdge.horizontal;
     final EdgeInsetsDirectional crossPadding = vertical
         ? EdgeInsetsDirectional.only(start: padding.start, end: padding.end)
         : EdgeInsetsDirectional.only(top: padding.top, bottom: padding.bottom);
 
-    // A pinned sliver dock takes over the leading edge, so the fairway's wake
-    // there would only fade the dock.
-    final bool hasSliverDock = slivers.any((final Widget s) => s is HarborSliverDock);
-    final Map<HarborEdge, HarborWakeBand> wakes = !wake
-        ? const <HarborEdge, HarborWakeBand>{}
-        : <HarborEdge, HarborWakeBand>{
-            for (final HarborEdge e in castOff)
-              if (waters.wakes.containsKey(e) && !waters.wakesPainted.contains(e) && !(hasSliverDock && e == leadingEdge))
-                e: waters.wakes[e]!,
+    // A pinned sliver bar takes over the leading edge, so the scroll view's edge effect
+    // there would only fade the bar.
+    final bool hasSliverDock = slivers.any((final Widget s) => s is HarborSliverBar);
+    final Map<HarborEdge, HarborFadeBand> bands = !edgeEffects
+        ? const <HarborEdge, HarborFadeBand>{}
+        : <HarborEdge, HarborFadeBand>{
+            for (final HarborEdge e in handled)
+              if (waters.fadeBands.containsKey(e) &&
+                  !waters.fadeBandsPainted.contains(e) &&
+                  !(hasSliverDock && e == leadingEdge))
+                e: waters.fadeBands[e]!,
           };
-    final Widget fairway = HarborWakeMask(
-      wakes: wakes,
+    final Widget fairway = HarborFadeMask(
+      bands: bands,
       child: _fairway(
         context,
         leadingEdge,
         vertical,
-        // Open water skips only the clearance at the leading end: the caller's own padding and
+        // Starting under the bars skips only the clearance at the leading end: the caller's own padding and
         // minimum there still apply (#74).
-        startsInOpenWater ? HarborEdges.of(minimum, leadingEdge) + HarborEdges.of(padding, leadingEdge) : leading,
+        startsUnderBars ? HarborEdges.of(minimum, leadingEdge) + HarborEdges.of(padding, leadingEdge) : leading,
         clearLeading,
         cover,
         trailing,
@@ -435,8 +513,8 @@ class HarborFairway extends StatelessWidget {
         ? (reverse ? AxisDirection.left : AxisDirection.right)
         : (reverse ? AxisDirection.right : AxisDirection.left);
     // Every reveal (a focused field, focus traversal, ensureVisible) is widened
-    // by what covers the trailing edge, and by the wake past the leading
-    // docks' face, so the row comes to rest in clear water.
+    // by what covers the trailing edge, and by the fade past the leading
+    // bars' face, so the row comes to rest in the room.
     final double trailExtra = reveals.trailing;
     EdgeInsets reveal(final double leadExtra) => switch (axis) {
       AxisDirection.down => EdgeInsets.only(top: leadExtra, bottom: trailExtra),
@@ -445,10 +523,10 @@ class HarborFairway extends StatelessWidget {
       AxisDirection.left => EdgeInsets.only(left: trailExtra, right: leadExtra),
     };
     Widget first(final Widget sliver) {
-      final Widget result = leadsWithDock ? _SliverDockAbsorb(coast: absorbed, child: sliver) : sliver;
-      // Content that starts in open water keeps the coast and docks it starts under, on the
-      // leading end alone: the trailing end and the keyboard are still cast off.
-      return startsInOpenWater ? _HarborOpenWaterSliver(sliver: result) : result;
+      final Widget result = leadsWithDock ? _SliverDockAbsorb(systemEdges: absorbed, child: sliver) : sliver;
+      // Content that starts under the bars keeps the system edges and bars it starts under, on the
+      // leading end alone: the trailing end and the keyboard are still handled.
+      return startsUnderBars ? _HarborOpenWaterSliver(sliver: result) : result;
     }
 
     // With a center, the cover leads the slivers that grow forward from it,
@@ -459,20 +537,20 @@ class HarborFairway extends StatelessWidget {
       fromViewportEdge: !shrinkWrap && (center != null || anchor != 0.0),
     );
     final bool centersFirst = center != null && slivers.first.key == center;
-    // The trailing end is cast off first and the leading end beneath it, so the first sliver of a
-    // fairway that starts in open water can be handed the view between the two.
-    final bool margin = !vertical && mooringLine;
-    return HarborCastOff(
+    // The trailing end is handled first and the leading end beneath it, so the first sliver of a
+    // scroll view that starts under the bars can be handed the view between the two.
+    final bool margin = !vertical && rowInsets;
+    return HarborHandled(
       edges: <HarborEdge>{leadingEdge.opposite},
-      tide: vertical && tide,
+      clearsKeyboard: vertical && clearsKeyboard,
       margin: margin,
-      docks: bars,
+      clearsBars: clearsBars,
       child: _HarborOpenWaterView(
-        enabled: startsInOpenWater,
-        child: HarborCastOff(
+        enabled: startsUnderBars,
+        child: HarborHandled(
           edges: <HarborEdge>{leadingEdge},
           margin: margin,
-          docks: bars,
+          clearsBars: clearsBars,
           child: _HarborScrollView(
             reveal: reveal(reveals.leading),
             reverseReveal: reveal(reveals.reverseLeading),
@@ -522,9 +600,9 @@ class HarborFairway extends StatelessWidget {
   }
 }
 
-/// Publishes, to the first sliver of a fairway that starts in open water, the view between the
-/// fairway's two cast-offs: its leading end still there, its trailing end, the keyboard and the
-/// trailing mooring line already cast off.
+/// Publishes, to the first sliver of a scroll view that starts under the bars, the view between
+/// the scroll view's two [HarborHandled]s: its leading end still there, its trailing end, the
+/// keyboard and the trailing row insets already handled.
 ///
 /// It is in the tree either way, so turning [enabled] on or off keeps the scroll view's state;
 /// only while it is on does it depend on what it publishes.
@@ -537,7 +615,7 @@ class _HarborOpenWaterView extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => _HarborOpenWaterScope(
     media: enabled ? MediaQuery.of(context) : null,
-    waters: enabled ? HarborWaters.maybeRawOf(context) : null,
+    waters: enabled ? HarborRoom.maybeRawOf(context) : null,
     child: child,
   );
 }
@@ -546,13 +624,14 @@ class _HarborOpenWaterScope extends InheritedWidget {
   const _HarborOpenWaterScope({required this.media, required this.waters, required super.child});
 
   final MediaQueryData? media;
-  final HarborWatersData? waters;
+  final HarborRoomData? waters;
 
   @override
-  bool updateShouldNotify(final _HarborOpenWaterScope oldWidget) => media != oldWidget.media || waters != oldWidget.waters;
+  bool updateShouldNotify(final _HarborOpenWaterScope oldWidget) =>
+      media != oldWidget.media || waters != oldWidget.waters;
 }
 
-/// The first sliver of a fairway that starts in open water, in the view [_HarborOpenWaterView]
+/// The first sliver of a scroll view that starts under the bars, in the view [_HarborOpenWaterView]
 /// publishes.
 class _HarborOpenWaterSliver extends StatelessWidget {
   const _HarborOpenWaterSliver({required this.sliver});
@@ -566,10 +645,10 @@ class _HarborOpenWaterSliver extends StatelessWidget {
     if (media == null) {
       return sliver;
     }
-    final HarborWatersData? waters = scope!.waters;
+    final HarborRoomData? waters = scope!.waters;
     return MediaQuery(
       data: media,
-      child: waters == null ? sliver : HarborWaters(data: waters, child: sliver),
+      child: waters == null ? sliver : HarborRoom(data: waters, child: sliver),
     );
   }
 }
@@ -580,7 +659,7 @@ class _HarborCoverKey extends LocalKey {
   const _HarborCoverKey();
 }
 
-/// The key of the sliver a fairway wraps around one of yours that has a key,
+/// The key of the sliver a scroll view wraps around one of yours that has a key,
 /// so a center names it and keyed slivers keep their state as they move.
 class _HarborSliverKey extends LocalKey {
   const _HarborSliverKey(this.key);
@@ -747,8 +826,8 @@ class _RenderHarborViewport extends RenderViewport {
     }
   }
 
-  // The viewport runs under the docks, so the anchor it lays out by is the
-  // fairway's anchor taken across the water between them.
+  // The viewport runs under the bars, so the anchor it lays out by is the
+  // scroll view's anchor taken across the room between them.
   @override
   double get anchor {
     final double extent = hasSize ? (axis == Axis.vertical ? size.height : size.width) : 0.0;
@@ -760,7 +839,12 @@ class _RenderHarborViewport extends RenderViewport {
   }
 
   @override
-  RevealedOffset getOffsetToReveal(final RenderObject target, final double alignment, {final Rect? rect, final Axis? axis}) {
+  RevealedOffset getOffsetToReveal(
+    final RenderObject target,
+    final double alignment, {
+    final Rect? rect,
+    final Axis? axis,
+  }) {
     RenderObject? sliver = target;
     while (sliver != null && sliver.parent != this) {
       sliver = sliver.parent;
@@ -829,8 +913,12 @@ class _RenderHarborShrinkWrappingViewport extends RenderShrinkWrappingViewport {
   EdgeInsets reveal;
 
   @override
-  RevealedOffset getOffsetToReveal(final RenderObject target, final double alignment, {final Rect? rect, final Axis? axis}) =>
-      super.getOffsetToReveal(target, alignment, rect: _widen(rect ?? target.paintBounds, reveal), axis: axis);
+  RevealedOffset getOffsetToReveal(
+    final RenderObject target,
+    final double alignment, {
+    final Rect? rect,
+    final Axis? axis,
+  }) => super.getOffsetToReveal(target, alignment, rect: _widen(rect ?? target.paintBounds, reveal), axis: axis);
 
   // A shrink-wrapped viewport is as long as its slivers' paint. The cover only
   // paints to hand its overlap to the slivers after it, and the spacer behind
@@ -839,7 +927,10 @@ class _RenderHarborShrinkWrappingViewport extends RenderShrinkWrappingViewport {
   void updateOutOfBandData(final GrowthDirection growthDirection, final SliverGeometry childLayoutGeometry) {
     final RenderSliver? cover = firstChild;
     if (cover is _RenderHarborCoverSliver && identical(childLayoutGeometry, cover.geometry)) {
-      super.updateOutOfBandData(growthDirection, SliverGeometry(hasVisualOverflow: childLayoutGeometry.hasVisualOverflow));
+      super.updateOutOfBandData(
+        growthDirection,
+        SliverGeometry(hasVisualOverflow: childLayoutGeometry.hasVisualOverflow),
+      );
       return;
     }
     super.updateOutOfBandData(growthDirection, childLayoutGeometry);
@@ -849,7 +940,7 @@ class _RenderHarborShrinkWrappingViewport extends RenderShrinkWrappingViewport {
 Rect _widen(final Rect rect, final EdgeInsets by) =>
     Rect.fromLTRB(rect.left - by.left, rect.top - by.top, rect.right + by.right, rect.bottom + by.bottom);
 
-/// Gives a box fairway its cross-axis size from its child when its parent
+/// Gives a box scroll view its cross-axis size from its child when its parent
 /// leaves that axis unbounded. A viewport cannot be measured by what it holds,
 /// so this asks the child, through [_HarborHugTarget], for its intrinsic size.
 class _HarborCrossAxisHug extends SingleChildRenderObjectWidget {
@@ -857,11 +948,12 @@ class _HarborCrossAxisHug extends SingleChildRenderObjectWidget {
 
   final Axis scrollDirection;
 
-  /// The fairway's own padding across the scroll, added to the child's size.
+  /// The scroll view's own padding across the scroll, added to the child's size.
   final double crossPadding;
 
   @override
-  RenderObject createRenderObject(final BuildContext context) => _RenderHarborCrossAxisHug(scrollDirection, crossPadding);
+  RenderObject createRenderObject(final BuildContext context) =>
+      _RenderHarborCrossAxisHug(scrollDirection, crossPadding);
 
   @override
   void updateRenderObject(final BuildContext context, final _RenderHarborCrossAxisHug renderObject) {
@@ -989,54 +1081,163 @@ class _RenderHarborHugTarget extends RenderProxyBox {
   }
 }
 
+/// The old name of [HarborScrollView], whose constructors keep their names.
+///
+/// A subclass rather than a typedef: `dart fix` renames the arguments of `box(tide:, ...)`, and a
+/// typedef cannot carry a fix on a named constructor's call.
+@Deprecated('Renamed HarborScrollView. `dart fix` applies it.')
+class HarborFairway extends HarborScrollView {
+  /// The old name of [HarborScrollView.new].
+  @Deprecated('Renamed HarborScrollView. `dart fix` applies it.')
+  const HarborFairway({
+    super.key,
+    super.scrollDirection,
+    super.reverse,
+    super.controller,
+    super.primary,
+    super.physics,
+    super.scrollBehavior,
+    super.shrinkWrap,
+    super.center,
+    super.anchor,
+    super.padding,
+    super.minimum,
+    super.rowInsets,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it.') super.mooringLine,
+    super.clearsBars,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') super.bars,
+    super.clearsKeyboard,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') super.tide,
+    super.revealMargin,
+    super.edgeEffects,
+    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') super.wake,
+    super.startsUnderBars,
+    @Deprecated('Renamed startsUnderBars. `dart fix` applies it.') super.startsInOpenWater,
+    super.scrollCacheExtent,
+    super.paintOrder,
+    super.semanticChildCount,
+    super.dragStartBehavior,
+    super.keyboardDismissBehavior,
+    super.restorationId,
+    super.clipBehavior,
+    super.hitTestBehavior,
+    required super.slivers,
+  });
+
+  /// The old name of [HarborScrollView.box].
+  @Deprecated('Renamed HarborScrollView.box. `dart fix` applies it.')
+  HarborFairway.box({
+    super.key,
+    super.scrollDirection,
+    super.reverse,
+    super.controller,
+    super.primary,
+    super.physics,
+    super.scrollBehavior,
+    super.shrinkWrap,
+    super.padding,
+    super.minimum,
+    super.rowInsets,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it.') super.mooringLine,
+    super.clearsBars,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') super.bars,
+    super.clearsKeyboard,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') super.tide,
+    super.revealMargin,
+    super.edgeEffects,
+    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') super.wake,
+    super.startsUnderBars,
+    @Deprecated('Renamed startsUnderBars. `dart fix` applies it.') super.startsInOpenWater,
+    super.scrollCacheExtent,
+    super.dragStartBehavior,
+    super.keyboardDismissBehavior,
+    super.restorationId,
+    super.clipBehavior,
+    super.hitTestBehavior,
+    required super.child,
+  }) : super.box();
+
+  /// The old name of [HarborScrollView.paddingOf].
+  @Deprecated('Renamed HarborScrollView.paddingOf. `dart fix` applies it.')
+  static EdgeInsets paddingOf(
+    final BuildContext context, {
+    final Axis axis = Axis.vertical,
+    final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
+    final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
+    final bool rowInsets = true,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
+  }) => HarborScrollView.paddingOf(
+    context,
+    axis: axis,
+    extra: extra,
+    minimum: minimum,
+    rowInsets: renamed(mooringLine, rowInsets, true, 'rowInsets', 'mooringLine'),
+    clearsBars: renamed(bars, clearsBars, true, 'clearsBars', 'bars'),
+    clearsKeyboard: renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide'),
+  );
+}
+
 /// One sliver of a scroll view you build yourself, kept clear at the ends you
 /// choose. Use it on the sliver at each end of a `CustomScrollView`; a whole
-/// scroll view is better as a [HarborFairway].
+/// scroll view is better as a [HarborScrollView].
 ///
-/// It casts off the ends it cleared, as `SliverSafeArea` removes the padding it
+/// It marks the ends it cleared handled, as `SliverSafeArea` removes the padding it
 /// applied, so a `SafeArea` or a `MediaQuery.padding` reader in [sliver] does
 /// not clear them a second time. An end it does not clear is left as it is.
 ///
 /// See also:
 ///
 ///  * [SliverSafeArea], the closest Flutter widget, which keeps clear of `MediaQuery.padding` alone.
-class HarborFairwaySliver extends StatelessWidget {
-  const HarborFairwaySliver({
+class HarborSliverClear extends StatelessWidget {
+  const HarborSliverClear({
     super.key,
     this.clearLeading = true,
     this.clearTrailing = true,
-    final bool bars = true,
-    @Deprecated(
-      'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
-      'Deprecated after 0.7.0.',
-    )
-    final HarborClear? clear,
-    this.tide = true,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
     required this.sliver,
-  }) : assert(clear == null || bars || clear == HarborClear.coast, _barsConflict),
-       bars = bars && clear != HarborClear.coast;
+  }) : assert(
+         bars == null || clearsBars || bars == clearsBars,
+         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
+       ),
+       assert(
+         tide == null || clearsKeyboard || tide == clearsKeyboard,
+         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
+       ),
+       clearsBars = bars ?? clearsBars,
+       clearsKeyboard = tide ?? clearsKeyboard;
 
   final bool clearLeading;
   final bool clearTrailing;
 
-  /// Whether the ends it clears keep clear of the bars as well as the coast, as
-  /// on [HarborFairway.bars]: false casts off the coast alone, keeps the
-  /// keyboard while [tide], and reveals still keep clear of everything over the
+  /// Whether the ends it clears keep clear of the bars as well as the system edges, as
+  /// on [HarborScrollView.clearsBars]: false handles the system edges alone, keeps the
+  /// keyboard while [clearsKeyboard], and reveals still keep clear of everything over the
   /// viewport.
-  final bool bars;
+  final bool clearsBars;
 
-  /// The old spelling of [bars]: [HarborClear.coast] where [bars] is false.
-  @Deprecated('Use bars. Deprecated after 0.7.0.')
-  HarborClear get clear => bars ? HarborClear.everything : HarborClear.coast;
+  /// The old name of [clearsBars].
+  @Deprecated('Renamed clearsBars. `dart fix` applies it.')
+  bool get bars => clearsBars;
 
-  /// Whether a bottom end it clears keeps clear of the keyboard, and casts it
-  /// off, as on [HarborFairway.tide].
-  final bool tide;
+  /// Whether a bottom end it clears keeps clear of the keyboard, and marks it
+  /// handled, as on [HarborScrollView.clearsKeyboard].
+  final bool clearsKeyboard;
+
+  /// The old name of [clearsKeyboard].
+  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.')
+  bool get tide => clearsKeyboard;
   final EdgeInsetsGeometry padding;
 
-  /// A floor on the clearance at each end it clears, as on [HarborFairway.minimum].
+  /// A floor on the clearance at each end it clears, as on [HarborScrollView.minimum].
   final EdgeInsetsGeometry minimum;
   final Widget sliver;
 
@@ -1045,8 +1246,8 @@ class HarborFairwaySliver extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
     properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
-    properties.add(FlagProperty('bars', value: bars, ifFalse: 'bars not cleared'));
-    properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
+    properties.add(FlagProperty('clearsBars', value: clearsBars, ifFalse: 'bars not cleared'));
+    properties.add(FlagProperty('clearsKeyboard', value: clearsKeyboard, ifFalse: 'keyboard ignored'));
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
     );
@@ -1062,18 +1263,22 @@ class HarborFairwaySliver extends StatelessWidget {
     final (HarborEdge leadingEdge, HarborEdge trailingEdge) = switch (axis) {
       AxisDirection.down => (HarborEdge.top, HarborEdge.bottom),
       AxisDirection.up => (HarborEdge.bottom, HarborEdge.top),
-      AxisDirection.right => direction == TextDirection.ltr ? (HarborEdge.start, HarborEdge.end) : (HarborEdge.end, HarborEdge.start),
-      AxisDirection.left => direction == TextDirection.ltr ? (HarborEdge.end, HarborEdge.start) : (HarborEdge.start, HarborEdge.end),
+      AxisDirection.right =>
+        direction == TextDirection.ltr ? (HarborEdge.start, HarborEdge.end) : (HarborEdge.end, HarborEdge.start),
+      AxisDirection.left =>
+        direction == TextDirection.ltr ? (HarborEdge.end, HarborEdge.start) : (HarborEdge.start, HarborEdge.end),
     };
     final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
     final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
-    double clearance(final HarborEdge edge, final bool bars) =>
-        math.max(_endClearance(context, edge, bars: bars, tide: tide), HarborEdges.of(minimum, edge));
-    final double leading = clearLeading ? clearance(leadingEdge, bars) : 0.0;
-    final double trailing = clearTrailing ? clearance(trailingEdge, bars) : 0.0;
+    double clearance(final HarborEdge edge, final bool clearsBars) => math.max(
+      _endClearance(context, edge, clearsBars: clearsBars, clearsKeyboard: clearsKeyboard),
+      HarborEdges.of(minimum, edge),
+    );
+    final double leading = clearLeading ? clearance(leadingEdge, clearsBars) : 0.0;
+    final double trailing = clearTrailing ? clearance(trailingEdge, clearsBars) : 0.0;
     // Reveals keep clear of everything over the viewport, whatever the ends clear.
-    final double revealLeading = bars || !clearLeading ? leading : clearance(leadingEdge, true);
-    final double revealTrailing = bars || !clearTrailing ? trailing : clearance(trailingEdge, true);
+    final double revealLeading = clearsBars || !clearLeading ? leading : clearance(leadingEdge, true);
+    final double revealTrailing = clearsBars || !clearTrailing ? trailing : clearance(trailingEdge, true);
     final EdgeInsetsDirectional insets = HarborEdges.build((final HarborEdge e) {
       final double own = HarborEdges.of(padding, e);
       if (e == leadingEdge) {
@@ -1084,7 +1289,7 @@ class HarborFairwaySliver extends StatelessWidget {
       }
       return own;
     });
-    // As `SliverSafeArea` pads and then removes that padding, the ends it cleared are cast off, so a
+    // As `SliverSafeArea` pads and then removes that padding, the ends it cleared are handled, so a
     // reader in the sliver does not clear them again. An end it leaves is left to its content.
     final Set<HarborEdge> cleared = <HarborEdge>{if (clearLeading) leadingEdge, if (clearTrailing) trailingEdge};
     return _HarborRevealSliver(
@@ -1093,11 +1298,11 @@ class HarborFairwaySliver extends StatelessWidget {
       textDirection: direction,
       sliver: SliverPadding(
         padding: insets.resolve(direction),
-        sliver: HarborCastOff(
+        sliver: HarborHandled(
           edges: cleared,
-          tide: tide && cleared.contains(HarborEdge.bottom),
+          clearsKeyboard: clearsKeyboard && cleared.contains(HarborEdge.bottom),
           margin: false,
-          docks: bars,
+          clearsBars: clearsBars,
           child: sliver,
         ),
       ),
@@ -1105,16 +1310,19 @@ class HarborFairwaySliver extends StatelessWidget {
   }
 }
 
-/// A dock that lives in a fairway: a header that scrolls with the content and
-/// then pins, clear of the docks above it, and becomes a dock for everything
-/// after it. The first one in a fairway with no dock above takes the status
+/// A bar that lives in a [HarborScrollView]: a header that scrolls with the content and
+/// then pins, clear of the bars above it, and becomes a bar for everything
+/// after it. The first one in a scroll view with no bar above takes the status
 /// bar itself, so its [backdrop] runs under it. Several stack.
+///
+/// It pins and stacks, but it is not a `SliverAppBar`: it has no `expandedHeight` and no
+/// `flexibleSpace`.
 ///
 /// See also:
 ///
 ///  * [PinnedHeaderSliver], which this pins with, and `SliverAppBar(pinned: true)`.
-class HarborSliverDock extends StatelessWidget {
-  const HarborSliverDock({super.key, required this.child, this.backdrop, this.hitTestBehavior = HitTestBehavior.opaque});
+class HarborSliverBar extends StatelessWidget {
+  const HarborSliverBar({super.key, required this.child, this.backdrop, this.hitTestBehavior = HitTestBehavior.opaque});
 
   final Widget child;
   final Widget? backdrop;
@@ -1131,7 +1339,7 @@ class HarborSliverDock extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    final double coast = _SliverDockAbsorb.coastOf(context);
+    final double systemEdges = _SliverDockAbsorb.coastOf(context);
     return PinnedHeaderSliver(
       child: Listener(
         behavior: hitTestBehavior,
@@ -1139,7 +1347,7 @@ class HarborSliverDock extends StatelessWidget {
           children: <Widget>[
             Positioned.fill(child: backdrop ?? const SizedBox.shrink()),
             Padding(
-              padding: EdgeInsets.only(top: coast),
+              padding: EdgeInsets.only(top: systemEdges),
               child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
             ),
           ],
@@ -1150,19 +1358,19 @@ class HarborSliverDock extends StatelessWidget {
 }
 
 class _SliverDockAbsorb extends InheritedWidget {
-  const _SliverDockAbsorb({required this.coast, required super.child});
+  const _SliverDockAbsorb({required this.systemEdges, required super.child});
 
-  final double coast;
+  final double systemEdges;
 
   static double coastOf(final BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_SliverDockAbsorb>()?.coast ?? 0.0;
+      context.dependOnInheritedWidgetOfExactType<_SliverDockAbsorb>()?.systemEdges ?? 0.0;
 
   @override
-  bool updateShouldNotify(final _SliverDockAbsorb oldWidget) => coast != oldWidget.coast;
+  bool updateShouldNotify(final _SliverDockAbsorb oldWidget) => systemEdges != oldWidget.systemEdges;
 }
 
 /// Widens every reveal that passes through it by what covers the scroll
-/// view's edges, so the viewport brings the row clear of the docks rather
+/// view's edges, so the viewport brings the row clear of the bars rather
 /// than merely onto the screen.
 class _HarborRevealSliver extends SingleChildRenderObjectWidget {
   const _HarborRevealSliver({
@@ -1208,7 +1416,10 @@ class _RenderHarborRevealSliver extends RenderProxySliver {
     // screen does, and handed on with the descendant so the viewport measures
     // it from where the descendant really is.
     final Rect local = rect ?? descendant.paintBounds;
-    final Rect widened = switch (applyGrowthDirectionToAxisDirection(constraints.axisDirection, constraints.growthDirection)) {
+    final Rect widened = switch (applyGrowthDirectionToAxisDirection(
+      constraints.axisDirection,
+      constraints.growthDirection,
+    )) {
       AxisDirection.down => Rect.fromLTRB(local.left, local.top - leading, local.right, local.bottom + trailing),
       AxisDirection.up => Rect.fromLTRB(local.left, local.top - trailing, local.right, local.bottom + leading),
       AxisDirection.right => Rect.fromLTRB(local.left - leading, local.top, local.right + trailing, local.bottom),
@@ -1218,16 +1429,16 @@ class _RenderHarborRevealSliver extends RenderProxySliver {
   }
 }
 
-/// Covers the leading edge of a fairway without taking any scroll space: it
-/// tells the slivers after it how far the docks reach, so pinned headers pin
-/// at the docks' face and reveals keep clear of them.
+/// Covers the leading edge of a scroll view without taking any scroll space: it
+/// tells the slivers after it how far the bars reach, so pinned headers pin
+/// at the bars' face and reveals keep clear of them.
 class _HarborCoverSliver extends LeafRenderObjectWidget {
   const _HarborCoverSliver({super.key, required this.extent, required this.fromViewportEdge});
 
   final double extent;
 
   /// Whether the cover may start inside the viewport, as it does at a center
-  /// or an anchor, and must reach only as far as the docks do from its edge.
+  /// or an anchor, and must reach only as far as the bars do from its edge.
   final bool fromViewportEdge;
 
   @override
@@ -1264,7 +1475,9 @@ class _RenderHarborCoverSliver extends RenderSliver {
   void performLayout() {
     // First in its run of slivers, it starts where the viewport has that much
     // paint extent left, as the viewport measures overlap.
-    final double start = _fromViewportEdge ? constraints.viewportMainAxisExtent - constraints.remainingPaintExtent : 0.0;
+    final double start = _fromViewportEdge
+        ? constraints.viewportMainAxisExtent - constraints.remainingPaintExtent
+        : 0.0;
     final double paint = (_extent - start).clamp(0.0, constraints.remainingPaintExtent);
     geometry = SliverGeometry(
       paintExtent: paint,
@@ -1276,6 +1489,9 @@ class _RenderHarborCoverSliver extends RenderSliver {
   }
 
   @override
-  bool hitTest(final SliverHitTestResult result, {required final double mainAxisPosition, required final double crossAxisPosition}) =>
-      false;
+  bool hitTest(
+    final SliverHitTestResult result, {
+    required final double mainAxisPosition,
+    required final double crossAxisPosition,
+  }) => false;
 }

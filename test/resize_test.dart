@@ -12,7 +12,7 @@ import 'package:harbor_test/harbor_test.dart';
 /// the pixel ratio the trial put on it.
 void _resizeTo(final WidgetTester tester, final HarborTrialDevice device) {
   final double ratio = tester.view.devicePixelRatio;
-  final EdgeInsets coast = device.coast * ratio;
+  final EdgeInsets coast = device.systemEdges * ratio;
   tester.view
     ..physicalSize = device.size * ratio
     ..padding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
@@ -24,33 +24,39 @@ void main() {
   // Failed before: for the first frame after a turn, the page under a breakwater sheet was laid out
   // against the cover the sheet had in the old orientation, in pixels: 365 of portrait's 874 is
   // nearly all of landscape's 402, and the page's content overflowed by 83.
-  testWidgets('a page under a breakwater sheet is not laid out against the old orientation after a turn', (final tester) async {
+  testWidgets('a page under a breakwater sheet is not laid out against the old orientation after a turn', (
+    final tester,
+  ) async {
     late BuildContext page;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-        home: Harbor(
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+        home: HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               page = context;
-              return const HarborMoored(child: Column(children: <Widget>[SizedBox(key: ValueKey<String>('title'), height: 120)]));
+              return const HarborClear(
+                child: Column(children: <Widget>[SizedBox(key: ValueKey<String>('title'), height: 120)]),
+              );
             },
           ),
         ),
       ),
     );
-    unawaited(showHarborSheet<void>(
-      page,
-      breakwater: true,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext _) => HarborSheet.draggable(
-        extent: const HarborSheetExtent(rest: 0.45),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        coversPage: true,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext _) => HarborSheet.draggable(
+          extent: const HarborSheetExtent(rest: 0.45),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull, reason: 'positive control: portrait lays out cleanly');
 
@@ -63,13 +69,15 @@ void main() {
 
   // Failed before: the flare kept the clear water captured when it was raised, so after the
   // foldable opened it stayed boxed into the old 382-wide cover screen.
-  testWidgets('a flare follows the clear water of the harbor that raised it when the screen grows', (final tester) async {
+  testWidgets('a flare follows the clear water of the harbor that raised it when the screen grows', (
+    final tester,
+  ) async {
     late BuildContext page;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-        home: Harbor(
-          top: const <HarborDock>[HarborDock.pier(child: SizedBox(width: double.infinity, height: 50))],
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+        home: HarborFrame(
+          top: const <HarborBar>[HarborBar.overlay(child: SizedBox(width: double.infinity, height: 50))],
           body: Builder(
             builder: (final BuildContext context) {
               page = context;
@@ -80,9 +88,9 @@ void main() {
       ),
       device: HarborTrialDevice.dualScreenCover,
     );
-    HarborFlares.raise(
+    HarborToasts.show(
       page,
-      slot: HarborFlareSlot.low,
+      slot: HarborToastSlot.low,
       duration: null,
       builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 100, height: 30),
     );

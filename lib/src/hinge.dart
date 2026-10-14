@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Which hinges and folds across a foldable's screen harbor keeps things off: a sheet or dialog
-/// opens on one side of them, and a flare or buoy keeps to the side that holds it. Modelled on
+/// opens on one side of them, and a toast or float keeps to the side that holds it. Modelled on
 /// Material 3's `HingePolicy`.
 ///
-/// Set the app's default on `HarborSea(hinge:)`, a page's on `Harbor(hinge:)`, and one overlay's
-/// on `showHarborSheet(hinge:)`, `showHarborDialog(hinge:)`, `HarborFlares.raise(hinge:)` or
-/// `HarborBuoy(hinge:)`. The nearest wins. It is a policy, not a change to the screen:
+/// Set the app's default on `HarborRoot(hinge:)`, a page's on `HarborFrame(hinge:)`, and one overlay's
+/// on `showHarborSheet(hinge:)`, `showHarborDialog(hinge:)`, `HarborToasts.show(hinge:)` or
+/// `HarborFloat(hinge:)`. The nearest wins. It is a policy, not a change to the screen:
 /// `MediaQuery.displayFeatures` is left as the platform reports it for everything else, so a
 /// two-pane layout or a video player beneath still sees the hinge.
 enum HarborHinge {
@@ -28,10 +28,10 @@ enum HarborHinge {
   always,
 
   /// Keeps off nothing: the inner screen is one wide, unbroken screen, and sheets, dialogs,
-  /// flares and buoys run across the crease. Use it for an extended canvas, a map or a drawing.
+  /// toasts and floats run across the crease. Use it for an extended canvas, a map or a drawing.
   never;
 
-  /// The policy at [context]: the nearest `Harbor(hinge:)` or `HarborSea(hinge:)` above it, or
+  /// The policy at [context]: the nearest `HarborFrame(hinge:)` or `HarborRoot(hinge:)` above it, or
   /// [avoidSeparating] with neither.
   static HarborHinge of(final BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<HarborHingeScope>()?.hinge ?? HarborHinge.avoidSeparating;
@@ -49,7 +49,8 @@ enum HarborHinge {
   ];
 
   bool _keepsOff(final DisplayFeature feature) => switch (this) {
-    HarborHinge.avoidSeparating => feature.bounds.shortestSide > 0 || feature.state == DisplayFeatureState.postureHalfOpened,
+    HarborHinge.avoidSeparating =>
+      feature.bounds.shortestSide > 0 || feature.state == DisplayFeatureState.postureHalfOpened,
     HarborHinge.avoidOccluding => feature.type == DisplayFeatureType.hinge && feature.bounds.shortestSide > 0,
     HarborHinge.always => true,
     HarborHinge.never => false,
@@ -57,7 +58,8 @@ enum HarborHinge {
 
   /// [mediaQuery] with its display features cut down to the ones this policy keeps off, for a
   /// `DisplayFeatureSubScreen` to choose a side of the screen by.
-  MediaQueryData splitting(final MediaQueryData mediaQuery) => mediaQuery.copyWith(displayFeatures: keptOff(mediaQuery.displayFeatures));
+  MediaQueryData splitting(final MediaQueryData mediaQuery) =>
+      mediaQuery.copyWith(displayFeatures: keptOff(mediaQuery.displayFeatures));
 }
 
 /// How a foldable is held, from its fold: open flat, half open on a table, or half open like a

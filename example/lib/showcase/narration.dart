@@ -2,7 +2,13 @@ import 'narration.g.dart';
 
 /// One spoken line of the showcase, placed on its timeline by `tool/narrate.py`.
 class NarrationLine {
-  const NarrationLine({required this.chapter, required this.text, required this.start, required this.duration, required this.words});
+  const NarrationLine({
+    required this.chapter,
+    required this.text,
+    required this.start,
+    required this.duration,
+    required this.words,
+  });
 
   final String chapter;
   final String text;
@@ -36,7 +42,8 @@ class NarrationScript {
   /// When the voiceover ends, tail included.
   final double end;
 
-  List<NarrationLine> of(final String chapter) => lines.where((final NarrationLine line) => line.chapter == chapter).toList();
+  List<NarrationLine> of(final String chapter) =>
+      lines.where((final NarrationLine line) => line.chapter == chapter).toList();
 
   /// The chapters in the order they play.
   List<String> get chapters {
