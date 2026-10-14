@@ -5,30 +5,30 @@ import 'controller.dart';
 import 'dock.dart';
 import 'edge.dart';
 
-/// Asks the docks on [edge] to make way while [active]: to go dark (keep their
-/// ground) or withdraw (give it back). For a panel that takes over the bottom
+/// Asks the bars on [edge] to hide while [active]: to go dark (keep their
+/// space) or withdraw (give it back). For a panel that takes over the bottom
 /// edge, or lyrics that need the whole screen.
 ///
-/// The claim goes to the nearest harbor above, from the closest outward, that
-/// has a dock on [edge], and is counted: the dock comes back only once every
+/// The claim goes to the nearest frame above, from the closest outward, that
+/// has a bar on [edge], and is counted: the bar comes back only once every
 /// claim on it is released. It is released when this widget leaves the tree.
 ///
-/// A claim taken while the tree is being built reaches the harbor on the next
-/// frame: the harbor sits above this widget and has already been built in this
-/// one, so for one frame the dock is still in place and everything reads the
-/// old padding. Then the dock goes, or slides out over its duration. To make
-/// way in the frame a mode starts, take the claim where the mode starts, in
-/// the tap that opens it, with `Harbor.of(context).makeWay(edge)`, and release
-/// it when the mode ends; a claim taken outside a build is applied in the next
-/// frame drawn. A page that opens with the dock already gone builds the dock
-/// with `state: HarborDockState.withdrawn` instead.
+/// A claim taken while the tree is being built reaches the frame in the next
+/// frame drawn: the frame sits above this widget and has already been built in
+/// this one, so for one frame drawn the bar is still in place and everything
+/// reads the old padding. Then the bar goes, or slides out over its duration. To
+/// hide it in the frame drawn as a mode starts, take the claim where the mode
+/// starts, in the tap that opens it, with `HarborFrame.of(context).hideBar(edge)`,
+/// and release it when the mode ends; a claim taken outside a build is applied
+/// in the next frame drawn. A page that opens with the bar already gone builds
+/// the bar with `state: HarborBarState.withdrawn` instead.
 ///
 /// See also:
 ///
-///  * [Visibility] with `maintainSize`, which a dark dock behaves like. Flutter has no way to ask a
-///    `Scaffold`'s bars to make way from inside its body.
-class HarborMakeWay extends StatefulWidget {
-  const HarborMakeWay({
+///  * [Visibility] with `maintainSize`, which a dark bar behaves like. Flutter has no way to ask a
+///    `Scaffold`'s bars to hide from inside its body.
+class HarborHideBar extends StatefulWidget {
+  const HarborHideBar({
     super.key,
     required this.edge,
     this.mode = HarborYield.withdraw,
@@ -42,7 +42,7 @@ class HarborMakeWay extends StatefulWidget {
   final Widget child;
 
   @override
-  State<HarborMakeWay> createState() => _HarborMakeWayState();
+  State<HarborHideBar> createState() => _HarborMakeWayState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -53,7 +53,7 @@ class HarborMakeWay extends StatefulWidget {
   }
 }
 
-class _HarborMakeWayState extends State<HarborMakeWay> {
+class _HarborMakeWayState extends State<HarborHideBar> {
   HarborClaim? _claim;
 
   @override
@@ -63,7 +63,7 @@ class _HarborMakeWayState extends State<HarborMakeWay> {
   }
 
   @override
-  void didUpdateWidget(final HarborMakeWay oldWidget) {
+  void didUpdateWidget(final HarborHideBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.edge != widget.edge || oldWidget.mode != widget.mode || oldWidget.active != widget.active) {
       _claim?.release();
@@ -81,7 +81,7 @@ class _HarborMakeWayState extends State<HarborMakeWay> {
     if (_claim != null) {
       return;
     }
-    _claim = HarborController.maybeOf(context)?.makeWay(widget.edge, mode: widget.mode);
+    _claim = HarborController.maybeOf(context)?.hideBar(widget.edge, mode: widget.mode);
   }
 
   @override
@@ -94,45 +94,59 @@ class _HarborMakeWayState extends State<HarborMakeWay> {
   Widget build(final BuildContext context) => widget.child;
 }
 
-/// A pontoon: a dock moored to the nearest harbor from deeper in the tree,
-/// for a bar that belongs to the content rather than to the page (an unsaved
-/// changes bar, a hint, a floating pill). It joins the docks on [edge],
-/// innermost, measured and stacked like any other, and leaves when this widget
-/// does. It is built where the harbor's docks are, so it sees the harbor's
-/// inherited widgets, not this widget's.
+/// A bar attached to the nearest frame from deeper in the tree, for a bar that
+/// belongs to the content rather than to the page (an unsaved changes bar, a
+/// hint, a floating pill). It joins the bars on [edge], innermost, measured and
+/// stacked like any other, and leaves when this widget does. It is built where
+/// the frame's bars are, so it sees the frame's inherited widgets, not this
+/// widget's.
 ///
-/// A pontoon joins on the frame after it arrives, and its content follows
-/// changes a frame behind.
+/// An attached bar joins in the frame drawn after it arrives, and its content
+/// follows changes a drawn frame behind.
 ///
 /// See also:
 ///
 ///  * `ScaffoldState.showBottomSheet`, which also puts a widget into an ancestor's frame from deep in
 ///    the tree.
-class HarborPontoon extends StatefulWidget {
-  const HarborPontoon({super.key, required this.edge, required this.dock, this.active = true, required this.child});
+class HarborAttachedBar extends StatefulWidget {
+  const HarborAttachedBar({
+    super.key,
+    required this.edge,
+    final HarborBar? bar,
+    @Deprecated('Renamed bar. `dart fix` applies it.') final HarborBar? dock,
+    this.active = true,
+    required this.child,
+  }) : assert(bar != null || dock != null, 'bar is required.'),
+       bar = bar ?? dock ?? const HarborBar.reserve(extent: 0.0);
 
   final HarborEdge edge;
-  final HarborDock dock;
+
+  /// The bar to attach.
+  final HarborBar bar;
+
+  /// The old name of [bar].
+  @Deprecated('Renamed bar. `dart fix` applies it.')
+  HarborBar get dock => bar;
   final bool active;
 
-  /// The content this pontoon belongs to. Built in place.
+  /// The content this bar belongs to. Built in place.
   final Widget child;
 
   @override
-  State<HarborPontoon> createState() => _HarborPontoonState();
+  State<HarborAttachedBar> createState() => _HarborPontoonState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(EnumProperty<HarborEdge>('edge', edge));
-    properties.add(DiagnosticsProperty<HarborDock>('dock', dock));
+    properties.add(DiagnosticsProperty<HarborBar>('bar', bar));
     properties.add(FlagProperty('active', value: active, ifFalse: 'inactive'));
   }
 }
 
-class _HarborPontoonState extends State<HarborPontoon> {
+class _HarborPontoonState extends State<HarborAttachedBar> {
   HarborController? _controller;
-  HarborPontoonHandle? _handle;
+  HarborAttachedBarHandle? _handle;
 
   @override
   void didChangeDependencies() {
@@ -146,7 +160,7 @@ class _HarborPontoonState extends State<HarborPontoon> {
   }
 
   @override
-  void didUpdateWidget(final HarborPontoon oldWidget) {
+  void didUpdateWidget(final HarborAttachedBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     _sync();
   }
@@ -160,18 +174,18 @@ class _HarborPontoonState extends State<HarborPontoon> {
       _remove();
       return;
     }
-    final HarborPontoonHandle? handle = _handle;
+    final HarborAttachedBarHandle? handle = _handle;
     if (handle == null) {
-      _handle = controller.addPontoon(widget.edge, widget.dock);
+      _handle = controller.attachBar(widget.edge, widget.bar);
     } else {
-      controller.updatePontoon(handle, widget.edge, widget.dock);
+      controller.updateAttachedBar(handle, widget.edge, widget.bar);
     }
   }
 
   void _remove() {
-    final HarborPontoonHandle? handle = _handle;
+    final HarborAttachedBarHandle? handle = _handle;
     if (handle != null) {
-      _controller?.removePontoon(handle);
+      _controller?.detachBar(handle);
       _handle = null;
     }
   }

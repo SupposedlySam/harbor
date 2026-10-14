@@ -1,8 +1,9 @@
-/// A harbor for your widgets.
+/// Every edge of the screen, claimed once.
 ///
-/// Docks claim the edges of the screen. Everything else moors clear of them,
-/// sails under them, or is open water, and the tide (the keyboard) rises over
-/// whatever doesn't float.
+/// Each edge is claimed once, by the layer that owns it, and everything inside
+/// gets what is left. Bars claim the edges. Content keeps clear of them, runs
+/// under them, or reads the room itself, and the keyboard rises over whatever
+/// does not ride it.
 library;
 
 export 'src/buoy.dart'
@@ -11,29 +12,30 @@ export 'src/buoy.dart'
         HarborAnchorClip,
         HarborAnchorPoint,
         HarborBuoy,
-        HarborPortalBuoy,
+        HarborFloat,
+        HarborPopover,
         HarborFlarePolicy,
-        HarborFlareSlot,
-        HarborFlareTarget,
-        HarborFlares;
+        HarborToastSlot,
+        HarborToastTarget,
+        HarborToasts;
 export 'src/chart.dart';
 export 'src/coast.dart';
 export 'src/controller.dart'
     show
-        HarborBreakwater,
+        HarborPageCover,
         HarborClaim,
         HarborController,
-        HarborDockRecord,
-        HarborFleet,
-        HarborFleetObserver,
+        HarborBarRecord,
+        HarborFrameRegistry,
+        HarborFrameObserver,
         HarborLayoutRecord,
-        HarborPontoonHandle,
-        HarborFlareClosedReason,
-        HarborFlareEntry,
-        HarborFlareHold,
-        HarborFlarePhase,
-        HarborFlareQueue,
-        HarborFlareTransitionBuilder,
+        HarborAttachedBarHandle,
+        HarborToastClosedReason,
+        HarborToastEntry,
+        HarborToastHold,
+        HarborToastPhase,
+        HarborToastQueue,
+        HarborToastTransitionBuilder,
         HarborYield;
 export 'src/deprecated.dart';
 export 'src/dialog.dart';
@@ -52,6 +54,21 @@ export 'src/render_harbor.dart' show HarborSizing;
 export 'src/scale_model.dart';
 export 'src/sheet.dart' hide HarborNonModalSheetActions, HarborPageSheetHost;
 export 'src/sticky.dart';
-export 'src/tide.dart' show HarborDryDock, HarborTide, HarborTidePhase, HarborTideSource, HarborTideStance, HarborTideState;
-export 'src/wake.dart' show HarborRest, HarborWake, HarborWakeKind, HarborWakeMask, HarborWakePainter, harborAlphaWake;
-export 'src/waters.dart' show HarborCastOff, HarborWakeBand, HarborWaters, HarborWatersAspect, HarborWatersData;
+export 'src/tide.dart'
+    show
+        HarborKeyboardSpace,
+        HarborKeyboard,
+        HarborKeyboardPhase,
+        HarborKeyboardSource,
+        HarborKeyboardStance,
+        HarborKeyboardState;
+export 'src/wake.dart'
+    show
+        HarborRest,
+        HarborEdgeEffect,
+        HarborWake,
+        HarborEdgeEffectKind,
+        HarborFadeMask,
+        HarborEdgeEffectPainter,
+        harborAlphaWake;
+export 'src/waters.dart' show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData;

@@ -51,7 +51,10 @@ class HarborSheetExtent with Diagnosticable {
   /// Whether reaching [min] closes the sheet. Off, the sheet rests at its floor.
   final bool shouldCloseOnMinExtent;
 
-  List<double> get _snaps => <double>{...(snapSizes ?? <double>[rest]), max}.toList()..sort();
+  List<double> get _snaps => <double>{
+    ...(snapSizes ?? <double>[rest]),
+    max,
+  }.toList()..sort();
 
   @override
   bool operator ==(final Object other) =>
@@ -78,16 +81,18 @@ class HarborSheetExtent with Diagnosticable {
     properties.add(PercentProperty('min', min, level: min == 0.25 ? DiagnosticLevel.fine : DiagnosticLevel.info));
     properties.add(FlagProperty('snap', value: snap, ifFalse: 'no snapping'));
     properties.add(IterableProperty<double>('snapSizes', snapSizes, defaultValue: null));
-    properties.add(FlagProperty('shouldCloseOnMinExtent', value: shouldCloseOnMinExtent, ifFalse: 'stays open at its floor'));
+    properties.add(
+      FlagProperty('shouldCloseOnMinExtent', value: shouldCloseOnMinExtent, ifFalse: 'stays open at its floor'),
+    );
   }
 }
 
-/// A sheet's surface: a new port with its own docks. Its header is a pier the
-/// body sails under, with a wake; its footer is a quay that floats on the
-/// tide and keeps [footerMinimum] above the screen's edge on a phone with no
+/// A sheet's surface: a new page frame with its own bars. Its header is an overlay bar the
+/// body scrolls under, with an edge effect; its footer is a solid bar that rides the
+/// keyboard and keeps [footerMinimum] above the screen's edge on a phone with no
 /// home indicator. Neither is given a height: both are measured.
 ///
-/// The sheet keeps the coast at the bottom (the home indicator), so its footer
+/// The sheet keeps the system edge at the bottom (the home indicator), so its footer
 /// clears it once and nothing else in it has to.
 ///
 /// See also:
@@ -102,20 +107,30 @@ class HarborSheet extends StatelessWidget {
     this.footer,
     required Widget this.body,
     this.surface,
-    this.headerWake = const HarborWake.fade(length: 12.0),
-    this.footerWake = const HarborWake.hairline(),
+    final HarborEdgeEffect headerEdgeEffect = const HarborEdgeEffect.fade(length: 12.0),
+    @Deprecated('Renamed headerEdgeEffect. `dart fix` applies it.') final HarborEdgeEffect? headerWake,
+    final HarborEdgeEffect footerEdgeEffect = const HarborEdgeEffect.hairline(),
+    @Deprecated('Renamed footerEdgeEffect. `dart fix` applies it.') final HarborEdgeEffect? footerWake,
     this.footerMinimum = 16.0,
-    this.footerTide = HarborTideStance.float,
+    final HarborKeyboardStance footerKeyboard = HarborKeyboardStance.rides,
+    @Deprecated('Renamed footerKeyboard. `dart fix` applies it.') final HarborKeyboardStance? footerTide,
     this.maxExtentFraction = 0.9,
     this.debugLabel,
     this.contentBuilder,
     this.clip,
     this.dragToClose = false,
     this.closeFlingVelocity = 700.0,
-    this.clearsTopCoast = true,
+    final bool clearsTopSystemEdge = true,
+    @Deprecated('Renamed clearsTopSystemEdge. `dart fix` applies it.') final bool? clearsTopCoast,
     this.clearsSides = false,
-    this.bodyClearsTide = true,
-  }) : assert(closeFlingVelocity >= 0.0),
+    final bool bodyClearsKeyboard = true,
+    @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it.') final bool? bodyClearsTide,
+  }) : headerEdgeEffect = headerWake ?? headerEdgeEffect,
+       footerEdgeEffect = footerWake ?? footerEdgeEffect,
+       footerKeyboard = footerTide ?? footerKeyboard,
+       clearsTopSystemEdge = clearsTopCoast ?? clearsTopSystemEdge,
+       bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
+       assert(closeFlingVelocity >= 0.0),
        builder = null,
        extent = null,
        controller = null,
@@ -123,7 +138,7 @@ class HarborSheet extends StatelessWidget {
 
   /// A sheet whose content is a list: it rests at [extent]'s rest height, drags
   /// to its ceiling, and closes when dragged below its floor. [builder] must
-  /// give its fairway the controller it is handed, so dragging the list drags
+  /// give its scroll view the controller it is handed, so dragging the list drags
   /// the sheet.
   ///
   /// A [controller] reads and moves the sheet from outside it: a share sheet
@@ -138,18 +153,28 @@ class HarborSheet extends StatelessWidget {
     this.controller,
     this.expand = true,
     this.surface,
-    this.headerWake = const HarborWake.fade(length: 12.0),
-    this.footerWake = const HarborWake.hairline(),
+    final HarborEdgeEffect headerEdgeEffect = const HarborEdgeEffect.fade(length: 12.0),
+    @Deprecated('Renamed headerEdgeEffect. `dart fix` applies it.') final HarborEdgeEffect? headerWake,
+    final HarborEdgeEffect footerEdgeEffect = const HarborEdgeEffect.hairline(),
+    @Deprecated('Renamed footerEdgeEffect. `dart fix` applies it.') final HarborEdgeEffect? footerWake,
     this.footerMinimum = 16.0,
-    this.footerTide = HarborTideStance.float,
+    final HarborKeyboardStance footerKeyboard = HarborKeyboardStance.rides,
+    @Deprecated('Renamed footerKeyboard. `dart fix` applies it.') final HarborKeyboardStance? footerTide,
     this.debugLabel,
     this.contentBuilder,
     this.clip,
     this.closeFlingVelocity = 700.0,
-    this.clearsTopCoast = true,
+    final bool clearsTopSystemEdge = true,
+    @Deprecated('Renamed clearsTopSystemEdge. `dart fix` applies it.') final bool? clearsTopCoast,
     this.clearsSides = false,
-    this.bodyClearsTide = true,
-  }) : assert(closeFlingVelocity >= 0.0),
+    final bool bodyClearsKeyboard = true,
+    @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it.') final bool? bodyClearsTide,
+  }) : headerEdgeEffect = headerWake ?? headerEdgeEffect,
+       footerEdgeEffect = footerWake ?? footerEdgeEffect,
+       footerKeyboard = footerTide ?? footerKeyboard,
+       clearsTopSystemEdge = clearsTopCoast ?? clearsTopSystemEdge,
+       bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
+       assert(closeFlingVelocity >= 0.0),
        body = null,
        maxExtentFraction = null,
        dragToClose = false;
@@ -171,10 +196,22 @@ class HarborSheet extends StatelessWidget {
 
   /// Painted under the whole sheet: its color and corners.
   final Widget? surface;
-  final HarborWake headerWake;
-  final HarborWake footerWake;
+  final HarborEdgeEffect headerEdgeEffect;
+
+  /// The old name of [headerEdgeEffect].
+  @Deprecated('Renamed headerEdgeEffect. `dart fix` applies it.')
+  HarborEdgeEffect get headerWake => headerEdgeEffect;
+  final HarborEdgeEffect footerEdgeEffect;
+
+  /// The old name of [footerEdgeEffect].
+  @Deprecated('Renamed footerEdgeEffect. `dart fix` applies it.')
+  HarborEdgeEffect get footerWake => footerEdgeEffect;
   final double footerMinimum;
-  final HarborTideStance footerTide;
+  final HarborKeyboardStance footerKeyboard;
+
+  /// The old name of [footerKeyboard].
+  @Deprecated('Renamed footerKeyboard. `dart fix` applies it.')
+  HarborKeyboardStance get footerTide => footerKeyboard;
   final double? maxExtentFraction;
   final String? debugLabel;
 
@@ -219,57 +256,75 @@ class HarborSheet extends StatelessWidget {
   /// and from the lowest to the floor, which closes the sheet, at any speed.
   final double closeFlingVelocity;
 
-  /// Whether the header and body clear the top coast (the status bar) the
-  /// sheet is handed. False leaves the sheet where it is and casts the top
-  /// coast off for its content, which reads zero there: a header that paints
+  /// Whether the header and body clear the top system edge (the status bar) the
+  /// sheet is handed. False leaves the sheet where it is and marks the top
+  /// system edge handled for its content, which reads zero there: a header that paints
   /// under the status bar and pads its own title, or a body that runs to the
   /// top of a sheet capped at a fraction of the screen.
   ///
-  /// It only matters for a sheet opened with `showHarborSheet(keepsTopCoast: true)`.
+  /// It only matters for a sheet opened with `showHarborSheet(reachesTop: true)`.
   /// Otherwise the sheet stops short of the status bar and is handed no top
-  /// coast, so there is nothing to clear. `keepsTopCoast` decides how far up
+  /// system edge, so there is nothing to clear. `reachesTop` decides how far up
   /// the sheet may reach; this decides whether its content pads for what is
   /// up there.
-  final bool clearsTopCoast;
+  final bool clearsTopSystemEdge;
 
-  /// Whether the header, body and footer clear the coast on the left and right
-  /// (a phone's notch in landscape, a cutout on a side edge) and cast it off,
+  /// The old name of [clearsTopSystemEdge].
+  @Deprecated('Renamed clearsTopSystemEdge. `dart fix` applies it.')
+  bool get clearsTopCoast => clearsTopSystemEdge;
+
+  /// Whether the header, body and footer clear the system edges on the left and right
+  /// (a phone's notch in landscape, a cutout on a side edge) and mark them handled,
   /// so content beneath does not clear it again. The [surface] still runs edge
   /// to edge.
   ///
   /// Off by default, as `showModalBottomSheet`'s `useSafeArea` is: the header
-  /// and footer then run the sheet's full width and are handed the side coast
-  /// in `MediaQuery.padding`, as is the body, which clears it where it moors.
+  /// and footer then run the sheet's full width and are handed the side system edges
+  /// in `MediaQuery.padding`, as is the body, which clears them where it uses a [HarborClear].
   /// Material's `useSafeArea` (`ModalBottomSheetRoute.useSafeArea`, in the
   /// Flutter SDK's `packages/flutter/lib/src/material/bottom_sheet.dart`) wraps
   /// the whole sheet in a `SafeArea(bottom: false)`, surface and top included;
   /// this insets only what is over the surface, and only the sides.
   final bool clearsSides;
 
-  /// Whether the sheet keeps its body above the keyboard, as [Harbor.bodyClearsTide] does a
+  /// Whether the sheet keeps its body above the keyboard, as [HarborFrame.bodyClearsKeyboard] does a
   /// page's. True by default: the body ends at the keyboard and the sheet's height is capped by
   /// the space above it.
   ///
   /// False leaves the keyboard to the body, for a sheet that manages it itself: a toolbar that
   /// holds a keyboard-sized space so nothing jumps when a field takes focus, or an inspector the
   /// keyboard may cover while something above it is edited. The body then runs under the
-  /// keyboard and reads it in `MediaQuery.viewInsets`, a [HarborTideStance.float] footer still
+  /// keyboard and reads it in `MediaQuery.viewInsets`, a [HarborKeyboardStance.rides] footer still
   /// rides up on it, and [maxExtentFraction] (or a draggable sheet's extents) is a share of the
   /// whole height, the keyboard included.
-  final bool bodyClearsTide;
+  final bool bodyClearsKeyboard;
+
+  /// The old name of [bodyClearsKeyboard].
+  @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it.')
+  bool get bodyClearsTide => bodyClearsKeyboard;
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<HarborSheetExtent>('extent', extent, defaultValue: null));
     properties.add(
-      DiagnosticsProperty<HarborWake>('headerWake', headerWake, defaultValue: const HarborWake.fade(length: 12.0)),
+      DiagnosticsProperty<HarborEdgeEffect>(
+        'headerEdgeEffect',
+        headerEdgeEffect,
+        defaultValue: const HarborEdgeEffect.fade(length: 12.0),
+      ),
     );
     properties.add(
-      DiagnosticsProperty<HarborWake>('footerWake', footerWake, defaultValue: const HarborWake.hairline()),
+      DiagnosticsProperty<HarborEdgeEffect>(
+        'footerEdgeEffect',
+        footerEdgeEffect,
+        defaultValue: const HarborEdgeEffect.hairline(),
+      ),
     );
     properties.add(DoubleProperty('footerMinimum', footerMinimum, defaultValue: 16.0));
-    properties.add(EnumProperty<HarborTideStance>('footerTide', footerTide, defaultValue: HarborTideStance.float));
+    properties.add(
+      EnumProperty<HarborKeyboardStance>('footerKeyboard', footerKeyboard, defaultValue: HarborKeyboardStance.rides),
+    );
     properties.add(
       PercentProperty(
         'maxExtentFraction',
@@ -282,9 +337,11 @@ class HarborSheet extends StatelessWidget {
     properties.add(DiagnosticsProperty<ShapeBorder>('clip', clip, defaultValue: null));
     properties.add(FlagProperty('dragToClose', value: dragToClose, ifTrue: 'drag to close'));
     properties.add(DoubleProperty('closeFlingVelocity', closeFlingVelocity, defaultValue: 700.0, unit: 'px/s'));
-    properties.add(FlagProperty('clearsTopCoast', value: clearsTopCoast, ifFalse: 'casts off the top coast'));
+    properties.add(
+      FlagProperty('clearsTopSystemEdge', value: clearsTopSystemEdge, ifFalse: 'casts off the top systemEdges'),
+    );
     properties.add(FlagProperty('clearsSides', value: clearsSides, ifTrue: 'clears the sides'));
-    properties.add(FlagProperty('bodyClearsTide', value: bodyClearsTide, ifFalse: 'body under the keyboard'));
+    properties.add(FlagProperty('bodyClearsKeyboard', value: bodyClearsKeyboard, ifFalse: 'body under the keyboard'));
   }
 
   /// Closes the sheet [context] is in, whichever way it was opened, and
@@ -305,21 +362,21 @@ class HarborSheet extends StatelessWidget {
   }
 
   Widget _harbor(final Widget body, {required final bool hug, final Widget? header}) {
-    Widget port = Harbor(
-      newPort: true,
-      bodyClearsTide: bodyClearsTide,
+    Widget port = HarborFrame(
+      isPage: true,
+      bodyClearsKeyboard: bodyClearsKeyboard,
       sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
       maxExtentFraction: hug ? maxExtentFraction : null,
       debugLabel: debugLabel ?? 'sheet',
-      top: <HarborDock>[
+      top: <HarborBar>[
         if ((header ?? this.header) != null)
-          HarborDock.pier(wake: headerWake, debugLabel: 'sheet header', child: (header ?? this.header)!),
+          HarborBar.overlay(edgeEffect: headerEdgeEffect, debugLabel: 'sheet header', child: (header ?? this.header)!),
       ],
-      bottom: <HarborDock>[
+      bottom: <HarborBar>[
         if (footer != null)
-          HarborDock.quay(
-            tide: footerTide,
-            wake: footerWake,
+          HarborBar.solid(
+            keyboard: footerKeyboard,
+            edgeEffect: footerEdgeEffect,
             minimum: footerMinimum,
             debugLabel: 'sheet footer',
             child: footer!,
@@ -327,22 +384,22 @@ class HarborSheet extends StatelessWidget {
       ],
       body: body,
     );
-    if (!clearsTopCoast) {
-      // The coast alone: the sheet keeps the height keepsTopCoast gave it, and its new port is
-      // handed no status bar to clear. The mooring line stays. The sheet still reaches under the
-      // status bar, so its port keeps it out of its clear water, where flares and buoys go.
+    if (!clearsTopSystemEdge) {
+      // The system edges alone: the sheet keeps the height reachesTop gave it, and its new page frame
+      // is handed no status bar to clear. The margin stays. The sheet still reaches under the
+      // status bar, so its page frame keeps it out of its room, where toasts and floats go.
       final Widget content = port;
       port = Builder(
         builder: (final BuildContext context) => HarborClearWaterFloor(
           floor: EdgeInsetsDirectional.only(top: MediaQuery.paddingOf(context).top),
-          child: HarborCastOff(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: content),
+          child: HarborHandled(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: content),
         ),
       );
     }
     if (clearsSides) {
-      // Moored to the side coast alone, inside the surface, so the surface still runs edge to edge
-      // and the new port beneath is handed no side coast. The mooring line stays.
-      port = HarborMoored(edges: HarborEdge.horizontal, bars: false, tide: false, child: port);
+      // Clear of the side system edges alone, inside the surface, so the surface still runs edge to
+      // edge and the new page frame beneath is handed no side system edges. The margin stays.
+      port = HarborClear(edges: HarborEdge.horizontal, bars: false, keyboard: false, child: port);
     }
     return port;
   }
@@ -366,7 +423,9 @@ class HarborSheet extends StatelessWidget {
       }
       throw FlutterError.fromParts(<DiagnosticsNode>[
         ErrorSummary('HarborSheet(dragToClose: true) was built outside a sheet that showHarborSheet opened.'),
-        ErrorDescription('Dragging to close needs the sheet showHarborSheet opened to close, and none is above this HarborSheet.'),
+        ErrorDescription(
+          'Dragging to close needs the sheet showHarborSheet opened to close, and none is above this HarborSheet.',
+        ),
         ErrorHint(
           'Open the sheet with showHarborSheet, or pass dragToClose: false where the HarborSheet is shown some other way, '
           'such as inside a page or a dialog.',
@@ -377,7 +436,8 @@ class HarborSheet extends StatelessWidget {
     return GestureDetector(
       onVerticalDragStart: (final DragStartDetails _) => host?.host.dragStart(),
       onVerticalDragUpdate: (final DragUpdateDetails details) => host?.host.dragBy(details.primaryDelta ?? 0.0),
-      onVerticalDragEnd: (final DragEndDetails details) => host?.host.dragEnd(details.primaryVelocity ?? 0.0, closeFlingVelocity),
+      onVerticalDragEnd: (final DragEndDetails details) =>
+          host?.host.dragEnd(details.primaryVelocity ?? 0.0, closeFlingVelocity),
       child: sheet,
     );
   }
@@ -507,7 +567,7 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
         return _draggable(host);
       },
     );
-    if (!widget.sheet.bodyClearsTide) {
+    if (!widget.sheet.bodyClearsKeyboard) {
       // The body manages the keyboard: the extents are of the whole height, and the keyboard
       // stays in the body's view insets.
       return sheet;
@@ -659,11 +719,11 @@ class HarborSheetController extends ChangeNotifier {
   }
 }
 
-/// Opens [builder]'s sheet (usually a [HarborSheet]) over [context]'s harbor.
+/// Opens [builder]'s sheet (usually a [HarborSheet]) over [context]'s frame.
 ///
-/// With [breakwater] set, the sheet reports how far it covers the bottom of
-/// the harbor that opened it, animated as it slides in and out and as it is
-/// dragged, and that harbor's content keeps clear of it: a fairway's last row
+/// With [coversPage] set, the sheet reports how far it covers the bottom of
+/// the frame that opened it, animated as it slides in and out and as it is
+/// dragged, and that frame's content keeps clear of it: a scroll view's last row
 /// stays reachable, a lifted canvas element stays in sight.
 ///
 /// A sheet with a barrier is a route, as a modal bottom sheet is: [routeSettings]
@@ -685,7 +745,7 @@ class HarborSheetController extends ChangeNotifier {
 /// freely between it and the page. It is a [FocusScope] of its own, as a route
 /// is, so Tab goes through the sheet in order and then on to the page, and Escape
 /// (a [DismissIntent]) closes it, as back does, from focus in the sheet or in a
-/// harbor on the page that opened it.
+/// frame on the page that opened it.
 ///
 /// [requestFocus] is whether the sheet takes focus when it opens, as
 /// [Route.requestFocus]. Left null, a sheet that is a route follows
@@ -703,13 +763,13 @@ class HarborSheetController extends ChangeNotifier {
 /// [anchorPoint] picks the screen a sheet opens on, on a device with a hinge:
 /// the one nearest it, as for [DisplayFeatureSubScreen]. With
 /// [fillsScreenAtHinge], a sheet a hinge keeps to one screen fills that screen
-/// top to bottom, keeping the status bar as its top coast, as Microsoft
+/// top to bottom, keeping the status bar as its top system edge, as Microsoft
 /// suggests for a partial overlay on a dual-screen device; with no hinge it
 /// changes nothing. [hinge] is which hinges and folds it keeps off.
 ///
-/// With [keepsTopCoast], the sheet may reach the top of the screen rather than
+/// With [reachesTop], the sheet may reach the top of the screen rather than
 /// stopping short of the status bar, and its content is handed the status bar
-/// to clear. [HarborSheet.clearsTopCoast] false keeps that height and casts the
+/// to clear. [HarborSheet.clearsTopSystemEdge] false keeps that height and casts the
 /// status bar off for content that pads for it itself.
 ///
 /// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
@@ -736,7 +796,8 @@ class HarborSheetController extends ChangeNotifier {
 Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
-  final bool breakwater = false,
+  final bool coversPage = false,
+  @Deprecated('Renamed coversPage. `dart fix` applies it.') final bool? breakwater,
   final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
   final bool isDismissible = true,
   final Color barrierColor = const Color(0x80000000),
@@ -744,7 +805,8 @@ Future<T?> showHarborSheet<T>(
   final bool useRootNavigator = false,
   final Offset? anchorPoint,
   final bool? requestFocus,
-  final bool keepsTopCoast = false,
+  final bool reachesTop = false,
+  @Deprecated('Renamed reachesTop. `dart fix` applies it.') final bool? keepsTopCoast,
   final RouteSettings? routeSettings,
   final String? barrierLabel,
   final AnimationStyle? sheetAnimationStyle,
@@ -765,9 +827,9 @@ Future<T?> showHarborSheet<T>(
     // `Theme.of(context)` in a sheet's builder read the navigator's theme, not the page's.
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
     maxWidth: maxWidth,
-    keepsTopCoast: keepsTopCoast,
+    reachesTop: keepsTopCoast ?? reachesTop,
     anchorPoint: anchorPoint,
-    presenter: breakwater ? presenter : null,
+    presenter: (breakwater ?? coversPage) ? presenter : null,
     animationStyle: sheetAnimationStyle,
     controller: controller,
     scopesRoute: barrier != HarborSheetBarrier.none,
@@ -779,7 +841,7 @@ Future<T?> showHarborSheet<T>(
     final OverlayState overlay = navigator.overlay!;
     // A non-modal sheet lives in the navigator's overlay, not in a route of its own, so it is tied
     // to the page's route by hand: back closes it first, it hides while another page is on top,
-    // and it leaves when its page does. It also leaves with the harbor that opened it.
+    // and it leaves when its page does. It also leaves with the frame that opened it.
     final _NonModalSheet<T> sheet = _NonModalSheet<T>(
       host: host,
       navigator: navigator,
@@ -811,7 +873,7 @@ class _SheetHost {
   _SheetHost({
     required this.builder,
     required this.maxWidth,
-    required this.keepsTopCoast,
+    required this.reachesTop,
     required this.anchorPoint,
     required this.presenter,
     required this.animationStyle,
@@ -835,7 +897,7 @@ class _SheetHost {
 
   final WidgetBuilder builder;
   final double? maxWidth;
-  final bool keepsTopCoast;
+  final bool reachesTop;
   final Offset? anchorPoint;
   final HarborController? presenter;
   final AnimationStyle? animationStyle;
@@ -844,7 +906,7 @@ class _SheetHost {
   final bool scopesRoute;
   final String? semanticLabel;
 
-  HarborBreakwater? _breakwater;
+  HarborPageCover? _breakwater;
   double _height = 0.0;
   double? _dragExtent;
   double _available = 0.0;
@@ -955,7 +1017,7 @@ class _SheetHost {
   }
 
   void attach() {
-    _breakwater ??= presenter?.addBreakwaterEdge(topInGlobal);
+    _breakwater ??= presenter?.addPageCoverEdge(topInGlobal);
     controller?._attach(this);
   }
 
@@ -979,7 +1041,7 @@ class _SheetHost {
     _paintedShown = _drawn;
     _paintedExtent = _dragExtent;
     onTopPainted?.call(top);
-    // Reported during paint now, and breakwater listeners lay out other routes, so they hear of it
+    // Reported during paint now, and page cover listeners lay out other routes, so they hear of it
     // after this frame; between paints, _moveTop keeps topInGlobal moving with the slide.
     WidgetsBinding.instance.addPostFrameCallback((final Duration _) => topInGlobal.value = top);
   }
@@ -1006,7 +1068,10 @@ class _SheetHost {
     _split = hinge.keptOff(whole.displayFeatures).isNotEmpty;
     return MediaQuery(
       data: hinge.splitting(whole),
-      child: DisplayFeatureSubScreen(anchorPoint: anchorPoint, child: Builder(builder: _build)),
+      child: DisplayFeatureSubScreen(
+        anchorPoint: anchorPoint,
+        child: Builder(builder: _build),
+      ),
     );
   }
 
@@ -1018,12 +1083,13 @@ class _SheetHost {
     // Built inside the sheet, so its context can close the sheet.
     Widget sheet = Builder(builder: builder);
     // Kept to one screen by a hinge, it may take that screen whole, as Microsoft suggests for a
-    // partial overlay on a dual-screen device: top to bottom, keeping the status bar as its coast.
+    // partial overlay on a dual-screen device: top to bottom, keeping the status bar as its system
+    // edge.
     // DisplayFeatureSubScreen places the sheet on one side with padding and leaves the size in
     // MediaQuery the whole screen's, so the split is known from the hinge, not from the size.
     final bool fills = fillsScreenAtHinge && _split;
-    final bool keepsTop = keepsTopCoast || fills;
-    // A sheet stops short of the status bar unless it keeps the top coast.
+    final bool keepsTop = reachesTop || fills;
+    // A sheet stops short of the status bar unless it keeps the top system edge.
     final double top = keepsTop ? 0.0 : mediaQuery.padding.top;
     final double height = math.max(0.0, mediaQuery.size.height - top);
     sheet = ConstrainedBox(
@@ -1034,7 +1100,13 @@ class _SheetHost {
     if (scopesRoute) {
       // As a modal bottom sheet's: the route is the sheet, so the scope is the sheet's box, not the
       // screen the barrier covers.
-      sheet = Semantics(scopesRoute: true, namesRoute: true, explicitChildNodes: true, label: semanticLabel, child: sheet);
+      sheet = Semantics(
+        scopesRoute: true,
+        namesRoute: true,
+        explicitChildNodes: true,
+        label: semanticLabel,
+        child: sheet,
+      );
     }
     return _SheetHostScope(
       host: this,
@@ -1046,11 +1118,7 @@ class _SheetHost {
           child: AnimatedBuilder(
             animation: animation,
             builder: (final BuildContext context, final Widget? child) => ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: _drawn,
-                child: child,
-              ),
+              child: Align(alignment: Alignment.topCenter, heightFactor: _drawn, child: child),
             ),
             child: _MeasureHeight(
               onHeight: measured,
@@ -1112,7 +1180,7 @@ class _RenderMeasureHeight extends RenderProxyBox {
   void performLayout() {
     super.performLayout();
     final double height = size.height;
-    // Breakwater listeners lay out other routes, so tell them after this pass.
+    // Page cover listeners lay out other routes, so tell them after this pass.
     final ValueChanged<double>? onHeight = this.onHeight;
     if (onHeight != null) {
       WidgetsBinding.instance.addPostFrameCallback((final Duration _) => onHeight(height));
@@ -1223,8 +1291,11 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
   }
 
   @override
-  Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
-      host.build(context);
+  Widget buildPage(
+    final BuildContext context,
+    final Animation<double> animation,
+    final Animation<double> secondaryAnimation,
+  ) => host.build(context);
 
   // ModalRoute's barrier, with the tap hint and semantics clip ModalBottomSheetRoute gives its own:
   // ModalRoute has no field for either.
@@ -1233,7 +1304,10 @@ class _HarborSheetRoute<T> extends PopupRoute<T> {
     if (barrierColor.a != 0 && !offstage) {
       return AnimatedModalBarrier(
         color: animation!.drive(
-          ColorTween(begin: barrierColor.withValues(alpha: 0.0), end: barrierColor).chain(CurveTween(curve: barrierCurve)),
+          ColorTween(
+            begin: barrierColor.withValues(alpha: 0.0),
+            end: barrierColor,
+          ).chain(CurveTween(curve: barrierCurve)),
         ),
         dismissible: barrierDismissible,
         semanticsLabel: barrierLabel,
@@ -1312,7 +1386,7 @@ class _NonModalSheet<T> {
       ..slide = _animation
       ..attach();
     final ModalRoute<Object?>? route = this.route;
-    // In a page with a harbor, the page hosts the sheet through an OverlayPortal, which paints it
+    // In a page with a frame, the page hosts the sheet through an OverlayPortal, which paints it
     // just above the page and below every route pushed after it: a dialog, a modal sheet or a menu
     // over the page sits over the sheet too, as over a Scaffold's persistent bottom sheet. A free
     // overlay entry could not: the navigator rearranges its overlay on every history change and
@@ -1342,7 +1416,10 @@ class _NonModalSheet<T> {
   }
 
   /// The sheet as it is drawn, by its page ([hosted]) or by an overlay entry of its own.
-  Widget build(final BuildContext context, {required final bool hosted}) => _SheetLifeline(onGone: _gone, child: _build(context, hosted: hosted));
+  Widget build(final BuildContext context, {required final bool hosted}) => _SheetLifeline(
+    onGone: _gone,
+    child: _build(context, hosted: hosted),
+  );
 
   // Torn down with the sheet still open (the navigator's whole subtree replaced, as an app does on
   // sign-out, or a test swapping the tree): nothing closed it first, so its transition, made on the
@@ -1378,7 +1455,8 @@ class _NonModalSheet<T> {
         if (!route.isActive) {
           WidgetsBinding.instance.addPostFrameCallback((final Duration _) => closeNow());
         }
-        final bool uncovered = (hosted ? route.isActive : route.isCurrent) && (route.secondaryAnimation?.isDismissed ?? true);
+        final bool uncovered =
+            (hosted ? route.isActive : route.isCurrent) && (route.secondaryAnimation?.isDismissed ?? true);
         return Visibility(visible: uncovered, maintainState: true, child: child!);
       },
       child: sheet,
@@ -1448,7 +1526,7 @@ class _NonModalSheet<T> {
 
   // The sheet's scope may hold primary focus as its entry is removed. Disposed at once, while its
   // FocusScope is still mounted, focus stayed on the disposed node and keys reached nothing: with a
-  // modal buoy under the sheet, Escape could no longer close the buoy. So focus is handed back
+  // modal float under the sheet, Escape could no longer close the float. So focus is handed back
   // first, to the scope that had it before, as a route's leaving does, and the node is disposed
   // after the frame, once its widget has left the tree. Either alone passes the test in
   // modal_buoy_test.dart; both are kept, since a FocusNode must not be disposed while still
@@ -1512,7 +1590,8 @@ class _NonModalSheetFocusState extends State<_NonModalSheetFocus> {
   }
 
   @override
-  Widget build(final BuildContext context) => FocusScope.withExternalFocusNode(focusScopeNode: widget.scope, child: widget.child);
+  Widget build(final BuildContext context) =>
+      FocusScope.withExternalFocusNode(focusScopeNode: widget.scope, child: widget.child);
 }
 
 /// The sheets with no barrier open over a page, in the order they opened.
@@ -1523,7 +1602,7 @@ class _HarborPageSheets extends ChangeNotifier {
 
   final List<_NonModalSheet<Object?>> _open = <_NonModalSheet<Object?>>[];
 
-  /// The page's route-level harbor, which draws its sheets; null in a page with no harbor.
+  /// The page's route-level frame, which draws its sheets; null in a page with no frame.
   _HarborPageSheetHostState? host;
 
   _NonModalSheet<Object?>? get top => _open.isEmpty ? null : _open.last;
@@ -1537,8 +1616,8 @@ class _HarborPageSheets extends ChangeNotifier {
     if (!_open.remove(sheet)) {
       return;
     }
-    // A sheet that leaves with its harbor goes while the tree is being torn down, when the
-    // harbors listening cannot rebuild yet.
+    // A sheet that leaves with its frame goes while the tree is being torn down, when the
+    // frames listening cannot rebuild yet.
     if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
       SchedulerBinding.instance.addPostFrameCallback((final Duration _) => notifyListeners());
     } else {
@@ -1547,7 +1626,7 @@ class _HarborPageSheets extends ChangeNotifier {
   }
 }
 
-/// Escape (a [DismissIntent]) from anywhere in a harbor closes the top sheet with no barrier
+/// Escape (a [DismissIntent]) from anywhere in a frame closes the top sheet with no barrier
 /// over its page, as back does. With none open it is left to the widgets above, as
 /// `RawMenuAnchor` leaves it while its menu is closed: a page route answers Escape with an action
 /// that is disabled, which would stop the search there.
@@ -1570,9 +1649,7 @@ class HarborNonModalSheetActions extends StatelessWidget {
       builder: (final BuildContext context, final Widget? child) {
         final _NonModalSheet<Object?>? top = sheets.top;
         return Actions(
-          actions: <Type, Action<Intent>>{
-            if (top != null) DismissIntent: _CloseSheetAction(top._close),
-          },
+          actions: <Type, Action<Intent>>{if (top != null) DismissIntent: _CloseSheetAction(top._close)},
           child: child!,
         );
       },
@@ -1596,7 +1673,7 @@ void closeHarborSheet(final BuildContext context) => HarborSheet.close<Object?>(
 
 /// Draws the sheets with no barrier that its page opened, through an [OverlayPortal], so they
 /// paint just above the page and below every route pushed after it. Mounted by each page's
-/// route-level harbor, outermost, so a sheet sees what that harbor sees: the sea, and the
+/// route-level frame, outermost, so a sheet sees what that frame sees: the root, and the
 /// screen's `MediaQuery`, as it did from an overlay entry of its own.
 @internal
 class HarborPageSheetHost extends StatefulWidget {
@@ -1668,8 +1745,8 @@ class _HarborPageSheetHostState extends State<HarborPageSheetHost> {
     });
   }
 
-  // The portal sits beside the page, not around it: wrapped around the page, it hid every portal
-  // buoy in the page from screen readers (measured: the buoy's node left the semantics tree).
+  // The portal sits beside the page, not around it: wrapped around the page, it hid every
+  // popover in the page from screen readers (measured: the popover's node left the semantics tree).
   // Where it sits in the page does not matter to its paint order, only which overlay entry it is
   // in. StackFit.passthrough hands the page its constraints unchanged.
   @override

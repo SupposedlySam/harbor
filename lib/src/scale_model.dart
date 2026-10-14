@@ -5,37 +5,42 @@ import 'package:flutter/widgets.dart';
 
 import 'coast.dart';
 
-/// A scale model: lays [child] out on a fixed reference screen (a TV's
+/// A scaled screen: lays [child] out on a fixed reference screen (a TV's
 /// 1200×675, say) and scales it to fit the real one, letterboxed.
 ///
 /// Everything inside sees the reference size, and the real screen's insets
-/// re-based into the model: cut to the part of the model they actually reach
-/// and scaled into its coordinates. A notch beside a letterboxed model doesn't
-/// reach it, so the model's coast there is zero. Then [coast] applies, so a
-/// model can add a title-safe band of its own.
+/// re-based into the scaled screen: cut to the part of it they actually reach
+/// and scaled into its coordinates. A notch beside a letterboxed screen doesn't
+/// reach it, so its system edge there is zero. Then [systemEdges] applies, so a
+/// scaled screen can add a title-safe band of its own.
 ///
 /// Mount it above the `Navigator` (in `MaterialApp.builder`) so routes, dialogs
-/// and sheets are all inside the model.
+/// and sheets are all inside the scaled screen.
 ///
 /// See also:
 ///
 ///  * [FittedBox], which scales the same way but leaves the real screen's `MediaQuery` in place.
-class HarborScaleModel extends StatelessWidget {
-  const HarborScaleModel({
+class HarborScaledScreen extends StatelessWidget {
+  const HarborScaledScreen({
     super.key,
     required this.referenceSize,
     this.devicePixelRatio,
-    this.coast = HarborCoast.ambient,
+    final HarborSystemEdges systemEdges = HarborSystemEdges.ambient,
+    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final HarborSystemEdges? coast,
     this.letterbox = const Color(0xFF000000),
     required this.child,
-  });
+  }) : systemEdges = coast ?? systemEdges;
 
   final Size referenceSize;
 
-  /// The pixel ratio the model reports; null scales the real one.
+  /// The pixel ratio the scaled screen reports; null scales the real one.
   final double? devicePixelRatio;
 
-  final HarborCoast coast;
+  final HarborSystemEdges systemEdges;
+
+  /// The old name of [systemEdges].
+  @Deprecated('Renamed systemEdges. `dart fix` applies it.')
+  HarborSystemEdges get coast => systemEdges;
   final Color letterbox;
   final Widget child;
 
@@ -44,7 +49,9 @@ class HarborScaleModel extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Size>('referenceSize', referenceSize));
     properties.add(DoubleProperty('devicePixelRatio', devicePixelRatio, defaultValue: null));
-    properties.add(DiagnosticsProperty<HarborCoast>('coast', coast, defaultValue: HarborCoast.ambient));
+    properties.add(
+      DiagnosticsProperty<HarborSystemEdges>('systemEdges', systemEdges, defaultValue: HarborSystemEdges.ambient),
+    );
     properties.add(ColorProperty('letterbox', letterbox, defaultValue: const Color(0xFF000000)));
   }
 
@@ -78,10 +85,7 @@ class HarborScaleModel extends StatelessWidget {
               child: FittedBox(
                 child: SizedBox.fromSize(
                   size: referenceSize,
-                  child: MediaQuery(
-                    data: coast.apply(model, Directionality.of(context)),
-                    child: child,
-                  ),
+                  child: MediaQuery(data: systemEdges.apply(model, Directionality.of(context)), child: child),
                 ),
               ),
             ),

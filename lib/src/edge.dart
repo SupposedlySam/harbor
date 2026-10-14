@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// An edge of a harbor. Directional, so a side follows the reading direction
+/// An edge of a frame. Directional, so a side follows the reading direction
 /// rather than the physical side of the screen.
 enum HarborEdge {
   top,
@@ -12,7 +12,7 @@ enum HarborEdge {
   static const Set<HarborEdge> vertical = {top, bottom};
   static const Set<HarborEdge> horizontal = {start, end};
 
-  /// Whether docks on this edge stack along the vertical axis.
+  /// Whether bars on this edge stack along the vertical axis.
   bool get isVertical => this == top || this == bottom;
 
   /// The edge across from this one.
@@ -33,8 +33,12 @@ abstract final class HarborEdges {
     HarborEdge.end => insets.end,
   };
 
-  static EdgeInsetsDirectional build(final double Function(HarborEdge edge) value) =>
-      EdgeInsetsDirectional.fromSTEB(value(HarborEdge.start), value(HarborEdge.top), value(HarborEdge.end), value(HarborEdge.bottom));
+  static EdgeInsetsDirectional build(final double Function(HarborEdge edge) value) => EdgeInsetsDirectional.fromSTEB(
+    value(HarborEdge.start),
+    value(HarborEdge.top),
+    value(HarborEdge.end),
+    value(HarborEdge.bottom),
+  );
 
   static EdgeInsetsDirectional only(final HarborEdge edge, final double value) =>
       build((final HarborEdge e) => e == edge ? value : 0.0);

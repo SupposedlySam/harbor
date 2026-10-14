@@ -6,128 +6,211 @@ import 'package:flutter/widgets.dart';
 import 'edge.dart';
 import 'tide.dart';
 
-/// Which part of the waters a reader depends on, so it rebuilds only for that.
-enum HarborWatersAspect { coast, docks, margin, frame }
+/// Which part of the [HarborRoomData] a reader depends on, so it rebuilds only for that.
+enum HarborRoomAspect {
+  systemEdges,
+  bars,
+  margin,
+  frame;
 
-/// One edge's wake: the band where content passing under a dock fades out.
+  /// The old name of [systemEdges].
+  @Deprecated('Renamed systemEdges. `dart fix` applies it.')
+  static const HarborRoomAspect coast = systemEdges;
+
+  /// The old name of [bars].
+  @Deprecated('Renamed bars. `dart fix` applies it.')
+  static const HarborRoomAspect docks = bars;
+}
+
+/// One edge's fade: the band where content passing under a bar fades out.
 @immutable
-class HarborWakeBand {
-  const HarborWakeBand({required this.dockEdge, required this.wakeEnd, this.dockOpacity, this.curve});
+class HarborFadeBand {
+  const HarborFadeBand({
+    final double? barFace,
+    @Deprecated('Renamed barFace. `dart fix` applies it.') final double? dockEdge,
+    final double? fadeEnd,
+    @Deprecated('Renamed fadeEnd. `dart fix` applies it.') final double? wakeEnd,
+    final double? faceOpacity,
+    @Deprecated('Renamed faceOpacity. `dart fix` applies it.') final double? dockOpacity,
+    this.curve,
+  }) : assert(barFace != null || dockEdge != null, 'barFace is required.'),
+       assert(fadeEnd != null || wakeEnd != null, 'fadeEnd is required.'),
+       barFace = barFace ?? dockEdge ?? 0.0,
+       fadeEnd = fadeEnd ?? wakeEnd ?? 0.0,
+       faceOpacity = faceOpacity ?? dockOpacity;
 
-  static const HarborWakeBand none = HarborWakeBand(dockEdge: 0.0, wakeEnd: 0.0);
+  static const HarborFadeBand none = HarborFadeBand(barFace: 0.0, fadeEnd: 0.0);
 
-  /// Distance from the body's edge to the inner face of the docks.
-  final double dockEdge;
+  /// Distance from the body's edge to the inner face of the bars.
+  final double barFace;
 
-  /// Distance from the body's edge to where the wake has fully faded out.
-  final double wakeEnd;
+  /// The old name of [barFace].
+  @Deprecated('Renamed barFace. `dart fix` applies it.')
+  double get dockEdge => barFace;
 
-  /// How opaque content is at the docks' inner face: the wake's
-  /// `HarborWake.fade(dockOpacity:)`. Null for a fade at its default, so the
-  /// painter's own (`HarborWakeMask.dockOpacity`) applies.
-  final double? dockOpacity;
+  /// Distance from the body's edge to where the fade has fully faded out.
+  final double fadeEnd;
 
-  /// The shape of the ramp from [dockEdge] to [wakeEnd]: the wake's
-  /// `HarborWake.fade(curve:)`. Null for a fade at its default, a straight line.
+  /// The old name of [fadeEnd].
+  @Deprecated('Renamed fadeEnd. `dart fix` applies it.')
+  double get wakeEnd => fadeEnd;
+
+  /// How opaque content is at the bars' inner face: the edge effect's
+  /// `HarborEdgeEffect.fade(faceOpacity:)`. Null for a fade at its default, so the
+  /// painter's own (`HarborFadeMask.faceOpacity`) applies.
+  final double? faceOpacity;
+
+  /// The old name of [faceOpacity].
+  @Deprecated('Renamed faceOpacity. `dart fix` applies it.')
+  double? get dockOpacity => faceOpacity;
+
+  /// The shape of the ramp from [barFace] to [fadeEnd]: the edge effect's
+  /// `HarborEdgeEffect.fade(curve:)`. Null for a fade at its default, a straight line.
   final Curve? curve;
 
-  double get length => wakeEnd - dockEdge;
+  double get length => fadeEnd - barFace;
 
   /// This band measured from [distance] further in, keeping its ramp.
   @internal
-  HarborWakeBand measuredFrom(final double distance) => HarborWakeBand(
-    dockEdge: math.max(0.0, dockEdge - distance),
-    wakeEnd: wakeEnd - distance,
-    dockOpacity: dockOpacity,
+  HarborFadeBand measuredFrom(final double distance) => HarborFadeBand(
+    barFace: math.max(0.0, barFace - distance),
+    fadeEnd: fadeEnd - distance,
+    faceOpacity: faceOpacity,
     curve: curve,
   );
 
   @override
   bool operator ==(final Object other) =>
-      other is HarborWakeBand &&
-      other.dockEdge == dockEdge &&
-      other.wakeEnd == wakeEnd &&
-      other.dockOpacity == dockOpacity &&
+      other is HarborFadeBand &&
+      other.barFace == barFace &&
+      other.fadeEnd == fadeEnd &&
+      other.faceOpacity == faceOpacity &&
       other.curve == curve;
 
   @override
-  int get hashCode => Object.hash(dockEdge, wakeEnd, dockOpacity, curve);
+  int get hashCode => Object.hash(barFace, fadeEnd, faceOpacity, curve);
 
   @override
   String toString() => <String>[
-    'HarborWakeBand($dockEdge → $wakeEnd',
-    if (dockOpacity != null) ', dockOpacity: $dockOpacity',
+    'HarborFadeBand($barFace → $fadeEnd',
+    if (faceOpacity != null) ', faceOpacity: $faceOpacity',
     if (curve != null) ', curve: $curve',
     ')',
   ].join();
 }
 
-/// The waters at a point in the tree: why `MediaQuery.padding` is what it is.
+/// What bounds the room at a point in the tree: why `MediaQuery.padding` is what it is.
 ///
 /// `MediaQuery` holds one truth, what is still in the way on each edge, and
-/// that is what everything lays out against. These waters hold the
-/// explanation: how much of it is coast (the platform), how much is docks
-/// (your bars and headers, wake included), the mooring line (the page margin)
+/// that is what everything lays out against. This data holds the
+/// explanation: how much of it is system edges (the platform), how much is bars
+/// (your bars and headers, edge effect included), the margin (the page margin)
 /// and the frame. Readers that need one part (a hero that clears the status
 /// bar but sits under the header, a page that follows the rail at rest) read
 /// it here. Every value is clamped to `MediaQuery`, so a layer outside the
-/// harbor that removes padding is honored here too.
+/// frame that removes padding is honored here too.
 @immutable
-class HarborWatersData {
-  const HarborWatersData({
-    this.coast = EdgeInsetsDirectional.zero,
-    this.coastSteady = EdgeInsetsDirectional.zero,
-    this.docks = EdgeInsetsDirectional.zero,
-    this.docksResting = EdgeInsetsDirectional.zero,
-    this.wakes = const <HarborEdge, HarborWakeBand>{},
+class HarborRoomData {
+  const HarborRoomData({
+    final EdgeInsetsDirectional systemEdges = EdgeInsetsDirectional.zero,
+    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final EdgeInsetsDirectional? coast,
+    final EdgeInsetsDirectional systemEdgesSteady = EdgeInsetsDirectional.zero,
+    @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it.') final EdgeInsetsDirectional? coastSteady,
+    final EdgeInsetsDirectional bars = EdgeInsetsDirectional.zero,
+    @Deprecated('Renamed bars. `dart fix` applies it.') final EdgeInsetsDirectional? docks,
+    final EdgeInsetsDirectional barsResting = EdgeInsetsDirectional.zero,
+    @Deprecated('Renamed barsResting. `dart fix` applies it.') final EdgeInsetsDirectional? docksResting,
+    final Map<HarborEdge, HarborFadeBand> edgeEffects = const <HarborEdge, HarborFadeBand>{},
+    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final Map<HarborEdge, HarborFadeBand>? wakes,
     this.margin = EdgeInsetsDirectional.zero,
     this.frameSize = Size.zero,
-    this.hasDocks = const <HarborEdge>{},
-    this.wakesPainted = const <HarborEdge>{},
-  });
+    final Set<HarborEdge> hasBars = const <HarborEdge>{},
+    @Deprecated('Renamed hasBars. `dart fix` applies it.') final Set<HarborEdge>? hasDocks,
+    final Set<HarborEdge> edgeEffectsPainted = const <HarborEdge>{},
+    @Deprecated('Renamed edgeEffectsPainted. `dart fix` applies it.') final Set<HarborEdge>? wakesPainted,
+  }) : systemEdges = coast ?? systemEdges,
+       systemEdgesSteady = coastSteady ?? systemEdgesSteady,
+       bars = docks ?? bars,
+       barsResting = docksResting ?? barsResting,
+       edgeEffects = wakes ?? edgeEffects,
+       hasBars = hasDocks ?? hasBars,
+       edgeEffectsPainted = wakesPainted ?? edgeEffectsPainted;
 
   /// What the platform still takes on each edge: status bar, home indicator,
   /// cutouts, title-safe.
-  final EdgeInsetsDirectional coast;
+  final EdgeInsetsDirectional systemEdges;
 
-  /// [coast] as it is with the keyboard down, as `MediaQuery.viewPadding` is to
+  /// The old name of [systemEdges].
+  @Deprecated('Renamed systemEdges. `dart fix` applies it.')
+  EdgeInsetsDirectional get coast => systemEdges;
+
+  /// [systemEdges] as it is with the keyboard down, as `MediaQuery.viewPadding` is to
   /// `MediaQuery.padding`: the home indicator stays in it while the keyboard
-  /// covers it. Read it with [HarborWaters.steadyCoastOf].
-  final EdgeInsetsDirectional coastSteady;
+  /// covers it. Read it with [HarborRoom.steadySystemEdgeOf].
+  final EdgeInsetsDirectional systemEdgesSteady;
 
-  /// How far the docks (and their wake, where content rests past it) reach
+  /// The old name of [systemEdgesSteady].
+  @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it.')
+  EdgeInsetsDirectional get coastSteady => systemEdgesSteady;
+
+  /// How far the bars (and their edge effect, where content rests past it) reach
   /// into this area on each edge, as they are now.
-  final EdgeInsetsDirectional docks;
+  final EdgeInsetsDirectional bars;
 
-  /// How far the docks reach at rest, for content that holds still while a
-  /// dock expands over it (a rail that opens on focus).
-  final EdgeInsetsDirectional docksResting;
+  /// The old name of [bars].
+  @Deprecated('Renamed bars. `dart fix` applies it.')
+  EdgeInsetsDirectional get docks => bars;
 
-  /// The wake band on each edge that has one, measured from this area's edge.
-  final Map<HarborEdge, HarborWakeBand> wakes;
+  /// How far the bars reach at rest, for content that holds still while a
+  /// bar expands over it (a rail that opens on focus).
+  final EdgeInsetsDirectional barsResting;
 
-  /// The mooring line: the margin content keeps from whatever is in its way.
+  /// The old name of [barsResting].
+  @Deprecated('Renamed barsResting. `dart fix` applies it.')
+  EdgeInsetsDirectional get docksResting => barsResting;
+
+  /// The fade band on each edge that has one, measured from this area's edge.
+  final Map<HarborEdge, HarborFadeBand> edgeEffects;
+
+  /// The old name of [edgeEffects].
+  @Deprecated('Renamed edgeEffects. `dart fix` applies it.')
+  Map<HarborEdge, HarborFadeBand> get wakes => edgeEffects;
+
+  /// The row insets: the margin content keeps from whatever is in its way.
   /// Applied only by the content that asks for it, so a carousel can run to the
   /// frame's edge while its first item lines up with everything else.
   final EdgeInsetsDirectional margin;
 
-  /// The size of the harbor's frame, which neither the docks nor the keyboard shrink.
+  /// The size of the frame, which neither the bars nor the keyboard shrink.
   final Size frameSize;
 
-  /// The edges the nearest harbor has docks on.
-  final Set<HarborEdge> hasDocks;
+  /// The edges the nearest frame has bars on.
+  final Set<HarborEdge> hasBars;
 
-  /// The edges whose wake a harbor's `wakePainter` already draws over its
-  /// whole body, so fairways inside leave them alone rather than fade twice.
-  final Set<HarborEdge> wakesPainted;
+  /// The old name of [hasBars].
+  @Deprecated('Renamed hasBars. `dart fix` applies it.')
+  Set<HarborEdge> get hasDocks => hasBars;
 
-  HarborWakeBand wakeOf(final HarborEdge edge) => wakes[edge] ?? HarborWakeBand.none;
+  /// The edges whose edge effect a frame's `edgeEffectPainter` already draws over its
+  /// whole body, so scroll views inside leave them alone rather than fade twice.
+  final Set<HarborEdge> edgeEffectsPainted;
+
+  /// The old name of [edgeEffectsPainted].
+  @Deprecated('Renamed edgeEffectsPainted. `dart fix` applies it.')
+  Set<HarborEdge> get wakesPainted => edgeEffectsPainted;
+
+  /// The fade band on [edge], or [HarborFadeBand.none].
+  HarborFadeBand edgeEffectOf(final HarborEdge edge) => edgeEffects[edge] ?? HarborFadeBand.none;
+
+  /// The old name of [edgeEffectOf].
+  @Deprecated('Renamed edgeEffectOf. `dart fix` applies it.')
+  HarborFadeBand wakeOf(final HarborEdge edge) => edgeEffectOf(edge);
 
   /// What a web view in this area should keep clear of, as CSS custom
   /// properties for `env(safe-area-inset-*)`-style layouts: the larger of the
-  /// coast and the docks on each edge, in logical pixels.
+  /// system edges and the bars on each edge, in logical pixels.
   Map<String, String> toCssVariables(final TextDirection direction) {
-    final EdgeInsets insets = HarborEdges.max(coast, docks).resolve(direction);
+    final EdgeInsets insets = HarborEdges.max(systemEdges, bars).resolve(direction);
     return <String, String>{
       '--harbor-inset-top': '${insets.top}px',
       '--harbor-inset-right': '${insets.right}px',
@@ -136,64 +219,76 @@ class HarborWatersData {
     };
   }
 
-  HarborWatersData copyWith({
-    final EdgeInsetsDirectional? coast,
-    final EdgeInsetsDirectional? coastSteady,
-    final EdgeInsetsDirectional? docks,
-    final EdgeInsetsDirectional? docksResting,
-    final Map<HarborEdge, HarborWakeBand>? wakes,
+  HarborRoomData copyWith({
+    final EdgeInsetsDirectional? systemEdges,
+    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final EdgeInsetsDirectional? coast,
+    final EdgeInsetsDirectional? systemEdgesSteady,
+    @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it.') final EdgeInsetsDirectional? coastSteady,
+    final EdgeInsetsDirectional? bars,
+    @Deprecated('Renamed bars. `dart fix` applies it.') final EdgeInsetsDirectional? docks,
+    final EdgeInsetsDirectional? barsResting,
+    @Deprecated('Renamed barsResting. `dart fix` applies it.') final EdgeInsetsDirectional? docksResting,
+    final Map<HarborEdge, HarborFadeBand>? edgeEffects,
+    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final Map<HarborEdge, HarborFadeBand>? wakes,
     final EdgeInsetsDirectional? margin,
     final Size? frameSize,
-    final Set<HarborEdge>? hasDocks,
-    final Set<HarborEdge>? wakesPainted,
-  }) => HarborWatersData(
-    coast: coast ?? this.coast,
-    coastSteady: coastSteady ?? this.coastSteady,
-    docks: docks ?? this.docks,
-    docksResting: docksResting ?? this.docksResting,
-    wakes: wakes ?? this.wakes,
+    final Set<HarborEdge>? hasBars,
+    @Deprecated('Renamed hasBars. `dart fix` applies it.') final Set<HarborEdge>? hasDocks,
+    final Set<HarborEdge>? edgeEffectsPainted,
+    @Deprecated('Renamed edgeEffectsPainted. `dart fix` applies it.') final Set<HarborEdge>? wakesPainted,
+  }) => HarborRoomData(
+    systemEdges: systemEdges ?? coast ?? this.systemEdges,
+    systemEdgesSteady: systemEdgesSteady ?? coastSteady ?? this.systemEdgesSteady,
+    bars: bars ?? docks ?? this.bars,
+    barsResting: barsResting ?? docksResting ?? this.barsResting,
+    edgeEffects: edgeEffects ?? wakes ?? this.edgeEffects,
     margin: margin ?? this.margin,
     frameSize: frameSize ?? this.frameSize,
-    hasDocks: hasDocks ?? this.hasDocks,
-    wakesPainted: wakesPainted ?? this.wakesPainted,
+    hasBars: hasBars ?? hasDocks ?? this.hasBars,
+    edgeEffectsPainted: edgeEffectsPainted ?? wakesPainted ?? this.edgeEffectsPainted,
   );
 
-  /// These waters with [edges] cast off: a layer has kept clear of them, so
+  /// The old name of [handled].
+  @Deprecated('Renamed handled. `dart fix` applies it.')
+  HarborRoomData castOff(final Set<HarborEdge> edges, {final bool margin = true}) => handled(edges, margin: margin);
+
+  /// This room with [edges] handled: a layer has kept clear of them, so
   /// nothing beneath does it again.
-  HarborWatersData castOff(final Set<HarborEdge> edges, {final bool margin = true}) => copyWith(
-    coast: HarborEdges.without(coast, edges),
-    coastSteady: HarborEdges.without(coastSteady, edges),
-    docks: HarborEdges.without(docks, edges),
-    docksResting: HarborEdges.without(docksResting, edges),
-    wakes: {
-      for (final MapEntry<HarborEdge, HarborWakeBand> entry in wakes.entries)
+  HarborRoomData handled(final Set<HarborEdge> edges, {final bool margin = true}) => copyWith(
+    systemEdges: HarborEdges.without(systemEdges, edges),
+    systemEdgesSteady: HarborEdges.without(systemEdgesSteady, edges),
+    bars: HarborEdges.without(bars, edges),
+    barsResting: HarborEdges.without(barsResting, edges),
+    edgeEffects: {
+      for (final MapEntry<HarborEdge, HarborFadeBand> entry in edgeEffects.entries)
         if (!edges.contains(entry.key)) entry.key: entry.value,
     },
     margin: margin ? HarborEdges.without(this.margin, edges) : this.margin,
   );
 
-  // These waters with the coast on [edges] cast off and the docks kept, beneath a layer that kept
-  // clear of [cleared] there: the docks and their wakes are measured from that layer's edge, which
-  // is [cleared] in from this area's.
-  HarborWatersData _castOffCoast(
+  // This room with the system edges on [edges] handled and the bars kept, beneath a layer that kept
+  // clear of [cleared] there: the bars and their edge effects are measured from that layer's edge,
+  // which is [cleared] in from this area's.
+  HarborRoomData _castOffCoast(
     final Set<HarborEdge> edges, {
     required final EdgeInsetsDirectional cleared,
     required final bool margin,
   }) {
     EdgeInsetsDirectional past(final EdgeInsetsDirectional insets) => HarborEdges.build(
-      (final HarborEdge e) =>
-          edges.contains(e) ? math.max(0.0, HarborEdges.of(insets, e) - HarborEdges.of(cleared, e)) : HarborEdges.of(insets, e),
+      (final HarborEdge e) => edges.contains(e)
+          ? math.max(0.0, HarborEdges.of(insets, e) - HarborEdges.of(cleared, e))
+          : HarborEdges.of(insets, e),
     );
     return copyWith(
-      coast: HarborEdges.without(coast, edges),
-      coastSteady: HarborEdges.without(coastSteady, edges),
-      docks: past(docks),
-      docksResting: past(docksResting),
-      wakes: <HarborEdge, HarborWakeBand>{
-        for (final MapEntry<HarborEdge, HarborWakeBand> entry in wakes.entries)
+      systemEdges: HarborEdges.without(systemEdges, edges),
+      systemEdgesSteady: HarborEdges.without(systemEdgesSteady, edges),
+      bars: past(bars),
+      barsResting: past(barsResting),
+      edgeEffects: <HarborEdge, HarborFadeBand>{
+        for (final MapEntry<HarborEdge, HarborFadeBand> entry in edgeEffects.entries)
           if (!edges.contains(entry.key))
             entry.key: entry.value
-          else if (entry.value.wakeEnd > HarborEdges.of(cleared, entry.key))
+          else if (entry.value.fadeEnd > HarborEdges.of(cleared, entry.key))
             entry.key: entry.value.measuredFrom(HarborEdges.of(cleared, entry.key)),
       },
       margin: margin ? HarborEdges.without(this.margin, edges) : this.margin,
@@ -202,98 +297,102 @@ class HarborWatersData {
 
   @override
   bool operator ==(final Object other) =>
-      other is HarborWatersData &&
-      other.coast == coast &&
-      other.coastSteady == coastSteady &&
-      other.docks == docks &&
-      other.docksResting == docksResting &&
-      _mapEquals(other.wakes, wakes) &&
+      other is HarborRoomData &&
+      other.systemEdges == systemEdges &&
+      other.systemEdgesSteady == systemEdgesSteady &&
+      other.bars == bars &&
+      other.barsResting == barsResting &&
+      _mapEquals(other.edgeEffects, edgeEffects) &&
       other.margin == margin &&
       other.frameSize == frameSize &&
-      _setEquals(other.hasDocks, hasDocks) &&
-      _setEquals(other.wakesPainted, wakesPainted);
+      _setEquals(other.hasBars, hasBars) &&
+      _setEquals(other.edgeEffectsPainted, edgeEffectsPainted);
 
   @override
   int get hashCode => Object.hash(
-    coast,
-    coastSteady,
-    docks,
-    docksResting,
-    Object.hashAllUnordered(wakes.entries.map((final MapEntry<HarborEdge, HarborWakeBand> e) => Object.hash(e.key, e.value))),
+    systemEdges,
+    systemEdgesSteady,
+    bars,
+    barsResting,
+    Object.hashAllUnordered(
+      edgeEffects.entries.map((final MapEntry<HarborEdge, HarborFadeBand> e) => Object.hash(e.key, e.value)),
+    ),
     margin,
     frameSize,
-    Object.hashAllUnordered(hasDocks),
-    Object.hashAllUnordered(wakesPainted),
+    Object.hashAllUnordered(hasBars),
+    Object.hashAllUnordered(edgeEffectsPainted),
   );
 
-  static bool _mapEquals(final Map<HarborEdge, HarborWakeBand> a, final Map<HarborEdge, HarborWakeBand> b) =>
-      a.length == b.length && a.entries.every((final MapEntry<HarborEdge, HarborWakeBand> e) => b[e.key] == e.value);
+  static bool _mapEquals(final Map<HarborEdge, HarborFadeBand> a, final Map<HarborEdge, HarborFadeBand> b) =>
+      a.length == b.length && a.entries.every((final MapEntry<HarborEdge, HarborFadeBand> e) => b[e.key] == e.value);
 
   static bool _setEquals(final Set<HarborEdge> a, final Set<HarborEdge> b) => a.length == b.length && a.containsAll(b);
 
   @override
-  String toString() => 'HarborWatersData(coast: $coast, docks: $docks, margin: $margin, frame: $frameSize)';
+  String toString() => 'HarborRoomData(systemEdges: $systemEdges, bars: $bars, margin: $margin, frame: $frameSize)';
 }
 
-/// Publishes [HarborWatersData] beneath a harbor layer.
-class HarborWaters extends InheritedModel<HarborWatersAspect> {
-  const HarborWaters({super.key, required this.data, required super.child});
+/// Publishes [HarborRoomData] beneath a harbor layer.
+class HarborRoom extends InheritedModel<HarborRoomAspect> {
+  const HarborRoom({super.key, required this.data, required super.child});
 
-  final HarborWatersData data;
+  final HarborRoomData data;
 
   @override
-  bool updateShouldNotify(final HarborWaters oldWidget) => data != oldWidget.data;
+  bool updateShouldNotify(final HarborRoom oldWidget) => data != oldWidget.data;
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<HarborWatersData>('data', data, showName: false));
+    properties.add(DiagnosticsProperty<HarborRoomData>('data', data, showName: false));
   }
 
   @override
-  bool updateShouldNotifyDependent(final HarborWaters oldWidget, final Set<HarborWatersAspect> dependencies) {
-    final HarborWatersData a = data;
-    final HarborWatersData b = oldWidget.data;
+  bool updateShouldNotifyDependent(final HarborRoom oldWidget, final Set<HarborRoomAspect> dependencies) {
+    final HarborRoomData a = data;
+    final HarborRoomData b = oldWidget.data;
     return dependencies.any(
-      (final HarborWatersAspect aspect) => switch (aspect) {
-        HarborWatersAspect.coast => a.coast != b.coast || a.coastSteady != b.coastSteady,
-        HarborWatersAspect.docks =>
-          a.docks != b.docks ||
-              a.docksResting != b.docksResting ||
-              !HarborWatersData._mapEquals(a.wakes, b.wakes) ||
-              !HarborWatersData._setEquals(a.hasDocks, b.hasDocks) ||
-              !HarborWatersData._setEquals(a.wakesPainted, b.wakesPainted),
-        HarborWatersAspect.margin => a.margin != b.margin,
-        HarborWatersAspect.frame => a.frameSize != b.frameSize,
+      (final HarborRoomAspect aspect) => switch (aspect) {
+        HarborRoomAspect.systemEdges => a.systemEdges != b.systemEdges || a.systemEdgesSteady != b.systemEdgesSteady,
+        HarborRoomAspect.bars =>
+          a.bars != b.bars ||
+              a.barsResting != b.barsResting ||
+              !HarborRoomData._mapEquals(a.edgeEffects, b.edgeEffects) ||
+              !HarborRoomData._setEquals(a.hasBars, b.hasBars) ||
+              !HarborRoomData._setEquals(a.edgeEffectsPainted, b.edgeEffectsPainted),
+        HarborRoomAspect.margin => a.margin != b.margin,
+        HarborRoomAspect.frame => a.frameSize != b.frameSize,
       },
     );
   }
 
-  /// The raw waters published above [context], unclamped; null outside any harbor.
-  static HarborWatersData? maybeRawOf(final BuildContext context, {final HarborWatersAspect? aspect}) =>
-      InheritedModel.inheritFrom<HarborWaters>(context, aspect: aspect)?.data;
+  /// The raw room data published above [context], unclamped; null outside any frame.
+  static HarborRoomData? maybeRawOf(final BuildContext context, {final HarborRoomAspect? aspect}) =>
+      InheritedModel.inheritFrom<HarborRoom>(context, aspect: aspect)?.data;
 
-  /// The waters at [context], clamped to `MediaQuery` so a layer outside the
-  /// harbor that already kept clear of an edge is honored. Outside any
-  /// harbor the whole of `MediaQuery.padding` reads as coast.
+  /// The room data at [context], clamped to `MediaQuery` so a layer outside the
+  /// frame that already kept clear of an edge is honored. Outside any
+  /// frame the whole of `MediaQuery.padding` reads as system edges.
   ///
   /// With an [aspect], the caller rebuilds only when that part changes: a
-  /// reader of the docks holds still while the keyboard moves.
-  static HarborWatersData of(final BuildContext context, {final HarborWatersAspect? aspect}) {
-    final HarborWatersData? raw = maybeRawOf(context, aspect: aspect);
+  /// reader of the bars holds still while the keyboard moves.
+  static HarborRoomData of(final BuildContext context, {final HarborRoomAspect? aspect}) {
+    final HarborRoomData? raw = maybeRawOf(context, aspect: aspect);
     // Every field is filled in, but only the ones the aspect covers are
     // depended on: the rest are read without subscribing.
-    final MediaQueryData mediaQuery = context.getInheritedWidgetOfExactType<MediaQuery>()?.data ?? MediaQuery.of(context);
-    final bool readsPadding = aspect == null || aspect == HarborWatersAspect.coast || aspect == HarborWatersAspect.docks;
+    final MediaQueryData mediaQuery =
+        context.getInheritedWidgetOfExactType<MediaQuery>()?.data ?? MediaQuery.of(context);
+    final bool readsPadding =
+        aspect == null || aspect == HarborRoomAspect.systemEdges || aspect == HarborRoomAspect.bars;
     final EdgeInsetsDirectional padding = HarborEdges.directional(
       readsPadding ? MediaQuery.paddingOf(context) : mediaQuery.padding,
       Directionality.of(context),
     );
     if (raw == null) {
-      final bool readsFrame = aspect == null || aspect == HarborWatersAspect.frame;
-      return HarborWatersData(
-        coast: padding,
-        coastSteady: HarborEdges.directional(
+      final bool readsFrame = aspect == null || aspect == HarborRoomAspect.frame;
+      return HarborRoomData(
+        systemEdges: padding,
+        systemEdgesSteady: HarborEdges.directional(
           readsPadding ? MediaQuery.viewPaddingOf(context) : mediaQuery.viewPadding,
           Directionality.of(context),
         ),
@@ -301,62 +400,74 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
       );
     }
     return raw.copyWith(
-      coast: HarborEdges.min(raw.coast, padding),
-      // The steady coast's clamp reads the view padding and the keyboard, which a body that clears
-      // the tide moves on every frame. As `MediaQuery.paddingOf` does not subscribe to
-      // `viewPadding`, only a reader of everything subscribes here; the rest get the right value,
-      // read without subscribing, and hold still while the keyboard moves. `steadyCoastOf` is the
-      // reader that follows it.
-      coastSteady: HarborEdges.build(
+      systemEdges: HarborEdges.min(raw.systemEdges, padding),
+      // The steady system edges' clamp reads the view padding and the keyboard, which a body that
+      // clears the keyboard moves on every frame drawn. As `MediaQuery.paddingOf` does not subscribe
+      // to `viewPadding`, only a reader of everything subscribes here; the rest get the right value,
+      // read without subscribing, and hold still while the keyboard moves. `steadySystemEdgeOf` is
+      // the reader that follows it.
+      systemEdgesSteady: HarborEdges.build(
         (final HarborEdge edge) => _steadyCoast(context, raw, edge, listen: aspect == null),
       ),
-      docks: HarborEdges.min(raw.docks, padding),
-      docksResting: HarborEdges.min(raw.docksResting, padding),
+      bars: HarborEdges.min(raw.bars, padding),
+      barsResting: HarborEdges.min(raw.barsResting, padding),
     );
   }
 
-  /// The coast on [edge] at [context] as it is with the keyboard down: the home
+  /// The system edge on [edge] at [context] as it is with the keyboard down: the home
   /// indicator's height at the bottom, held while the keyboard is up. For a
   /// footer that keeps the same size as the keyboard comes and goes, where
-  /// `MediaQuery.viewPadding` would not: a harbor whose body clears the tide
-  /// takes the keyboard's ground out of both. Zero once a dock has absorbed
-  /// the coast or a layer has cast it off; outside any harbor,
+  /// `MediaQuery.viewPadding` would not: a frame whose body clears the keyboard
+  /// takes the keyboard's ground out of both. Zero once a bar has absorbed
+  /// the system edge or a layer has handled it; outside any frame,
   /// `MediaQuery.viewPadding`.
   ///
   /// It holds the home indicator even in a body that ends at the keyboard, so
   /// a footer there keeps its height as the keyboard comes and goes. A footer
   /// that sits on the keyboard instead, and gives the home indicator's room
   /// back while the keyboard covers it, reads `MediaQuery.viewPaddingOf`: in a
-  /// body that clears the tide it is the home indicator with the keyboard
+  /// body that clears the keyboard it is the home indicator with the keyboard
   /// down and 0 with it up, the share of the indicator the keyboard leaves
   /// uncovered on the way.
-  static double steadyCoastOf(final BuildContext context, final HarborEdge edge) {
-    final HarborWatersData? raw = maybeRawOf(context, aspect: HarborWatersAspect.coast);
+  static double steadySystemEdgeOf(final BuildContext context, final HarborEdge edge) {
+    final HarborRoomData? raw = maybeRawOf(context, aspect: HarborRoomAspect.systemEdges);
     if (raw == null) {
-      return HarborEdges.of(HarborEdges.directional(MediaQuery.viewPaddingOf(context), Directionality.of(context)), edge);
+      return HarborEdges.of(
+        HarborEdges.directional(MediaQuery.viewPaddingOf(context), Directionality.of(context)),
+        edge,
+      );
     }
     return _steadyCoast(context, raw, edge);
   }
 
-  // Clamped to `MediaQuery.viewPadding` like the rest of the waters, so a layer
-  // outside the harbor that removed the coast is honored. At the bottom the
-  // keyboard the harbors above kept clear of is added back first: a body that
-  // ends at the waterline has no view padding left there, though the coast is
-  // still what it was.
+  /// The old name of [steadySystemEdgeOf].
+  @Deprecated('Renamed steadySystemEdgeOf. `dart fix` applies it.')
+  static double steadyCoastOf(final BuildContext context, final HarborEdge edge) => steadySystemEdgeOf(context, edge);
+
+  // Clamped to `MediaQuery.viewPadding` like the rest of the room data, so a layer
+  // outside the frame that removed the system edges is honored. At the bottom the
+  // keyboard the frames above kept clear of is added back first: a body that
+  // ends at the keyboard's top has no view padding left there, though the system
+  // edge is still what it was.
   //
   // The keyboard's height is read without following it. Under a body that
-  // clears the tide the view padding falls as the keyboard rises, so their sum
+  // clears the keyboard the view padding falls as the keyboard rises, so their sum
   // and the result hold still; following the gauge would rebuild a listening
-  // reader on every frame for a value that does not move. It still hears the
+  // reader on every frame drawn for a value that does not move. It still hears the
   // keyboard come and go.
-  static double _steadyCoast(final BuildContext context, final HarborWatersData raw, final HarborEdge edge, {final bool listen = true}) {
-    final double value = HarborEdges.of(raw.coastSteady, edge);
+  static double _steadyCoast(
+    final BuildContext context,
+    final HarborRoomData raw,
+    final HarborEdge edge, {
+    final bool listen = true,
+  }) {
+    final double value = HarborEdges.of(raw.systemEdgesSteady, edge);
     final MediaQueryData? quiet = listen ? null : context.getInheritedWidgetOfExactType<MediaQuery>()?.data;
     final EdgeInsets viewPadding = quiet?.viewPadding ?? MediaQuery.viewPaddingOf(context);
     double bound = HarborEdges.of(HarborEdges.directional(viewPadding, Directionality.of(context)), edge);
     if (bound < value && edge == HarborEdge.bottom) {
       if (listen) {
-        HarborTide.isInOf(context);
+        HarborKeyboard.isShownOf(context);
       }
       final double remaining = quiet?.viewInsets.bottom ?? MediaQuery.viewInsetsOf(context).bottom;
       final double height = HarborTideScope.maybeGaugeOf(context, listen: false)?.height ?? remaining;
@@ -365,80 +476,100 @@ class HarborWaters extends InheritedModel<HarborWatersAspect> {
     return math.min(value, bound);
   }
 
-  /// How far the docks on [edge] reach into [context]'s area, to their inner
-  /// face: a header's bottom edge, where its wake (if it has one) begins. For
-  /// artwork that lines up under a frosted header, with or without a wake.
+  /// How far the bars on [edge] reach into [context]'s area, to their inner
+  /// face: a header's bottom edge, where its edge effect (if it has one) begins. For
+  /// artwork that lines up under a frosted header, with or without an edge effect.
   ///
-  /// It is the wake band's [HarborWakeBand.dockEdge] where [edge] has a fade
-  /// wake, and [HarborWatersData.docks] otherwise, which is the face itself when
-  /// the wake adds no clearance (no wake, a hairline, or a fade that rests at
-  /// the dock's edge). Zero where nothing is docked, and beneath anything that
-  /// cast the edge off, a fairway's ends included.
+  /// It is the fade band's [HarborFadeBand.barFace] where [edge] has a fade
+  /// edge effect, and [HarborRoomData.bars] otherwise, which is the face itself when
+  /// the edge effect adds no clearance (no edge effect, a hairline, or a fade that
+  /// rests at the bar's edge). Zero where there is no bar, and beneath anything that
+  /// handled the edge, a scroll view's ends included.
   ///
-  /// It depends on the [HarborWatersAspect.docks] aspect alone, so its reader
+  /// It depends on the [HarborRoomAspect.bars] aspect alone, so its reader
   /// holds still while the keyboard moves.
-  static double dockFaceOf(final BuildContext context, final HarborEdge edge) {
-    final HarborWatersData waters = of(context, aspect: HarborWatersAspect.docks);
-    final HarborWakeBand? band = waters.wakes[edge];
-    return band != null ? band.dockEdge : HarborEdges.of(waters.docks, edge);
+  static double barFaceOf(final BuildContext context, final HarborEdge edge) {
+    final HarborRoomData waters = of(context, aspect: HarborRoomAspect.bars);
+    final HarborFadeBand? band = waters.edgeEffects[edge];
+    return band != null ? band.barFace : HarborEdges.of(waters.bars, edge);
   }
+
+  /// The old name of [barFaceOf].
+  @Deprecated('Renamed barFaceOf. `dart fix` applies it.')
+  static double dockFaceOf(final BuildContext context, final HarborEdge edge) => barFaceOf(context, edge);
 
   /// What is still in the way on [edge] at [context]: the one number content
   /// lays out against. The larger of `MediaQuery.padding` and, at the bottom,
   /// whatever of the keyboard still reaches here.
-  static double clearanceOf(final BuildContext context, final HarborEdge edge, {final bool tide = true}) {
+  static double clearanceOf(
+    final BuildContext context,
+    final HarborEdge edge, {
+    final bool keyboard = true,
+    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
+  }) {
     final EdgeInsetsDirectional padding = HarborEdges.directional(
       MediaQuery.paddingOf(context),
       Directionality.of(context),
     );
     final double value = HarborEdges.of(padding, edge);
-    if (tide && edge == HarborEdge.bottom) {
+    if ((tide ?? keyboard) && edge == HarborEdge.bottom) {
       return math.max(value, MediaQuery.viewInsetsOf(context).bottom);
     }
     return value;
   }
 }
 
-/// Casts off [edges] for everything beneath: after a layer has kept clear of
+/// Marks [edges] handled for everything beneath: after a layer has kept clear of
 /// them, the area below reads zero there and cannot clear them a second time.
 ///
 /// For your own layer that pads by hand (or a third-party list given
-/// `HarborFairway.paddingOf`). The harbor's own widgets cast off for you.
+/// `HarborScrollView.paddingOf`). harbor's own widgets mark them handled for you.
 ///
-/// A layer that kept clear of the coast alone (a page's safe-area margin, as
-/// `HarborWaters.of(context).coast` reads it) passes `docks: false`: the coast
-/// is cast off and the docks stay, so a fairway beneath still rests clear of a
-/// frosted header or tab bar. Beneath, the docks are measured from that
+/// A layer that kept clear of the system edges alone (a page's safe-area margin, as
+/// `HarborRoom.of(context).systemEdges` reads it) passes `bars: false`: the system
+/// edges are handled and the bars stay, so a scroll view beneath still rests clear of a
+/// frosted header or tab bar. Beneath, the bars are measured from that
 /// layer's edge, and `MediaQuery.padding` and `viewPadding` say the same.
 ///
 /// See also:
 ///
 ///  * [MediaQuery.removePadding], which lowers `viewPadding` only by the padding it removes; this
-///    zeroes `viewPadding`, removes the keyboard with [tide], and zeroes harbor's own waters.
-class HarborCastOff extends StatelessWidget {
-  const HarborCastOff({
+///    zeroes `viewPadding`, removes the keyboard with [keyboard], and zeroes harbor's own room data.
+class HarborHandled extends StatelessWidget {
+  const HarborHandled({
     super.key,
     this.edges = HarborEdge.all,
-    this.tide = false,
+    final bool keyboard = false,
+    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
     this.margin = true,
-    this.docks = true,
+    final bool bars = true,
+    @Deprecated('Renamed bars. `dart fix` applies it.') final bool? docks,
     required this.child,
-  });
+  }) : keyboard = tide ?? keyboard,
+       bars = docks ?? bars;
 
   final Set<HarborEdge> edges;
 
-  /// Whether the keyboard is cast off too.
-  final bool tide;
+  /// Whether the keyboard is handled too.
+  final bool keyboard;
 
-  /// Whether the mooring line on [edges] is cast off too.
+  /// The old name of [keyboard].
+  @Deprecated('Renamed keyboard. `dart fix` applies it.')
+  bool get tide => keyboard;
+
+  /// Whether the margin on [edges] is handled too.
   final bool margin;
 
-  /// Whether the docks on [edges] are cast off with the coast. False casts off
-  /// the coast alone, for a layer that kept clear of the coast and leaves the
-  /// docks (their wakes, the docks at rest, which edges have them) to what is
-  /// beneath it. Outside any harbor all of `MediaQuery.padding` is coast, so it
-  /// is all cast off either way.
-  final bool docks;
+  /// Whether the bars on [edges] are handled with the system edges. False handles
+  /// the system edges alone, for a layer that kept clear of them and leaves the
+  /// bars (their edge effects, the bars at rest, which edges have them) to what is
+  /// beneath it. Outside any frame all of `MediaQuery.padding` is system edges, so it
+  /// is all handled either way.
+  final bool bars;
+
+  /// The old name of [bars].
+  @Deprecated('Renamed bars. `dart fix` applies it.')
+  bool get docks => bars;
 
   final Widget child;
 
@@ -446,90 +577,90 @@ class HarborCastOff extends StatelessWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(IterableProperty<HarborEdge>('edges', edges, defaultValue: HarborEdge.all));
-    properties.add(FlagProperty('tide', value: tide, ifTrue: 'casts off the tide'));
-    properties.add(FlagProperty('margin', value: margin, ifFalse: 'keeps the mooring line'));
-    properties.add(FlagProperty('docks', value: docks, ifFalse: 'keeps the docks'));
+    properties.add(FlagProperty('keyboard', value: keyboard, ifTrue: 'handles the keyboard'));
+    properties.add(FlagProperty('margin', value: margin, ifFalse: 'keeps the margin'));
+    properties.add(FlagProperty('bars', value: bars, ifFalse: 'keeps the bars'));
   }
 
   @override
   Widget build(final BuildContext context) {
-    if (!docks) {
+    if (!bars) {
       return _castOffCoast(context);
     }
     final TextDirection direction = Directionality.of(context);
     final ({bool left, bool top, bool right, bool bottom}) sides = HarborEdges.physical(edges, direction);
-    MediaQueryData data = MediaQuery.of(context).removePadding(
-      removeLeft: sides.left,
-      removeTop: sides.top,
-      removeRight: sides.right,
-      removeBottom: sides.bottom,
-    );
+    MediaQueryData data = MediaQuery.of(
+      context,
+    ).removePadding(removeLeft: sides.left, removeTop: sides.top, removeRight: sides.right, removeBottom: sides.bottom);
     data = data.removeViewPadding(
       removeLeft: sides.left,
       removeTop: sides.top,
       removeRight: sides.right,
       removeBottom: sides.bottom,
     );
-    if (tide) {
+    if (keyboard) {
       data = data.removeViewInsets(removeBottom: true);
     }
-    // Outside any harbor, the waters a reader here would see: all of MediaQuery's padding as coast.
-    // Empty waters zeroed every edge beneath, not just these: a sheet with clearsSides opened with
-    // no HarborSea read a bottom inset of 0 instead of the home indicator (#98).
-    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? HarborWaters.of(context)).castOff(
+    // Outside any frame, the room data a reader here would see: all of MediaQuery's padding as system
+    // edges. Empty room data zeroed every edge beneath, not just these: a sheet with clearsSides opened
+    // with no HarborRoot read a bottom inset of 0 instead of the home indicator (#98).
+    final HarborRoomData waters = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context)).handled(
       edges,
       margin: margin,
     );
     return MediaQuery(
       data: data,
-      child: HarborWaters(data: waters, child: child),
+      child: HarborRoom(data: waters, child: child),
     );
   }
 
-  // The coast alone: what is still in the way beneath is the docks past the coast the layer kept
-  // clear of, in `MediaQuery` and in the waters alike.
+  // The system edges alone: what is still in the way beneath is the bars past the system edges the
+  // layer kept clear of, in `MediaQuery` and in the room data alike.
   Widget _castOffCoast(final BuildContext context) {
     final TextDirection direction = Directionality.of(context);
     final MediaQueryData ambient = MediaQuery.of(context);
-    // The coast as a reader here sees it, clamped to `MediaQuery`: outside a harbor, all of it.
-    final HarborWatersData here = HarborWaters.of(context);
-    final EdgeInsetsDirectional cleared = HarborEdges.keep(here.coast, edges);
-    final EdgeInsetsDirectional clearedSteady = HarborEdges.keep(here.coastSteady, edges);
+    // The system edges as a reader here sees them, clamped to `MediaQuery`: outside a frame, all of it.
+    final HarborRoomData here = HarborRoom.of(context);
+    final EdgeInsetsDirectional cleared = HarborEdges.keep(here.systemEdges, edges);
+    final EdgeInsetsDirectional clearedSteady = HarborEdges.keep(here.systemEdgesSteady, edges);
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
     final EdgeInsetsDirectional viewPadding = HarborEdges.directional(ambient.viewPadding, direction);
     final EdgeInsetsDirectional paddingBeneath = HarborEdges.build(
       (final HarborEdge e) => math.max(0.0, HarborEdges.of(padding, e) - HarborEdges.of(cleared, e)),
     );
-    // The view padding is the docks past the steady coast, never less than the padding, as
+    // The view padding is the bars past the steady system edges, never less than the padding, as
     // Flutter keeps it.
     final EdgeInsetsDirectional viewPaddingBeneath = HarborEdges.build(
       (final HarborEdge e) => edges.contains(e)
-          ? math.max(HarborEdges.of(paddingBeneath, e), HarborEdges.of(viewPadding, e) - HarborEdges.of(clearedSteady, e))
+          ? math.max(
+              HarborEdges.of(paddingBeneath, e),
+              HarborEdges.of(viewPadding, e) - HarborEdges.of(clearedSteady, e),
+            )
           : HarborEdges.of(viewPadding, e),
     );
     MediaQueryData data = ambient.copyWith(
       padding: paddingBeneath.resolve(direction),
       viewPadding: viewPaddingBeneath.resolve(direction),
     );
-    if (tide) {
+    if (keyboard) {
       data = data.removeViewInsets(removeBottom: true);
     }
-    final HarborWatersData waters = (HarborWaters.maybeRawOf(context) ?? HarborWaters.of(context))._castOffCoast(
+    final HarborRoomData waters = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context))._castOffCoast(
       edges,
       cleared: cleared,
       margin: margin,
     );
     return MediaQuery(
       data: data,
-      child: HarborWaters(data: waters, child: child),
+      child: HarborRoom(data: waters, child: child),
     );
   }
 }
 
-/// The coast a layer cast off above a harbor that still covers the harbor's frame, which the
-/// harbor keeps out of its clear water though its content reads zero there. A sheet with
-/// `clearsTopCoast: false` casts the status bar off for its header and body, yet the sheet still
-/// reaches under it, so flares, buoys and the chart must keep clear of it (#97).
+/// The system edges a layer handled above a frame that still covers the frame, which the
+/// frame keeps out of its room though its content reads zero there. A sheet with
+/// `clearsTopSystemEdge: false` handles the status bar for its header and body, yet the sheet still
+/// reaches under it, so toasts, floats and the inspector must keep clear of it (#97).
 @internal
 class HarborClearWaterFloor extends InheritedWidget {
   const HarborClearWaterFloor({super.key, required this.floor, required super.child});

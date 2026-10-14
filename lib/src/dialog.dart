@@ -13,8 +13,8 @@ import 'hinge.dart';
 /// `showDialog` pushes a `DialogRoute`. Push a [HarborDialogRoute] yourself to
 /// keep the route, or to push it with a navigator of your choosing.
 ///
-/// A dialog is a new port: by default it sees only the coast. With
-/// [inheritClearWater], it sees the opening harbor's docks as coast too, so a
+/// A dialog is a new page: by default it sees only the system edges. With
+/// [inheritRoom], it sees the opening frame's bars as system edges too, so a
 /// contextual menu opened from a message stays between that page's header and
 /// its composer rather than only clear of the status bar.
 ///
@@ -42,7 +42,8 @@ import 'hinge.dart';
 Future<T?> showHarborDialog<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
-  final bool inheritClearWater = false,
+  final bool inheritRoom = false,
+  @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
   final Color barrierColor = const Color(0x80000000),
   final bool barrierDismissible = true,
   final String? barrierLabel,
@@ -62,7 +63,7 @@ Future<T?> showHarborDialog<T>(
       context: context,
       builder: builder,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
-      inheritClearWater: inheritClearWater,
+      inheritRoom: inheritClearWater ?? inheritRoom,
       barrierColor: barrierColor,
       barrierDismissible: barrierDismissible,
       barrierLabel: barrierLabel,
@@ -97,9 +98,9 @@ Future<T?> showHarborDialog<T>(
 /// It takes [showHarborDialog]'s options, with `settings` for its
 /// `routeSettings`. `context` is the page that opens it: the dialog keeps its
 /// themes (unless `themes` are given, as `DialogRoute` takes them), and with
-/// [inheritClearWater] it keeps clear of the docks of the harbor around it.
+/// [inheritRoom] it keeps clear of the bars of the frame around it.
 /// Both are read when the route is installed, as it is pushed, not when it is
-/// constructed, since the clear water is measured against the overlay of the
+/// constructed, since the room is measured against the overlay of the
 /// navigator it is pushed onto. So `context` must still be mounted when the
 /// route is pushed; if it is not, the dialog opens with neither.
 class HarborDialogRoute<T> extends RawDialogRoute<T> {
@@ -108,7 +109,8 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required final BuildContext context,
     required final WidgetBuilder builder,
     final CapturedThemes? themes,
-    final bool inheritClearWater = false,
+    final bool inheritRoom = false,
+    @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
     final Color? barrierColor = const Color(0x80000000),
     final bool barrierDismissible = true,
     final String? barrierLabel,
@@ -122,7 +124,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final HarborHinge? hinge,
   }) : this._(
          builder: builder,
-         inheritClearWater: inheritClearWater,
+         inheritRoom: inheritClearWater ?? inheritRoom,
          barrierColor: barrierColor,
          barrierDismissible: barrierDismissible,
          barrierLabel: barrierLabel,
@@ -139,7 +141,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
 
   HarborDialogRoute._({
     required final WidgetBuilder builder,
-    required this.inheritClearWater,
+    required this.inheritRoom,
     required super.barrierColor,
     required super.barrierDismissible,
     required final String? barrierLabel,
@@ -170,13 +172,23 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   // The side of the screen is chosen by the DisplayFeatureSubScreen RawDialogRoute puts around
   // the page, from the display features it reads here: only those the policy keeps off.
   @override
-  Widget buildPage(final BuildContext context, final Animation<double> animation, final Animation<double> secondaryAnimation) =>
-      MediaQuery(data: hinge.splitting(MediaQuery.of(context)), child: super.buildPage(context, animation, secondaryAnimation));
+  Widget buildPage(
+    final BuildContext context,
+    final Animation<double> animation,
+    final Animation<double> secondaryAnimation,
+  ) => MediaQuery(
+    data: hinge.splitting(MediaQuery.of(context)),
+    child: super.buildPage(context, animation, secondaryAnimation),
+  );
 
-  /// Whether the dialog sees the opening harbor's docks as coast, as
-  /// [showHarborDialog]'s `inheritClearWater` does. Measured when the route is
+  /// Whether the dialog sees the opening frame's bars as system edges, as
+  /// [showHarborDialog]'s `inheritRoom` does. Measured when the route is
   /// installed.
-  final bool inheritClearWater;
+  final bool inheritRoom;
+
+  /// The old name of [inheritRoom].
+  @Deprecated('Renamed inheritRoom. `dart fix` applies it.')
+  bool get inheritClearWater => inheritRoom;
 
   /// Builds the dialog's entrance and exit, in place of its fade, as
   /// `showGeneralDialog`'s `transitionBuilder` does. Null keeps the fade.
@@ -204,18 +216,18 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final NavigatorState navigator = this.navigator!;
     if (context != null && context.mounted) {
       _page.themes ??= InheritedTheme.capture(from: context, to: navigator.context);
-      if (inheritClearWater) {
+      if (inheritRoom) {
         _page.inherited = _clearWaterInOverlay(context, navigator);
       }
     }
     super.install();
   }
 
-  /// The opening harbor's clear water as insets of [navigator]'s overlay,
-  /// where the dialog will be, so a scale model between the two is accounted
+  /// The opening frame's room as insets of [navigator]'s overlay,
+  /// where the dialog will be, so a scaled screen between the two is accounted
   /// for.
   static EdgeInsets? _clearWaterInOverlay(final BuildContext context, final NavigatorState navigator) {
-    final Rect? clear = HarborController.maybeOf(context)?.clearWaterInGlobal();
+    final Rect? clear = HarborController.maybeOf(context)?.roomInGlobal();
     final RenderObject? overlay = navigator.overlay?.context.findRenderObject();
     if (clear == null || overlay is! RenderBox || !overlay.hasSize) {
       return null;
@@ -252,7 +264,8 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
       );
     }
     final CurvedAnimation curved = _curved!;
-    return transitionBuilder?.call(context, curved, secondaryAnimation, child) ?? FadeTransition(opacity: curved, child: child);
+    return transitionBuilder?.call(context, curved, secondaryAnimation, child) ??
+        FadeTransition(opacity: curved, child: child);
   }
 
   @override
@@ -273,21 +286,23 @@ class _HarborDialogPage {
   EdgeInsets? inherited;
 
   Widget build(final BuildContext context, final WidgetBuilder builder, final String? semanticLabel) {
-    // A Builder, so the builder's own context sees the captured themes (as for sheets and flares).
+    // A Builder, so the builder's own context sees the captured themes (as for sheets and toasts).
     final Widget content = Builder(builder: builder);
     Widget dialog = themes?.wrap(content) ?? content;
     if (semanticLabel != null) {
-      dialog = Semantics(container: true, explicitChildNodes: true, namesRoute: true, label: semanticLabel, child: dialog);
+      dialog = Semantics(
+        container: true,
+        explicitChildNodes: true,
+        namesRoute: true,
+        label: semanticLabel,
+        child: dialog,
+      );
     }
     final EdgeInsets? insets = inherited;
     if (insets != null) {
       final MediaQueryData mediaQuery = MediaQuery.of(context);
       dialog = MediaQuery(
-        data: mediaQuery.copyWith(
-          padding: insets,
-          viewPadding: insets,
-          viewInsets: EdgeInsets.zero,
-        ),
+        data: mediaQuery.copyWith(padding: insets, viewPadding: insets, viewInsets: EdgeInsets.zero),
         child: dialog,
       );
     }

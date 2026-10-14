@@ -5,16 +5,16 @@ import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
 
-/// What the coast is made of: the part of the screen the platform keeps for
-/// itself. A chart shows which feature put each inset there.
-enum HarborCoastFeature {
+/// What the system edges are made of: the part of the screen the platform keeps
+/// for itself. The inspector shows which feature put each inset there.
+enum HarborSystemEdgeFeature {
   statusBar,
   homeIndicator,
   cutout,
   titleSafe,
   fixed,
 
-  /// A fold or hinge. Reserved and not yet read: [HarborCoast.features] never
+  /// A fold or hinge. Reserved and not yet read: [HarborSystemEdges.features] never
   /// reports it, and no layout splits around a fold yet.
   hinge,
 }
@@ -62,40 +62,50 @@ class HarborTitleSafe with Diagnosticable {
   }
 }
 
-/// Where a harbor's coast comes from. Set it once, on [HarborSea] or on the
-/// first [Harbor]; everything beneath inherits it.
+/// Where a frame's system edges come from. Set it once, on [HarborRoot] or on the
+/// first [HarborFrame]; everything beneath inherits it.
 ///
 /// See also:
 ///
-///  * [MediaQueryData.padding] and [MediaQueryData.viewPadding], the insets the ambient coast is read
-///    from.
+///  * [MediaQueryData.padding] and [MediaQueryData.viewPadding], the insets the ambient system edges are
+///    read from.
 @immutable
-class HarborCoast with Diagnosticable {
-  const HarborCoast._({this.titleSafe, this.fixedInsets, this.calmTide = false});
+class HarborSystemEdges with Diagnosticable {
+  const HarborSystemEdges._({this.titleSafe, this.fixedInsets, this.ignoresKeyboard = false});
 
   /// The platform's insets, as `MediaQuery` reports them. The default.
-  static const HarborCoast ambient = HarborCoast._();
+  static const HarborSystemEdges ambient = HarborSystemEdges._();
 
-  /// No coast and no tide at all: for a postcard frame that must render the
+  /// No system edges and no keyboard at all: for a frame that must render the
   /// same everywhere (golden tests, embeds, headless rendering).
-  static const HarborCoast none = HarborCoast._(fixedInsets: EdgeInsetsDirectional.zero, calmTide: true);
+  static const HarborSystemEdges none = HarborSystemEdges._(
+    fixedInsets: EdgeInsetsDirectional.zero,
+    ignoresKeyboard: true,
+  );
 
-  /// A coast of exactly [insets], whatever the platform reports. The tide still
-  /// comes in unless [calmTide] is set.
-  const HarborCoast.fixed(final EdgeInsetsGeometry insets, {final bool calmTide = false})
-    : this._(fixedInsets: insets, calmTide: calmTide);
+  /// System edges of exactly [insets], whatever the platform reports. The keyboard still
+  /// comes in unless [ignoresKeyboard] is set.
+  const HarborSystemEdges.fixed(
+    final EdgeInsetsGeometry insets, {
+    final bool ignoresKeyboard = false,
+    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.') final bool? calmTide,
+  }) : this._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
 
   /// A TV's title-safe band on top of what the platform reports, edge by edge
   /// whichever is larger.
-  const HarborCoast.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
+  const HarborSystemEdges.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
 
   final HarborTitleSafe? titleSafe;
   final EdgeInsetsGeometry? fixedInsets;
 
   /// Whether the keyboard is kept out entirely.
-  final bool calmTide;
+  final bool ignoresKeyboard;
 
-  /// [mediaQuery] with its padding and view padding replaced by this coast.
+  /// The old name of [ignoresKeyboard].
+  @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.')
+  bool get calmTide => ignoresKeyboard;
+
+  /// [mediaQuery] with its padding and view padding replaced by these system edges.
   MediaQueryData apply(final MediaQueryData mediaQuery, final TextDirection direction) {
     if (identical(this, ambient) || this == ambient) {
       return mediaQuery;
@@ -114,32 +124,32 @@ class HarborCoast with Diagnosticable {
     return mediaQuery.copyWith(
       padding: padding,
       viewPadding: viewPadding,
-      viewInsets: calmTide ? EdgeInsets.zero : mediaQuery.viewInsets,
+      viewInsets: ignoresKeyboard ? EdgeInsets.zero : mediaQuery.viewInsets,
     );
   }
 
-  /// The features each edge of [mediaQuery] is made of under this coast, for a chart.
-  Map<HarborEdge, HarborCoastFeature?> features(final MediaQueryData mediaQuery, final TextDirection direction) {
+  /// The features each edge of [mediaQuery] is made of under these system edges, for the inspector.
+  Map<HarborEdge, HarborSystemEdgeFeature?> features(final MediaQueryData mediaQuery, final TextDirection direction) {
     final EdgeInsetsDirectional platform = HarborEdges.directional(mediaQuery.padding, direction);
     final EdgeInsetsGeometry? bandGeometry = titleSafe?.resolve(mediaQuery.size);
     final EdgeInsetsDirectional? band = bandGeometry == null ? null : HarborEdges.resolve(bandGeometry, direction);
     final EdgeInsetsGeometry? fixedGeometry = fixedInsets;
     final EdgeInsetsDirectional? fixed = fixedGeometry == null ? null : HarborEdges.resolve(fixedGeometry, direction);
-    HarborCoastFeature? featureOf(final HarborEdge edge) {
+    HarborSystemEdgeFeature? featureOf(final HarborEdge edge) {
       if (fixed != null) {
-        return HarborEdges.of(fixed, edge) > 0 ? HarborCoastFeature.fixed : null;
+        return HarborEdges.of(fixed, edge) > 0 ? HarborSystemEdgeFeature.fixed : null;
       }
       final double fromPlatform = HarborEdges.of(platform, edge);
       if (band != null && HarborEdges.of(band, edge) >= fromPlatform && HarborEdges.of(band, edge) > 0) {
-        return HarborCoastFeature.titleSafe;
+        return HarborSystemEdgeFeature.titleSafe;
       }
       if (fromPlatform <= 0) {
         return null;
       }
       return switch (edge) {
-        HarborEdge.top => HarborCoastFeature.statusBar,
-        HarborEdge.bottom => HarborCoastFeature.homeIndicator,
-        HarborEdge.start || HarborEdge.end => HarborCoastFeature.cutout,
+        HarborEdge.top => HarborSystemEdgeFeature.statusBar,
+        HarborEdge.bottom => HarborSystemEdgeFeature.homeIndicator,
+        HarborEdge.start || HarborEdge.end => HarborSystemEdgeFeature.cutout,
       };
     }
 
@@ -155,13 +165,13 @@ class HarborCoast with Diagnosticable {
 
   @override
   bool operator ==(final Object other) =>
-      other is HarborCoast &&
+      other is HarborSystemEdges &&
       other.titleSafe == titleSafe &&
       other.fixedInsets == fixedInsets &&
-      other.calmTide == calmTide;
+      other.ignoresKeyboard == ignoresKeyboard;
 
   @override
-  int get hashCode => Object.hash(titleSafe, fixedInsets, calmTide);
+  int get hashCode => Object.hash(titleSafe, fixedInsets, ignoresKeyboard);
 
   @override
   String toStringShort() {
@@ -172,7 +182,7 @@ class HarborCoast with Diagnosticable {
         : fixedInsets != null
         ? 'fixed'
         : 'titleSafe';
-    return '${objectRuntimeType(this, 'HarborCoast')}.$name';
+    return '${objectRuntimeType(this, 'HarborSystemEdges')}.$name';
   }
 
   @override
@@ -183,6 +193,33 @@ class HarborCoast with Diagnosticable {
     }
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('fixedInsets', fixedInsets, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborTitleSafe>('titleSafe', titleSafe, defaultValue: null));
-    properties.add(FlagProperty('calmTide', value: calmTide, ifTrue: 'calm tide'));
+    properties.add(FlagProperty('ignoresKeyboard', value: ignoresKeyboard, ifTrue: 'ignores the keyboard'));
   }
+}
+
+/// The old name of [HarborSystemEdges], whose constructors keep their names.
+///
+/// A subclass rather than a typedef: `dart fix` renames `fixed(calmTide:)`, and a typedef cannot
+/// carry a fix on a named constructor's call.
+@Deprecated('Renamed HarborSystemEdges. `dart fix` applies it.')
+class HarborCoast extends HarborSystemEdges {
+  const HarborCoast._({super.titleSafe, super.fixedInsets, super.ignoresKeyboard}) : super._();
+
+  /// The old name of [HarborSystemEdges.ambient].
+  static const HarborCoast ambient = HarborCoast._();
+
+  /// The old name of [HarborSystemEdges.none].
+  static const HarborCoast none = HarborCoast._(fixedInsets: EdgeInsetsDirectional.zero, ignoresKeyboard: true);
+
+  /// The old name of [HarborSystemEdges.fixed].
+  @Deprecated('Renamed HarborSystemEdges.fixed. `dart fix` applies it.')
+  const HarborCoast.fixed(
+    final EdgeInsetsGeometry insets, {
+    final bool ignoresKeyboard = false,
+    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.') final bool? calmTide,
+  }) : this._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
+
+  /// The old name of [HarborSystemEdges.titleSafe].
+  @Deprecated('Renamed HarborSystemEdges.titleSafe. `dart fix` applies it.')
+  const HarborCoast.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
 }

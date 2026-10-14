@@ -7,15 +7,15 @@ import 'controller.dart';
 import 'edge.dart';
 import 'waters.dart';
 
-/// Keeps [child] in sight at the top of the clear water while the item it is
-/// in scrolls under the docks: a pill that rides with its card and then sticks
+/// Keeps [child] in sight at the top of the room while the item it is
+/// in scrolls under the bars: a pill that rides with its card and then sticks
 /// just below the header, until the card itself has scrolled away.
 ///
 /// It never leaves its parent's box, so it goes once the item does.
 class HarborSticky extends SingleChildRenderObjectWidget {
   const HarborSticky({super.key, this.gap = 8.0, super.child});
 
-  /// How far below the docks it sticks.
+  /// How far below the bars it sticks.
   final double gap;
 
   @override
@@ -57,6 +57,7 @@ class _RenderHarborSticky extends RenderProxyBox {
       markNeedsPaint();
     }
   }
+
   double _shift = 0.0;
 
   @override
@@ -79,10 +80,10 @@ class _RenderHarborSticky extends RenderProxyBox {
     context.paintChild(child, offset + Offset(0.0, _shift));
   }
 
-  /// Where the top of the clear water is, in global coordinates: below the
-  /// harbor's docks and below any sliver docks pinned in the scroll view.
+  /// Where the top of the room is, in global coordinates: below the
+  /// frame's bars and below any sliver bars pinned in the scroll view.
   double? _stickLine() {
-    double? line = harbor?.clearWaterInGlobal()?.top;
+    double? line = harbor?.roomInGlobal()?.top;
     RenderObject? node = parent;
     while (node != null && node is! RenderSliver) {
       node = node.parent;
@@ -96,7 +97,10 @@ class _RenderHarborSticky extends RenderProxyBox {
       if (viewport.axisDirection == AxisDirection.down && viewport.hasSize) {
         // The overlap is measured from this sliver's own leading edge, which
         // sits below the viewport's top until the sliver scrolls up to it.
-        final double pinned = MatrixUtils.transformPoint(node.getTransformTo(null), Offset(0.0, node.constraints.overlap)).dy;
+        final double pinned = MatrixUtils.transformPoint(
+          node.getTransformTo(null),
+          Offset(0.0, node.constraints.overlap),
+        ).dy;
         line = line == null ? pinned : math.max(line, pinned);
       }
     }
@@ -111,7 +115,8 @@ class _RenderHarborSticky extends RenderProxyBox {
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) => result.addWithPaintOffset(
     offset: Offset(0.0, _shift),
     position: position,
-    hitTest: (final BoxHitTestResult result, final Offset transformed) => child?.hitTest(result, position: transformed) ?? false,
+    hitTest: (final BoxHitTestResult result, final Offset transformed) =>
+        child?.hitTest(result, position: transformed) ?? false,
   );
 
   @override
@@ -125,10 +130,10 @@ class _RenderHarborSticky extends RenderProxyBox {
   }
 }
 
-/// Centers [child] in the harbor's frame, then nudges it just far enough that
-/// it overlaps the docks and the keyboard by no more than [overlapBudget]: a
+/// Centers [child] in the frame, then nudges it just far enough that
+/// it overlaps the bars and the keyboard by no more than [overlapBudget]: a
 /// canvas's controls that should sit in the middle of the screen, not the
-/// middle of whatever water is left, but never mostly under a sheet.
+/// middle of whatever room is left, but never mostly under a sheet.
 ///
 /// When the child is too tall for both limits, the top one wins: it stays
 /// clear of the header and lets the bottom run past the budget.
@@ -146,8 +151,8 @@ class HarborCenter extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    final double top = HarborWaters.clearanceOf(context, HarborEdge.top);
-    final double bottom = HarborWaters.clearanceOf(context, HarborEdge.bottom);
+    final double top = HarborRoom.clearanceOf(context, HarborEdge.top);
+    final double bottom = HarborRoom.clearanceOf(context, HarborEdge.bottom);
     return CustomSingleChildLayout(
       delegate: _CenterDelegate(top: top, bottom: bottom, budget: overlapBudget),
       child: child,

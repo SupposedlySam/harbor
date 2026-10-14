@@ -39,12 +39,12 @@ enum HarborPanesMode {
 /// decides it.
 ///
 /// Each pane is built as a screen of its own: its `MediaQuery` has the pane's size, keeps the
-/// coast only on the pane's outer edges, and lists only the display features inside it. So each
-/// can hold a `Harbor` with docks of its own, kept clear of nothing the other pane has.
+/// system edges only on the pane's outer edges, and lists only the display features inside it. So
+/// each can hold a `HarborFrame` with bars of its own, kept clear of nothing the other pane has.
 ///
 /// The display features are read from the `MediaQuery` above, which is taken to be in this
 /// widget's coordinates, as `DisplayFeatureSubScreen` takes it: mount it where it fills the
-/// screen (a route's page, or a harbor's body that runs under no docks).
+/// screen (a route's page, or a frame's body that runs under no bars).
 class HarborPanes extends StatelessWidget {
   const HarborPanes({
     super.key,
@@ -94,8 +94,10 @@ class HarborPanes extends StatelessWidget {
   }) {
     final Rect all = Offset.zero & size;
     for (final Rect hinge in hinges) {
-      final bool vertical = hinge.top <= 0.5 && hinge.bottom >= size.height - 0.5 && hinge.left > 0 && hinge.right < size.width;
-      final bool horizontal = hinge.left <= 0.5 && hinge.right >= size.width - 0.5 && hinge.top > 0 && hinge.bottom < size.height;
+      final bool vertical =
+          hinge.top <= 0.5 && hinge.bottom >= size.height - 0.5 && hinge.left > 0 && hinge.right < size.width;
+      final bool horizontal =
+          hinge.left <= 0.5 && hinge.right >= size.width - 0.5 && hinge.top > 0 && hinge.bottom < size.height;
       if (vertical) {
         final Rect left = Rect.fromLTRB(0, 0, hinge.left, size.height);
         final Rect right = Rect.fromLTRB(hinge.right, 0, size.width, size.height);
@@ -121,7 +123,11 @@ class HarborPanes extends StatelessWidget {
     }
     if (size.height >= minTallHeight) {
       final double split = size.height * startFraction;
-      return (mode: HarborPanesMode.tall, startRect: Rect.fromLTRB(0, 0, size.width, split), endRect: Rect.fromLTRB(0, split, size.width, size.height));
+      return (
+        mode: HarborPanesMode.tall,
+        startRect: Rect.fromLTRB(0, 0, size.width, split),
+        endRect: Rect.fromLTRB(0, split, size.width, size.height),
+      );
     }
     return (mode: HarborPanesMode.single, startRect: all, endRect: all);
   }
@@ -131,7 +137,8 @@ class HarborPanes extends StatelessWidget {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     final TextDirection direction = Directionality.of(context);
     final List<Rect> hinges = <Rect>[
-      for (final DisplayFeature feature in (hinge ?? HarborHinge.of(context)).keptOff(mediaQuery.displayFeatures)) feature.bounds,
+      for (final DisplayFeature feature in (hinge ?? HarborHinge.of(context)).keptOff(mediaQuery.displayFeatures))
+        feature.bounds,
     ];
     return LayoutBuilder(
       builder: (final BuildContext context, final BoxConstraints constraints) {
@@ -146,15 +153,18 @@ class HarborPanes extends StatelessWidget {
         );
         Widget pane(final Widget child, final Rect rect, final String label) => Positioned.fromRect(
           rect: rect,
-          child: MediaQuery(data: _paneMediaQuery(mediaQuery, rect, size), child: KeyedSubtree(key: ValueKey<String>(label), child: child)),
+          child: MediaQuery(
+            data: _paneMediaQuery(mediaQuery, rect, size),
+            child: KeyedSubtree(key: ValueKey<String>(label), child: child),
+          ),
         );
         return _HarborPanesScope(
           mode: panes.mode,
           child: Stack(
             children: <Widget>[
-            if (panes.mode == HarborPanesMode.single)
-              pane(priority == HarborPanePriority.start ? start : end, panes.startRect, priority.name)
-            else ...<Widget>[pane(start, panes.startRect, 'start'), pane(end, panes.endRect, 'end')],
+              if (panes.mode == HarborPanesMode.single)
+                pane(priority == HarborPanePriority.start ? start : end, panes.startRect, priority.name)
+              else ...<Widget>[pane(start, panes.startRect, 'start'), pane(end, panes.endRect, 'end')],
             ],
           ),
         );
@@ -162,7 +172,7 @@ class HarborPanes extends StatelessWidget {
     );
   }
 
-  /// A pane's screen: its size, the coast only on the edges it shares with the whole, and the
+  /// A pane's screen: its size, the system edges only on the edges it shares with the whole, and the
   /// display features inside it, moved into its coordinates.
   static MediaQueryData _paneMediaQuery(final MediaQueryData mediaQuery, final Rect rect, final Size whole) {
     EdgeInsets outer(final EdgeInsets insets) => EdgeInsets.fromLTRB(
