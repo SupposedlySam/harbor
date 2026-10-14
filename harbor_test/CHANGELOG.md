@@ -1,4 +1,4 @@
-## 0.3.0 (unreleased)
+## 0.3.0
 
 Needs harbor 0.7.0.
 
