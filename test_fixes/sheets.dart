@@ -1,0 +1,136 @@
+// The sheets step's transforms (lib/fix_data/sheets.yaml): this file is written against the barrier
+// parameters of 0.9 (a sheet's HarborSheetBarrier and isDismissible, barrierColor, barrierLabel and
+// barrierOnTapHint; a dialog's barrierColor, barrierDismissible and barrierLabel; a float's modal,
+// barrierColor and barrierLabel) and a sheet's header and footer knobs. sheets.dart.expect is what
+// `dart fix --apply` makes of it, including what it leaves alone because a rewrite could break code
+// that compiles (tool/fix_data/sheets.dart says why for each).
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+const Color tint = Color(0x66000000);
+
+void sheets(BuildContext context, bool answered, String label, HarborSheetBarrier barrier) {
+  // No barrier, alone, is left: HarborSheetBarrier.none rewritten everywhere breaks a variable typed
+  // with the enum. It still compiles, the enum's values being barriers.
+  showHarborSheet<void>(context, barrier: HarborSheetBarrier.none, builder: (_) => const SizedBox());
+  // Each loose argument, alone and together, becomes a field of a dimmed barrier.
+  showHarborSheet<void>(context, isDismissible: false, builder: (_) => const SizedBox());
+  showHarborSheet<void>(context, barrierColor: tint, builder: (_) => const SizedBox());
+  showHarborSheet<void>(context, barrierLabel: label, builder: (_) => const SizedBox());
+  showHarborSheet<void>(context, barrierOnTapHint: 'close the sheet', builder: (_) => const SizedBox());
+  showHarborSheet<void>(
+    context,
+    isDismissible: answered,
+    barrierColor: tint,
+    barrierLabel: label,
+    barrierOnTapHint: 'close the sheet',
+    builder: (_) => const SizedBox(),
+  );
+  // With the old enum: dismissible is dimmed, clear is clear and drops the colour it never used,
+  // and none drops everything, which did nothing.
+  showHarborSheet<void>(
+    context,
+    barrier: HarborSheetBarrier.dismissible,
+    barrierLabel: label,
+    builder: (_) => const SizedBox(),
+  );
+  showHarborSheet<void>(
+    context,
+    barrier: HarborSheetBarrier.clear,
+    isDismissible: false,
+    barrierColor: tint,
+    builder: (_) => const SizedBox(),
+  );
+  showHarborSheet<void>(context, barrier: HarborSheetBarrier.clear, barrierColor: tint, builder: (_) => const SizedBox());
+  showHarborSheet<void>(
+    context,
+    barrier: HarborSheetBarrier.none,
+    isDismissible: false,
+    barrierLabel: label,
+    builder: (_) => const SizedBox(),
+  );
+  // A barrier given by a variable is left as it is, still compiling: which barrier it is depends on
+  // its value.
+  showHarborSheet<void>(context, barrier: barrier, isDismissible: false, builder: (_) => const SizedBox());
+  // Through the 0.8 names too: the rename's transforms run on the way.
+  showHarborSheet<void>(
+    context,
+    breakwater: true,
+    keepsTopCoast: true,
+    isDismissible: false,
+    builder: (_) => const SizedBox(),
+  );
+}
+
+void dialogs(BuildContext context, String label) {
+  showHarborDialog<void>(context, barrierDismissible: false, builder: (_) => const SizedBox());
+  showHarborDialog<void>(context, barrierColor: tint, barrierLabel: label, builder: (_) => const SizedBox());
+  showHarborDialog<void>(
+    context,
+    barrierColor: tint,
+    barrierDismissible: false,
+    barrierLabel: label,
+    builder: (_) => const SizedBox(),
+  );
+  HarborDialogRoute<void>(context: context, barrierDismissible: false, builder: (_) => const SizedBox());
+  HarborDialogRoute<void>(context: context, barrierLabel: label, inheritClearWater: true, builder: (_) => const SizedBox());
+  // A route's barrierColor is a Color?, and null was a clear barrier: left for you.
+  HarborDialogRoute<void>(context: context, barrierColor: tint, barrierDismissible: false, builder: (_) => const SizedBox());
+}
+
+void floats(VoidCallback close, HarborAnchor anchor, bool open) {
+  // modal: true is a clear barrier, or a dimmed one with a barrierColor.
+  HarborFloat(modal: true, onDismiss: close, child: const SizedBox());
+  HarborFloat(modal: true, barrierLabel: 'Close menu', onDismiss: close, child: const SizedBox());
+  HarborFloat(modal: true, barrierColor: tint, onDismiss: close, child: const SizedBox());
+  HarborFloat(modal: true, barrierColor: tint, barrierLabel: 'Close menu', onDismiss: close, child: const SizedBox());
+  // modal: false, and a colour or label without modal, did nothing.
+  const HarborFloat(modal: false, child: SizedBox());
+  const HarborFloat(barrierColor: tint, child: SizedBox());
+  // Through the 0.8 name, and the 0.7 anchored constructor.
+  HarborBuoy(modal: true, onDismiss: close, child: const SizedBox());
+  HarborBuoy.anchored(
+    anchor: anchor,
+    modal: true,
+    barrierLabel: 'Close menu',
+    onDismiss: close,
+    child: const SizedBox(),
+  );
+  // A modal given by a variable is left as it is: whether it is a barrier depends on its value.
+  HarborFloat(modal: open, onDismiss: close, child: const SizedBox());
+}
+
+void headersAndFooters() {
+  const Widget title = SizedBox();
+  const Widget actions = SizedBox();
+  // The knobs of a plain header and footer are left for you: headerBar:/footerBar: take a bar whose
+  // child cannot be null, and a header or footer often can (`footer: done ? actions : null`).
+  const HarborSheet(header: title, headerEdgeEffect: HarborEdgeEffect.none, body: SizedBox());
+  const HarborSheet(footer: actions, footerMinimum: 0, body: SizedBox());
+  const HarborSheet(
+    header: title,
+    headerEdgeEffect: HarborEdgeEffect.none,
+    footer: actions,
+    footerKeyboard: HarborKeyboardStance.reserves,
+    footerMinimum: 0,
+    footerEdgeEffect: HarborEdgeEffect.none,
+    body: SizedBox(),
+  );
+  HarborSheet.draggable(
+    header: title,
+    headerEdgeEffect: const HarborEdgeEffect.hairline(),
+    footer: actions,
+    footerKeyboard: HarborKeyboardStance.stays,
+    builder: (context, controller) => const SizedBox(),
+  );
+  const HarborSheet(headerEdgeEffect: HarborEdgeEffect.none, footerMinimum: 0, body: SizedBox());
+  // The 0.8 names are renamed to the knobs, which are deprecated in turn.
+  const HarborSheet(
+    header: title,
+    headerWake: HarborEdgeEffect.none,
+    footer: actions,
+    footerTide: HarborKeyboardStance.stays,
+    body: SizedBox(),
+  );
+}

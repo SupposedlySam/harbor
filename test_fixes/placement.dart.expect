@@ -24,7 +24,7 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
   HarborFloat(placement: HarborAnchored(anchor, side: side, overlap: 6), child: const SizedBox());
   HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 4, crossAlignment: cross, crossOffset: 2, margin: EdgeInsets.zero), child: const SizedBox());
   HarborFloat(
-    placement: HarborAnchored(anchor, side: HarborAnchorSide.end, gap: 1, overlap: 2, crossAlignment: HarborCrossAlignment.end, crossOffset: 3, margin: const EdgeInsets.all(5)), modal: true,
+    placement: HarborAnchored(anchor, side: HarborAnchorSide.end, gap: 1, overlap: 2, crossAlignment: HarborCrossAlignment.end, crossOffset: 3, margin: const EdgeInsets.all(5)), barrier: const HarborBarrier.clear(),
     onDismiss: close,
     child: const SizedBox(),
   );
