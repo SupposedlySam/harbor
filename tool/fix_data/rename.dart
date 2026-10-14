@@ -144,6 +144,13 @@ List<_Transform> _members(
   for (final MapEntry<String, String> e in methods.entries) _Rename(_Element('method', e.key, _In.cls(cls)), e.value),
 ];
 
+/// A deprecated subclass [old] of [now] whose unnamed constructor takes [parameters]' old names.
+List<_Transform> _subclass(final String old, final String now, final Map<String, String> parameters) => <_Transform>[
+  _Rename(_Element('class', old), now),
+  _ReplacedBy(_ctor(old), _ctor(now)),
+  _Parameters(_ctor(old), parameters),
+];
+
 /// Every old type name that is now a deprecated typedef of the new one (lib/src/deprecated.dart).
 const List<(String, String)> _typedefs = <(String, String)>[
   ('HarborSea', 'HarborRoot'),
@@ -151,14 +158,11 @@ const List<(String, String)> _typedefs = <(String, String)>[
   ('HarborDockKind', 'HarborBarKind'),
   ('HarborDockState', 'HarborBarState'),
   ('HarborCoastStance', 'HarborSystemEdgeStance'),
-  ('HarborDockRecord', 'HarborBarRecord'),
   ('HarborSliverDock', 'HarborSliverBar'),
-  ('HarborPontoon', 'HarborAttachedBar'),
   ('HarborPontoonHandle', 'HarborAttachedBarHandle'),
   ('HarborMakeWay', 'HarborHideBar'),
   ('HarborCoastFeature', 'HarborSystemEdgeFeature'),
   ('HarborTide', 'HarborKeyboard'),
-  ('HarborTideState', 'HarborKeyboardState'),
   ('HarborTidePhase', 'HarborKeyboardPhase'),
   ('HarborTideStance', 'HarborKeyboardStance'),
   ('HarborDryDock', 'HarborKeyboardSpace'),
@@ -170,10 +174,7 @@ const List<(String, String)> _typedefs = <(String, String)>[
   ('HarborMoored', 'HarborClear'),
   ('HarborFairwaySliver', 'HarborSliverClear'),
   ('HarborWakeKind', 'HarborEdgeEffectKind'),
-  ('HarborWakeBand', 'HarborFadeBand'),
   ('HarborWakePainter', 'HarborEdgeEffectPainter'),
-  ('HarborWakeMask', 'HarborFadeMask'),
-  ('HarborPortalBuoy', 'HarborPopover'),
   ('HarborFlares', 'HarborToasts'),
   ('HarborFlareSlot', 'HarborToastSlot'),
   ('HarborFlareTarget', 'HarborToastTarget'),
@@ -188,7 +189,6 @@ const List<(String, String)> _typedefs = <(String, String)>[
   ('HarborLighthouse', 'HarborKeepInSight'),
   ('HarborLighthouseRegion', 'HarborKeepInSightRegion'),
   ('HarborChart', 'HarborInspector'),
-  ('HarborChartEntry', 'HarborInspectorEntry'),
   ('HarborChartOverlay', 'HarborInspectorOverlay'),
   ('HarborFleet', 'HarborFrameRegistry'),
   ('HarborFleetObserver', 'HarborFrameObserver'),
@@ -206,18 +206,20 @@ List<_Transform> _harbor() {
     'coastSteady': 'systemEdgesSteady',
     'docks': 'bars',
     'docksResting': 'barsResting',
-    'wakes': 'edgeEffects',
+    'wakes': 'fadeBands',
     'hasDocks': 'hasBars',
-    'wakesPainted': 'edgeEffectsPainted',
+    'wakesPainted': 'fadeBandsPainted',
   };
   const Map<String, String> scrollView = <String, String>{
     'mooringLine': 'rowInsets',
-    'tide': 'keyboard',
+    'bars': 'clearsBars',
+    'tide': 'clearsKeyboard',
     'wake': 'edgeEffects',
     'startsInOpenWater': 'startsUnderBars',
   };
   const Map<String, String> clear = <String, String>{
-    'tide': 'keyboard',
+    'bars': 'clearsBars',
+    'tide': 'clearsKeyboard',
     'mooringLine': 'rowInsets',
     'extra': 'padding',
   };
@@ -237,6 +239,11 @@ List<_Transform> _harbor() {
     'dockHinge': 'barHinge',
   };
   const Map<String, String> records = <String, String>{'clearWater': 'room', 'docks': 'bars', 'tide': 'keyboard'};
+  const Map<String, String> paddingOf = <String, String>{
+    'mooringLine': 'rowInsets',
+    'bars': 'clearsBars',
+    'tide': 'clearsKeyboard',
+  };
   return <_Transform>[
     for (final (String old, String now) in _typedefs) _Rename(_Element('typedef', old), now),
 
@@ -276,10 +283,30 @@ List<_Transform> _harbor() {
     _Parameters(_ctor('HarborFairway'), scrollView),
     _ReplacedBy(_ctor('HarborFairway', 'box'), _ctor('HarborScrollView', 'box')),
     _Parameters(_ctor('HarborFairway', 'box'), scrollView),
-    _Parameters(_method('HarborFairway', 'paddingOf'), const <String, String>{
-      'mooringLine': 'rowInsets',
-      'tide': 'keyboard',
+    _Parameters(_method('HarborFairway', 'paddingOf'), paddingOf),
+    // Seven more are deprecated subclasses that take the old names of their parameters, so the new
+    // constructors keep them required: each is renamed with `class:`, its constructor replaced, and
+    // its old parameters renamed, keyed on the old class that declares them.
+    ..._subclass('HarborTideState', 'HarborKeyboardState', const <String, String>{
+      'highWater': 'settledHeight',
+      'highWaterIsEstimate': 'settledHeightIsEstimate',
     }),
+    ..._subclass('HarborWakeBand', 'HarborFadeBand', const <String, String>{
+      'dockEdge': 'barFace',
+      'wakeEnd': 'fadeEnd',
+      'dockOpacity': 'faceOpacity',
+    }),
+    ..._subclass('HarborWakeMask', 'HarborFadeMask', const <String, String>{
+      'wakes': 'bands',
+      'dockOpacity': 'faceOpacity',
+    }),
+    // HarborWakeMask.alphaWake is a static of the subclass; HarborFadeMask keeps one too, so the
+    // rename lands whichever class the expression names by the time it runs.
+    ..._members('HarborWakeMask', methods: const <String, String>{'alphaWake': 'alphaFade'}),
+    ..._subclass('HarborPortalBuoy', 'HarborPopover', const <String, String>{'buoyBuilder': 'popoverBuilder'}),
+    ..._subclass('HarborPontoon', 'HarborAttachedBar', const <String, String>{'dock': 'bar'}),
+    ..._subclass('HarborDockRecord', 'HarborBarRecord', const <String, String>{'tide': 'keyboard'}),
+    ..._subclass('HarborChartEntry', 'HarborInspectorEntry', records),
     // HarborMooringLine(follow:, child:) is HarborClear.rowInsets(follow:, child:).
     _ReplacedBy(_ctor('HarborMooringLine'), _ctor('HarborClear', 'rowInsets')),
 
@@ -293,9 +320,7 @@ List<_Transform> _harbor() {
     ..._members('HarborBarKind', values: const <String, String>{'pier': 'overlay', 'quay': 'solid'}),
     ..._members('HarborBar', getters: <String, String>{...dockParameters, 'effectiveCoast': 'effectiveSystemEdges'}),
     _Parameters(_method('HarborBar', 'copyWith'), const <String, String>{'tide': 'keyboard'}),
-    _Parameters(_ctor('HarborBarRecord'), const <String, String>{'tide': 'keyboard'}),
     ..._members('HarborBarRecord', getters: const <String, String>{'tide': 'keyboard'}),
-    _Parameters(_ctor('HarborAttachedBar'), const <String, String>{'dock': 'bar'}),
     ..._members('HarborAttachedBar', getters: const <String, String>{'dock': 'bar'}),
     ..._members('HarborAttachedBarHandle', getters: const <String, String>{'dock': 'bar'}),
 
@@ -303,10 +328,6 @@ List<_Transform> _harbor() {
     _Parameters(_ctor('HarborSystemEdges', 'fixed'), const <String, String>{'calmTide': 'ignoresKeyboard'}),
     ..._members('HarborSystemEdges', getters: const <String, String>{'calmTide': 'ignoresKeyboard'}),
     ..._members('HarborKeyboard', methods: const <String, String>{'isInOf': 'isShownOf'}),
-    _Parameters(_ctor('HarborKeyboardState'), const <String, String>{
-      'highWater': 'settledHeight',
-      'highWaterIsEstimate': 'settledHeightIsEstimate',
-    }),
     ..._members(
       'HarborKeyboardState',
       getters: const <String, String>{
@@ -323,25 +344,28 @@ List<_Transform> _harbor() {
       'HarborKeyboardStance',
       values: const <String, String>{'float': 'rides', 'pilings': 'stays', 'dryDock': 'reserves'},
     ),
-    _Parameters(_ctor('HarborKeyboardSpace'), const <String, String>{'showsChildAtHighTide': 'showsChildWhileShown'}),
-    ..._members('HarborKeyboardSpace', getters: const <String, String>{'showsChildAtHighTide': 'showsChildWhileShown'}),
+    _Parameters(_ctor('HarborKeyboardSpace'), const <String, String>{'showsChildAtHighTide': 'showsChildWithKeyboard'}),
+    ..._members(
+      'HarborKeyboardSpace',
+      getters: const <String, String>{'showsChildAtHighTide': 'showsChildWithKeyboard'},
+    ),
 
     // The room.
     ..._members(
       'HarborRoom',
       methods: const <String, String>{'steadyCoastOf': 'steadySystemEdgeOf', 'dockFaceOf': 'barFaceOf'},
     ),
-    _Parameters(_method('HarborRoom', 'clearanceOf'), const <String, String>{'tide': 'keyboard'}),
+    _Parameters(_method('HarborRoom', 'clearanceOf'), const <String, String>{'tide': 'clearsKeyboard'}),
     _Parameters(_ctor('HarborRoomData'), roomData),
     _Parameters(_method('HarborRoomData', 'copyWith'), roomData),
     ..._members(
       'HarborRoomData',
       getters: roomData,
-      methods: const <String, String>{'castOff': 'handled', 'wakeOf': 'edgeEffectOf'},
+      methods: const <String, String>{'castOff': 'handled', 'wakeOf': 'fadeBandOf'},
     ),
     ..._members('HarborRoomAspect', values: const <String, String>{'coast': 'systemEdges', 'docks': 'bars'}),
-    _Parameters(_ctor('HarborHandled'), const <String, String>{'tide': 'keyboard', 'docks': 'bars'}),
-    ..._members('HarborHandled', getters: const <String, String>{'tide': 'keyboard', 'docks': 'bars'}),
+    _Parameters(_ctor('HarborHandled'), const <String, String>{'tide': 'clearsKeyboard', 'docks': 'clearsBars'}),
+    ..._members('HarborHandled', getters: const <String, String>{'tide': 'clearsKeyboard', 'docks': 'clearsBars'}),
     _Parameters(_ctor('HarborLayoutRecord'), records),
     ..._members('HarborLayoutRecord', getters: records),
     ..._members(
@@ -377,36 +401,26 @@ List<_Transform> _harbor() {
     // Scroll views.
     _Parameters(_ctor('HarborScrollView'), scrollView),
     _Parameters(_ctor('HarborScrollView', 'box'), scrollView),
-    _Parameters(_method('HarborScrollView', 'paddingOf'), const <String, String>{
-      'mooringLine': 'rowInsets',
-      'tide': 'keyboard',
-    }),
+    _Parameters(_method('HarborScrollView', 'paddingOf'), paddingOf),
     ..._members('HarborScrollView', getters: scrollView),
-    _Parameters(_ctor('HarborSliverClear'), const <String, String>{'tide': 'keyboard'}),
-    ..._members('HarborSliverClear', getters: const <String, String>{'tide': 'keyboard'}),
+    _Parameters(_ctor('HarborSliverClear'), const <String, String>{'bars': 'clearsBars', 'tide': 'clearsKeyboard'}),
+    ..._members('HarborSliverClear', getters: const <String, String>{'bars': 'clearsBars', 'tide': 'clearsKeyboard'}),
 
     // The edge effect.
     _Parameters(_ctor('HarborEdgeEffect', 'fade'), const <String, String>{'dockOpacity': 'faceOpacity'}),
     ..._members('HarborEdgeEffect', getters: const <String, String>{'dockOpacity': 'faceOpacity'}),
     ..._members('HarborRest', values: const <String, String>{'wakeEnd': 'fadeEnd', 'dockEdge': 'barFace'}),
-    _Parameters(_ctor('HarborFadeBand'), const <String, String>{
-      'dockEdge': 'barFace',
-      'wakeEnd': 'fadeEnd',
-      'dockOpacity': 'faceOpacity',
-    }),
     ..._members(
       'HarborFadeBand',
       getters: const <String, String>{'dockEdge': 'barFace', 'wakeEnd': 'fadeEnd', 'dockOpacity': 'faceOpacity'},
     ),
-    _Parameters(_ctor('HarborFadeMask'), const <String, String>{'wakes': 'edgeEffects', 'dockOpacity': 'faceOpacity'}),
     ..._members(
       'HarborFadeMask',
-      getters: const <String, String>{'wakes': 'edgeEffects', 'dockOpacity': 'faceOpacity'},
+      getters: const <String, String>{'wakes': 'bands', 'dockOpacity': 'faceOpacity'},
       methods: const <String, String>{'alphaWake': 'alphaFade'},
     ),
 
     // Popovers and toasts.
-    _Parameters(_ctor('HarborPopover'), const <String, String>{'buoyBuilder': 'popoverBuilder'}),
     ..._members('HarborPopover', getters: const <String, String>{'buoyBuilder': 'popoverBuilder'}),
     ..._members('HarborToasts', methods: const <String, String>{'raise': 'show'}),
     _Parameters(_method('HarborToasts', 'raise'), const <String, String>{'reachesCoast': 'reachesSystemEdges'}),
@@ -432,7 +446,6 @@ List<_Transform> _harbor() {
     ..._members('HarborDialogRoute', getters: const <String, String>{'inheritClearWater': 'inheritRoom'}),
 
     // The inspector and the scaled screen.
-    _Parameters(_ctor('HarborInspectorEntry'), records),
     ..._members('HarborInspectorEntry', getters: records),
     _Parameters(_ctor('HarborScaledScreen'), const <String, String>{'coast': 'systemEdges'}),
     ..._members('HarborScaledScreen', getters: const <String, String>{'coast': 'systemEdges'}),

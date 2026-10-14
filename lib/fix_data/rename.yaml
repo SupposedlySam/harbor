@@ -50,15 +50,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborSystemEdgeStance'
-  # HarborDockRecord
-  - title: "Rename to 'HarborBarRecord'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborDockRecord'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborBarRecord'
   # HarborSliverDock
   - title: "Rename to 'HarborSliverBar'"
     date: 2026-10-14
@@ -68,15 +59,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborSliverBar'
-  # HarborPontoon
-  - title: "Rename to 'HarborAttachedBar'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborPontoon'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborAttachedBar'
   # HarborPontoonHandle
   - title: "Rename to 'HarborAttachedBarHandle'"
     date: 2026-10-14
@@ -113,15 +95,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborKeyboard'
-  # HarborTideState
-  - title: "Rename to 'HarborKeyboardState'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborTideState'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborKeyboardState'
   # HarborTidePhase
   - title: "Rename to 'HarborKeyboardPhase'"
     date: 2026-10-14
@@ -221,15 +194,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborEdgeEffectKind'
-  # HarborWakeBand
-  - title: "Rename to 'HarborFadeBand'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborWakeBand'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborFadeBand'
   # HarborWakePainter
   - title: "Rename to 'HarborEdgeEffectPainter'"
     date: 2026-10-14
@@ -239,24 +203,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborEdgeEffectPainter'
-  # HarborWakeMask
-  - title: "Rename to 'HarborFadeMask'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborWakeMask'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborFadeMask'
-  # HarborPortalBuoy
-  - title: "Rename to 'HarborPopover'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborPortalBuoy'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborPopover'
   # HarborFlares
   - title: "Rename to 'HarborToasts'"
     date: 2026-10-14
@@ -383,15 +329,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborInspector'
-  # HarborChartEntry
-  - title: "Rename to 'HarborInspectorEntry'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      typedef: 'HarborChartEntry'
-    changes:
-      - kind: 'rename'
-        newName: 'HarborInspectorEntry'
   # HarborChartOverlay
   - title: "Rename to 'HarborInspectorOverlay'"
     date: 2026-10-14
@@ -685,8 +622,11 @@ transforms:
         oldName: 'mooringLine'
         newName: 'rowInsets'
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'wake'
         newName: 'edgeEffects'
@@ -718,8 +658,11 @@ transforms:
         oldName: 'mooringLine'
         newName: 'rowInsets'
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'wake'
         newName: 'edgeEffects'
@@ -737,6 +680,268 @@ transforms:
       - kind: 'renameParameter'
         oldName: 'mooringLine'
         newName: 'rowInsets'
+      - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
+        oldName: 'tide'
+        newName: 'clearsKeyboard'
+  # HarborTideState
+  - title: "Rename to 'HarborKeyboardState'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborTideState'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborKeyboardState'
+  # HarborTideState
+  - title: "Replace with 'HarborKeyboardState'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborTideState'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborKeyboardState'
+  # HarborTideState
+  - title: "Rename parameters"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborTideState'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'highWater'
+        newName: 'settledHeight'
+      - kind: 'renameParameter'
+        oldName: 'highWaterIsEstimate'
+        newName: 'settledHeightIsEstimate'
+  # HarborWakeBand
+  - title: "Rename to 'HarborFadeBand'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborWakeBand'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFadeBand'
+  # HarborWakeBand
+  - title: "Replace with 'HarborFadeBand'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborWakeBand'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborFadeBand'
+  # HarborWakeBand
+  - title: "Rename parameters"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborWakeBand'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'dockEdge'
+        newName: 'barFace'
+      - kind: 'renameParameter'
+        oldName: 'wakeEnd'
+        newName: 'fadeEnd'
+      - kind: 'renameParameter'
+        oldName: 'dockOpacity'
+        newName: 'faceOpacity'
+  # HarborWakeMask
+  - title: "Rename to 'HarborFadeMask'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborWakeMask'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFadeMask'
+  # HarborWakeMask
+  - title: "Replace with 'HarborFadeMask'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborWakeMask'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborFadeMask'
+  # HarborWakeMask
+  - title: "Rename parameters"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborWakeMask'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'wakes'
+        newName: 'bands'
+      - kind: 'renameParameter'
+        oldName: 'dockOpacity'
+        newName: 'faceOpacity'
+  # HarborWakeMask.alphaWake
+  - title: "Rename to 'alphaFade'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      method: 'alphaWake'
+      inClass: 'HarborWakeMask'
+    changes:
+      - kind: 'rename'
+        newName: 'alphaFade'
+  # HarborPortalBuoy
+  - title: "Rename to 'HarborPopover'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborPortalBuoy'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborPopover'
+  # HarborPortalBuoy
+  - title: "Replace with 'HarborPopover'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborPortalBuoy'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborPopover'
+  # HarborPortalBuoy
+  - title: "Rename to 'popoverBuilder'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborPortalBuoy'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'buoyBuilder'
+        newName: 'popoverBuilder'
+  # HarborPontoon
+  - title: "Rename to 'HarborAttachedBar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborPontoon'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborAttachedBar'
+  # HarborPontoon
+  - title: "Replace with 'HarborAttachedBar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborPontoon'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborAttachedBar'
+  # HarborPontoon
+  - title: "Rename to 'bar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborPontoon'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'dock'
+        newName: 'bar'
+  # HarborDockRecord
+  - title: "Rename to 'HarborBarRecord'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborDockRecord'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborBarRecord'
+  # HarborDockRecord
+  - title: "Replace with 'HarborBarRecord'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborDockRecord'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborBarRecord'
+  # HarborDockRecord
+  - title: "Rename to 'keyboard'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborDockRecord'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'tide'
+        newName: 'keyboard'
+  # HarborChartEntry
+  - title: "Rename to 'HarborInspectorEntry'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      class: 'HarborChartEntry'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborInspectorEntry'
+  # HarborChartEntry
+  - title: "Replace with 'HarborInspectorEntry'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborChartEntry'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborInspectorEntry'
+  # HarborChartEntry
+  - title: "Rename parameters"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborChartEntry'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'clearWater'
+        newName: 'room'
+      - kind: 'renameParameter'
+        oldName: 'docks'
+        newName: 'bars'
       - kind: 'renameParameter'
         oldName: 'tide'
         newName: 'keyboard'
@@ -931,17 +1136,6 @@ transforms:
       - kind: 'renameParameter'
         oldName: 'tide'
         newName: 'keyboard'
-  # HarborBarRecord
-  - title: "Rename to 'keyboard'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborBarRecord'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'tide'
-        newName: 'keyboard'
   # HarborBarRecord.tide
   - title: "Rename to 'keyboard'"
     date: 2026-10-14
@@ -952,17 +1146,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'keyboard'
-  # HarborAttachedBar
-  - title: "Rename to 'bar'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborAttachedBar'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'dock'
-        newName: 'bar'
   # HarborAttachedBar.dock
   - title: "Rename to 'bar'"
     date: 2026-10-14
@@ -1014,20 +1197,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'isShownOf'
-  # HarborKeyboardState
-  - title: "Rename parameters"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborKeyboardState'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'highWater'
-        newName: 'settledHeight'
-      - kind: 'renameParameter'
-        oldName: 'highWaterIsEstimate'
-        newName: 'settledHeightIsEstimate'
   # HarborKeyboardState.highWater
   - title: "Rename to 'settledHeight'"
     date: 2026-10-14
@@ -1129,7 +1298,7 @@ transforms:
       - kind: 'rename'
         newName: 'reserves'
   # HarborKeyboardSpace
-  - title: "Rename to 'showsChildWhileShown'"
+  - title: "Rename to 'showsChildWithKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1138,9 +1307,9 @@ transforms:
     changes:
       - kind: 'renameParameter'
         oldName: 'showsChildAtHighTide'
-        newName: 'showsChildWhileShown'
+        newName: 'showsChildWithKeyboard'
   # HarborKeyboardSpace.showsChildAtHighTide
-  - title: "Rename to 'showsChildWhileShown'"
+  - title: "Rename to 'showsChildWithKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1148,7 +1317,7 @@ transforms:
       inClass: 'HarborKeyboardSpace'
     changes:
       - kind: 'rename'
-        newName: 'showsChildWhileShown'
+        newName: 'showsChildWithKeyboard'
   # HarborRoom.steadyCoastOf
   - title: "Rename to 'steadySystemEdgeOf'"
     date: 2026-10-14
@@ -1170,7 +1339,7 @@ transforms:
       - kind: 'rename'
         newName: 'barFaceOf'
   # HarborRoom.clearanceOf
-  - title: "Rename to 'keyboard'"
+  - title: "Rename to 'clearsKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1179,7 +1348,7 @@ transforms:
     changes:
       - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
   # HarborRoomData
   - title: "Rename parameters"
     date: 2026-10-14
@@ -1202,13 +1371,13 @@ transforms:
         newName: 'barsResting'
       - kind: 'renameParameter'
         oldName: 'wakes'
-        newName: 'edgeEffects'
+        newName: 'fadeBands'
       - kind: 'renameParameter'
         oldName: 'hasDocks'
         newName: 'hasBars'
       - kind: 'renameParameter'
         oldName: 'wakesPainted'
-        newName: 'edgeEffectsPainted'
+        newName: 'fadeBandsPainted'
   # HarborRoomData.copyWith
   - title: "Rename parameters"
     date: 2026-10-14
@@ -1231,13 +1400,13 @@ transforms:
         newName: 'barsResting'
       - kind: 'renameParameter'
         oldName: 'wakes'
-        newName: 'edgeEffects'
+        newName: 'fadeBands'
       - kind: 'renameParameter'
         oldName: 'hasDocks'
         newName: 'hasBars'
       - kind: 'renameParameter'
         oldName: 'wakesPainted'
-        newName: 'edgeEffectsPainted'
+        newName: 'fadeBandsPainted'
   # HarborRoomData.coast
   - title: "Rename to 'systemEdges'"
     date: 2026-10-14
@@ -1279,7 +1448,7 @@ transforms:
       - kind: 'rename'
         newName: 'barsResting'
   # HarborRoomData.wakes
-  - title: "Rename to 'edgeEffects'"
+  - title: "Rename to 'fadeBands'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1287,7 +1456,7 @@ transforms:
       inClass: 'HarborRoomData'
     changes:
       - kind: 'rename'
-        newName: 'edgeEffects'
+        newName: 'fadeBands'
   # HarborRoomData.hasDocks
   - title: "Rename to 'hasBars'"
     date: 2026-10-14
@@ -1299,7 +1468,7 @@ transforms:
       - kind: 'rename'
         newName: 'hasBars'
   # HarborRoomData.wakesPainted
-  - title: "Rename to 'edgeEffectsPainted'"
+  - title: "Rename to 'fadeBandsPainted'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1307,7 +1476,7 @@ transforms:
       inClass: 'HarborRoomData'
     changes:
       - kind: 'rename'
-        newName: 'edgeEffectsPainted'
+        newName: 'fadeBandsPainted'
   # HarborRoomData.castOff
   - title: "Rename to 'handled'"
     date: 2026-10-14
@@ -1319,7 +1488,7 @@ transforms:
       - kind: 'rename'
         newName: 'handled'
   # HarborRoomData.wakeOf
-  - title: "Rename to 'edgeEffectOf'"
+  - title: "Rename to 'fadeBandOf'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1327,7 +1496,7 @@ transforms:
       inClass: 'HarborRoomData'
     changes:
       - kind: 'rename'
-        newName: 'edgeEffectOf'
+        newName: 'fadeBandOf'
   # HarborRoomAspect.coast
   - title: "Rename to 'systemEdges'"
     date: 2026-10-14
@@ -1358,12 +1527,12 @@ transforms:
     changes:
       - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'docks'
-        newName: 'bars'
+        newName: 'clearsBars'
   # HarborHandled.tide
-  - title: "Rename to 'keyboard'"
+  - title: "Rename to 'clearsKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1371,9 +1540,9 @@ transforms:
       inClass: 'HarborHandled'
     changes:
       - kind: 'rename'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
   # HarborHandled.docks
-  - title: "Rename to 'bars'"
+  - title: "Rename to 'clearsBars'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1381,7 +1550,7 @@ transforms:
       inClass: 'HarborHandled'
     changes:
       - kind: 'rename'
-        newName: 'bars'
+        newName: 'clearsBars'
   # HarborLayoutRecord
   - title: "Rename parameters"
     date: 2026-10-14
@@ -1608,8 +1777,11 @@ transforms:
       inClass: 'HarborClear'
     changes:
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'mooringLine'
         newName: 'rowInsets'
@@ -1625,16 +1797,29 @@ transforms:
       inClass: 'HarborClear'
     changes:
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'mooringLine'
         newName: 'rowInsets'
       - kind: 'renameParameter'
         oldName: 'extra'
         newName: 'padding'
+  # HarborClear.bars
+  - title: "Rename to 'clearsBars'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      getter: 'bars'
+      inClass: 'HarborClear'
+    changes:
+      - kind: 'rename'
+        newName: 'clearsBars'
   # HarborClear.tide
-  - title: "Rename to 'keyboard'"
+  - title: "Rename to 'clearsKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1642,7 +1827,7 @@ transforms:
       inClass: 'HarborClear'
     changes:
       - kind: 'rename'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
   # HarborClear.mooringLine
   - title: "Rename to 'rowInsets'"
     date: 2026-10-14
@@ -1675,8 +1860,11 @@ transforms:
         oldName: 'mooringLine'
         newName: 'rowInsets'
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'wake'
         newName: 'edgeEffects'
@@ -1695,8 +1883,11 @@ transforms:
         oldName: 'mooringLine'
         newName: 'rowInsets'
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
       - kind: 'renameParameter'
         oldName: 'wake'
         newName: 'edgeEffects'
@@ -1715,8 +1906,11 @@ transforms:
         oldName: 'mooringLine'
         newName: 'rowInsets'
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
   # HarborScrollView.mooringLine
   - title: "Rename to 'rowInsets'"
     date: 2026-10-14
@@ -1727,8 +1921,18 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'rowInsets'
+  # HarborScrollView.bars
+  - title: "Rename to 'clearsBars'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      getter: 'bars'
+      inClass: 'HarborScrollView'
+    changes:
+      - kind: 'rename'
+        newName: 'clearsBars'
   # HarborScrollView.tide
-  - title: "Rename to 'keyboard'"
+  - title: "Rename to 'clearsKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1736,7 +1940,7 @@ transforms:
       inClass: 'HarborScrollView'
     changes:
       - kind: 'rename'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
   # HarborScrollView.wake
   - title: "Rename to 'edgeEffects'"
     date: 2026-10-14
@@ -1758,7 +1962,7 @@ transforms:
       - kind: 'rename'
         newName: 'startsUnderBars'
   # HarborSliverClear
-  - title: "Rename to 'keyboard'"
+  - title: "Rename parameters"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1766,10 +1970,23 @@ transforms:
       inClass: 'HarborSliverClear'
     changes:
       - kind: 'renameParameter'
+        oldName: 'bars'
+        newName: 'clearsBars'
+      - kind: 'renameParameter'
         oldName: 'tide'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
+  # HarborSliverClear.bars
+  - title: "Rename to 'clearsBars'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      getter: 'bars'
+      inClass: 'HarborSliverClear'
+    changes:
+      - kind: 'rename'
+        newName: 'clearsBars'
   # HarborSliverClear.tide
-  - title: "Rename to 'keyboard'"
+  - title: "Rename to 'clearsKeyboard'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1777,7 +1994,7 @@ transforms:
       inClass: 'HarborSliverClear'
     changes:
       - kind: 'rename'
-        newName: 'keyboard'
+        newName: 'clearsKeyboard'
   # HarborEdgeEffect.fade
   - title: "Rename to 'faceOpacity'"
     date: 2026-10-14
@@ -1819,23 +2036,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'barFace'
-  # HarborFadeBand
-  - title: "Rename parameters"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborFadeBand'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'dockEdge'
-        newName: 'barFace'
-      - kind: 'renameParameter'
-        oldName: 'wakeEnd'
-        newName: 'fadeEnd'
-      - kind: 'renameParameter'
-        oldName: 'dockOpacity'
-        newName: 'faceOpacity'
   # HarborFadeBand.dockEdge
   - title: "Rename to 'barFace'"
     date: 2026-10-14
@@ -1866,22 +2066,8 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'faceOpacity'
-  # HarborFadeMask
-  - title: "Rename parameters"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborFadeMask'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'wakes'
-        newName: 'edgeEffects'
-      - kind: 'renameParameter'
-        oldName: 'dockOpacity'
-        newName: 'faceOpacity'
   # HarborFadeMask.wakes
-  - title: "Rename to 'edgeEffects'"
+  - title: "Rename to 'bands'"
     date: 2026-10-14
     element:
       uris: [ 'harbor.dart' ]
@@ -1889,7 +2075,7 @@ transforms:
       inClass: 'HarborFadeMask'
     changes:
       - kind: 'rename'
-        newName: 'edgeEffects'
+        newName: 'bands'
   # HarborFadeMask.dockOpacity
   - title: "Rename to 'faceOpacity'"
     date: 2026-10-14
@@ -1910,17 +2096,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'alphaFade'
-  # HarborPopover
-  - title: "Rename to 'popoverBuilder'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborPopover'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'buoyBuilder'
-        newName: 'popoverBuilder'
   # HarborPopover.buoyBuilder
   - title: "Rename to 'popoverBuilder'"
     date: 2026-10-14
@@ -2162,23 +2337,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'inheritRoom'
-  # HarborInspectorEntry
-  - title: "Rename parameters"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      constructor: ''
-      inClass: 'HarborInspectorEntry'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'clearWater'
-        newName: 'room'
-      - kind: 'renameParameter'
-        oldName: 'docks'
-        newName: 'bars'
-      - kind: 'renameParameter'
-        oldName: 'tide'
-        newName: 'keyboard'
   # HarborInspectorEntry.clearWater
   - title: "Rename to 'room'"
     date: 2026-10-14

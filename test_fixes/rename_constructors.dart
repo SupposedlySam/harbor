@@ -57,4 +57,60 @@ void stored(HarborDock dock, Harbor frame, HarborSea sea) {
   <Object?>[edge, top, edges, root, floats, scroll, copy];
 }
 
+// The seven subclasses that carry the old names of required parameters: built under the old
+// names, read back into variables typed with them, and their statics.
+void subclasses(BuildContext context, OverlayPortalController menu, HarborWatersData room) {
+  const HarborTideState state = HarborTideState(
+    height: 0,
+    remaining: 0,
+    highWater: 300,
+    highWaterIsEstimate: false,
+    phase: HarborTidePhase.low,
+  );
+  final HarborTideState read = HarborTide.of(context);
+  const HarborWakeBand band = HarborWakeBand(dockEdge: 40, wakeEnd: 80, dockOpacity: 0.5);
+  final HarborWakeBand top = room.wakeOf(HarborEdge.top);
+  const HarborWakeBand none = HarborWakeBand.none;
+  const HarborWakeMask mask = HarborWakeMask(wakes: <HarborEdge, HarborWakeBand>{}, dockOpacity: 0.5, child: SizedBox());
+  final HarborWakePainter painter = HarborWakeMask.alphaWake;
+  final HarborPortalBuoy popover = HarborPortalBuoy(controller: menu, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
+  final HarborBuoySide? side = HarborPortalBuoy.maybeSideOf(context);
+  const HarborPontoon attached = HarborPontoon(edge: HarborEdge.bottom, dock: HarborDock.pier(child: SizedBox()), child: SizedBox());
+  const HarborDockRecord record = HarborDockRecord(
+    edge: HarborEdge.top,
+    kind: HarborDockKind.pier,
+    rect: Rect.zero,
+    extent: 0,
+    restingExtent: 0,
+    state: HarborDockState.open,
+    tide: HarborTideStance.pilings,
+  );
+  final HarborChartEntry? nearest = HarborChart.nearest(context);
+  final List<HarborDockRecord> docks = nearest?.docks ?? const <HarborDockRecord>[];
+  const HarborChartEntry entry = HarborChartEntry(
+    label: 'page',
+    depth: 0,
+    frame: Rect.zero,
+    body: Rect.zero,
+    clearWater: Rect.zero,
+    docks: <HarborDockRecord>[record],
+    obstruction: EdgeInsetsDirectional.zero,
+    tide: 0,
+  );
+  <Object?>[state, read, band, top, none, mask, painter, popover, side, attached, docks, entry];
+}
+
+// HarborLayoutRecord keeps its name, so its old parameters are gone rather than kept beside the new
+// ones: the call does not compile against 0.9, and the fix renames them all the same.
+void layout() {
+  const HarborLayoutRecord(
+    frame: Rect.zero,
+    body: Rect.zero,
+    clearWater: Rect.zero,
+    docks: <HarborDockRecord>[],
+    obstruction: EdgeInsetsDirectional.zero,
+    tide: 0,
+  );
+}
+
 void _close() {}

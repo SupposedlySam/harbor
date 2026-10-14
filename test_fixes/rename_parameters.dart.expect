@@ -29,30 +29,30 @@ void bars(HarborBar dock) {
 }
 
 void keyboard(BuildContext context) {
-  const HarborKeyboardSpace(showsChildWhileShown: true);
+  const HarborKeyboardSpace(showsChildWithKeyboard: true);
   const HarborKeyboardState(height: 0, remaining: 0, settledHeight: 300, settledHeightIsEstimate: false, phase: HarborKeyboardPhase.hidden);
 }
 
 void room(BuildContext context, HarborRoomData waters) {
-  HarborRoom.clearanceOf(context, HarborEdge.bottom, keyboard: false);
+  HarborRoom.clearanceOf(context, HarborEdge.bottom, clearsKeyboard: false);
   const HarborRoomData(systemEdges: EdgeInsetsDirectional.zero, bars: EdgeInsetsDirectional.zero, hasBars: <HarborEdge>{});
-  waters.copyWith(systemEdgesSteady: EdgeInsetsDirectional.zero, barsResting: EdgeInsetsDirectional.zero, edgeEffects: const <HarborEdge, HarborFadeBand>{}, edgeEffectsPainted: const <HarborEdge>{});
-  const HarborHandled(keyboard: true, bars: false, child: SizedBox());
+  waters.copyWith(systemEdgesSteady: EdgeInsetsDirectional.zero, barsResting: EdgeInsetsDirectional.zero, fadeBands: const <HarborEdge, HarborFadeBand>{}, fadeBandsPainted: const <HarborEdge>{});
+  const HarborHandled(clearsKeyboard: true, clearsBars: false, child: SizedBox());
   const HarborFadeBand(barFace: 40, fadeEnd: 80, faceOpacity: 0.5);
 }
 
 void content(BuildContext context) {
-  const HarborClear(keyboard: false, rowInsets: true, padding: EdgeInsets.all(8), child: SizedBox());
-  HarborClear.clearanceOf(context, keyboard: false, rowInsets: true, padding: EdgeInsets.zero);
-  const HarborScrollView(rowInsets: false, keyboard: false, edgeEffects: false, startsUnderBars: true, slivers: <Widget>[]);
-  HarborScrollView.box(keyboard: false, edgeEffects: false, child: const SizedBox());
-  HarborScrollView.paddingOf(context, rowInsets: false, keyboard: false);
-  const HarborSliverClear(keyboard: false, sliver: SliverToBoxAdapter());
+  const HarborClear(clearsKeyboard: false, rowInsets: true, padding: EdgeInsets.all(8), child: SizedBox());
+  HarborClear.clearanceOf(context, clearsKeyboard: false, rowInsets: true, padding: EdgeInsets.zero);
+  const HarborScrollView(rowInsets: false, clearsKeyboard: false, edgeEffects: false, startsUnderBars: true, slivers: <Widget>[]);
+  HarborScrollView.box(clearsKeyboard: false, edgeEffects: false, child: const SizedBox());
+  HarborScrollView.paddingOf(context, rowInsets: false, clearsKeyboard: false);
+  const HarborSliverClear(clearsKeyboard: false, sliver: SliverToBoxAdapter());
 }
 
 void effects() {
   const HarborEdgeEffect.fade(length: 12, faceOpacity: 0.6);
-  const HarborFadeMask(edgeEffects: <HarborEdge, HarborFadeBand>{}, faceOpacity: 0.5, child: SizedBox());
+  const HarborFadeMask(bands: <HarborEdge, HarborFadeBand>{}, faceOpacity: 0.5, child: SizedBox());
 }
 
 void overlays(BuildContext context, OverlayPortalController menu) {

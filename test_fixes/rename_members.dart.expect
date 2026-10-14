@@ -35,14 +35,14 @@ void reads(
 ) {
   <Object?>[frame.floats, frame.systemEdges, frame.isPage, frame.bodyClearsKeyboard, frame.edgeEffectPainter, frame.barHinge, sea.systemEdges];
   <Object?>[dock.edgeEffect, dock.keyboard, dock.systemEdges, dock.effectiveSystemEdges, record.keyboard, pontoon.bar, handle.bar];
-  <Object?>[edges.ignoresKeyboard, keyboard.settledHeight, keyboard.settledHeightIsEstimate, keyboard.isShown, space.showsChildWhileShown];
-  <Object?>[room.systemEdges, room.systemEdgesSteady, room.bars, room.barsResting, room.edgeEffects, room.hasBars, room.edgeEffectsPainted];
-  <Object?>[room.handled(HarborEdge.vertical), room.edgeEffectOf(HarborEdge.top), handled.keyboard, handled.bars];
+  <Object?>[edges.ignoresKeyboard, keyboard.settledHeight, keyboard.settledHeightIsEstimate, keyboard.isShown, space.showsChildWithKeyboard];
+  <Object?>[room.systemEdges, room.systemEdgesSteady, room.bars, room.barsResting, room.fadeBands, room.hasBars, room.fadeBandsPainted];
+  <Object?>[room.handled(HarborEdge.vertical), room.fadeBandOf(HarborEdge.top), handled.clearsKeyboard, handled.clearsBars];
   <Object?>[layout.room, layout.bars, layout.keyboard];
   <Object?>[controller.room, controller.roomInGlobal(), controller.registry, controller.isPage, controller.edgesWithBars];
   <Object?>[controller.pageCoverTopsInGlobal, controller.pageCoverage, controller.pageCoverChanges, controller.toasts];
-  <Object?>[clear.keyboard, clear.rowInsets, clear.padding, scroll.rowInsets, scroll.keyboard, scroll.edgeEffects, scroll.startsUnderBars];
-  <Object?>[sliver.keyboard, fade.faceOpacity, band.barFace, band.fadeEnd, band.faceOpacity, mask.edgeEffects, mask.faceOpacity];
+  <Object?>[clear.clearsKeyboard, clear.rowInsets, clear.padding, scroll.rowInsets, scroll.clearsKeyboard, scroll.edgeEffects, scroll.startsUnderBars];
+  <Object?>[sliver.clearsKeyboard, fade.faceOpacity, band.barFace, band.fadeEnd, band.faceOpacity, mask.bands, mask.faceOpacity];
   <Object?>[popover.popoverBuilder, toast.shownFrom, toast.reachesSystemEdges, registry.frames, registry.root];
   <Object?>[sheet.headerEdgeEffect, sheet.footerEdgeEffect, sheet.footerKeyboard, sheet.clearsTopSystemEdge, sheet.bodyClearsKeyboard, dialog.inheritRoom];
   <Object?>[entry.room, entry.bars, entry.keyboard, scaled.systemEdges];

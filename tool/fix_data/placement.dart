@@ -280,18 +280,22 @@ String generate() {
     );
   }
 
-  out.write(
-    _transform(
-      title: "Migrate to 'placement'",
-      comment:
-          'HarborPortalBuoy(anchor:, side:, gap:, overlap:, crossAlignment:, crossOffset:, margin:, flips:) becomes\n'
-          "HarborPortalBuoy(placement: HarborAnchored(anchor or null, ...)). A portal buoy's old side was above, so\n"
-          'side: above is written where it was left out.',
-      element: "      constructor: ''\n      inClass: 'HarborPopover'\n",
-      branches: _anchored(optional: portal, anchorAlways: false, sideDefault: above),
-      variables: <String>['anchor', for (final _Arg a in portal) a.name],
-    ),
-  );
+  // HarborPortalBuoy is a deprecated subclass of HarborPopover since 0.9.0, so a call spelled with
+  // either name is keyed on the class that declares its constructor.
+  for (final String popover in <String>['HarborPortalBuoy', 'HarborPopover']) {
+    out.write(
+      _transform(
+        title: "Migrate to 'placement'",
+        comment:
+            'HarborPortalBuoy(anchor:, side:, gap:, overlap:, crossAlignment:, crossOffset:, margin:, flips:) becomes\n'
+            "HarborPortalBuoy(placement: HarborAnchored(anchor or null, ...)). A portal buoy's old side was above, so\n"
+            'side: above is written where it was left out.',
+        element: "      constructor: ''\n      inClass: '$popover'\n",
+        branches: _anchored(optional: portal, anchorAlways: false, sideDefault: above),
+        variables: <String>['anchor', for (final _Arg a in portal) a.name],
+      ),
+    );
+  }
 
   // The class is HarborToasts since 0.9.0, where `raise` was renamed `show`: a call through the old
   // name HarborFlares resolves there, and either name may be the one in the code when this runs.

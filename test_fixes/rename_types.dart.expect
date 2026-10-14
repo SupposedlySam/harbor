@@ -48,7 +48,7 @@ void types(BuildContext context, HarborController controller, ValueNotifier<doub
   const HarborEdgeEffectKind fadeKind = HarborEdgeEffectKind.fade;
   const HarborFadeBand band = HarborFadeBand.none;
   const HarborEdgeEffectPainter painter = HarborFadeMask.alphaFade;
-  const HarborFadeMask mask = HarborFadeMask(edgeEffects: <HarborEdge, HarborFadeBand>{}, child: SizedBox());
+  const HarborFadeMask mask = HarborFadeMask(bands: <HarborEdge, HarborFadeBand>{}, child: SizedBox());
 
   // Popovers and toasts.
   final HarborToastEntry toast = HarborToasts.show(context, slot: HarborToastSlot.low, builder: (_) => const SizedBox());
