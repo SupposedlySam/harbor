@@ -286,8 +286,8 @@ class _MooredEntryState extends State<MooredEntry> {
         labelOf: (final _EdgeSet e) => e.label,
         onChanged: (final _EdgeSet e) => setState(() => _edges = e),
       ),
-      ToggleControl(label: 'bars', value: _bars, onChanged: (final bool v) => setState(() => _bars = v)),
-      ToggleControl(label: 'keyboard', value: _keyboard, onChanged: (final bool v) => setState(() => _keyboard = v)),
+      ToggleControl(label: 'clearsBars', value: _bars, onChanged: (final bool v) => setState(() => _bars = v)),
+      ToggleControl(label: 'clearsKeyboard', value: _keyboard, onChanged: (final bool v) => setState(() => _keyboard = v)),
       ToggleControl(label: 'rowInsets', value: _rowInsets, onChanged: (final bool v) => setState(() => _rowInsets = v)),
       SliderControl(
         label: 'minimum',
@@ -304,8 +304,8 @@ class _MooredEntryState extends State<MooredEntry> {
         '  bottom: [HarborBar.solid(child: Bar())],\n'
         '  body: HarborClear(\n'
         '    edges: ${_edges.code},\n'
-        '    bars: $_bars,\n'
-        '    keyboard: $_keyboard,\n'
+        '    clearsBars: $_bars,\n'
+        '    clearsKeyboard: $_keyboard,\n'
         '    rowInsets: $_rowInsets,\n'
         '    minimum: EdgeInsetsDirectional.all(${_n(_minimum)}),\n'
         '    child: Form(),\n'
@@ -319,8 +319,8 @@ class _MooredEntryState extends State<MooredEntry> {
         label: 'HarborFrame body (around HarborClear)',
         child: HarborClear(
           edges: _edges.edges,
-          bars: _bars,
-          keyboard: _keyboard,
+          clearsBars: _bars,
+          clearsKeyboard: _keyboard,
           rowInsets: _rowInsets,
           minimum: EdgeInsetsDirectional.all(_minimum),
           child: const StageProbe(
@@ -1153,7 +1153,7 @@ class _OpenWaterEntryState extends State<OpenWaterEntry> {
         'runs full bleed while it is told how far each thing in the way reaches.',
     inYourApp:
         'A background, a map or a hero that runs full bleed and ignores the bars, while a Builder reads how far each '
-        'one reaches (HarborRoom.of(context): room.systemEdges, room.bars, room.edgeEffects, room.frameSize) so it '
+        'one reaches (HarborRoom.of(context): room.systemEdges, room.bars, room.fadeBands, room.frameSize) so it '
         'can place what it draws. Here it shades a band for each.',
     art: const OpenWaterArt(),
     controls: <Widget>[
@@ -1205,7 +1205,7 @@ class _OpenWaterEntryState extends State<OpenWaterEntry> {
                     ),
                     child: Text(
                       'HarborRoom.of(context)\nframeSize ${_n(room.frameSize.width)} × ${_n(room.frameSize.height)}\n'
-                      'edgeEffects ${room.edgeEffects.length}',
+                      'edgeEffects ${room.fadeBands.length}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontFamily: 'Menlo', fontSize: 13, color: Palette.foam),
                     ),

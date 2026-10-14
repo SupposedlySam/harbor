@@ -148,7 +148,7 @@ Map<HarborEdge, HarborFadeBand> _fadesOver(final WidgetTester tester, final Stri
     .widget<HarborFadeMask>(
       find.ancestor(of: find.byKey(ValueKey<String>(row)), matching: find.byType(HarborFadeMask)).first,
     )
-    .edgeEffects;
+    .bands;
 
 /// The render box that draws a bar's frame (and its hairline), found from
 /// something in the bar.

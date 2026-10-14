@@ -411,7 +411,7 @@ void main() {
     _near(_rect(tester, 'reserve tabs').top, tabsTop, 'nothing above moves');
     _near(_rect(tester, 'stage body').bottom, tabsTop);
 
-    await _tap(tester, 'toggle showsChildWhileShown');
+    await _tap(tester, 'toggle showsChildWithKeyboard');
     expect(tester.takeException(), isNull);
   });
 
@@ -465,15 +465,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('reserves: showsChildWhileShown keeps the panel under the keyboard', (final WidgetTester tester) async {
+  testWidgets('reserves: showsChildWithKeyboard keeps the panel under the keyboard', (final WidgetTester tester) async {
     await _pumpEntry(tester, const DryDockEntry());
     final Finder swatches = find.byKey(const ValueKey<String>('reserve swatches'));
-    expect(_code(tester), isNot(contains('showsChildWhileShown')));
+    expect(_code(tester), isNot(contains('showsChildWithKeyboard')));
     await _toggleKeyboard(tester);
     expect(swatches, findsNothing, reason: 'off: the panel hides while the keyboard is up');
 
-    await _tap(tester, 'toggle showsChildWhileShown');
-    expect(_code(tester), contains('showsChildWhileShown: true,'));
+    await _tap(tester, 'toggle showsChildWithKeyboard');
+    expect(_code(tester), contains('showsChildWithKeyboard: true,'));
     expect(swatches, findsOneWidget, reason: 'on: the panel stays');
     final Rect ground = _rect(tester, 'keyboard space');
     _near(tester.getRect(swatches).top, ground.top);

@@ -25,7 +25,7 @@ Future<List<double>> _alphaColumn(final WidgetTester tester, final Map<HarborEdg
             width: 10,
             height: _height,
             child: HarborFadeMask(
-              edgeEffects: wakes,
+              bands: wakes,
               child: const ColoredBox(color: Color(0xFFFFFFFF)),
             ),
           ),
@@ -124,7 +124,7 @@ void main() {
           ),
         ),
       );
-      return HarborRoom.of(body.currentContext!).edgeEffects[HarborEdge.top]!;
+      return HarborRoom.of(body.currentContext!).fadeBands[HarborEdge.top]!;
     }
 
     expect(await bandOf(const HarborEdgeEffect.fade(length: 12)), const HarborFadeBand(barFace: 50, fadeEnd: 62));

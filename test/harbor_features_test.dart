@@ -2291,7 +2291,7 @@ void main() {
       ),
     );
     final Iterable<HarborFadeMask> masks = tester.widgetList<HarborFadeMask>(find.byType(HarborFadeMask));
-    expect(masks.where((final HarborFadeMask m) => m.edgeEffects.isNotEmpty), hasLength(1));
+    expect(masks.where((final HarborFadeMask m) => m.bands.isNotEmpty), hasLength(1));
   });
 
   testWidgets('a breakwater sheet covers the page under a scale', (final tester) async {

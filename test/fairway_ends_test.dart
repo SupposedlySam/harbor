@@ -368,7 +368,7 @@ void main() {
           HarborFrame(
             bodyClearsKeyboard: false,
             body: HarborScrollView(
-              keyboard: false,
+              clearsKeyboard: false,
               slivers: <Widget>[
                 SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
                 _rows(),
@@ -389,7 +389,7 @@ void main() {
     testWidgets('reveals leave the keyboard out', (final tester) async {
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
-          HarborFrame(bodyClearsKeyboard: false, body: HarborScrollView(keyboard: false, slivers: <Widget>[_rows()])),
+          HarborFrame(bodyClearsKeyboard: false, body: HarborScrollView(clearsKeyboard: false, slivers: <Widget>[_rows()])),
         ),
         device: phone,
       );
@@ -409,7 +409,7 @@ void main() {
             bodyClearsKeyboard: false,
             body: Builder(
               builder: (final BuildContext context) {
-                padding = HarborScrollView.paddingOf(context, keyboard: false);
+                padding = HarborScrollView.paddingOf(context, clearsKeyboard: false);
                 return const SizedBox.expand();
               },
             ),
@@ -431,7 +431,7 @@ void main() {
             body: CustomScrollView(
               slivers: <Widget>[
                 HarborSliverClear(
-                  keyboard: false,
+                  clearsKeyboard: false,
                   sliver: SliverMainAxisGroup(
                     slivers: <Widget>[
                       SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),

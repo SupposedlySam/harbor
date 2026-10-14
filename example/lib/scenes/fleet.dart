@@ -325,7 +325,7 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
                   padding: HarborClear.clearanceOf(
                     context,
                     edges: HarborEdge.horizontal,
-                    keyboard: false,
+                    clearsKeyboard: false,
                     rowInsets: true,
                     padding: const EdgeInsetsDirectional.only(bottom: 16),
                   ).resolve(Directionality.of(context)),
@@ -381,7 +381,7 @@ class _BoatHero extends StatelessWidget {
         // The title block clears the status bar only, so it sits under the
         // translucent header.
         HarborClear(
-          bars: false,
+          clearsBars: false,
           edges: const <HarborEdge>{HarborEdge.top},
           child: Column(
             key: const ValueKey<String>('hero title block'),

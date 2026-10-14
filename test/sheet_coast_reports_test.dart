@@ -60,7 +60,7 @@ void main() {
           home: HarborClear(
             edges: HarborEdge.horizontal,
             bars: false,
-            keyboard: false,
+            clearsKeyboard: false,
             // A new port reads its coast from the waters above it, as a sheet's does.
             child: HarborFrame(
               isPage: true,

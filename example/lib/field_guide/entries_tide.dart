@@ -542,7 +542,7 @@ class _DryDockEntryState extends State<DryDockEntry> {
         'The swatches come back in exactly the keyboard\'s ground, so the tab row and the list above it never move.',
       ),
       TryStep(
-        'Switch showsChildWhileShown on, tap the keyboard button',
+        'Switch showsChildWithKeyboard on, tap the keyboard button',
         'The swatches stay drawn while the keyboard slides over them, instead of vanishing the moment it starts in.',
       ),
       TryStep(
@@ -562,7 +562,7 @@ class _DryDockEntryState extends State<DryDockEntry> {
     art: const DryDockArt(),
     controls: <Widget>[
       ToggleControl(
-        label: 'showsChildWhileShown',
+        label: 'showsChildWithKeyboard',
         value: _showsWhileShown,
         onChanged: (final bool v) => setState(() => _showsWhileShown = v),
       ),
@@ -575,7 +575,7 @@ class _DryDockEntryState extends State<DryDockEntry> {
         '      child: Column(mainAxisSize: MainAxisSize.min, children: [\n'
         '        StyleTabs(),\n'
         '        HarborKeyboardSpace(\n'
-        '${_showsWhileShown ? '          showsChildWhileShown: true,\n' : ''}'
+        '${_showsWhileShown ? '          showsChildWithKeyboard: true,\n' : ''}'
         '          child: ColorSwatches(),\n'
         '        ),\n'
         '      ]),\n'
@@ -596,7 +596,7 @@ class _DryDockEntryState extends State<DryDockEntry> {
               const _StyleTabs(),
               HarborKeyboardSpace(
                 key: const ValueKey<String>('keyboard space'),
-                showsChildWhileShown: _showsWhileShown,
+                showsChildWithKeyboard: _showsWhileShown,
                 child: const _Swatches(),
               ),
             ],

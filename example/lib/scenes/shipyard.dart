@@ -722,7 +722,7 @@ class _PaintShopState extends State<PaintShop> {
         ),
         body: HarborClear(
           edges: const <HarborEdge>{HarborEdge.top},
-          keyboard: false,
+          clearsKeyboard: false,
           child: SizedBox(height: 64, child: HarborClear.rowInsets(child: _deck(boat))),
         ),
         // A keyboard space: the keyboard's ground, kept at its settled height either way.

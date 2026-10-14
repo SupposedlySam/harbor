@@ -157,7 +157,7 @@ void main() {
             shrinkWrap: true,
             rowInsets: false,
             bars: false,
-            keyboard: false,
+            clearsKeyboard: false,
             revealMargin: 24.0,
             startsUnderBars: true,
             slivers: <Widget>[],

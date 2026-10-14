@@ -703,7 +703,7 @@ void main() {
           matching: find.byType(HarborFadeMask),
         ),
       ))
-        if (mask.edgeEffects.isNotEmpty) mask.edgeEffects,
+        if (mask.bands.isNotEmpty) mask.bands,
     ];
 
     /// The fade bands the scroll view fades its own rows by.
@@ -711,7 +711,7 @@ void main() {
         .widget<HarborFadeMask>(
           find.descendant(of: find.byType(HarborScrollView), matching: find.byType(HarborFadeMask)).first,
         )
-        .edgeEffects;
+        .bands;
 
     // The header's overlay bar is 62 of status bar and 52 of header from the body's top edge.
     const HarborFadeBand band = HarborFadeBand(barFace: 114, fadeEnd: 114 + 24);

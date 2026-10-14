@@ -619,7 +619,7 @@ class HarborRulesPage extends StatelessWidget {
               // The button below keeps clear of the bottom, so the rules don't.
               child: HarborHandled(
                 edges: const <HarborEdge>{HarborEdge.bottom},
-                keyboard: true,
+                clearsKeyboard: true,
                 child: HarborScrollView(
                   padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
                   slivers: <Widget>[

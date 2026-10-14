@@ -213,7 +213,7 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
               },
             ),
             HarborFadeMask(
-              edgeEffects: HarborRoom.of(context).edgeEffects,
+              bands: HarborRoom.of(context).fadeBands,
               child: HarborHideBar(
                 edge: HarborEdge.top,
                 mode: widget.hideMode,

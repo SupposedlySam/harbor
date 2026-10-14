@@ -54,7 +54,7 @@ class _CoastMargin extends StatelessWidget {
     final EdgeInsetsDirectional coast = HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
     return Padding(
       padding: HarborEdges.keep(coast, HarborEdge.vertical),
-      child: HarborHandled(edges: HarborEdge.vertical, bars: docks, keyboard: tide, child: child),
+      child: HarborHandled(edges: HarborEdge.vertical, clearsBars: docks, clearsKeyboard: tide, child: child),
     );
   }
 }
@@ -787,9 +787,9 @@ void main() {
           ),
         ),
       );
-      expect(HarborRoom.of(under).edgeEffects, contains(HarborEdge.top), reason: 'positive control');
-      expect(HarborRoom.of(castOff).edgeEffects, isNot(contains(HarborEdge.top)));
-      expect(HarborRoom.of(castOff).edgeEffectOf(HarborEdge.top), HarborFadeBand.none);
+      expect(HarborRoom.of(under).fadeBands, contains(HarborEdge.top), reason: 'positive control');
+      expect(HarborRoom.of(castOff).fadeBands, isNot(contains(HarborEdge.top)));
+      expect(HarborRoom.of(castOff).fadeBandOf(HarborEdge.top), HarborFadeBand.none);
     });
 
     // Breaks if: a reader of the coast aspect is not rebuilt when the coast changes.
@@ -843,7 +843,7 @@ void main() {
               (final BuildContext c) => under = c,
               child: HarborHandled(
                 edges: const <HarborEdge>{},
-                keyboard: true,
+                clearsKeyboard: true,
                 child: _Probe((final BuildContext c) => castOff = c),
               ),
             ),
@@ -919,7 +919,7 @@ void main() {
       expect(waters.systemEdges, EdgeInsetsDirectional.zero);
       expect(waters.bars, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
       expect(waters.barsResting, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
-      expect(waters.edgeEffectOf(HarborEdge.top), const HarborFadeBand(barFace: 50, fadeEnd: 50 + 12));
+      expect(waters.fadeBandOf(HarborEdge.top), const HarborFadeBand(barFace: 50, fadeEnd: 50 + 12));
       expect(waters.hasBars, containsAll(HarborEdge.vertical));
       final HarborRoomData raw = HarborRoom.maybeRawOf(beneath)!;
       expect(raw.bars, waters.bars, reason: 'measured from the layer, not left for MediaQuery to clamp');
@@ -957,7 +957,7 @@ void main() {
         MaterialApp(
           home: HarborHandled(
             edges: HarborEdge.vertical,
-            bars: false,
+            clearsBars: false,
             child: _Probe((final BuildContext c) => beneath = c),
           ),
         ),
@@ -1075,7 +1075,7 @@ void main() {
                 const _AspectReader(HarborRoomAspect.margin),
                 const _RoomReader(),
                 const HarborClear.rowInsets(child: SizedBox(height: 10)),
-                const HarborClear(edges: HarborEdge.horizontal, keyboard: false, child: SizedBox(height: 10)),
+                const HarborClear(edges: HarborEdge.horizontal, clearsKeyboard: false, child: SizedBox(height: 10)),
                 const SizedBox(
                   height: 40,
                   child: HarborScrollView(
@@ -1159,14 +1159,14 @@ void main() {
                 const SizedBox(
                   height: 100,
                   child: HarborScrollView(
-                    keyboard: false,
+                    clearsKeyboard: false,
                     slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 10))],
                   ),
                 ),
                 const SizedBox(
                   height: 100,
                   child: HarborScrollView(
-                    keyboard: false,
+                    clearsKeyboard: false,
                     bars: false,
                     slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 10))],
                   ),
@@ -1206,7 +1206,7 @@ void main() {
                 const HarborClear(
                   edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
                   bars: false,
-                  keyboard: false,
+                  clearsKeyboard: false,
                   child: SizedBox(height: 10),
                 ),
                 const _AspectReader(HarborRoomAspect.systemEdges),

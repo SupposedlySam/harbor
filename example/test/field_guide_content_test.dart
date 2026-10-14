@@ -200,20 +200,20 @@ void main() {
       expect(_code(tester), contains('edges: HarborEdge.all,'));
     });
 
-    testWidgets('keyboard on: the bottom rises clear of the keyboard', (final WidgetTester tester) async {
+    testWidgets('clearsKeyboard on: the bottom rises clear of the keyboard', (final WidgetTester tester) async {
       await pump(tester);
       await _setKeyboard(tester, shown: true);
       expect(box(tester).bottom, _near(_keyboardTop(tester)));
       expect(box(tester).top, _near(_rect(tester, 'overlay header').bottom));
-      expect(_code(tester), contains('keyboard: true,'));
+      expect(_code(tester), contains('clearsKeyboard: true,'));
     });
 
-    testWidgets('keyboard off: the bottom stays on the solid bar under the keyboard', (
+    testWidgets('clearsKeyboard off: the bottom stays on the solid bar under the keyboard', (
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'toggle keyboard');
-      expect(_code(tester), contains('keyboard: false,'));
+      await _tap(tester, 'toggle clearsKeyboard');
+      expect(_code(tester), contains('clearsKeyboard: false,'));
       await _setKeyboard(tester, shown: true);
       expect(box(tester).bottom, _near(_rect(tester, 'solid bar').top));
       expect(box(tester).bottom, greaterThan(_keyboardTop(tester) + 1));
@@ -260,23 +260,23 @@ void main() {
       expect(box(tester).bottom, _near(_keyboardTop(tester)));
     });
 
-    testWidgets('bars off: sits under the overlay header, just below the status bar, and ignores the keyboard', (
+    testWidgets('clearsBars off: sits under the overlay header, just below the status bar, and ignores the keyboard', (
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'toggle bars');
-      expect(_code(tester), contains('bars: false,'));
+      await _tap(tester, 'toggle clearsBars');
+      expect(_code(tester), contains('clearsBars: false,'));
       expect(box(tester).top, _near(_frameTop(tester) + 62 * _scale(tester)));
       expect(box(tester).bottom, _near(_rect(tester, 'solid bar').top));
       await _setKeyboard(tester, shown: true);
       expect(box(tester).bottom, _near(_rect(tester, 'solid bar').top));
     });
 
-    testWidgets('bars, switched on again, clears the overlay header again', (final WidgetTester tester) async {
+    testWidgets('clearsBars, switched on again, clears the overlay header again', (final WidgetTester tester) async {
       await pump(tester);
-      await _tap(tester, 'toggle bars');
-      await _tap(tester, 'toggle bars');
-      expect(_code(tester), contains('bars: true,'));
+      await _tap(tester, 'toggle clearsBars');
+      await _tap(tester, 'toggle clearsBars');
+      expect(_code(tester), contains('clearsBars: true,'));
       expect(box(tester).top, _near(_rect(tester, 'overlay header').bottom));
     });
 
@@ -310,7 +310,7 @@ void main() {
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'toggle bars');
+      await _tap(tester, 'toggle clearsBars');
       await _slide(tester, 'minimum', 48);
       // The status bar's 62 is more than 48, so the top stays.
       expect(box(tester).top, _near(_frameTop(tester) + 62 * _scale(tester)));
