@@ -1,3 +1,7 @@
+## 0.3.1
+
+Needs harbor 0.8.0. Nothing in harbor_test changes.
+
 ## 0.3.0
 
 Needs harbor 0.7.0.
