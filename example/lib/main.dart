@@ -37,9 +37,9 @@ class _HarborMasterAppState extends State<HarborMasterApp> {
         debugShowCheckedModeBanner: false,
         theme: Palette.theme(),
         builder: (final BuildContext context, final Widget? child) {
-          final Widget sea = HarborChartOverlay(
+          final Widget sea = HarborInspectorOverlay(
             enabled: _settings.chart,
-            child: HarborSea(
+            child: HarborRoot(
               margin: EdgeInsetsDirectional.symmetric(horizontal: _settings.tv ? 32 : 16),
               child: child!,
             ),
@@ -51,10 +51,10 @@ class _HarborMasterAppState extends State<HarborMasterApp> {
           if (!_settings.tv) {
             return directed;
           }
-          // A TV: a 1200×675 reference screen with a 5% title-safe coast.
-          return HarborScaleModel(
+          // A TV: a 1200×675 reference screen with a 5% title-safe band.
+          return HarborScaledScreen(
             referenceSize: const Size(1200, 675),
-            coast: const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)),
+            systemEdges: const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)),
             child: directed,
           );
         },

@@ -101,7 +101,10 @@ class _BoatPainter extends CustomPainter {
         );
       case BoatKind.tug:
         canvas
-          ..drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.3, h * 0.3, w * 0.36, h * 0.23), const Radius.circular(4)), white)
+          ..drawRRect(
+            RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.3, h * 0.3, w * 0.36, h * 0.23), const Radius.circular(4)),
+            white,
+          )
           ..drawRect(Rect.fromLTWH(w * 0.52, h * 0.12, w * 0.09, h * 0.2), Paint()..color = Palette.buoyRed)
           ..drawRect(Rect.fromLTWH(w * 0.52, h * 0.12, w * 0.09, h * 0.04), Paint()..color = Colors.black87);
         _portholes(canvas, w * 0.36, h * 0.4, 3, w * 0.08, w);
@@ -113,21 +116,37 @@ class _BoatPainter extends CustomPainter {
         _portholes(canvas, w * 0.22, h * 0.43, 7, w * 0.085, w);
       case BoatKind.rowboat:
         canvas
-          ..drawLine(Offset(w * 0.2, h * 0.36), Offset(w * 0.38, h * 0.62), Paint()
-            ..color = Palette.plankLight
-            ..strokeWidth = w * 0.02)
-          ..drawLine(Offset(w * 0.8, h * 0.36), Offset(w * 0.62, h * 0.62), Paint()
-            ..color = Palette.plankLight
-            ..strokeWidth = w * 0.02);
+          ..drawLine(
+            Offset(w * 0.2, h * 0.36),
+            Offset(w * 0.38, h * 0.62),
+            Paint()
+              ..color = Palette.plankLight
+              ..strokeWidth = w * 0.02,
+          )
+          ..drawLine(
+            Offset(w * 0.8, h * 0.36),
+            Offset(w * 0.62, h * 0.62),
+            Paint()
+              ..color = Palette.plankLight
+              ..strokeWidth = w * 0.02,
+          );
       case BoatKind.trawler:
         canvas
           ..drawRect(Rect.fromLTWH(w * 0.56, h * 0.28, w * 0.24, h * 0.25), white)
-          ..drawLine(Offset(w * 0.3, h * 0.52), Offset(w * 0.3, h * 0.1), Paint()
-            ..color = Palette.plankDark
-            ..strokeWidth = w * 0.02)
-          ..drawLine(Offset(w * 0.3, h * 0.12), Offset(w * 0.12, h * 0.4), Paint()
-            ..color = Palette.rope
-            ..strokeWidth = w * 0.01);
+          ..drawLine(
+            Offset(w * 0.3, h * 0.52),
+            Offset(w * 0.3, h * 0.1),
+            Paint()
+              ..color = Palette.plankDark
+              ..strokeWidth = w * 0.02,
+          )
+          ..drawLine(
+            Offset(w * 0.3, h * 0.12),
+            Offset(w * 0.12, h * 0.4),
+            Paint()
+              ..color = Palette.rope
+              ..strokeWidth = w * 0.01,
+          );
         _portholes(canvas, w * 0.6, h * 0.38, 2, w * 0.08, w);
       case BoatKind.yacht:
         canvas
@@ -148,9 +167,13 @@ class _BoatPainter extends CustomPainter {
       final double fx = kind == BoatKind.sailboat ? w * 0.51 : w * 0.7;
       final double fy = kind == BoatKind.sailboat ? h * 0.04 : h * 0.18;
       canvas
-        ..drawLine(Offset(fx, fy), Offset(fx, fy + h * 0.16), Paint()
-          ..color = Palette.plankDark
-          ..strokeWidth = 1.5)
+        ..drawLine(
+          Offset(fx, fy),
+          Offset(fx, fy + h * 0.16),
+          Paint()
+            ..color = Palette.plankDark
+            ..strokeWidth = 1.5,
+        )
         ..drawPath(
           Path()
             ..moveTo(fx, fy)
@@ -172,7 +195,14 @@ class _BoatPainter extends CustomPainter {
       ..drawArc(Rect.fromLTWH(w * 0.58, waterline + h * 0.06, w * 0.3, h * 0.1), 0.2, 2.6, false, ripple);
   }
 
-  void _portholes(final Canvas canvas, final double x, final double y, final int count, final double step, final double w) {
+  void _portholes(
+    final Canvas canvas,
+    final double x,
+    final double y,
+    final int count,
+    final double step,
+    final double w,
+  ) {
     final Paint glass = Paint()..color = const Color(0xFF90CAF9);
     for (int i = 0; i < count; i++) {
       canvas.drawCircle(Offset(x + i * step, y), w * 0.018, glass);

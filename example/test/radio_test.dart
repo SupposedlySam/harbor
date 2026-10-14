@@ -10,7 +10,7 @@ import 'package:harbor_example/scenes/radio.dart';
 Widget _app() => MaterialApp(
   theme: Palette.theme(),
   builder: (final BuildContext context, final Widget? child) =>
-      HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+      HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
   home: HarborPage(child: ChannelPage(channel: Fleet.channels.first)),
 );
 
@@ -19,8 +19,8 @@ final Finder _header = find.byKey(ChannelPage.headerKey);
 final Finder _field = find.descendant(of: _composer, matching: find.byType(TextField));
 
 /// Pumps the channel and stows the logbook note so it covers no calls.
-Future<HarborSeaTrial> _pumpChannel(final WidgetTester tester, final HarborTrialDevice device) async {
-  final HarborSeaTrial trial = await tester.pumpSeaTrial(_app(), device: device);
+Future<HarborTrial> _pumpChannel(final WidgetTester tester, final HarborTrialDevice device) async {
+  final HarborTrial trial = await tester.pumpHarborTrial(_app(), device: device);
   await tester.pump();
   await tester.tap(find.byType(LogbookNote));
   await tester.pump();
@@ -30,27 +30,27 @@ Future<HarborSeaTrial> _pumpChannel(final WidgetTester tester, final HarborTrial
 void main() {
   for (final HarborTrialDevice device in HarborTrialDevice.phones) {
     group(device.name, () {
-      testWidgets('the composer rests on the home indicator and floats on the tide', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpChannel(tester, device);
+      testWidgets('the composer rests on the home indicator and rides the keyboard', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpChannel(tester, device);
         final Finder newest = find.byKey(ChannelPage.callKey(0));
 
-        expect(tester.getRect(_composer).bottom, device.size.height - device.coast.bottom);
+        expect(tester.getRect(_composer).bottom, device.size.height - device.systemEdges.bottom);
         expect(tester.getRect(newest).bottom, lessThanOrEqualTo(tester.getRect(_composer).top));
         expect(tester.getRect(newest).bottom, greaterThan(tester.getRect(_composer).top - 24));
 
         await tester.tap(_field);
-        await trial.raiseTide();
+        await trial.showKeyboard();
 
-        expect(tester.getRect(_composer).bottom, trial.waterline);
+        expect(tester.getRect(_composer).bottom, trial.keyboardTop);
         expect(tester.getRect(newest).bottom, lessThanOrEqualTo(tester.getRect(_composer).top));
         expect(tester.getRect(newest).bottom, greaterThan(tester.getRect(_composer).top - 24));
         expect(tester.getRect(newest).top, greaterThanOrEqualTo(tester.getRect(_header).bottom));
       });
 
       testWidgets('a sent call lands just above the composer', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpChannel(tester, device);
+        final HarborTrial trial = await _pumpChannel(tester, device);
         await tester.tap(_field);
-        await trial.raiseTide();
+        await trial.showKeyboard();
         await tester.enterText(_field, 'Ahoy, Harbor Control!');
         await tester.tap(find.byTooltip('Send'));
         await tester.pump();
@@ -61,36 +61,36 @@ void main() {
         expect(tester.getRect(sent).bottom, greaterThan(tester.getRect(_composer).top - 24));
       });
 
-      testWidgets('the crew buoy floats above the composer, below the header', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpChannel(tester, device);
+      testWidgets('the crew float sits above the composer, below the header', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpChannel(tester, device);
         await tester.tap(_field);
-        await trial.raiseTide();
+        await trial.showKeyboard();
         await tester.enterText(_field, 'Ask @');
         await tester.pump();
         await tester.pump();
 
-        final Finder buoy = find.byKey(ChannelPage.mentionsKey);
-        expect(buoy, findsOneWidget);
-        expect(tester.getRect(buoy).bottom, lessThanOrEqualTo(tester.getRect(_composer).top));
-        expect(tester.getRect(buoy).top, greaterThanOrEqualTo(tester.getRect(_header).bottom));
+        final Finder mentions = find.byKey(ChannelPage.mentionsKey);
+        expect(mentions, findsOneWidget);
+        expect(tester.getRect(mentions).bottom, lessThanOrEqualTo(tester.getRect(_composer).top));
+        expect(tester.getRect(mentions).top, greaterThanOrEqualTo(tester.getRect(_header).bottom));
 
         await tester.enterText(_field, 'Ask @H');
         await tester.pump();
         await tester.tap(find.text('Hana'));
         await tester.pump();
         expect(tester.widget<TextField>(_field).controller!.text, 'Ask @Hana ');
-        expect(buoy, findsNothing);
+        expect(mentions, findsNothing);
       });
 
-      testWidgets('the call actions stay in the clear water', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpChannel(tester, device);
-        final Rect clear = trial.clearWaterAround(_composer);
+      testWidgets('the call actions stay in the room', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpChannel(tester, device);
+        final Rect clear = trial.roomAround(_composer);
         await tester.longPress(find.byKey(ChannelPage.callKey(0)));
         await tester.pump(const Duration(milliseconds: 300));
 
         final Finder card = find.byKey(ChannelPage.actionsKey);
         expect(card, findsOneWidget);
-        expect(card, isInClearWater(clear));
+        expect(card, isInRoom(clear));
         expect(tester.getRect(card).bottom, lessThanOrEqualTo(tester.getRect(_composer).top));
         expect(tester.getRect(card).top, greaterThanOrEqualTo(tester.getRect(_header).bottom));
         await tester.tap(find.text('Reply'));
@@ -100,14 +100,14 @@ void main() {
         expect(tester.widget<TextField>(_field).controller!.text, startsWith('You, copy that.'));
       });
 
-      testWidgets('an edited call is kept in sight as the tide comes in', (final WidgetTester tester) async {
-        final HarborSeaTrial trial = await _pumpChannel(tester, device);
+      testWidgets('an edited call is kept in sight as the keyboard comes in', (final WidgetTester tester) async {
+        final HarborTrial trial = await _pumpChannel(tester, device);
         // Fold the logbook note out of the way, as a sailor would.
         await tester.tap(find.byKey(const ValueKey<String>('logbook note')));
         await tester.pump(const Duration(milliseconds: 300));
-        // The highest of our own calls still wholly in sight: the rising tide
+        // The highest of our own calls still wholly in sight: the rising keyboard
         // would push it up under the header.
-        final Rect clear = trial.clearWaterAround(_composer);
+        final Rect clear = trial.roomAround(_composer);
         int id = 0;
         for (int i = 0; i < Fleet.channels.first.calls.length; i++) {
           final Finder candidate = find.byKey(ChannelPage.callKey(i));
@@ -127,7 +127,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
         expect(tester.widget<TextField>(_field).controller!.text, Fleet.channels.first.calls[id].text);
 
-        await trial.raiseTide();
+        await trial.showKeyboard();
 
         expect(tester.getRect(call).top, greaterThanOrEqualTo(tester.getRect(_header).bottom));
         expect(tester.getRect(call).bottom, lessThanOrEqualTo(tester.getRect(_composer).top));

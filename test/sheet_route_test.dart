@@ -8,12 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-Widget _bar(final String label, final double height) => SizedBox(
-  key: ValueKey<String>(label),
-  height: height,
-  width: double.infinity,
-  child: Text(label),
-);
+Widget _bar(final String label, final double height) =>
+    SizedBox(key: ValueKey<String>(label), height: height, width: double.infinity, child: Text(label));
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
@@ -55,16 +51,16 @@ Future<BuildContext> _page(
   final FocusNode? focusNode,
 }) async {
   late BuildContext pageContext;
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
       theme: theme,
       navigatorObservers: observers,
       builder: (final BuildContext context, final Widget? child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
-        child: HarborSea(child: child!),
+        child: HarborRoot(child: child!),
       ),
       home: Material(
-        child: Harbor(
+        child: HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
@@ -84,11 +80,13 @@ void main() {
   testWidgets('a sheet route carries its settings to navigator observers', (final tester) async {
     final _Observer observer = _Observer();
     final BuildContext page = await _page(tester, observers: <NavigatorObserver>[observer]);
-    unawaited(showHarborSheet<void>(
-      page,
-      routeSettings: const RouteSettings(name: 'share', arguments: 7),
-      builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 200)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        routeSettings: const RouteSettings(name: 'share', arguments: 7),
+        builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 200)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(observer.pushed.last.settings.name, 'share');
     expect(observer.pushed.last.settings.arguments, 7);
@@ -96,42 +94,49 @@ void main() {
 
   // harbor's core imports no design library, so a Material app passes Material's localized
   // label itself; the default is the English that Material and Cupertino fall back to.
-  testWidgets('a sheet barrier is announced with the label given, Material\'s by the documented recipe', (final tester) async {
+  testWidgets('a sheet barrier is announced with the label given, Material\'s by the documented recipe', (
+    final tester,
+  ) async {
     final BuildContext page = await _page(tester);
     late BuildContext sheet;
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) {
-        sheet = context;
-        return const HarborSheet(body: SizedBox(height: 200));
-      },
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) {
+          sheet = context;
+          return const HarborSheet(body: SizedBox(height: 200));
+        },
+      ),
+    );
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierLabel, 'Dismiss');
     HarborSheet.close(sheet);
     await tester.pumpAndSettle();
 
-    unawaited(showHarborSheet<void>(
-      page,
-      barrierLabel: MaterialLocalizations.of(page).modalBarrierDismissLabel,
-      builder: (final BuildContext context) {
-        sheet = context;
-        return const HarborSheet(body: SizedBox(height: 200));
-      },
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        barrierLabel: MaterialLocalizations.of(page).modalBarrierDismissLabel,
+        builder: (final BuildContext context) {
+          sheet = context;
+          return const HarborSheet(body: SizedBox(height: 200));
+        },
+      ),
+    );
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultMaterialLocalizations().modalBarrierDismissLabel);
   });
 
   testWidgets('a sheet barrier has a label without Material localizations', (final tester) async {
     late BuildContext page;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       WidgetsApp(
         color: const Color(0xFF000000),
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
         pageRouteBuilder: <T>(final RouteSettings settings, final WidgetBuilder builder) => PageRouteBuilder<T>(
           settings: settings,
-          pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) => builder(context),
+          pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) =>
+              builder(context),
         ),
         home: Builder(
           builder: (final BuildContext context) {
@@ -142,13 +147,15 @@ void main() {
       ),
     );
     late BuildContext sheet;
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) {
-        sheet = context;
-        return const HarborSheet(body: SizedBox(height: 200));
-      },
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) {
+          sheet = context;
+          return const HarborSheet(body: SizedBox(height: 200));
+        },
+      ),
+    );
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultMaterialLocalizations().modalBarrierDismissLabel);
     expect(ModalRoute.of(sheet)!.barrierLabel, const DefaultCupertinoLocalizations().modalBarrierDismissLabel);
@@ -157,38 +164,51 @@ void main() {
   testWidgets("a sheet barrier is showGeneralDialog's black by default", (final tester) async {
     final BuildContext page = await _page(tester);
     late BuildContext sheet;
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) {
-        sheet = context;
-        return const HarborSheet(body: SizedBox(height: 200));
-      },
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) {
+          sheet = context;
+          return const HarborSheet(body: SizedBox(height: 200));
+        },
+      ),
+    );
     await tester.pumpAndSettle();
     expect(ModalRoute.of(sheet)!.barrierColor, const Color(0x80000000));
   });
 
   testWidgets('a sheet footer draws a translucent black hairline by default', (final tester) async {
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200), footer: _bar('actions', 48)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200), footer: _bar('actions', 48)),
+      ),
+    );
     await tester.pumpAndSettle();
-    final Finder footer = find.ancestor(of: find.byKey(const ValueKey<String>('actions')), matching: find.byType(HarborDockSlot)).first;
+    final Finder footer = find
+        .ancestor(of: find.byKey(const ValueKey<String>('actions')), matching: find.byType(HarborDockSlot))
+        .first;
     expect(tester.renderObject(footer), paints..rect(color: const Color(0x1F000000)));
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.clear]) {
-    testWidgets('a sheet that is not dismissible ignores a barrier tap and closes on back (barrier: ${barrier.name})', (final tester) async {
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
+    HarborSheetBarrier.dismissible,
+    HarborSheetBarrier.clear,
+  ]) {
+    testWidgets('a sheet that is not dismissible ignores a barrier tap and closes on back (barrier: ${barrier.name})', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester);
       bool closed = false;
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: barrier,
-        isDismissible: false,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-      ).then((final void _) => closed = true));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: barrier,
+          isDismissible: false,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+        ).then((final void _) => closed = true),
+      );
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(200, 120));
       await tester.pumpAndSettle();
@@ -203,18 +223,22 @@ void main() {
   }
 
   for (final bool requestFocus in <bool>[true, false]) {
-    testWidgets('a sheet opened with requestFocus: $requestFocus ${requestFocus ? 'takes' : 'leaves'} the focus', (final tester) async {
+    testWidgets('a sheet opened with requestFocus: $requestFocus ${requestFocus ? 'takes' : 'leaves'} the focus', (
+      final tester,
+    ) async {
       final FocusNode field = FocusNode(debugLabel: 'page field');
       addTearDown(field.dispose);
       final BuildContext page = await _page(tester, focusNode: field);
       field.requestFocus();
       await tester.pump();
       expect(field.hasPrimaryFocus, isTrue);
-      unawaited(showHarborSheet<void>(
-        page,
-        requestFocus: requestFocus,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          requestFocus: requestFocus,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(field.hasPrimaryFocus, !requestFocus);
     });
@@ -222,14 +246,22 @@ void main() {
 
   testWidgets('a sheet spans the screen by default, however wide', (final tester) async {
     final BuildContext page = await _page(tester, device: HarborTrialDevice.television);
-    unawaited(showHarborSheet<void>(page, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))));
+    unawaited(
+      showHarborSheet<void>(page, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))),
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'content').width, 1920);
   });
 
   testWidgets('maxWidth caps a sheet on a wide screen, centred', (final tester) async {
     final BuildContext page = await _page(tester, device: HarborTrialDevice.television);
-    unawaited(showHarborSheet<void>(page, maxWidth: 640, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        maxWidth: 640,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'content').width, 640);
     expect(_rect(tester, 'content').center.dx, 960);
@@ -241,37 +273,46 @@ void main() {
       device: HarborTrialDevice.television,
       theme: ThemeData(bottomSheetTheme: const BottomSheetThemeData(constraints: BoxConstraints(maxWidth: 480))),
     );
-    unawaited(showHarborSheet<void>(
-      page,
-      maxWidth: Theme.of(page).bottomSheetTheme.constraints?.maxWidth ?? 640,
-      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        maxWidth: Theme.of(page).bottomSheetTheme.constraints?.maxWidth ?? 640,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'content').width, 480);
   });
 
-  testWidgets('a sheet whose content is wrapped in Material hosts a text field and keeps the page text style', (final tester) async {
+  testWidgets('a sheet whose content is wrapped in Material hosts a text field and keeps the page text style', (
+    final tester,
+  ) async {
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => DefaultTextStyle(
-        style: const TextStyle(fontSize: 21, color: Colors.teal),
-        child: HarborSheet(
-          contentBuilder: (final BuildContext context, final Widget? content) => Material(
-            type: MaterialType.transparency,
-            textStyle: DefaultTextStyle.of(context).style,
-            child: content,
-          ),
-          body: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const TextField(key: ValueKey<String>('field')),
-              InkWell(onTap: () {}, child: const Text('reply', key: ValueKey<String>('reply'))),
-            ],
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => DefaultTextStyle(
+          style: const TextStyle(fontSize: 21, color: Colors.teal),
+          child: HarborSheet(
+            contentBuilder: (final BuildContext context, final Widget? content) => Material(
+              type: MaterialType.transparency,
+              textStyle: DefaultTextStyle.of(context).style,
+              child: content,
+            ),
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const TextField(key: ValueKey<String>('field')),
+                InkWell(
+                  onTap: () {},
+                  child: const Text('reply', key: ValueKey<String>('reply')),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.enterText(find.byKey(const ValueKey<String>('field')), 'hello');
@@ -283,19 +324,24 @@ void main() {
 
   testWidgets('a clipped sheet cuts an edge-to-edge body to its corners', (final tester) async {
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet(
-        clip: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-        body: _bar('bleed', 200),
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet(
+          clip: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          body: _bar('bleed', 200),
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     final Rect bleed = _rect(tester, 'bleed');
     bool hits(final Offset point) => tester
         .hitTestOnBinding(point)
         .path
-        .any((final HitTestEntry entry) => entry.target == tester.renderObject(find.byKey(const ValueKey<String>('bleed'))));
+        .any(
+          (final HitTestEntry entry) =>
+              entry.target == tester.renderObject(find.byKey(const ValueKey<String>('bleed'))),
+        );
     expect(hits(bleed.center), isTrue);
     expect(hits(bleed.topLeft + const Offset(2, 2)), isFalse);
     expect(hits(bleed.topRight + const Offset(-2, 2)), isFalse);
@@ -304,10 +350,12 @@ void main() {
 
   testWidgets('a content-sized sheet follows the finger down and springs back when let go early', (final tester) async {
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
+      ),
+    );
     await tester.pumpAndSettle();
     final Rect rest = _rect(tester, 'content');
     final TestGesture gesture = await tester.startGesture(rest.center);
@@ -323,10 +371,12 @@ void main() {
   testWidgets('a content-sized sheet closes when flung or dragged past half way', (final tester) async {
     final BuildContext page = await _page(tester);
     bool closed = false;
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
-    ).then((final void _) => closed = true));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
+      ).then((final void _) => closed = true),
+    );
     await tester.pumpAndSettle();
     await tester.fling(find.byKey(const ValueKey<String>('content')), const Offset(0, 120), 2000);
     await tester.pumpAndSettle();
@@ -334,25 +384,35 @@ void main() {
     expect(find.byKey(const ValueKey<String>('content')), findsNothing);
 
     closed = false;
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
-    ).then((final void _) => closed = true));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
+      ).then((final void _) => closed = true),
+    );
     await tester.pumpAndSettle();
-    await tester.timedDrag(find.byKey(const ValueKey<String>('content')), const Offset(0, 220), const Duration(seconds: 1));
+    await tester.timedDrag(
+      find.byKey(const ValueKey<String>('content')),
+      const Offset(0, 220),
+      const Duration(seconds: 1),
+    );
     await tester.pumpAndSettle();
     expect(closed, isTrue);
   });
 
-  testWidgets('a content-sized sheet closes on a fling past 700 px/s, or past its closeFlingVelocity', (final tester) async {
+  testWidgets('a content-sized sheet closes on a fling past 700 px/s, or past its closeFlingVelocity', (
+    final tester,
+  ) async {
     final BuildContext page = await _page(tester);
     bool closed = false;
-    void open({final double? closeFlingVelocity}) => unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => closeFlingVelocity == null
-          ? HarborSheet(dragToClose: true, body: _bar('content', 300))
-          : HarborSheet(dragToClose: true, closeFlingVelocity: closeFlingVelocity, body: _bar('content', 300)),
-    ).then((final void _) => closed = true));
+    void open({final double? closeFlingVelocity}) => unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => closeFlingVelocity == null
+            ? HarborSheet(dragToClose: true, body: _bar('content', 300))
+            : HarborSheet(dragToClose: true, closeFlingVelocity: closeFlingVelocity, body: _bar('content', 300)),
+      ).then((final void _) => closed = true),
+    );
 
     // As a modal bottom sheet: a moderate fling, let go well over half shown, springs back.
     open();
@@ -373,17 +433,19 @@ void main() {
 
   testWidgets('a draggable sheet snaps to the sizes it is given', (final tester) async {
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        extent: const HarborSheetExtent(snapSizes: <double>[0.3, 0.5, 0.7]),
-        header: _bar('handle', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          extent: const HarborSheetExtent(snapSizes: <double>[0.3, 0.5, 0.7]),
+          header: _bar('handle', 40),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     const double available = 874.0 - 62.0;
     expect(_rect(tester, 'handle').top, closeTo(874 - available * 0.5, 2));
@@ -400,16 +462,19 @@ void main() {
   testWidgets('a draggable sheet in a route of its own closes that route when flung down', (final tester) async {
     final BuildContext page = await _page(tester);
     bool closed = false;
-    unawaited(showGeneralDialog<void>(
-      context: page,
-      pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) => HarborSheet.draggable(
-        header: _bar('handle', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
-        ),
-      ),
-    ).then((final void _) => closed = true));
+    unawaited(
+      showGeneralDialog<void>(
+        context: page,
+        pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) =>
+            HarborSheet.draggable(
+              header: _bar('handle', 40),
+              builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+                controller: controller,
+                slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+              ),
+            ),
+      ).then((final void _) => closed = true),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
     await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 300), 2000);
@@ -422,12 +487,18 @@ void main() {
   group('A sheet takes an AnimationStyle, as a modal bottom sheet does', () {
     // How much of a 300-high sheet shows, from where its content's top is: the sheet is revealed
     // from the bottom of the screen up.
-    Future<double> rest(final WidgetTester tester, final BuildContext page, {final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible}) async {
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: barrier,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 300)),
-      ));
+    Future<double> rest(
+      final WidgetTester tester,
+      final BuildContext page, {
+      final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
+    }) async {
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: barrier,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('content', 300)),
+        ),
+      );
       await tester.pumpAndSettle();
       final double top = _rect(tester, 'content').top;
       closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
@@ -440,19 +511,32 @@ void main() {
       return (screen - _rect(tester, 'content').top) / (screen - restTop);
     }
 
-    void open(final BuildContext page, final AnimationStyle style, {final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible, final bool dragToClose = false}) =>
-        unawaited(showHarborSheet<void>(
-          page,
-          barrier: barrier,
-          sheetAnimationStyle: style,
-          builder: (final BuildContext context) => HarborSheet(dragToClose: dragToClose, body: _bar('content', 300)),
-        ));
+    void open(
+      final BuildContext page,
+      final AnimationStyle style, {
+      final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
+      final bool dragToClose = false,
+    }) => unawaited(
+      showHarborSheet<void>(
+        page,
+        barrier: barrier,
+        sheetAnimationStyle: style,
+        builder: (final BuildContext context) => HarborSheet(dragToClose: dragToClose, body: _bar('content', 300)),
+      ),
+    );
 
-    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.none]) {
+    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
+      HarborSheetBarrier.dismissible,
+      HarborSheetBarrier.none,
+    ]) {
       testWidgets('its duration and curve set how a sheet opens (${barrier.name})', (final tester) async {
         final BuildContext page = await _page(tester);
         final double restTop = await rest(tester, page, barrier: barrier);
-        open(page, const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.linear), barrier: barrier);
+        open(
+          page,
+          const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.linear),
+          barrier: barrier,
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         // Half way through a linear second it is half shown (the default would be done by now).
@@ -478,7 +562,9 @@ void main() {
         expect(find.byKey(const ValueKey<String>('content')), findsNothing);
       });
 
-      testWidgets('AnimationStyle.noAnimation opens and closes a sheet at once (${barrier.name})', (final tester) async {
+      testWidgets('AnimationStyle.noAnimation opens and closes a sheet at once (${barrier.name})', (
+        final tester,
+      ) async {
         final BuildContext page = await _page(tester);
         final double restTop = await rest(tester, page, barrier: barrier);
         open(page, AnimationStyle.noAnimation, barrier: barrier);
@@ -503,7 +589,9 @@ void main() {
     });
 
     // The curve is any curve, not only one that can be inverted: easeOutBack overshoots.
-    testWidgets('a dragged sheet with a custom curve stays under the finger and springs back by it', (final tester) async {
+    testWidgets('a dragged sheet with a custom curve stays under the finger and springs back by it', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester);
       open(page, const AnimationStyle(curve: Curves.easeOutBack), dragToClose: true);
       await tester.pumpAndSettle();
@@ -527,7 +615,11 @@ void main() {
     testWidgets('a sheet caught while it opens stays under the finger', (final tester) async {
       final BuildContext page = await _page(tester);
       final double restTop = await rest(tester, page);
-      open(page, const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.easeOutBack), dragToClose: true);
+      open(
+        page,
+        const AnimationStyle(duration: Duration(milliseconds: 1000), curve: Curves.easeOutBack),
+        dragToClose: true,
+      );
       await tester.pump();
       // Still on its way up, short of the overshoot.
       await tester.pump(const Duration(milliseconds: 250));
@@ -546,7 +638,7 @@ void main() {
 
   group('a draggable sheet driven from outside', () {
     const double available = 874.0 - 62.0;
-    Widget list(final BuildContext context, final ScrollController controller) => HarborFairway(
+    Widget list(final BuildContext context, final ScrollController controller) => HarborScrollView(
       controller: controller,
       slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
     );
@@ -555,10 +647,13 @@ void main() {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) =>
+              HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(controller.isAttached, isTrue);
       expect(controller.size, closeTo(0.5, 0.001));
@@ -571,10 +666,12 @@ void main() {
     testWidgets('a fling down from its lowest snap closes it, as a fling on its list does', (final tester) async {
       final BuildContext page = await _page(tester);
       bool closed = false;
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(header: _bar('handle', 40), builder: list),
-      ).then((final void _) => closed = true));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) => HarborSheet.draggable(header: _bar('handle', 40), builder: list),
+        ).then((final void _) => closed = true),
+      );
       await tester.pumpAndSettle();
       // A short fling at Material's dismiss speed, nowhere near the floor.
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 800);
@@ -583,15 +680,20 @@ void main() {
       expect(find.byKey(const ValueKey<String>('handle')), findsNothing);
     });
 
-    testWidgets('a moderate fling down from its lowest snap settles back, under Material’s 700 px/s', (final tester) async {
+    testWidgets('a moderate fling down from its lowest snap settles back, under Material’s 700 px/s', (
+      final tester,
+    ) async {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
       bool closed = false;
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
-      ).then((final void _) => closed = true));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) =>
+              HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
+        ).then((final void _) => closed = true),
+      );
       await tester.pumpAndSettle();
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
       await tester.pumpAndSettle();
@@ -600,19 +702,23 @@ void main() {
       expect(controller.size, closeTo(0.5, 0.001));
     });
 
-    testWidgets('a fling on its list is DraggableScrollableSheet’s own, and closes it from its lowest snap', (final tester) async {
+    testWidgets('a fling on its list is DraggableScrollableSheet’s own, and closes it from its lowest snap', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester);
       bool closed = false;
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(
-          header: _bar('handle', 40),
-          builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-            controller: controller,
-            slivers: <Widget>[SliverToBoxAdapter(child: _bar('list', 2000))],
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) => HarborSheet.draggable(
+            header: _bar('handle', 40),
+            builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+              controller: controller,
+              slivers: <Widget>[SliverToBoxAdapter(child: _bar('list', 2000))],
+            ),
           ),
-        ),
-      ).then((final void _) => closed = true));
+        ).then((final void _) => closed = true),
+      );
       await tester.pumpAndSettle();
       // On the list, just under the header: the list's middle is off the screen.
       await tester.flingFrom(_rect(tester, 'handle').bottomCenter + const Offset(0, 100), const Offset(0, 60), 550);
@@ -624,10 +730,13 @@ void main() {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester, disableAnimations: true);
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) =>
+              HarborSheet.draggable(controller: controller, header: _bar('handle', 40), builder: list),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
       await tester.pump();
@@ -638,11 +747,13 @@ void main() {
     testWidgets('closeFlingVelocity sets the fling that closes it', (final tester) async {
       final BuildContext page = await _page(tester);
       bool closed = false;
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) =>
-            HarborSheet.draggable(closeFlingVelocity: 400, header: _bar('handle', 40), builder: list),
-      ).then((final void _) => closed = true));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) =>
+              HarborSheet.draggable(closeFlingVelocity: 400, header: _bar('handle', 40), builder: list),
+        ).then((final void _) => closed = true),
+      );
       await tester.pumpAndSettle();
       // The fling that settles it by default.
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
@@ -655,15 +766,17 @@ void main() {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(
-          controller: controller,
-          closeFlingVelocity: double.infinity,
-          header: _bar('handle', 40),
-          builder: list,
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) => HarborSheet.draggable(
+            controller: controller,
+            closeFlingVelocity: double.infinity,
+            header: _bar('handle', 40),
+            builder: list,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
       await tester.pumpAndSettle();
@@ -675,15 +788,17 @@ void main() {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(
-          controller: controller,
-          extent: const HarborSheetExtent(shouldCloseOnMinExtent: false),
-          header: _bar('handle', 40),
-          builder: list,
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) => HarborSheet.draggable(
+            controller: controller,
+            extent: const HarborSheetExtent(shouldCloseOnMinExtent: false),
+            header: _bar('handle', 40),
+            builder: list,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 550);
       await tester.pumpAndSettle();
@@ -695,15 +810,17 @@ void main() {
       final DraggableScrollableController controller = DraggableScrollableController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) => HarborSheet.draggable(
-          controller: controller,
-          extent: const HarborSheetExtent(shouldCloseOnMinExtent: false),
-          header: _bar('handle', 40),
-          builder: list,
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          builder: (final BuildContext context) => HarborSheet.draggable(
+            controller: controller,
+            extent: const HarborSheetExtent(shouldCloseOnMinExtent: false),
+            header: _bar('handle', 40),
+            builder: list,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 60), 3000);
       await tester.pumpAndSettle();
@@ -714,10 +831,13 @@ void main() {
     testWidgets('with expand off in showModalBottomSheet, a tap above it closes the route', (final tester) async {
       final BuildContext page = await _page(tester);
       bool closed = false;
-      unawaited(showModalBottomSheet<void>(
-        context: page,
-        builder: (final BuildContext context) => HarborSheet.draggable(expand: false, header: _bar('handle', 40), builder: list),
-      ).then((final void _) => closed = true));
+      unawaited(
+        showModalBottomSheet<void>(
+          context: page,
+          builder: (final BuildContext context) =>
+              HarborSheet.draggable(expand: false, header: _bar('handle', 40), builder: list),
+        ).then((final void _) => closed = true),
+      );
       await tester.pumpAndSettle();
       final Rect handle = _rect(tester, 'handle');
       // Half of the modal bottom sheet's 9/16 of the screen.
@@ -736,12 +856,14 @@ void main() {
       final HarborSheetController controller = HarborSheetController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: HarborSheetBarrier.none,
-        controller: controller,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: HarborSheetBarrier.none,
+          controller: controller,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(controller.isAttached, isTrue);
       expect(controller.animation.value, 1.0);
@@ -761,12 +883,14 @@ void main() {
       final HarborSheetController controller = HarborSheetController();
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: HarborSheetBarrier.none,
-        controller: controller,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: HarborSheetBarrier.none,
+          controller: controller,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+        ),
+      );
       await tester.pumpAndSettle();
       bool closed = false;
       unawaited(controller.closed.then((final void _) => closed = true));
@@ -781,11 +905,13 @@ void main() {
       addTearDown(controller.dispose);
       final BuildContext page = await _page(tester);
       bool popped = false;
-      unawaited(showHarborSheet<void>(
-        page,
-        controller: controller,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
-      ).then((final void _) => popped = true));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          controller: controller,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+        ).then((final void _) => popped = true),
+      );
       await tester.pumpAndSettle();
       controller.close();
       await tester.pumpAndSettle();
@@ -793,11 +919,13 @@ void main() {
       expect(popped, isTrue);
       expect(controller.isAttached, isFalse);
 
-      unawaited(showHarborSheet<void>(
-        page,
-        controller: controller,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          controller: controller,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+        ),
+      );
       await tester.pumpAndSettle();
       controller.remove();
       await tester.pump();
@@ -811,19 +939,24 @@ void main() {
       final List<bool> heard = <bool>[];
       controller.addListener(() => heard.add(controller.isAttached));
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: HarborSheetBarrier.none,
-        controller: controller,
-        builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: HarborSheetBarrier.none,
+          controller: controller,
+          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+        ),
+      );
       await tester.pumpAndSettle();
       controller.close();
       await tester.pumpAndSettle();
       expect(heard, <bool>[true, false]);
     });
 
-    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.none, HarborSheetBarrier.dismissible]) {
+    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
+      HarborSheetBarrier.none,
+      HarborSheetBarrier.dismissible,
+    ]) {
       testWidgets('rebuilds a sheet (${barrier.name}) with state the page holds', (final tester) async {
         final HarborSheetController controller = HarborSheetController();
         addTearDown(controller.dispose);
@@ -831,12 +964,14 @@ void main() {
         controller.close(); // a no-op with no sheet attached, since #121
         String track = 'first';
         final BuildContext page = await _page(tester);
-        unawaited(showHarborSheet<void>(
-          page,
-          barrier: barrier,
-          controller: controller,
-          builder: (final BuildContext context) => HarborSheet(body: Text(track)),
-        ));
+        unawaited(
+          showHarborSheet<void>(
+            page,
+            barrier: barrier,
+            controller: controller,
+            builder: (final BuildContext context) => HarborSheet(body: Text(track)),
+          ),
+        );
         await tester.pumpAndSettle();
         expect(find.text('first'), findsOneWidget);
         controller.setState(() => track = 'second');
@@ -845,18 +980,23 @@ void main() {
       });
 
       testWidgets('a sheet (${barrier.name}) slides by the transition it is given', (final tester) async {
-        final AnimationController transition = AnimationController(vsync: const TestVSync(), duration: const Duration(milliseconds: 300));
+        final AnimationController transition = AnimationController(
+          vsync: const TestVSync(),
+          duration: const Duration(milliseconds: 300),
+        );
         addTearDown(transition.dispose);
         final HarborSheetController controller = HarborSheetController();
         addTearDown(controller.dispose);
         final BuildContext page = await _page(tester);
-        unawaited(showHarborSheet<void>(
-          page,
-          barrier: barrier,
-          controller: controller,
-          transitionAnimationController: transition,
-          builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
-        ));
+        unawaited(
+          showHarborSheet<void>(
+            page,
+            barrier: barrier,
+            controller: controller,
+            transitionAnimationController: transition,
+            builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
+          ),
+        );
         await tester.pumpAndSettle();
         expect(transition.value, 1.0);
         final double height = 874 - tester.getRect(body()).top;
@@ -878,22 +1018,26 @@ void main() {
 
   // A picker sheet ("choose a folder") is awaited for its answer, as showModalBottomSheet is.
   for (final HarborSheetBarrier barrier in HarborSheetBarrier.values) {
-    testWidgets('a sheet with barrier ${barrier.name} completes with the result it is closed with', (final tester) async {
+    testWidgets('a sheet with barrier ${barrier.name} completes with the result it is closed with', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester);
       late BuildContext sheet;
       String? chosen;
       bool closed = false;
-      unawaited(showHarborSheet<String>(
-        page,
-        barrier: barrier,
-        builder: (final BuildContext context) {
-          sheet = context;
-          return HarborSheet(body: _bar('folders', 200));
-        },
-      ).then((final String? result) {
-        chosen = result;
-        closed = true;
-      }));
+      unawaited(
+        showHarborSheet<String>(
+          page,
+          barrier: barrier,
+          builder: (final BuildContext context) {
+            sheet = context;
+            return HarborSheet(body: _bar('folders', 200));
+          },
+        ).then((final String? result) {
+          chosen = result;
+          closed = true;
+        }),
+      );
       await tester.pumpAndSettle();
       HarborSheet.close(sheet, 'Archive');
       await tester.pumpAndSettle();
@@ -908,14 +1052,16 @@ void main() {
     final BuildContext page = await _page(tester);
     bool closed = false;
     String? chosen = 'unset';
-    unawaited(showHarborSheet<String>(
-      page,
-      barrier: HarborSheetBarrier.none,
-      builder: (final BuildContext context) => HarborSheet(body: _bar('folders', 200)),
-    ).then((final String? result) {
-      chosen = result;
-      closed = true;
-    }));
+    unawaited(
+      showHarborSheet<String>(
+        page,
+        barrier: HarborSheetBarrier.none,
+        builder: (final BuildContext context) => HarborSheet(body: _bar('folders', 200)),
+      ).then((final String? result) {
+        chosen = result;
+        closed = true;
+      }),
+    );
     await tester.pumpAndSettle();
     Navigator.pop(page, 'Archive');
     await tester.pumpAndSettle();
@@ -928,15 +1074,17 @@ void main() {
     final BuildContext page = await _page(tester);
     late BuildContext sheet;
     String? chosen;
-    unawaited(showGeneralDialog<String>(
-      context: page,
-      pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) => Builder(
-        builder: (final BuildContext context) {
-          sheet = context;
-          return HarborSheet(body: _bar('folders', 200));
-        },
-      ),
-    ).then((final String? result) => chosen = result));
+    unawaited(
+      showGeneralDialog<String>(
+        context: page,
+        pageBuilder: (final BuildContext context, final Animation<double> a, final Animation<double> b) => Builder(
+          builder: (final BuildContext context) {
+            sheet = context;
+            return HarborSheet(body: _bar('folders', 200));
+          },
+        ),
+      ).then((final String? result) => chosen = result),
+    );
     await tester.pumpAndSettle();
     HarborSheet.close(sheet, 'Archive');
     await tester.pumpAndSettle();
@@ -948,13 +1096,15 @@ void main() {
     final BuildContext page = await _page(tester);
     late BuildContext sheet;
     bool closed = false;
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) {
-        sheet = context;
-        return HarborSheet(body: _bar('folders', 200));
-      },
-    ).then((final void _) => closed = true));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) {
+          sheet = context;
+          return HarborSheet(body: _bar('folders', 200));
+        },
+      ).then((final void _) => closed = true),
+    );
     await tester.pumpAndSettle();
     // ignore: deprecated_member_use_from_same_package, the old name forwards to HarborSheet.close.
     closeHarborSheet(sheet);
@@ -962,14 +1112,18 @@ void main() {
     expect(closed, isTrue);
     expect(find.byKey(const ValueKey<String>('folders')), findsNothing);
   });
-  testWidgets("a sheet route is a semantics scope named by its semanticLabel, holding the sheet's content", (final tester) async {
+  testWidgets("a sheet route is a semantics scope named by its semanticLabel, holding the sheet's content", (
+    final tester,
+  ) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      semanticLabel: 'Reply',
-      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        semanticLabel: 'Reply',
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ),
+    );
     await tester.pumpAndSettle();
     final SemanticsNode scope = find.semantics.byLabel('Reply').evaluate().single;
     expect(scope, isSemantics(label: 'Reply', scopesRoute: true, namesRoute: true));
@@ -977,13 +1131,18 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('a sheet route scopes and names itself with no label given, as a modal bottom sheet does', (final tester) async {
+  testWidgets('a sheet route scopes and names itself with no label given, as a modal bottom sheet does', (
+    final tester,
+  ) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(page, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))));
+    unawaited(
+      showHarborSheet<void>(page, builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200))),
+    );
     await tester.pumpAndSettle();
-    final SemanticsNode nearestScope = _ancestors(tester.getSemantics(find.text('content')))
-        .firstWhere((final SemanticsNode node) => node.getSemanticsData().flagsCollection.scopesRoute);
+    final SemanticsNode nearestScope = _ancestors(
+      tester.getSemantics(find.text('content')),
+    ).firstWhere((final SemanticsNode node) => node.getSemanticsData().flagsCollection.scopesRoute);
     expect(nearestScope, isSemantics(scopesRoute: true, namesRoute: true));
     semantics.dispose();
   });
@@ -991,28 +1150,37 @@ void main() {
   testWidgets('a sheet with no barrier is not a route, so it names no route', (final tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      barrier: HarborSheetBarrier.none,
-      semanticLabel: 'Reply',
-      builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        barrier: HarborSheetBarrier.none,
+        semanticLabel: 'Reply',
+        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.semantics.byLabel('content'), findsOne);
     expect(find.semantics.byLabel('Reply'), findsNothing);
     semantics.dispose();
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[HarborSheetBarrier.dismissible, HarborSheetBarrier.clear]) {
-    testWidgets('a ${barrier.name} sheet barrier says what tapping it does with barrierOnTapHint', (final tester) async {
+  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
+    HarborSheetBarrier.dismissible,
+    HarborSheetBarrier.clear,
+  ]) {
+    testWidgets('a ${barrier.name} sheet barrier says what tapping it does with barrierOnTapHint', (
+      final tester,
+    ) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await _page(tester);
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: barrier,
-        barrierOnTapHint: 'Close the reply',
-        builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: barrier,
+          barrierOnTapHint: 'Close the reply',
+          builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
+        ),
+      );
       await tester.pumpAndSettle();
       final SemanticsNode barrierNode = find.semantics.byLabel('Dismiss').evaluate().single;
       expect(barrierNode, isSemantics(label: 'Dismiss', hasTapAction: true, onTapHint: 'Close the reply'));
@@ -1023,11 +1191,13 @@ void main() {
   testWidgets("a sheet's barrier is read only above the sheet, as a modal bottom sheet's is", (final tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      semanticLabel: 'Reply',
-      builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
-    ));
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        semanticLabel: 'Reply',
+        builder: (final BuildContext context) => HarborSheet(dragToClose: true, body: _bar('content', 300)),
+      ),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     // Mid-slide, the barrier already stops where the sheet has risen to.
@@ -1055,19 +1225,23 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets("a draggable sheet's barrier is read only above the sheet, not above its whole drag area", (final tester) async {
+  testWidgets("a draggable sheet's barrier is read only above the sheet, not above its whole drag area", (
+    final tester,
+  ) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final BuildContext page = await _page(tester);
-    unawaited(showHarborSheet<void>(
-      page,
-      builder: (final BuildContext context) => HarborSheet.draggable(
-        header: _bar('handle', 40),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    unawaited(
+      showHarborSheet<void>(
+        page,
+        builder: (final BuildContext context) => HarborSheet.draggable(
+          header: _bar('handle', 40),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+          ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     final Rect barrier = _globalRect(find.semantics.byLabel('Dismiss').evaluate().single);
     expect(barrier.top, 0.0);

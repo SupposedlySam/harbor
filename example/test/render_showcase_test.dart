@@ -28,7 +28,8 @@ final String? _out = Platform.environment['SHOWCASE_OUT'];
 /// Which video: the phone tour unless SHOWCASE_CUT names the wide one.
 final ShowcaseCut _cut = ShowcaseCut.values.firstWhere(
   (final ShowcaseCut cut) => cut.directory == (Platform.environment['SHOWCASE_CUT'] ?? 'showcase'),
-  orElse: () => throw StateError('SHOWCASE_CUT must be one of ${ShowcaseCut.values.map((final ShowcaseCut c) => c.directory)}'),
+  orElse: () =>
+      throw StateError('SHOWCASE_CUT must be one of ${ShowcaseCut.values.map((final ShowcaseCut c) => c.directory)}'),
 );
 
 double get _duration => _cut == ShowcaseCut.wide ? WideTimeline.duration : ShowcaseTimeline.duration;
@@ -52,7 +53,9 @@ Future<void> _loadFonts() async {
     for (final String path in family.value) {
       final File file = File(path);
       if (!file.existsSync()) {
-        throw StateError('Font for ${family.key} not found at $path. The showcase is recorded on macOS with FLUTTER_ROOT set.');
+        throw StateError(
+          'Font for ${family.key} not found at $path. The showcase is recorded on macOS with FLUTTER_ROOT set.',
+        );
       }
       loader.addFont(Future<ByteData>.value(ByteData.sublistView(file.readAsBytesSync())));
     }
@@ -104,8 +107,14 @@ void main() {
       // the video would show it cut off.
       final Finder caption = find.byKey(const ValueKey<String>('caption line'));
       if (caption.evaluate().isNotEmpty) {
-        final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(find.descendant(of: caption, matching: find.byType(RichText)));
-        expect(paragraph.didExceedMaxLines, isFalse, reason: 'caption cut off at ${t.toStringAsFixed(1)} s: ${tester.widget<Text>(caption).data}');
+        final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+          find.descendant(of: caption, matching: find.byType(RichText)),
+        );
+        expect(
+          paragraph.didExceedMaxLines,
+          isFalse,
+          reason: 'caption cut off at ${t.toStringAsFixed(1)} s: ${tester.widget<Text>(caption).data}',
+        );
       }
       if (stills != null && !stills.any((final double s) => (s - t).abs() < 0.5 / fps)) {
         continue;
@@ -115,7 +124,9 @@ void main() {
         final ui.Image image = await box.toImage();
         final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
         image.dispose();
-        final String name = stills != null ? 'still_${t.toStringAsFixed(1)}.png' : 'frame_${i.toString().padLeft(5, '0')}.png';
+        final String name = stills != null
+            ? 'still_${t.toStringAsFixed(1)}.png'
+            : 'frame_${i.toString().padLeft(5, '0')}.png';
         File('${out.path}/$name').writeAsBytesSync(png!.buffer.asUint8List());
       });
     }

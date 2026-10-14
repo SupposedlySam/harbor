@@ -35,7 +35,9 @@ class _LockGatesPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     for (final bool left in <bool>[true, false]) {
-      final Rect leaf = left ? Rect.fromLTRB(wall, top, mid - 1.5, h * 0.96) : Rect.fromLTRB(mid + 1.5, top, w - wall, h * 0.96);
+      final Rect leaf = left
+          ? Rect.fromLTRB(wall, top, mid - 1.5, h * 0.96)
+          : Rect.fromLTRB(mid + 1.5, top, w - wall, h * 0.96);
       canvas
         ..drawRect(leaf, oak)
         ..drawRect(leaf, frame);
@@ -48,7 +50,9 @@ class _LockGatesPainter extends CustomPainter {
       // The paddle gear on top, and the balance beam out over the wall.
       final double beamY = top - h * 0.04;
       canvas.drawRect(
-        left ? Rect.fromLTRB(2, beamY, mid - 6, beamY + h * 0.05) : Rect.fromLTRB(mid + 6, beamY, w - 2, beamY + h * 0.05),
+        left
+            ? Rect.fromLTRB(2, beamY, mid - 6, beamY + h * 0.05)
+            : Rect.fromLTRB(mid + 6, beamY, w - 2, beamY + h * 0.05),
         Paint()..color = Palette.sail,
       );
       // The hinges: iron straps where each leaf hangs on its wall.
@@ -56,7 +60,10 @@ class _LockGatesPainter extends CustomPainter {
       for (final double f in <double>[0.2, 0.75]) {
         final double y = leaf.top + leaf.height * f;
         canvas
-          ..drawRect(left ? Rect.fromLTWH(wall - 4, y, w * 0.12, 5) : Rect.fromLTWH(w - wall - w * 0.12 + 4, y, w * 0.12, 5), iron)
+          ..drawRect(
+            left ? Rect.fromLTWH(wall - 4, y, w * 0.12, 5) : Rect.fromLTWH(w - wall - w * 0.12 + 4, y, w * 0.12, 5),
+            iron,
+          )
           ..drawCircle(Offset(left ? wall - 2 : w - wall + 2, y + 2.5), 4.5, iron);
       }
     }
@@ -117,7 +124,11 @@ class _TwinLocksPainter extends CustomPainter {
     }
     // A narrowboat in each, bows the same way.
     void boat(final Rect chamber, final Color hull) {
-      final Rect body = Rect.fromCenter(center: chamber.center, width: chamber.width * 0.5, height: chamber.height * 0.62);
+      final Rect body = Rect.fromCenter(
+        center: chamber.center,
+        width: chamber.width * 0.5,
+        height: chamber.height * 0.62,
+      );
       canvas
         ..drawRRect(RRect.fromRectAndRadius(body, Radius.circular(body.width / 2)), Paint()..color = hull)
         ..drawRect(body.deflate(body.width * 0.18).translate(0, body.height * 0.06), Paint()..color = Palette.sail);
@@ -156,7 +167,10 @@ class _LogbookPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     for (int i = 1; i < 4; i++) {
-      canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.8, h * 0.85), width: w * 0.25 * i, height: h * 0.25 * i), depth);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(w * 0.8, h * 0.85), width: w * 0.25 * i, height: h * 0.25 * i),
+        depth,
+      );
     }
     // The book: two pages rising to the spine, half open.
     final double spine = w / 2;
@@ -164,7 +178,9 @@ class _LogbookPainter extends CustomPainter {
     final double bottom = h * 0.84;
     final Paint page = Paint()..color = Palette.sail;
     final Paint shade = Paint()
-      ..shader = const LinearGradient(colors: <Color>[Color(0x00000000), Color(0x55000000)]).createShader(Rect.fromLTRB(spine - w * 0.08, top, spine, bottom));
+      ..shader = const LinearGradient(
+        colors: <Color>[Color(0x00000000), Color(0x55000000)],
+      ).createShader(Rect.fromLTRB(spine - w * 0.08, top, spine, bottom));
     for (final bool left in <bool>[true, false]) {
       final double outer = left ? w * 0.14 : w * 0.86;
       final Path leaf = Path()
@@ -214,7 +230,8 @@ class ReservedBerthArt extends StatelessWidget {
   const ReservedBerthArt({super.key});
 
   @override
-  Widget build(final BuildContext context) => const CustomPaint(painter: _ReservedBerthPainter(), child: SizedBox.expand());
+  Widget build(final BuildContext context) =>
+      const CustomPaint(painter: _ReservedBerthPainter(), child: SizedBox.expand());
 }
 
 class _ReservedBerthPainter extends CustomPainter {
@@ -250,7 +267,12 @@ class _ReservedBerthPainter extends CustomPainter {
     final TextPainter text = TextPainter(
       text: TextSpan(
         text: 'RESERVED',
-        style: TextStyle(color: Palette.buoyRed, fontWeight: FontWeight.w900, fontSize: sign.height * 0.55, letterSpacing: 1),
+        style: TextStyle(
+          color: Palette.buoyRed,
+          fontWeight: FontWeight.w900,
+          fontSize: sign.height * 0.55,
+          letterSpacing: 1,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: sign.width);

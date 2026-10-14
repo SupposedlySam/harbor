@@ -11,7 +11,9 @@ import 'package:harbor_test/harbor_test.dart';
 
 /// The dual-screen device with a coast on the right and the bottom only, so a flare on the left
 /// screen has no right coast of its own: the right one belongs to the other screen.
-final HarborTrialDevice _dual = HarborTrialDevice.dualScreenOpen.copyWith(coast: const EdgeInsets.only(right: 40, bottom: 20));
+final HarborTrialDevice _dual = HarborTrialDevice.dualScreenOpen.copyWith(
+  systemEdges: const EdgeInsets.only(right: 40, bottom: 20),
+);
 
 Future<void> _settle(final WidgetTester tester) async {
   for (int i = 0; i < 5; i++) {
@@ -25,17 +27,21 @@ void main() {
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
       late BuildContext page;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-          home: Harbor(body: Builder(builder: (final BuildContext context) {
-            page = context;
-            return HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40));
-          })),
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
+            body: Builder(
+              builder: (final BuildContext context) {
+                page = context;
+                return HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40));
+              },
+            ),
+          ),
         ),
       );
       expect(
-        () => HarborFlares.raise(
+        () => HarborToasts.show(
           page,
           placement: HarborAnchored(anchor, side: HarborAnchorSide.above, flips: true),
           builder: (final BuildContext _) => const SizedBox(),
@@ -43,13 +49,13 @@ void main() {
         throwsAssertionError,
       );
       // flips: false says what a flare does anyway, and is allowed.
-      final HarborFlareEntry entry = HarborFlares.raise(
+      final HarborToastEntry entry = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor, flips: false),
         duration: null,
         builder: (final BuildContext _) => const SizedBox(),
       );
-      entry.lower();
+      entry.hide();
       await _settle(tester);
     });
   });
@@ -63,17 +69,23 @@ void main() {
       return const SizedBox(width: 100, height: 30);
     }
 
-    testWidgets('with no harbor, a low flare on the left screen keeps the bottom coast and drops the right', (final tester) async {
+    testWidgets('with no harbor, a low flare on the left screen keeps the bottom coast and drops the right', (
+      final tester,
+    ) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
-        MaterialApp(home: Builder(builder: (final BuildContext context) {
-          page = context;
-          return const SizedBox.expand();
-        })),
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          home: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return const SizedBox.expand();
+            },
+          ),
+        ),
         device: _dual,
       );
       expect(MediaQuery.paddingOf(page), const EdgeInsets.only(right: 40, bottom: 20), reason: 'positive control');
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, duration: null, builder: toast);
+      HarborToasts.show(page, slot: HarborToastSlot.low, duration: null, builder: toast);
       await _settle(tester);
       expect(padding, const EdgeInsets.only(bottom: 20));
       expect(features, isEmpty);
@@ -81,17 +93,21 @@ void main() {
 
     testWidgets('in a harbor, the same', (final tester) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-          home: Harbor(body: Builder(builder: (final BuildContext context) {
-            page = context;
-            return const SizedBox.expand();
-          })),
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
+            body: Builder(
+              builder: (final BuildContext context) {
+                page = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
         ),
         device: _dual,
       );
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, duration: null, builder: toast);
+      HarborToasts.show(page, slot: HarborToastSlot.low, duration: null, builder: toast);
       await _settle(tester);
       expect(padding.right, 0);
       expect(features, isEmpty);
@@ -99,14 +115,18 @@ void main() {
 
     testWidgets('with hinge: never, a flare spans both screens and keeps the whole MediaQuery', (final tester) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
-        MaterialApp(home: Builder(builder: (final BuildContext context) {
-          page = context;
-          return const SizedBox.expand();
-        })),
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          home: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return const SizedBox.expand();
+            },
+          ),
+        ),
         device: _dual,
       );
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, hinge: HarborHinge.never, duration: null, builder: toast);
+      HarborToasts.show(page, slot: HarborToastSlot.low, hinge: HarborHinge.never, duration: null, builder: toast);
       await _settle(tester);
       expect(padding, const EdgeInsets.only(right: 40, bottom: 20));
       expect(features, hasLength(1));
@@ -116,21 +136,26 @@ void main() {
   group('the moves the owner accepted, measured', () {
     Future<void> settle(final WidgetTester tester) => _settle(tester);
 
-    testWidgets('right to left, a centred flare with no harbor goes to the screen where reading starts', (final tester) async {
+    testWidgets('right to left, a centred flare with no harbor goes to the screen where reading starts', (
+      final tester,
+    ) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => Directionality(textDirection: TextDirection.rtl, child: child!),
-          home: Builder(builder: (final BuildContext context) {
-            page = context;
-            return const SizedBox.expand();
-          }),
+          builder: (final BuildContext context, final Widget? child) =>
+              Directionality(textDirection: TextDirection.rtl, child: child!),
+          home: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return const SizedBox.expand();
+            },
+          ),
         ),
         device: HarborTrialDevice.dualScreenOpen,
       );
-      HarborFlares.raise(
+      HarborToasts.show(
         page,
-        slot: HarborFlareSlot.low,
+        slot: HarborToastSlot.low,
         duration: null,
         builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('t'), width: 200, height: 30),
       );
@@ -144,16 +169,26 @@ void main() {
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
       late BuildContext page;
-      await tester.pumpSeaTrial(
-        MaterialApp(home: Builder(builder: (final BuildContext context) {
-          page = context;
-          return Stack(children: <Widget>[
-            Positioned(left: 480, top: 300, child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40))),
-          ]);
-        })),
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          home: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return Stack(
+                children: <Widget>[
+                  Positioned(
+                    left: 480,
+                    top: 300,
+                    child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
         device: _dual,
       );
-      HarborFlares.raise(
+      HarborToasts.show(
         page,
         placement: HarborAnchored(anchor),
         duration: null,

@@ -58,7 +58,12 @@ class WideShowcase extends StatelessWidget {
                           child: SizedBox(
                             width: 760,
                             height: 608,
-                            child: ShowcasePlate(chapter: chapter, time: time, script: WideTimeline.script, entries: plates),
+                            child: ShowcasePlate(
+                              chapter: chapter,
+                              time: time,
+                              script: WideTimeline.script,
+                              entries: plates,
+                            ),
                           ),
                         ),
                       ),
@@ -102,7 +107,11 @@ class WideShowcase extends StatelessWidget {
       padding: const EdgeInsets.only(top: 24, bottom: 24),
       radius: 28,
       displayFeatures: const <DisplayFeature>[
-        DisplayFeature(bounds: Rect.fromLTRB(540, 0, 574, 720), type: DisplayFeatureType.hinge, state: DisplayFeatureState.postureFlat),
+        DisplayFeature(
+          bounds: Rect.fromLTRB(540, 0, 574, 720),
+          type: DisplayFeatureType.hinge,
+          state: DisplayFeatureState.postureFlat,
+        ),
       ],
       child: _HingePage(time: time),
     ),
@@ -112,9 +121,7 @@ class WideShowcase extends StatelessWidget {
       size: const Size(1180, 820),
       padding: const EdgeInsets.only(top: 24, bottom: 20),
       radius: 36,
-      child: _RailPage(
-        rightToLeft: chapter.key == 'reading' && time >= WideTimeline.cue('reading', 'right') - 0.4,
-      ),
+      child: _RailPage(rightToLeft: chapter.key == 'reading' && time >= WideTimeline.cue('reading', 'right') - 0.4),
     ),
   };
 }
@@ -171,16 +178,24 @@ class _Screen extends StatelessWidget {
                   color: const Color(0xFFF4F7FA),
                   child: Stack(
                     children: <Widget>[
-                      HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: ShowcasePhone.margin), child: child),
+                      HarborRoot(
+                        margin: const EdgeInsetsDirectional.symmetric(horizontal: ShowcasePhone.margin),
+                        child: child,
+                      ),
                       for (final DisplayFeature feature in displayFeatures)
-                        Positioned.fromRect(rect: feature.bounds, child: const ColoredBox(color: Color(0xFF15181C))),
+                        Positioned.fromRect(
+                          rect: feature.bounds,
+                          child: const ColoredBox(color: Color(0xFF15181C)),
+                        ),
                       if (island == _Island.left)
                         Positioned(
                           left: 14,
                           top: size.height / 2 - 62,
                           width: 34,
                           height: 124,
-                          child: DecoratedBox(decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(17))),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(17)),
+                          ),
                         ),
                     ],
                   ),
@@ -196,25 +211,28 @@ class _Screen extends StatelessWidget {
 
 /// A header pier. Beside a rail it runs between the rail and the far edge, so its title lines up
 /// with the rows below without help.
-HarborDock _header(final String title) => HarborDock.pier(
-  wake: const HarborWake.fade(length: 18, blurSigma: 14),
+HarborBar _header(final String title) => HarborBar.overlay(
+  edgeEffect: const HarborEdgeEffect.fade(length: 18, blurSigma: 14),
   backdrop: ColoredBox(color: Colors.white.withValues(alpha: 0.78)),
   child: SizedBox(
     height: 60,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Container(
         alignment: AlignmentDirectional.centerStart,
-        child: Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea)),
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea),
+        ),
       ),
     ),
   ),
 );
 
-Widget _rows(final int count) => HarborFairway(
+Widget _rows(final int count) => HarborScrollView(
   slivers: <Widget>[
     SliverList.builder(
       itemCount: count,
-      itemBuilder: (final BuildContext _, final int i) => HarborMooringLine(child: BoatRow(index: i)),
+      itemBuilder: (final BuildContext _, final int i) => HarborClear.rowInsets(child: BoatRow(index: i)),
     ),
   ],
 );
@@ -229,14 +247,14 @@ class _RailPage extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => Directionality(
     textDirection: rightToLeft ? TextDirection.rtl : TextDirection.ltr,
-    child: Harbor(
-      start: const <HarborDock>[
-        HarborDock.quay(
+    child: HarborFrame(
+      start: const <HarborBar>[
+        HarborBar.solid(
           backdrop: ColoredBox(color: Palette.deepSea),
           child: _Rail(),
         ),
       ],
-      top: <HarborDock>[_header('Harbor Master')],
+      top: <HarborBar>[_header('Harbor Master')],
       body: _rows(16),
     ),
   );
@@ -272,7 +290,7 @@ class _LandscapePage extends StatelessWidget {
   const _LandscapePage();
 
   @override
-  Widget build(final BuildContext context) => Harbor(top: <HarborDock>[_header('Harbor Master')], body: _rows(12));
+  Widget build(final BuildContext context) => HarborFrame(top: <HarborBar>[_header('Harbor Master')], body: _rows(12));
 }
 
 /// A dual-screen phone, open: sheets, dialogs and flares keep to one screen, never across the hinge.
@@ -290,7 +308,7 @@ class _HingePageState extends State<_HingePage> {
   BuildContext? _page;
   bool _sheet = false;
   bool _dialog = false;
-  HarborFlareEntry? _flare;
+  HarborToastEntry? _flare;
 
   double get _sheetOpens => WideTimeline.cue('hinge', 'sheets') - 0.3;
   double get _dialogOpens => WideTimeline.cue('hinge', 'dialogs') - 0.2;
@@ -324,13 +342,13 @@ class _HingePageState extends State<_HingePage> {
         Navigator.of(page).pop();
       }
       if (_flare != null && !wantFlare) {
-        _flare!.lower();
+        _flare!.hide();
         _flare = null;
       }
       if (wantFlare && _flare == null) {
-        _flare = HarborFlares.raise(
+        _flare = HarborToasts.show(
           page,
-          slot: HarborFlareSlot.low,
+          slot: HarborToastSlot.low,
           duration: null,
           builder: (final BuildContext _) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -347,7 +365,12 @@ class _HingePageState extends State<_HingePage> {
             surface: ColoredBox(color: Color(0xFFF4F7FA)),
             body: SizedBox(
               height: 260,
-              child: Center(child: Text('Book a berth', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea))),
+              child: Center(
+                child: Text(
+                  'Book a berth',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Palette.deepSea),
+                ),
+              ),
             ),
           ),
         );
@@ -379,8 +402,8 @@ class _HingePageState extends State<_HingePage> {
     onGenerateRoute: (final RouteSettings settings) => PageRouteBuilder<void>(
       settings: settings,
       transitionDuration: Duration.zero,
-      pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) => Harbor(
-        top: <HarborDock>[_header('Harbor Master')],
+      pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) => HarborFrame(
+        top: <HarborBar>[_header('Harbor Master')],
         body: Builder(
           builder: (final BuildContext context) {
             _page = context;

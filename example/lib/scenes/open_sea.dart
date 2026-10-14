@@ -15,12 +15,13 @@ import '../game/widgets.dart';
 
 /// The Open Sea tab: a full-screen feed of voyages, one boat to a page.
 ///
-/// It is a component harbor inside Harbor Town's body. Its header is a pier
-/// with a frosted fade wake over open water that runs under the status bar; a
-/// fairway of sea moods in the header runs edge to edge; each voyage card is
-/// moored in the clear water between the header and the tab bar; a shanty
-/// drawer is a non-modal breakwater sheet the header withdraws for; and the fog
-/// horn is a buoy at the bottom of the clear water while the next voyage loads.
+/// It is a component frame inside Harbor Town's body. Its header is an overlay
+/// bar with a frosted fade over a background that runs under the status bar; a
+/// scroll view of sea moods in the header runs edge to edge; each voyage card
+/// keeps clear in the room between the header and the tab bar; a shanty drawer
+/// is a non-modal sheet that covers the page, which the header withdraws for;
+/// and the fog horn is a float at the bottom of the room while the next voyage
+/// loads.
 class OpenSeaTab extends StatelessWidget {
   const OpenSeaTab({super.key});
 
@@ -29,12 +30,12 @@ class OpenSeaTab extends StatelessWidget {
     debugLabel: 'open sea',
     title: 'Open Sea',
     boats: Fleet.boats,
-    makeWay: HarborYield.withdraw,
-    newPort: false,
+    hideMode: HarborYield.withdraw,
+    isPage: false,
   );
 }
 
-/// One boat's voyage, followed on its own page: a new port with a way back in
+/// One boat's voyage, followed on its own page: a page frame with a way back in
 /// its header and the same feed and drawer as the Open Sea tab. Here the
 /// header goes dark for the drawer rather than withdrawing, because it holds
 /// the back button and keeps its ground.
@@ -49,8 +50,8 @@ class VoyagePage extends StatelessWidget {
       debugLabel: 'voyage ${boat.name}',
       title: boat.name,
       boats: <Boat>[boat],
-      makeWay: HarborYield.dark,
-      newPort: true,
+      hideMode: HarborYield.dark,
+      isPage: true,
       showBack: true,
     ),
   );
@@ -77,16 +78,22 @@ enum _Weather {
   final bool moon;
 }
 
-const List<String> _destinations = <String>['Lantern Point', 'Puffin Rock', 'Seal Island', 'Mermaid Shoal', 'Cape Brine'];
+const List<String> _destinations = <String>[
+  'Lantern Point',
+  'Puffin Rock',
+  'Seal Island',
+  'Mermaid Shoal',
+  'Cape Brine',
+];
 
-/// The harbor both the tab and the voyage page are built from.
+/// The frame both the tab and the voyage page are built from.
 class _VoyageHarbor extends StatefulWidget {
   const _VoyageHarbor({
     required this.debugLabel,
     required this.title,
     required this.boats,
-    required this.makeWay,
-    required this.newPort,
+    required this.hideMode,
+    required this.isPage,
     this.showBack = false,
   });
 
@@ -94,9 +101,9 @@ class _VoyageHarbor extends StatefulWidget {
   final String title;
   final List<Boat> boats;
 
-  /// How the header makes way while the shanty drawer is open.
-  final HarborYield makeWay;
-  final bool newPort;
+  /// How the header hides while the shanty drawer is open.
+  final HarborYield hideMode;
+  final bool isPage;
   final bool showBack;
 
   @override
@@ -141,10 +148,10 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
     setState(() => _singing = true);
     await showHarborSheet<void>(
       context,
-      breakwater: true,
+      coversPage: true,
       barrier: HarborSheetBarrier.none,
       useRootNavigator: true,
-      // A non-modal sheet: it closes itself if this harbor leaves first.
+      // A non-modal sheet: it closes itself if this frame leaves first.
       builder: (final BuildContext _) => _ShantyDrawer(key: const ValueKey<String>('shanty drawer'), boat: boat),
     );
     if (mounted) {
@@ -153,23 +160,27 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
   }
 
   void _follow(final Boat boat) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (final BuildContext context) => VoyagePage(boat: boat)));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (final BuildContext context) => VoyagePage(boat: boat)));
   }
 
   @override
   Widget build(final BuildContext context) {
     final bool following = widget.boats.length == 1;
-    return Harbor(
-      newPort: widget.newPort,
+    return HarborFrame(
+      isPage: widget.isPage,
       debugLabel: widget.debugLabel,
-      top: <HarborDock>[
-        HarborDock.pier(
+      top: <HarborBar>[
+        HarborBar.overlay(
           debugLabel: '${widget.debugLabel} header',
-          wake: const HarborWake.fade(length: 16, blurSigma: 14),
+          edgeEffect: const HarborEdgeEffect.fade(length: 16, blurSigma: 14),
           backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.35)),
           child: _OpenSeaHeader(
             title: widget.title,
-            subtitle: following ? '${widget.boats.single.kindLabel} voyage' : '${widget.boats.length} voyages under way',
+            subtitle: following
+                ? '${widget.boats.single.kindLabel} voyage'
+                : '${widget.boats.length} voyages under way',
             showBack: widget.showBack,
             weather: _weather,
             onWeather: (final _Weather weather) => setState(() => _weather = weather),
@@ -177,32 +188,35 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
           ),
         ),
       ],
-      buoys: <HarborBuoy>[
+      floats: <HarborFloat>[
         if (_fogHorn != null)
-          const HarborBuoy(
+          const HarborFloat(
             placement: HarborAligned(alignment: Alignment.bottomCenter),
             key: ValueKey<String>('fog horn buoy'),
             child: _FogHorn(key: ValueKey<String>('fog horn')),
           ),
       ],
-      // Open water under everything, the status bar and the header included.
-      // The feed is no fairway, so it takes the wake itself and fades as it
-      // passes under the header; the sea is left as it is.
+      // The background runs under everything, the status bar and the header included.
+      // The feed is no HarborScrollView, so it takes the edge effect itself and fades
+      // as it passes under the header; the sea is left as it is.
       body: Builder(
         builder: (final BuildContext context) => Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            HarborOpenWater(
-              builder: (final BuildContext context, final HarborWatersData waters) => Sea(
-                mood: _weather.mood,
-                child: SkyOverlay(fog: _weather.fog, moon: _weather.moon, moonTop: waters.coast.top + 12),
-              ),
+            Builder(
+              builder: (final BuildContext context) {
+                final HarborRoomData waters = HarborRoom.of(context);
+                return Sea(
+                  mood: _weather.mood,
+                  child: SkyOverlay(fog: _weather.fog, moon: _weather.moon, moonTop: waters.systemEdges.top + 12),
+                );
+              },
             ),
-            HarborWakeMask(
-              wakes: HarborWaters.of(context).wakes,
-              child: HarborMakeWay(
+            HarborFadeMask(
+              edgeEffects: HarborRoom.of(context).edgeEffects,
+              child: HarborHideBar(
                 edge: HarborEdge.top,
-                mode: widget.makeWay,
+                mode: widget.hideMode,
                 active: _singing,
                 child: PageView.builder(
                   controller: _pages,
@@ -228,7 +242,7 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
   }
 }
 
-/// The header on the pier: a title plank and a fairway of sea moods.
+/// The header in the overlay bar: a title plank and a scroll view of sea moods.
 class _OpenSeaHeader extends StatelessWidget {
   const _OpenSeaHeader({
     required this.title,
@@ -259,10 +273,10 @@ class _OpenSeaHeader extends StatelessWidget {
       ),
       SizedBox(
         height: 44,
-        // A horizontal fairway in a dock: the dock leaves the side insets in
+        // A horizontal scroll view in a bar: the bar leaves the side insets in
         // its MediaQuery, so the chips run past a cutout and rest on the
-        // mooring line at both ends.
-        child: HarborFairway(
+        // row insets at both ends.
+        child: HarborScrollView(
           scrollDirection: Axis.horizontal,
           slivers: <Widget>[
             SliverList.separated(
@@ -295,7 +309,7 @@ class _OpenSeaHeader extends StatelessWidget {
   );
 }
 
-/// One page of the feed: a voyage card moored in the clear water, below the
+/// One page of the feed: a voyage card kept clear in the room, below the
 /// header and above the tab bar (or the shanty drawer, while it is open).
 class _VoyageBerth extends StatelessWidget {
   const _VoyageBerth({required this.boat, required this.singing, required this.onSing, required this.onFollow});
@@ -306,14 +320,14 @@ class _VoyageBerth extends StatelessWidget {
   final VoidCallback? onFollow;
 
   @override
-  Widget build(final BuildContext context) => HarborMoored(
-    mooringLine: true,
-    extra: const EdgeInsetsDirectional.symmetric(vertical: 8),
+  Widget build(final BuildContext context) => HarborClear(
+    rowInsets: true,
+    padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
     child: LayoutBuilder(
       builder: (final BuildContext context, final BoxConstraints constraints) {
         // Sized from the frame, which the keyboard never shrinks, and capped
-        // by the water that is left, so it reflows above the drawer.
-        final Size frame = HarborWaters.of(context, aspect: HarborWatersAspect.frame).frameSize;
+        // by the room that is left, so it reflows above the drawer.
+        final Size frame = HarborRoom.of(context, aspect: HarborRoomAspect.frame).frameSize;
         final double height = math.min(constraints.maxHeight, frame.height * 0.72);
         return Align(
           alignment: Alignment.topCenter,
@@ -362,7 +376,10 @@ class _VoyageCard extends StatelessWidget {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Text('VOYAGE ${boat.id + 1}', style: text.labelSmall?.copyWith(color: Palette.brass, letterSpacing: 2)),
+                        Text(
+                          'VOYAGE ${boat.id + 1}',
+                          style: text.labelSmall?.copyWith(color: Palette.brass, letterSpacing: 2),
+                        ),
                         const Spacer(),
                         Text('${boat.knots} kn', style: text.labelMedium?.copyWith(color: Palette.foam)),
                       ],
@@ -385,7 +402,10 @@ class _VoyageCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(boat.name, style: text.headlineSmall?.copyWith(color: Palette.foam, fontWeight: FontWeight.w700)),
+                    Text(
+                      boat.name,
+                      style: text.headlineSmall?.copyWith(color: Palette.foam, fontWeight: FontWeight.w700),
+                    ),
                     Text(
                       '${boat.kindLabel} · ${boat.captain} · ${boat.voyages} voyages logged',
                       style: TextStyle(color: Palette.foam.withValues(alpha: 0.75)),
@@ -395,7 +415,9 @@ class _VoyageCard extends StatelessWidget {
                       children: <Widget>[
                         const Icon(Icons.anchor_rounded, size: 16, color: Palette.brass),
                         const SizedBox(width: 6),
-                        Flexible(child: Text('${boat.homePort}  ⟶  $destination', style: const TextStyle(color: Palette.foam))),
+                        Flexible(
+                          child: Text('${boat.homePort}  ⟶  $destination', style: const TextStyle(color: Palette.foam)),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -418,9 +440,10 @@ class _VoyageCard extends StatelessWidget {
                       ),
                     ],
                     const LogbookNote(
-                      pattern: 'Pier over open water · moored cards · breakwater drawer · fog horn buoy',
+                      pattern:
+                          'Overlay bar over a background · HarborClear cards · page-covering drawer · fog horn float',
                       tryThis:
-                          'Pick a sea mood: the chips run edge to edge but start on the mooring line. Swipe up for '
+                          'Pick a sea mood: the chips run edge to edge but start on the row insets. Swipe up for '
                           'the next voyage and the fog horn sounds just above the tab bar. Sing a shanty: the header '
                           'withdraws here (on a followed voyage it goes dark, keeping the back button\'s ground) '
                           'and the card reflows above the drawer.',
@@ -436,7 +459,7 @@ class _VoyageCard extends StatelessWidget {
   }
 }
 
-/// The fog horn: a buoy that bobs at the bottom of the clear water while the
+/// The fog horn: a float that bobs at the bottom of the room while the
 /// next voyage loads.
 class _FogHorn extends StatelessWidget {
   const _FogHorn({super.key});
@@ -454,7 +477,9 @@ class _FogHorn extends StatelessWidget {
           SizedBox(width: 8),
           SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Palette.brass)),
           SizedBox(width: 10),
-          Flexible(child: Text('Fog horn! Charting the next voyage…', style: TextStyle(color: Palette.foam))),
+          Flexible(
+            child: Text('Fog horn! Charting the next voyage…', style: TextStyle(color: Palette.foam)),
+          ),
         ],
       ),
     ),
@@ -476,18 +501,22 @@ class _ShantyDrawer extends StatelessWidget {
       maxExtentFraction: 0.42,
       surface: const Sailcloth(),
       header: SheetHeader(title: 'The ${boat.name} Shanty'),
-      body: HarborFairway(
+      body: HarborScrollView(
         padding: const EdgeInsetsDirectional.only(bottom: 16),
         slivers: <Widget>[
           SliverList.builder(
             itemCount: verses.length,
-            itemBuilder: (final BuildContext context, final int index) => HarborMooringLine(
+            itemBuilder: (final BuildContext context, final int index) => HarborClear.rowInsets(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(index.isEven ? Icons.music_note_rounded : Icons.queue_music_rounded, color: Palette.brass, size: 18),
+                    Icon(
+                      index.isEven ? Icons.music_note_rounded : Icons.queue_music_rounded,
+                      color: Palette.brass,
+                      size: 18,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -510,10 +539,7 @@ class _ShantyDrawer extends StatelessWidget {
   }
 
   static List<List<String>> _shantyFor(final Boat boat) {
-    const List<String> chorus = <String>[
-      'So heave away, me hearties, heave!',
-      'The tide is turning, time to leave!',
-    ];
+    const List<String> chorus = <String>['So heave away, me hearties, heave!', 'The tide is turning, time to leave!'];
     final String name = boat.name;
     final String captain = boat.captain;
     return switch (boat.id % 3) {

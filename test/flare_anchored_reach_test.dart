@@ -28,10 +28,10 @@ void main() {
 
   Future<BuildContext> pump(final WidgetTester tester) async {
     late BuildContext page;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-        home: Harbor(
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+        home: HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               page = context;
@@ -64,7 +64,7 @@ void main() {
   testWidgets('an anchored flare with reachesCoast is laid out and padded as without it', (final tester) async {
     final BuildContext page = await pump(tester);
     EdgeInsets? plain;
-    final HarborFlareEntry first = HarborFlares.raise(
+    final HarborToastEntry first = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
       duration: null,
@@ -72,16 +72,18 @@ void main() {
     );
     await settle(tester);
     final Rect without = _rect(tester, 'plain');
-    first.lower();
+    first.hide();
     await settle(tester);
 
     EdgeInsets? reaching;
     // The deprecated spelling, on purpose: reachesCoast with an anchor stays a no-op there, as it was
     // since 0.6.3. Spelled with a HarborAnchored placement it is an assert (placement_test.dart).
-    HarborFlares.raise(
+    // ignore: deprecated_member_use_from_same_package
+    HarborToasts.raise(
       page,
       // ignore: deprecated_member_use_from_same_package
       anchor: anchor,
+      // ignore: deprecated_member_use_from_same_package
       reachesCoast: true,
       duration: null,
       builder: (final BuildContext _) => _toast('reaching', (final EdgeInsets p) => reaching = p),
@@ -94,14 +96,16 @@ void main() {
     expect(_rect(tester, 'reaching'), without);
   });
 
-  testWidgets('an aligned low flare with reachesCoast and no margin is still handed the whole side coast', (final tester) async {
+  testWidgets('an aligned low flare with reachesCoast and no margin is still handed the whole side coast', (
+    final tester,
+  ) async {
     final BuildContext page = await pump(tester);
     final EdgeInsets coast = MediaQuery.paddingOf(page);
     EdgeInsets? padding;
-    HarborFlares.raise(
+    HarborToasts.show(
       page,
-      placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero),
-      reachesCoast: true,
+      placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
+      reachesSystemEdges: true,
       duration: null,
       builder: (final BuildContext _) => _toast('low', (final EdgeInsets p) => padding = p),
     );

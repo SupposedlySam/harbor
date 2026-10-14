@@ -34,11 +34,13 @@ class _PageState extends State<_Page> {
 
   void openActions() => setState(() => actions = true);
 
-  void openSheet() => unawaited(showHarborSheet<void>(
-    inside,
-    barrier: HarborSheetBarrier.none,
-    builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 200, child: Text('sheet'))),
-  ).then((final void _) => widget.events.add('sheet closed')));
+  void openSheet() => unawaited(
+    showHarborSheet<void>(
+      inside,
+      barrier: HarborSheetBarrier.none,
+      builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 200, child: Text('sheet'))),
+    ).then((final void _) => widget.events.add('sheet closed')),
+  );
 
   @override
   Widget build(final BuildContext context) => PopScope<Object?>(
@@ -53,10 +55,10 @@ class _PageState extends State<_Page> {
       }
       back();
     },
-    child: Harbor(
-      buoys: <HarborBuoy>[
+    child: HarborFrame(
+      floats: <HarborFloat>[
         if (actions)
-          HarborBuoy(
+          HarborFloat(
             modal: true,
             requestFocus: false,
             onDismiss: () => setState(() {
@@ -70,13 +72,13 @@ class _PageState extends State<_Page> {
         builder: (final BuildContext context) {
           inside = context;
           return Center(
-            child: HarborPortalBuoy(
+            child: HarborPopover(
               controller: menu,
               onDismiss: () {
                 menu.hide();
                 widget.events.add('menu closed');
               },
-              buoyBuilder: (final BuildContext _) => const Text('menu'),
+              popoverBuilder: (final BuildContext _) => const Text('menu'),
               child: const Text('row'),
             ),
           );
@@ -86,12 +88,18 @@ class _PageState extends State<_Page> {
   );
 }
 
-Future<_PageState> _pumpAndOpenAll(final WidgetTester tester, {required final bool recipe, required final List<String> events}) async {
+Future<_PageState> _pumpAndOpenAll(
+  final WidgetTester tester, {
+  required final bool recipe,
+  required final List<String> events,
+}) async {
   final GlobalKey<_PageState> page = GlobalKey<_PageState>();
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-      home: Material(child: _Page(key: page, recipe: recipe, events: events)),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+      home: Material(
+        child: _Page(key: page, recipe: recipe, events: events),
+      ),
     ),
   );
   final _PageState state = page.currentState!;
@@ -114,7 +122,9 @@ Future<void> _back(final WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('without the recipe, back under PopScope(canPop: false) reaches only the app\'s handler', (final tester) async {
+  testWidgets('without the recipe, back under PopScope(canPop: false) reaches only the app\'s handler', (
+    final tester,
+  ) async {
     final List<String> events = <String>[];
     await _pumpAndOpenAll(tester, recipe: false, events: events);
     await _back(tester);
@@ -124,23 +134,31 @@ void main() {
     expect(find.text('actions'), findsOneWidget);
   });
 
-  testWidgets('with the recipe, back closes the sheet, the portal buoy and the modal buoy one at a time, then reaches the app', (final tester) async {
-    final List<String> events = <String>[];
-    await _pumpAndOpenAll(tester, recipe: true, events: events);
+  testWidgets(
+    'with the recipe, back closes the sheet, the portal buoy and the modal buoy one at a time, then reaches the app',
+    (final tester) async {
+      final List<String> events = <String>[];
+      await _pumpAndOpenAll(tester, recipe: true, events: events);
 
-    await _back(tester);
-    expect(events, <String>['sheet closed']);
-    expect(find.text('menu'), findsOneWidget, reason: 'one back press closes one thing');
+      await _back(tester);
+      expect(events, <String>['sheet closed']);
+      expect(find.text('menu'), findsOneWidget, reason: 'one back press closes one thing');
 
-    await _back(tester);
-    expect(events, <String>['sheet closed', 'menu closed']);
-    expect(find.text('actions'), findsOneWidget);
+      await _back(tester);
+      expect(events, <String>['sheet closed', 'menu closed']);
+      expect(find.text('actions'), findsOneWidget);
 
-    await _back(tester);
-    expect(events, <String>['sheet closed', 'menu closed', 'actions closed']);
+      await _back(tester);
+      expect(events, <String>['sheet closed', 'menu closed', 'actions closed']);
 
-    await _back(tester);
-    expect(events, <String>['sheet closed', 'menu closed', 'actions closed', 'tabs.back'], reason: 'only now is back the app\'s');
-    expect(find.text('row'), findsOneWidget, reason: 'and the page is still there');
-  });
+      await _back(tester);
+      expect(events, <String>[
+        'sheet closed',
+        'menu closed',
+        'actions closed',
+        'tabs.back',
+      ], reason: 'only now is back the app\'s');
+      expect(find.text('row'), findsOneWidget, reason: 'and the page is still there');
+    },
+  );
 }

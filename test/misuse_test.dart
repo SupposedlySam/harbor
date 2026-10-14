@@ -10,7 +10,7 @@ import 'package:harbor_test/harbor_test.dart';
 
 Widget _app(final Widget home) => WidgetsApp(
   color: const Color(0xFFFFFFFF),
-  builder: (final BuildContext context, final Widget? child) => HarborSea(child: home),
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(child: home),
 );
 
 /// The errors reported while [body] runs. A layout that throws goes on to fail its paint and its
@@ -49,7 +49,7 @@ void main() {
   });
 
   // Breaks if: Harbor.of points a reader at HarborController's methods, or stops throwing.
-  testWidgets('Harbor.of with no harbor above says to use Harbor.maybeOf', (final tester) async {
+  testWidgets('HarborFrame.of with no frame above says to use HarborFrame.maybeOf', (final tester) async {
     late BuildContext bare;
     await tester.pumpWidget(
       Builder(
@@ -60,21 +60,21 @@ void main() {
       ),
     );
     expect(
-      () => Harbor.of(bare),
+      () => HarborFrame.of(bare),
       throwsA(
         isA<FlutterError>()
-            .having((final FlutterError e) => e.toStringDeep(), 'message', contains('Harbor.of() called'))
-            .having((final FlutterError e) => e.toStringDeep(), 'message', contains('call Harbor.maybeOf()')),
+            .having((final FlutterError e) => e.toStringDeep(), 'message', contains('HarborFrame.of() called'))
+            .having((final FlutterError e) => e.toStringDeep(), 'message', contains('call HarborFrame.maybeOf()')),
       ),
     );
   });
 
   testWidgets('a harbor given unbounded height names itself and says to hug its body', (final tester) async {
     final List<FlutterErrorDetails> errors = await _errorsWhile(
-      () => tester.pumpSeaTrial(
+      () => tester.pumpHarborTrial(
         _app(
           const SingleChildScrollView(
-            child: Harbor(debugLabel: 'settings', body: SizedBox(height: 100)),
+            child: HarborFrame(debugLabel: 'settings', body: SizedBox(height: 100)),
           ),
         ),
       ),
@@ -87,14 +87,14 @@ void main() {
 
   testWidgets('a quay listed inside a pier says to list it nearer the edge', (final tester) async {
     final List<FlutterErrorDetails> errors = await _errorsWhile(
-      () => tester.pumpSeaTrial(
+      () => tester.pumpHarborTrial(
         _app(
-          const Harbor(
+          const HarborFrame(
             debugLabel: 'inbox',
-            top: <HarborDock>[
-              HarborDock.quay(child: SizedBox(height: 20)),
-              HarborDock.pier(child: SizedBox(height: 20)),
-              HarborDock.quay(child: SizedBox(height: 20)),
+            top: <HarborBar>[
+              HarborBar.solid(child: SizedBox(height: 20)),
+              HarborBar.overlay(child: SizedBox(height: 20)),
+              HarborBar.solid(child: SizedBox(height: 20)),
             ],
             body: SizedBox.expand(),
           ),
@@ -108,7 +108,7 @@ void main() {
   });
 
   testWidgets('dragToClose outside showHarborSheet says to open the sheet with it', (final tester) async {
-    await tester.pumpSeaTrial(_app(const HarborSheet(dragToClose: true, body: SizedBox(height: 100))));
+    await tester.pumpHarborTrial(_app(const HarborSheet(dragToClose: true, body: SizedBox(height: 100))));
     final Object? error = tester.takeException();
     expect(error, isA<FlutterError>());
     expect('$error', contains('showHarborSheet'));
@@ -117,7 +117,7 @@ void main() {
 
   group('Two anchor points sharing one anchor', () {
     Widget rows(final HarborAnchor anchor, final List<int> anchored) => _app(
-      Harbor(
+      HarborFrame(
         body: Column(
           children: <Widget>[
             for (int i = 0; i < 3; i++)
@@ -133,7 +133,7 @@ void main() {
     testWidgets('are reported after the frame, with the fix', (final tester) async {
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'row menu');
       addTearDown(anchor.dispose);
-      await tester.pumpSeaTrial(rows(anchor, <int>[0, 2]));
+      await tester.pumpHarborTrial(rows(anchor, <int>[0, 2]));
       final Object? error = tester.takeException();
       expect(error, isA<FlutterError>());
       expect('$error', contains('row menu'));
@@ -143,10 +143,10 @@ void main() {
     testWidgets('are not reported when the anchor moves from one point to another', (final tester) async {
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'row menu');
       addTearDown(anchor.dispose);
-      await tester.pumpSeaTrial(rows(anchor, <int>[0]));
+      await tester.pumpHarborTrial(rows(anchor, <int>[0]));
       // A sea trial both times, so the tree is kept and the old point detaches in the same frame
       // the new one attaches: the case the check must not mistake for two points on one anchor.
-      await tester.pumpSeaTrial(rows(anchor, <int>[2]));
+      await tester.pumpHarborTrial(rows(anchor, <int>[2]));
       await tester.pump();
       expect(tester.takeException(), isNull);
       expect(anchor.box, isNotNull, reason: 'positive control: the anchor holds the point it moved to');

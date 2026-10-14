@@ -25,7 +25,7 @@ void main() {
 
     testWidgets('raise, show, list and close as flares do', (final tester) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
           builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
           home: Material(

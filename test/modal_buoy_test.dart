@@ -32,10 +32,10 @@ class _PageState extends State<_Page> {
   void close() => setState(() => menu = false);
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    buoys: <HarborBuoy>[
+  Widget build(final BuildContext context) => HarborFrame(
+    floats: <HarborFloat>[
       if (menu)
-        HarborBuoy(
+        HarborFloat(
           placement: const HarborAligned(alignment: Alignment.center),
           modal: true,
           onDismiss: () => setState(() {
@@ -53,15 +53,17 @@ class _PageState extends State<_Page> {
 }
 
 Future<_PageState> _pumpPage(final WidgetTester tester, final List<String> taps) async {
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
       navigatorKey: _navigator,
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-      home: const Harbor(body: Center(child: Text('home'))),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+      home: const HarborFrame(body: Center(child: Text('home'))),
     ),
     device: HarborTrialDevice.androidGesture,
   );
-  unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => _Page(taps: taps))));
+  unawaited(
+    _navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => _Page(taps: taps))),
+  );
   await tester.pumpAndSettle();
   return tester.state<_PageState>(find.byType(_Page));
 }
@@ -91,10 +93,10 @@ class _FocusPageState extends State<_FocusPage> {
   }
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    buoys: <HarborBuoy>[
+  Widget build(final BuildContext context) => HarborFrame(
+    floats: <HarborFloat>[
       if (menu)
-        HarborBuoy(
+        HarborFloat(
           placement: const HarborAligned(alignment: Alignment.center),
           modal: true,
           onDismiss: () => setState(() {
@@ -126,15 +128,19 @@ Future<_FocusPageState> _pumpFocusPage(
   final _FocusPage home = const _FocusPage(),
   final Widget Function(Widget page)? around,
 }) async {
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
       navigatorKey: _navigator,
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-      home: const Harbor(body: Center(child: Text('home'))),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+      home: const HarborFrame(body: Center(child: Text('home'))),
     ),
     device: HarborTrialDevice.androidGesture,
   );
-  unawaited(_navigator.currentState!.push(MaterialPageRoute<void>(builder: (final BuildContext _) => around?.call(home) ?? home)));
+  unawaited(
+    _navigator.currentState!.push(
+      MaterialPageRoute<void>(builder: (final BuildContext _) => around?.call(home) ?? home),
+    ),
+  );
   await tester.pumpAndSettle();
   final _FocusPageState page = tester.state<_FocusPageState>(find.byType(_FocusPage));
   page.opener.requestFocus();
@@ -189,16 +195,16 @@ class _SpeedDialPageState extends State<_SpeedDialPage> {
   void update(final VoidCallback change) => setState(change);
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    buoys: <HarborBuoy>[
+  Widget build(final BuildContext context) => HarborFrame(
+    floats: <HarborFloat>[
       if (menu)
-        HarborBuoy(
+        HarborFloat(
           placement: const HarborAligned(alignment: Alignment.topCenter),
           modal: true,
           onDismiss: () => setState(() => menu = false),
           child: const Text('menu'),
         ),
-      HarborBuoy(
+      HarborFloat(
         key: const ValueKey<String>('dial'),
         modal: dialOpen,
         onDismiss: () => setState(() => dialOpen = false),
@@ -210,9 +216,9 @@ class _SpeedDialPageState extends State<_SpeedDialPage> {
 }
 
 Future<_SpeedDialPageState> _pumpSpeedDial(final WidgetTester tester) async {
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
       home: const _SpeedDialPage(),
     ),
   );
@@ -248,7 +254,11 @@ void main() {
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('Page action'), findsNothing, reason: 'positive control: back pops the page once the buoy is gone');
+    expect(
+      find.text('Page action'),
+      findsNothing,
+      reason: 'positive control: back pops the page once the buoy is gone',
+    );
   });
 
   testWidgets('screen readers leave the page alone while a modal buoy is up', (final tester) async {
@@ -265,12 +275,17 @@ void main() {
 
   testWidgets('a modal buoy\'s barrier is announced with its barrierLabel', (final tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-        home: Harbor(
-          buoys: <HarborBuoy>[
-            HarborBuoy(modal: true, onDismiss: () {}, barrierLabel: 'Fermer', child: const SizedBox(width: 100, height: 100)),
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+        home: HarborFrame(
+          floats: <HarborFloat>[
+            HarborFloat(
+              modal: true,
+              onDismiss: () {},
+              barrierLabel: 'Fermer',
+              child: const SizedBox(width: 100, height: 100),
+            ),
           ],
           body: const SizedBox.expand(),
         ),
@@ -282,11 +297,13 @@ void main() {
   });
 
   test('a modal buoy without onDismiss is refused', () {
-    expect(() => HarborBuoy(modal: true, child: const SizedBox()), throwsAssertionError);
+    expect(() => HarborFloat(modal: true, child: const SizedBox()), throwsAssertionError);
   });
 
   group('a modal buoy is modal for the keyboard', () {
-    testWidgets('it takes focus when it opens, keeps Tab and arrows inside, and gives focus back', (final tester) async {
+    testWidgets('it takes focus when it opens, keeps Tab and arrows inside, and gives focus back', (
+      final tester,
+    ) async {
       final _FocusPageState page = await _pumpFocusPage(tester);
       expect(page.opener.hasPrimaryFocus, isTrue, reason: 'positive control: the opener has focus');
 
@@ -305,7 +322,8 @@ void main() {
       ]) {
         await tester.sendKeyEvent(key);
         await tester.pump();
-        final TextButton? button = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>();
+        final TextButton? button = FocusManager.instance.primaryFocus?.context
+            ?.findAncestorWidgetOfExactType<TextButton>();
         reached.add(button == null ? '-' : (button.child! as Text).data!);
       }
       expect(reached, everyElement(isIn(<String>['Copy', 'Share'])), reason: 'traversal stays in the menu: $reached');
@@ -350,7 +368,8 @@ void main() {
       final _FocusPageState page = await _pumpFocusPage(tester, home: const _FocusPage(autofocusShare: true));
       page.open();
       await tester.pumpAndSettle();
-      final TextButton? focused = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>();
+      final TextButton? focused = FocusManager.instance.primaryFocus?.context
+          ?.findAncestorWidgetOfExactType<TextButton>();
       expect((focused?.child as Text?)?.data, 'Share');
     });
 
@@ -374,7 +393,9 @@ void main() {
       final _FocusPageState page = await _pumpFocusPage(
         tester,
         around: (final Widget harbor) => Actions(
-          actions: <Type, Action<Intent>>{DismissIntent: CallbackAction<DismissIntent>(onInvoke: (final _) => aboveEscapes++)},
+          actions: <Type, Action<Intent>>{
+            DismissIntent: CallbackAction<DismissIntent>(onInvoke: (final _) => aboveEscapes++),
+          },
           child: harbor,
         ),
       );
@@ -396,11 +417,13 @@ void main() {
 
     testWidgets('Escape closes a modal buoy before a sheet with no barrier under it', (final tester) async {
       final _FocusPageState page = await _pumpFocusPage(tester);
-      unawaited(showHarborSheet<void>(
-        tester.element(find.text('Open menu')),
-        barrier: HarborSheetBarrier.none,
-        builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 120, child: Text('sheet'))),
-      ));
+      unawaited(
+        showHarborSheet<void>(
+          tester.element(find.text('Open menu')),
+          barrier: HarborSheetBarrier.none,
+          builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 120, child: Text('sheet'))),
+        ),
+      );
       await tester.pumpAndSettle();
       page.open();
       await tester.pumpAndSettle();
@@ -425,24 +448,36 @@ void main() {
       final _FocusPageState page = await _pumpFocusPage(tester);
       page.open();
       await tester.pumpAndSettle();
-      unawaited(showHarborSheet<void>(
-        tester.element(find.text('Open menu')),
-        barrier: HarborSheetBarrier.none,
-        requestFocus: true,
-        builder: (final BuildContext _) => HarborSheet(
-          body: SizedBox(height: 120, child: TextButton(autofocus: true, onPressed: () {}, child: const Text('in the sheet'))),
+      unawaited(
+        showHarborSheet<void>(
+          tester.element(find.text('Open menu')),
+          barrier: HarborSheetBarrier.none,
+          requestFocus: true,
+          builder: (final BuildContext _) => HarborSheet(
+            body: SizedBox(
+              height: 120,
+              child: TextButton(autofocus: true, onPressed: () {}, child: const Text('in the sheet')),
+            ),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
-      expect(FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>()?.child, isA<Text>(),
-          reason: 'positive control: the sheet took focus');
+      expect(
+        FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>()?.child,
+        isA<Text>(),
+        reason: 'positive control: the sheet took focus',
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(find.text('in the sheet'), findsNothing, reason: 'the first Escape closed the sheet, the topmost thing');
       expect(page.dismissed, 0, reason: 'and left the menu');
       final FocusNode? focused = FocusManager.instance.primaryFocus;
-      expect(focused?.context, isNotNull, reason: 'focus is on a node still in the tree, not the sheet\'s disposed scope');
+      expect(
+        focused?.context,
+        isNotNull,
+        reason: 'focus is on a node still in the tree, not the sheet\'s disposed scope',
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
@@ -456,7 +491,11 @@ void main() {
       page.update(() => page.dialOpen = true);
       await tester.pumpAndSettle();
       expect(find.text('n=1'), findsOneWidget, reason: 'opening the dial kept the count');
-      expect(FocusScope.of(tester.element(find.text('n=1'))).hasFocus, isTrue, reason: 'and the dial took focus as it turned modal');
+      expect(
+        FocusScope.of(tester.element(find.text('n=1'))).hasFocus,
+        isTrue,
+        reason: 'and the dial took focus as it turned modal',
+      );
 
       page.update(() => page.dialOpen = false);
       await tester.pumpAndSettle();
@@ -477,7 +516,11 @@ void main() {
 
     testWidgets('when a flare comes up in its harbor', (final tester) async {
       await _pumpSpeedDial(tester);
-      HarborFlares.raise(tester.element(find.text('n=1')), persist: true, builder: (final BuildContext _) => const Text('Copied'));
+      HarborToasts.show(
+        tester.element(find.text('n=1')),
+        persist: true,
+        builder: (final BuildContext _) => const Text('Copied'),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Copied'), findsOneWidget, reason: 'positive control: the flare is up');
       expect(find.text('n=1'), findsOneWidget, reason: 'a flare coming up kept the count');

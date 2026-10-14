@@ -41,10 +41,7 @@ class _SeaState extends State<Sea> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(final BuildContext context) => RepaintBoundary(
-    child: CustomPaint(
-      painter: _SeaPainter(_time, widget.mood),
-      child: widget.child ?? const SizedBox.expand(),
-    ),
+    child: CustomPaint(painter: _SeaPainter(_time, widget.mood), child: widget.child ?? const SizedBox.expand()),
   );
 }
 

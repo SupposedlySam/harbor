@@ -8,7 +8,7 @@ import 'package:harbor/harbor.dart';
 
 /// Records each event with the scheduler phase it arrived in, and whether the harbor had a chart
 /// entry (had laid out) by then.
-class _Log extends HarborFleetObserver {
+class _Log extends HarborFrameObserver {
   final List<String> events = <String>[];
   final List<SchedulerPhase> phases = <SchedulerPhase>[];
   final List<bool> laidOut = <bool>[];
@@ -17,7 +17,9 @@ class _Log extends HarborFleetObserver {
   void didJoin(final HarborController harbor) {
     events.add('join ${harbor.debugLabel}');
     phases.add(SchedulerBinding.instance.schedulerPhase);
-    laidOut.add(HarborChart.snapshotOf(harbor.fleet).any((final HarborChartEntry e) => e.label == harbor.debugLabel));
+    laidOut.add(
+      HarborInspector.snapshotOf(harbor.registry).any((final HarborInspectorEntry e) => e.label == harbor.debugLabel),
+    );
   }
 
   @override
@@ -27,18 +29,18 @@ class _Log extends HarborFleetObserver {
   }
 }
 
-Widget _sea({required final Widget child, final List<HarborFleetObserver> observers = const <HarborFleetObserver>[]}) =>
+Widget _sea({required final Widget child, final List<HarborFrameObserver> observers = const <HarborFrameObserver>[]}) =>
     Directionality(
       textDirection: TextDirection.ltr,
       child: MediaQuery(
         data: const MediaQueryData(size: Size(800, 600)),
-        child: HarborSea(observers: observers, child: child),
+        child: HarborRoot(observers: observers, child: child),
       ),
     );
 
-Widget _page(final String label, {final Widget? body}) => Harbor(
+Widget _page(final String label, {final Widget? body}) => HarborFrame(
   debugLabel: label,
-  top: const <HarborDock>[HarborDock.quay(child: SizedBox(height: 40))],
+  top: const <HarborBar>[HarborBar.solid(child: SizedBox(height: 40))],
   body: body ?? const SizedBox.expand(),
 );
 
@@ -46,7 +48,7 @@ void main() {
   group('HarborFleetObserver', () {
     testWidgets('hears the sea and its pages join, after the frame they were built in', (final tester) async {
       final _Log log = _Log();
-      await tester.pumpWidget(_sea(observers: <HarborFleetObserver>[log], child: _page('inbox')));
+      await tester.pumpWidget(_sea(observers: <HarborFrameObserver>[log], child: _page('inbox')));
 
       expect(log.events, <String>['join sea', 'join inbox']);
       expect(log.phases, everyElement(SchedulerPhase.postFrameCallbacks));
@@ -56,11 +58,11 @@ void main() {
 
     testWidgets('hears a page leave, and nothing more once the page has gone', (final tester) async {
       final _Log log = _Log();
-      await tester.pumpWidget(_sea(observers: <HarborFleetObserver>[log], child: _page('inbox')));
+      await tester.pumpWidget(_sea(observers: <HarborFrameObserver>[log], child: _page('inbox')));
       log.events.clear();
       log.phases.clear();
 
-      await tester.pumpWidget(_sea(observers: <HarborFleetObserver>[log], child: const SizedBox.expand()));
+      await tester.pumpWidget(_sea(observers: <HarborFrameObserver>[log], child: const SizedBox.expand()));
       expect(log.events, <String>['leave inbox']);
       expect(log.phases, <SchedulerPhase>[SchedulerPhase.postFrameCallbacks]);
 
@@ -70,7 +72,7 @@ void main() {
 
     testWidgets('hears the sea itself leave when the app goes', (final tester) async {
       final _Log log = _Log();
-      await tester.pumpWidget(_sea(observers: <HarborFleetObserver>[log], child: _page('inbox')));
+      await tester.pumpWidget(_sea(observers: <HarborFrameObserver>[log], child: _page('inbox')));
       log.events.clear();
 
       await tester.pumpWidget(const SizedBox.shrink());
@@ -85,7 +87,7 @@ void main() {
           child: _page('inbox', body: SizedBox(key: anchor)),
         ),
       );
-      final HarborFleet fleet = Harbor.of(anchor.currentContext!).fleet;
+      final HarborFrameRegistry fleet = HarborFrame.of(anchor.currentContext!).registry;
 
       fleet.addObserver(log);
       await tester.pumpWidget(
@@ -110,8 +112,8 @@ void main() {
     testWidgets('moves with the sea when its list of observers changes', (final tester) async {
       final _Log first = _Log();
       final _Log second = _Log();
-      await tester.pumpWidget(_sea(observers: <HarborFleetObserver>[first], child: _page('inbox')));
-      await tester.pumpWidget(_sea(observers: <HarborFleetObserver>[second], child: const SizedBox.expand()));
+      await tester.pumpWidget(_sea(observers: <HarborFrameObserver>[first], child: _page('inbox')));
+      await tester.pumpWidget(_sea(observers: <HarborFrameObserver>[second], child: const SizedBox.expand()));
 
       expect(first.events, <String>['join sea', 'join inbox']);
       expect(second.events, <String>['leave inbox']);
@@ -120,16 +122,16 @@ void main() {
 
   group('HarborChart.snapshotAll', () {
     testWidgets('reads every live sea with no context, and forgets one once it is disposed', (final tester) async {
-      expect(HarborChart.snapshotAll(), isEmpty);
+      expect(HarborInspector.snapshotAll(), isEmpty);
       await tester.pumpWidget(_sea(child: _page('inbox')));
 
-      final List<HarborChartEntry> chart = HarborChart.snapshotAll();
-      expect(chart.map((final HarborChartEntry e) => e.label), <String>['sea', 'inbox']);
-      expect(chart.map((final HarborChartEntry e) => e.isolated), everyElement(isFalse));
-      expect(chart.last.docks.single.rect, const Rect.fromLTWH(0, 0, 800, 40));
+      final List<HarborInspectorEntry> chart = HarborInspector.snapshotAll();
+      expect(chart.map((final HarborInspectorEntry e) => e.label), <String>['sea', 'inbox']);
+      expect(chart.map((final HarborInspectorEntry e) => e.isolated), everyElement(isFalse));
+      expect(chart.last.bars.single.rect, const Rect.fromLTWH(0, 0, 800, 40));
 
       await tester.pumpWidget(const SizedBox.shrink());
-      expect(HarborChart.snapshotAll(), isEmpty);
+      expect(HarborInspector.snapshotAll(), isEmpty);
     });
 
     testWidgets('lists a sea inside a page after the app, labelled isolated', (final tester) async {
@@ -139,15 +141,15 @@ void main() {
             'field guide',
             body: Align(
               alignment: Alignment.topLeft,
-              child: SizedBox(width: 200, height: 300, child: HarborSea(child: _page('phone'))),
+              child: SizedBox(width: 200, height: 300, child: HarborRoot(child: _page('phone'))),
             ),
           ),
         ),
       );
 
-      final List<HarborChartEntry> chart = HarborChart.snapshotAll();
+      final List<HarborInspectorEntry> chart = HarborInspector.snapshotAll();
       expect(
-        <(String, bool, int)>[for (final HarborChartEntry e in chart) (e.label, e.isolated, e.depth)],
+        <(String, bool, int)>[for (final HarborInspectorEntry e in chart) (e.label, e.isolated, e.depth)],
         <(String, bool, int)>[('sea', false, 0), ('field guide', false, 1), ('sea', true, 0), ('phone', true, 1)],
       );
       // In global coordinates, as every entry is: the phone sits below the page's 40 header.
@@ -161,14 +163,14 @@ void main() {
           textDirection: TextDirection.ltr,
           child: MediaQuery(
             data: const MediaQueryData(size: Size(800, 600)),
-            child: HarborChartOverlay(enabled: false, child: HarborSea(child: _page('inbox'))),
+            child: HarborInspectorOverlay(enabled: false, child: HarborRoot(child: _page('inbox'))),
           ),
         ),
       );
-      expect(HarborChart.snapshotAll().map((final HarborChartEntry e) => e.label), <String>['sea', 'inbox']);
+      expect(HarborInspector.snapshotAll().map((final HarborInspectorEntry e) => e.label), <String>['sea', 'inbox']);
 
       await tester.pumpWidget(const SizedBox.shrink());
-      expect(HarborChart.snapshotAll(), isEmpty);
+      expect(HarborInspector.snapshotAll(), isEmpty);
     });
   });
 }

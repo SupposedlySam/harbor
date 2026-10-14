@@ -21,7 +21,7 @@ void main() {
         MaterialApp(
           theme: Palette.theme(),
           builder: (final BuildContext context, final Widget? child) =>
-              HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+              HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
           home: Builder(builder: entry.page),
         ),
       );

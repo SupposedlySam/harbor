@@ -30,7 +30,10 @@ void _sideBoat(final Canvas canvas, final double left, final double waterline, f
   final Rect house = Rect.fromLTWH(left + length * 0.28, waterline - h * 2.3, length * 0.26, h * 1.15);
   canvas
     ..drawRect(house, Paint()..color = Palette.sail)
-    ..drawRect(Rect.fromLTWH(house.left + 3, house.top + 3, house.width - 6, house.height * 0.35), Paint()..color = const Color(0xFF37474F))
+    ..drawRect(
+      Rect.fromLTWH(house.left + 3, house.top + 3, house.width - 6, house.height * 0.35),
+      Paint()..color = const Color(0xFF37474F),
+    )
     ..drawLine(
       Offset(house.center.dx, house.top),
       Offset(house.center.dx, house.top - length * 0.3),
@@ -63,7 +66,10 @@ class _QuayPainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final Rect shed = Rect.fromLTWH(w * (0.02 + i * 0.15), h * 0.22 + i * 4, w * 0.14, h * 0.24 - i * 4);
       canvas
-        ..drawRect(shed, Paint()..color = <Color>[const Color(0xFFB5654A), const Color(0xFFCFB58E), const Color(0xFF8C6D5A)][i])
+        ..drawRect(
+          shed,
+          Paint()..color = <Color>[const Color(0xFFB5654A), const Color(0xFFCFB58E), const Color(0xFF8C6D5A)][i],
+        )
         ..drawPath(
           Path()
             ..moveTo(shed.left - 2, shed.top)
@@ -150,7 +156,12 @@ class _RaftedPainter extends CustomPainter {
     final Rect all = Offset.zero & size;
     canvas.drawRect(
       all,
-      Paint()..shader = const LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: <Color>[Palette.shallows, Palette.sea]).createShader(all),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: <Color>[Palette.shallows, Palette.sea],
+        ).createShader(all),
     );
     TopDown.waves(canvas, Rect.fromLTWH(0, 0, w, h * 0.3), count: 16, seed: 3);
     // The quay along the bottom: paving and its stone edge.
@@ -211,11 +222,17 @@ class _RaftedPainter extends CustomPainter {
     for (final double dx in <double>[-0.2, 0.05, 0.25]) {
       canvas
         ..drawRRect(
-          RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(w * 0.5 + length * dx, (inner.dy + outer.dy) / 2), width: 10, height: 6), const Radius.circular(3)),
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(w * 0.5 + length * dx, (inner.dy + outer.dy) / 2), width: 10, height: 6),
+            const Radius.circular(3),
+          ),
           fender,
         )
         ..drawRRect(
-          RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(w * 0.5 + length * dx, edge - 3), width: 10, height: 5), const Radius.circular(3)),
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: Offset(w * 0.5 + length * dx, edge - 3), width: 10, height: 5),
+            const Radius.circular(3),
+          ),
           fender,
         );
     }
@@ -258,11 +275,19 @@ class _LightsPainter extends CustomPainter {
     final double lampHeight = h * 0.32;
     for (int i = 0; i < 6; i++) {
       canvas.drawRect(
-        Rect.fromCenter(center: Offset(litBase.dx + lampHeight * 0.18 + (i.isEven ? 2 : -2), waterline + 6 + i * 7), width: 18 - i * 2.0, height: 2),
+        Rect.fromCenter(
+          center: Offset(litBase.dx + lampHeight * 0.18 + (i.isEven ? 2 : -2), waterline + 6 + i * 7),
+          width: 18 - i * 2.0,
+          height: 2,
+        ),
         Paint()..color = const Color(0xFFFFE08A).withValues(alpha: 0.7 - i * 0.1),
       );
     }
-    canvas.drawCircle(litBase - Offset(-lampHeight * 0.18, lampHeight * 0.9), lampHeight * 0.5, Paint()..color = const Color(0x22FFE08A));
+    canvas.drawCircle(
+      litBase - Offset(-lampHeight * 0.18, lampHeight * 0.9),
+      lampHeight * 0.5,
+      Paint()..color = const Color(0x22FFE08A),
+    );
     Scenery.lamp(canvas, litBase, lampHeight, lit: true);
     // Out: the same lamp, dark.
     Scenery.lamp(canvas, Offset(w * 0.4, top), lampHeight, lit: false);
@@ -291,7 +316,10 @@ class _LightsPainter extends CustomPainter {
           ..strokeWidth = 1.5,
       )
       // The counterweight below the hinge.
-      ..drawRect(Rect.fromCenter(center: hinge + Offset(-w * 0.03, h * 0.06), width: w * 0.06, height: h * 0.08), Paint()..color = const Color(0xFF263238));
+      ..drawRect(
+        Rect.fromCenter(center: hinge + Offset(-w * 0.03, h * 0.06), width: w * 0.06, height: h * 0.08),
+        Paint()..color = const Color(0xFF263238),
+      );
     final Offset stop = Offset(pier.center.dx, pier.top - h * 0.1);
     canvas
       ..drawLine(
@@ -459,7 +487,10 @@ class _GangwayPainter extends CustomPainter {
     final Rect pontoon = Rect.fromLTRB(w * 0.62, pontoonTop, w, waterline + h * 0.03);
     canvas
       ..drawRect(pontoon, Paint()..color = const Color(0xFFCFD8DC))
-      ..drawRect(Rect.fromLTRB(pontoon.left, pontoonTop, pontoon.right, pontoonTop + 3), Paint()..color = Palette.plankLight);
+      ..drawRect(
+        Rect.fromLTRB(pontoon.left, pontoonTop, pontoon.right, pontoonTop + 3),
+        Paint()..color = Palette.plankLight,
+      );
     Scenery.rowboat(canvas, Offset(w * 0.84, waterline + h * 0.08), w * 0.16, Palette.hulls[2]);
     // The gangway: a ramp with handrails, hinged at the pier and rolling on the pontoon.
     final Offset from = Offset(pierEnd, pierTop + 3);
@@ -519,7 +550,10 @@ class _GangwayPainter extends CustomPainter {
       canvas.drawLine(Offset(x, leafTop + h * 0.04 * t), Offset(x, pierTop - 2 + h * 0.05 * t), bars);
     }
     // A sign on the closed leaf.
-    canvas.drawRect(Rect.fromCenter(center: Offset((gateLeft + mid) / 2, (leafTop + pierTop) / 2), width: w * 0.05, height: h * 0.05), Paint()..color = Palette.buoyRed);
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset((gateLeft + mid) / 2, (leafTop + pierTop) / 2), width: w * 0.05, height: h * 0.05),
+      Paint()..color = Palette.buoyRed,
+    );
     Scenery.ripples(canvas, size, waterline);
   }
 

@@ -58,7 +58,11 @@ class _PlankPainter extends CustomPainter {
       // Nails.
       canvas
         ..drawCircle(Offset(x + plank / 2 - 1, 5), 1.2, Paint()..color = Colors.black.withValues(alpha: 0.35 * opacity))
-        ..drawCircle(Offset(x + plank / 2 - 1, across - 5), 1.2, Paint()..color = Colors.black.withValues(alpha: 0.35 * opacity));
+        ..drawCircle(
+          Offset(x + plank / 2 - 1, across - 5),
+          1.2,
+          Paint()..color = Colors.black.withValues(alpha: 0.35 * opacity),
+        );
     }
     // A rope along the water side.
     final Path rope = Path()..moveTo(0, across - 2);
@@ -76,7 +80,8 @@ class _PlankPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(final _PlankPainter oldDelegate) => oldDelegate.postsToward != postsToward || oldDelegate.opacity != opacity;
+  bool shouldRepaint(final _PlankPainter oldDelegate) =>
+      oldDelegate.postsToward != postsToward || oldDelegate.opacity != opacity;
 }
 
 /// A quay's backdrop: a stone wall, solid ground the body starts beyond.
@@ -122,7 +127,10 @@ class BuoyArt extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(final BuildContext context) => SizedBox.square(dimension: size, child: const CustomPaint(painter: _BuoyPainter()));
+  Widget build(final BuildContext context) => SizedBox.square(
+    dimension: size,
+    child: const CustomPaint(painter: _BuoyPainter()),
+  );
 }
 
 class _BuoyPainter extends CustomPainter {
@@ -242,8 +250,11 @@ class GullArt extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(final BuildContext context) =>
-      SizedBox(width: size, height: size / 2, child: const CustomPaint(painter: _GullPainter()));
+  Widget build(final BuildContext context) => SizedBox(
+    width: size,
+    height: size / 2,
+    child: const CustomPaint(painter: _GullPainter()),
+  );
 }
 
 class _GullPainter extends CustomPainter {

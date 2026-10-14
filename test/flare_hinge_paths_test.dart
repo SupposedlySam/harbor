@@ -38,17 +38,22 @@ void main() {
   tearDown(() => anchor.dispose());
 
   group('in a harbor, by an anchor', () {
-    Future<BuildContext> pump(final WidgetTester tester, {final List<HarborBuoy> buoys = const <HarborBuoy>[]}) async {
+    Future<BuildContext> pump(
+      final WidgetTester tester, {
+      final List<HarborFloat> buoys = const <HarborFloat>[],
+    }) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-          home: Harbor(
-            buoys: buoys,
-            body: Builder(builder: (final BuildContext context) {
-              page = context;
-              return _anchored(anchor);
-            }),
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
+            floats: buoys,
+            body: Builder(
+              builder: (final BuildContext context) {
+                page = context;
+                return _anchored(anchor);
+              },
+            ),
           ),
         ),
         device: _dual,
@@ -58,27 +63,53 @@ void main() {
     }
 
     testWidgets('an anchored buoy keeps to the screen its anchor is on, 8 in from the hinge', (final tester) async {
-      await pump(tester, buoys: <HarborBuoy>[HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.below), child: _toast('buoy'))]);
+      await pump(
+        tester,
+        buoys: <HarborFloat>[
+          HarborFloat(
+            placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
+            child: _toast('buoy'),
+          ),
+        ],
+      );
       final Rect buoy = _rect(tester, 'buoy');
       expect(buoy.right, 532);
       expect(buoy.top, 348, reason: 'still below its anchor, 8 away');
     });
 
     testWidgets('with never, an anchored buoy is centred on its anchor across the hinge', (final tester) async {
-      await pump(tester, buoys: <HarborBuoy>[
-        HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.below), hinge: HarborHinge.never, child: _toast('buoy')),
-      ]);
+      await pump(
+        tester,
+        buoys: <HarborFloat>[
+          HarborFloat(
+            placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
+            hinge: HarborHinge.never,
+            child: _toast('buoy'),
+          ),
+        ],
+      );
       expect(_rect(tester, 'buoy').center.dx, 500);
     });
 
     testWidgets('an anchored flare keeps to its anchor\'s screen, and spans with never', (final tester) async {
       final BuildContext page = await pump(tester);
-      final HarborFlareEntry kept = HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('kept'));
+      final HarborToastEntry kept = HarborToasts.show(
+        page,
+        placement: HarborAnchored(anchor),
+        duration: null,
+        builder: (final BuildContext _) => _toast('kept'),
+      );
       await _settle(tester);
       expect(_rect(tester, 'kept').right, 532);
-      kept.lower();
+      kept.hide();
       await _settle(tester);
-      HarborFlares.raise(page, placement: HarborAnchored(anchor), hinge: HarborHinge.never, duration: null, builder: (final BuildContext _) => _toast('spans'));
+      HarborToasts.show(
+        page,
+        placement: HarborAnchored(anchor),
+        hinge: HarborHinge.never,
+        duration: null,
+        builder: (final BuildContext _) => _toast('spans'),
+      );
       await _settle(tester);
       expect(_rect(tester, 'spans').center.dx, 500);
     });
@@ -87,12 +118,14 @@ void main() {
   group('in an overlay, with no harbor', () {
     Future<BuildContext> pump(final WidgetTester tester, {final bool withAnchor = false}) async {
       late BuildContext page;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          home: Builder(builder: (final BuildContext context) {
-            page = context;
-            return withAnchor ? _anchored(anchor) : const SizedBox.expand();
-          }),
+          home: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return withAnchor ? _anchored(anchor) : const SizedBox.expand();
+            },
+          ),
         ),
         device: _dual,
       );
@@ -102,12 +135,14 @@ void main() {
     bool oneScreen(final Rect r) => r.right <= 540 || r.left >= 574;
 
     for (final bool reachesCoast in <bool>[false, true]) {
-      testWidgets('an aligned flare keeps to one screen, and spans with never (reachesCoast: $reachesCoast)', (final tester) async {
+      testWidgets('an aligned flare keeps to one screen, and spans with never (reachesCoast: $reachesCoast)', (
+        final tester,
+      ) async {
         final BuildContext page = await pump(tester);
-        final HarborFlareEntry kept = HarborFlares.raise(
+        final HarborToastEntry kept = HarborToasts.show(
           page,
-          slot: HarborFlareSlot.low,
-          reachesCoast: reachesCoast,
+          slot: HarborToastSlot.low,
+          reachesSystemEdges: reachesCoast,
           duration: null,
           builder: (final BuildContext _) => _toast('kept'),
         );
@@ -116,12 +151,12 @@ void main() {
         expect(oneScreen(rect), isTrue, reason: '$rect');
         expect(rect.bottom, lessThanOrEqualTo(_dual.size.height - 16), reason: 'still at the low slot, off the bottom');
         expect(rect.bottom, greaterThan(_dual.size.height / 2));
-        kept.lower();
+        kept.hide();
         await _settle(tester);
-        HarborFlares.raise(
+        HarborToasts.show(
           page,
-          slot: HarborFlareSlot.low,
-          reachesCoast: reachesCoast,
+          slot: HarborToastSlot.low,
+          reachesSystemEdges: reachesCoast,
           hinge: HarborHinge.never,
           duration: null,
           builder: (final BuildContext _) => _toast('spans'),
@@ -131,9 +166,16 @@ void main() {
       });
     }
 
-    testWidgets('an anchored flare keeps to its anchor\'s screen (positive control: already did)', (final tester) async {
+    testWidgets('an anchored flare keeps to its anchor\'s screen (positive control: already did)', (
+      final tester,
+    ) async {
       final BuildContext page = await pump(tester, withAnchor: true);
-      HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('kept'));
+      HarborToasts.show(
+        page,
+        placement: HarborAnchored(anchor),
+        duration: null,
+        builder: (final BuildContext _) => _toast('kept'),
+      );
       await _settle(tester);
       expect(_rect(tester, 'kept').right, 532);
     });

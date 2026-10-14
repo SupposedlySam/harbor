@@ -16,19 +16,21 @@ Future<void> _step(final WidgetTester tester, [final int times = 5]) async {
 
 Future<BuildContext> _page(
   final WidgetTester tester, {
-  final List<HarborDock> bottom = const <HarborDock>[],
+  final List<HarborBar> bottom = const <HarborBar>[],
   final bool sea = true,
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
 }) async {
   late BuildContext page;
-  final Widget body = Builder(builder: (final c) {
-    page = c;
-    return const SizedBox.expand();
-  });
-  await tester.pumpSeaTrial(
+  final Widget body = Builder(
+    builder: (final c) {
+      page = c;
+      return const SizedBox.expand();
+    },
+  );
+  await tester.pumpHarborTrial(
     MaterialApp(
-      builder: sea ? (final c, final child) => HarborSea(child: child!) : null,
-      home: sea ? Harbor(bottom: bottom, body: body) : body,
+      builder: sea ? (final c, final child) => HarborRoot(child: child!) : null,
+      home: sea ? HarborFrame(bottom: bottom, body: body) : body,
     ),
     device: device,
   );
@@ -45,25 +47,44 @@ void main() {
 
     testWidgets('positive control: by default a low bar stops at the home indicator', (final tester) async {
       final BuildContext page = await _page(tester);
-      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), builder: bar, duration: null);
+      HarborToasts.show(
+        page,
+        placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
+        builder: bar,
+        duration: null,
+      );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 34 - 40, 402, 874 - 34));
     });
 
     testWidgets('a low bar runs down over the home indicator and is handed it as padding', (final tester) async {
       final BuildContext page = await _page(tester);
-      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
+      HarborToasts.show(
+        page,
+        placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
+        reachesSystemEdges: true,
+        builder: bar,
+        duration: null,
+      );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 40, 402, 874));
       expect(padding, const EdgeInsets.only(bottom: 34));
     });
 
-    testWidgets('it still keeps off the docks: above a tab bar that took the home indicator, with no padding', (final tester) async {
+    testWidgets('it still keeps off the docks: above a tab bar that took the home indicator, with no padding', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(
         tester,
-        bottom: const <HarborDock>[HarborDock.quay(child: SizedBox(key: ValueKey<String>('tabs'), height: 56))],
+        bottom: const <HarborBar>[HarborBar.solid(child: SizedBox(key: ValueKey<String>('tabs'), height: 56))],
       );
-      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
+      HarborToasts.show(
+        page,
+        placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
+        reachesSystemEdges: true,
+        builder: bar,
+        duration: null,
+      );
       await _step(tester);
       expect(_rect(tester, 'bar').bottom, _rect(tester, 'tabs').top - 0);
       expect(padding.bottom, 0);
@@ -71,7 +92,13 @@ void main() {
 
     testWidgets('on a phone on its side it runs over the side insets too', (final tester) async {
       final BuildContext page = await _page(tester, device: HarborTrialDevice.iPhone17Landscape);
-      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
+      HarborToasts.show(
+        page,
+        placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
+        reachesSystemEdges: true,
+        builder: bar,
+        duration: null,
+      );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 402 - 40, 874, 402));
       expect(padding, const EdgeInsets.fromLTRB(62, 0, 62, 21));
@@ -79,7 +106,13 @@ void main() {
 
     testWidgets('at the top it runs under the status bar, and only the top is handed over', (final tester) async {
       final BuildContext page = await _page(tester);
-      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.top.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
+      HarborToasts.show(
+        page,
+        placement: HarborAligned(alignment: HarborToastSlot.top.alignment, margin: EdgeInsets.zero),
+        reachesSystemEdges: true,
+        builder: bar,
+        duration: null,
+      );
       await _step(tester);
       expect(_rect(tester, 'bar').top, 0);
       expect(padding, const EdgeInsets.only(top: 62));
@@ -87,7 +120,13 @@ void main() {
 
     testWidgets('with no harbor, in an overlay, the same', (final tester) async {
       final BuildContext page = await _page(tester, sea: false);
-      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), reachesCoast: true, builder: bar, duration: null);
+      HarborToasts.show(
+        page,
+        placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
+        reachesSystemEdges: true,
+        builder: bar,
+        duration: null,
+      );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 40, 402, 874));
       expect(padding, const EdgeInsets.only(bottom: 34));
@@ -95,9 +134,9 @@ void main() {
   });
 
   group('#101 a flare\'s countdown', () {
-    Future<HarborFlareEntry> raise(final WidgetTester tester, {final bool countsEntrance = false}) async {
+    Future<HarborToastEntry> raise(final WidgetTester tester, {final bool countsEntrance = false}) async {
       final BuildContext page = await _page(tester);
-      final HarborFlareEntry entry = HarborFlares.raise(
+      final HarborToastEntry entry = HarborToasts.show(
         page,
         countsEntrance: countsEntrance,
         builder: (final c) => const Text('toast'),
@@ -108,21 +147,21 @@ void main() {
     }
 
     testWidgets('positive control: by default the second starts after the 220 ms entrance', (final tester) async {
-      final HarborFlareEntry entry = await raise(tester);
+      final HarborToastEntry entry = await raise(tester);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 850));
       expect(entry.showing.value, isTrue, reason: '1150 ms after the raise, 930 into its second');
     });
 
     testWidgets('countsEntrance: the second includes the entrance', (final tester) async {
-      final HarborFlareEntry entry = await raise(tester, countsEntrance: true);
+      final HarborToastEntry entry = await raise(tester, countsEntrance: true);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 750));
       expect(entry.showing.value, isFalse, reason: 'gone 1050 ms after the raise');
     });
 
     testWidgets('setting the duration starts the time over with it', (final tester) async {
-      final HarborFlareEntry entry = await raise(tester);
+      final HarborToastEntry entry = await raise(tester);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 800));
       entry.duration = const Duration(seconds: 3);
@@ -133,7 +172,7 @@ void main() {
     });
 
     testWidgets('setting it to null stops it timing out', (final tester) async {
-      final HarborFlareEntry entry = await raise(tester);
+      final HarborToastEntry entry = await raise(tester);
       await tester.pump(const Duration(milliseconds: 300));
       entry.duration = null;
       await tester.pump(const Duration(seconds: 10));
@@ -142,18 +181,20 @@ void main() {
   });
 
   group('#103 a flare\'s transition and its anchor', () {
-    testWidgets('the builder and the transition find their own entry; outside a flare there is none', (final tester) async {
+    testWidgets('the builder and the transition find their own entry; outside a flare there is none', (
+      final tester,
+    ) async {
       final BuildContext page = await _page(tester);
-      HarborFlareEntry? fromBuilder;
-      HarborFlareEntry? fromTransition;
-      final HarborFlareEntry entry = HarborFlares.raise(
+      HarborToastEntry? fromBuilder;
+      HarborToastEntry? fromTransition;
+      final HarborToastEntry entry = HarborToasts.show(
         page,
         transitionBuilder: (final c, final animation, final child) {
-          fromTransition = HarborFlareEntry.maybeOf(c);
+          fromTransition = HarborToastEntry.maybeOf(c);
           return child;
         },
         builder: (final c) {
-          fromBuilder = HarborFlareEntry.maybeOf(c);
+          fromBuilder = HarborToastEntry.maybeOf(c);
           return const Text('toast');
         },
         duration: null,
@@ -161,19 +202,23 @@ void main() {
       await _step(tester);
       expect(fromBuilder, same(entry));
       expect(fromTransition, same(entry));
-      expect(HarborFlareEntry.maybeOf(page), isNull);
+      expect(HarborToastEntry.maybeOf(page), isNull);
     });
 
     testWidgets('a hold taken from inside the builder holds the flare', (final tester) async {
       final BuildContext page = await _page(tester);
       late BuildContext inside;
-      final HarborFlareEntry entry = HarborFlares.raise(page, builder: (final c) {
-        inside = c;
-        return const Text('toast');
-      }, duration: const Duration(seconds: 1));
+      final HarborToastEntry entry = HarborToasts.show(
+        page,
+        builder: (final c) {
+          inside = c;
+          return const Text('toast');
+        },
+        duration: const Duration(seconds: 1),
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      HarborFlareEntry.maybeOf(inside)!.hold();
+      HarborToastEntry.maybeOf(inside)!.hold();
       await tester.pump(const Duration(seconds: 3));
       expect(entry.showing.value, isTrue);
     });
@@ -185,19 +230,35 @@ void main() {
       testWidgets('HarborAnchorClip clips at the anchor\'s $label edge', (final tester) async {
         final HarborAnchor anchor = HarborAnchor(debugLabel: 'field');
         late BuildContext page;
-        await tester.pumpSeaTrial(MaterialApp(
-          builder: (final c, final child) => HarborSea(child: child!),
-          home: Harbor(body: Builder(builder: (final c) {
-            page = c;
-            return Center(child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(key: ValueKey<String>('field'), width: 200, height: 40)));
-          })),
-        ));
-        HarborFlares.raise(
+        await tester.pumpHarborTrial(
+          MaterialApp(
+            builder: (final c, final child) => HarborRoot(child: child!),
+            home: HarborFrame(
+              body: Builder(
+                builder: (final c) {
+                  page = c;
+                  return Center(
+                    child: HarborAnchorPoint(
+                      anchor: anchor,
+                      child: const SizedBox(key: ValueKey<String>('field'), width: 200, height: 40),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        HarborToasts.show(
           page,
           placement: HarborAnchored(anchor, side: side),
           transitionBuilder: (final c, final animation, final child) {
-            final HarborFlareEntry entry = HarborFlareEntry.maybeOf(c)!;
-            return HarborAnchorClip(key: const ValueKey<String>('clip'), anchor: entry.anchor!, side: entry.side, child: child);
+            final HarborToastEntry entry = HarborToastEntry.maybeOf(c)!;
+            return HarborAnchorClip(
+              key: const ValueKey<String>('clip'),
+              anchor: entry.anchor!,
+              side: entry.side,
+              child: child,
+            );
           },
           builder: (final c) => const SizedBox(width: 120, height: 30),
           duration: null,
@@ -213,12 +274,18 @@ void main() {
     }
   });
 
-  testWidgets('#102 a portal buoy shown in initState is afloat and takes taps in its first frame', (final tester) async {
+  testWidgets('#102 a portal buoy shown in initState is afloat and takes taps in its first frame', (
+    final tester,
+  ) async {
     int taps = 0;
-    await tester.pumpWidget(MaterialApp(
-      builder: (final c, final child) => HarborSea(child: child!),
-      home: Harbor(body: Center(child: _ShownFromTheStart(onTap: () => taps++))),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (final c, final child) => HarborRoot(child: child!),
+        home: HarborFrame(
+          body: Center(child: _ShownFromTheStart(onTap: () => taps++)),
+        ),
+      ),
+    );
     await tester.tapAt(tester.getCenter(find.byKey(const ValueKey<String>('menu'))));
     expect(taps, 1);
   });
@@ -243,11 +310,15 @@ class _ShownFromTheStartState extends State<_ShownFromTheStart> {
   }
 
   @override
-  Widget build(final BuildContext context) => HarborPortalBuoy(
+  Widget build(final BuildContext context) => HarborPopover(
     controller: _menu,
-    buoyBuilder: (final BuildContext _) => GestureDetector(
+    popoverBuilder: (final BuildContext _) => GestureDetector(
       onTap: widget.onTap,
-      child: const ColoredBox(key: ValueKey<String>('menu'), color: Color(0xFF000000), child: SizedBox(width: 50, height: 50)),
+      child: const ColoredBox(
+        key: ValueKey<String>('menu'),
+        color: Color(0xFF000000),
+        child: SizedBox(width: 50, height: 50),
+      ),
     ),
     child: const SizedBox(width: 40, height: 40),
   );

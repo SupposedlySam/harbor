@@ -58,6 +58,45 @@ class ShowcasePlate extends StatelessWidget {
   /// Whether [chapter] is told with a plate rather than the panorama.
   static bool shows(final ShowcaseChapter chapter) => phone.containsKey(chapter.key);
 
+  /// What each plate says under its drawing, as the videos recorded it: the 0.8 class and the
+  /// thing it was named after. The field guide's own entries took the 0.9 names, but the videos
+  /// keep their words until they are re-voiced (#120, naming.md Q5), so the plates do too.
+  static const Map<String, (String, String)> labels = <String, (String, String)>{
+    'frame-harbor': ('Harbor', 'A bay sheltered by two breakwater arms, with a town on the shore'),
+    'frame-sea': ('HarborSea', 'The open ocean, out to the horizon'),
+    'frame-new-port': ('Harbor(newPort: true)', 'A second harbor town further up the coast, with its own quays'),
+    'tide-dry-dock': (
+      'HarborTideStance.dryDock',
+      'A graving dry dock: a ship on keel blocks, the gate holding the sea out',
+    ),
+    'content-moored': ('HarborMoored', 'A boat moored alongside a quay, held off the wall by fenders'),
+    'content-mooring-line': ('HarborMooringLine', 'Boats lined up along a quay, all tied to one mooring line'),
+    'content-fairway': ('HarborFairway', 'A buoyed channel leading boats in from the sea'),
+    'content-sliver-dock': ('HarborSliverDock', 'A landing stage on a gangway pinned to the quay'),
+    'content-sticky': ('HarborSticky', 'Barnacles clinging to a hull'),
+    'content-open-water': ('HarborOpenWater', 'A depth chart with its soundings'),
+    'talk-make-way': ('HarborMakeWay', 'A small sailboat giving way to a ship in the channel'),
+    'talk-pontoon': ('HarborPontoon', 'A floating pontoon tied to the quay'),
+    'buoy': ('HarborBuoy', 'A red can buoy floating free in open water'),
+    'buoy-modal': ('HarborBuoy(modal: true)', 'The harbor master’s launch, clearing other boats out of its way'),
+    'buoy-portal': ('HarborPortalBuoy', 'A dan buoy thrown over the side, wherever the boat happens to be'),
+    'signals': ('HarborFlares.raise', 'International signal flags run up a halyard'),
+    'sheet': ('HarborSheet', 'A sail, trimmed by its sheet'),
+    'sheet-breakwater': ('showHarborSheet(breakwater: true)', 'A rock breakwater sheltering the harbor from the swell'),
+    'dialog': (
+      'showHarborDialog(inheritClearWater:)',
+      'The harbor master’s office window, where the radio call is taken',
+    ),
+    'lighthouse-reveal': ('HarborBeacon(keepInSight:)', 'A lighthouse sweeping its beam onto a boat'),
+    'coast': ('HarborCoast', 'A rugged coastline of cliffs and a beach'),
+    'coast-title-safe': ('HarborCoast.titleSafe', 'An old TV set with the broadcast title-safe frame marked'),
+    'scale-model': ('HarborScaleModel', 'A ship in a bottle'),
+    'edge': ('HarborEdge', 'A ship’s port and starboard running lights'),
+    'chart': ('HarborChart', 'A nautical chart with a compass rose and soundings'),
+    'sea-trial': ('pumpSeaTrial', 'A new ship on her sea trials, a tug alongside'),
+    'wake-painter': ('HarborWakePainter', 'The V-shaped wake spreading behind a boat'),
+  };
+
   static GuideEntry _entry(final String id) => fieldGuideEntries.firstWhere(
     (final GuideEntry e) => e.id == id,
     orElse: () => throw StateError('the field guide has no entry "$id"'),
@@ -112,7 +151,7 @@ class ShowcasePlate extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            _Label(entry: _entry(ids[index])),
+            _Label(id: ids[index]),
           ],
         ),
       ),
@@ -121,9 +160,9 @@ class ShowcasePlate extends StatelessWidget {
 }
 
 class _Label extends StatelessWidget {
-  const _Label({required this.entry});
+  const _Label({required this.id});
 
-  final GuideEntry entry;
+  final String id;
 
   @override
   Widget build(final BuildContext context) => SizedBox(
@@ -132,7 +171,7 @@ class _Label extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          entry.className,
+          ShowcasePlate.labels[id]!.$1,
           key: const ValueKey<String>('plate class'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -140,9 +179,14 @@ class _Label extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          entry.realWorld,
+          ShowcasePlate.labels[id]!.$2,
           maxLines: 2,
-          style: TextStyle(fontFamily: 'Georgia', fontSize: 19, fontStyle: FontStyle.italic, color: Palette.foam.withValues(alpha: 0.85)),
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            fontSize: 19,
+            fontStyle: FontStyle.italic,
+            color: Palette.foam.withValues(alpha: 0.85),
+          ),
         ),
       ],
     ),

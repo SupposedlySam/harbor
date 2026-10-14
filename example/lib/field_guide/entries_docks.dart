@@ -11,125 +11,155 @@ import 'guide_page.dart';
 import 'stage.dart';
 import 'stage_kit.dart';
 
-/// Docks: what claims an edge, and how.
+/// Bars: what claims an edge, and how.
 final List<GuideEntry> dockEntries = <GuideEntry>[
   GuideEntry(
     id: 'dock-pier',
-    className: 'HarborDock.pier',
+    className: 'HarborBar.overlay',
     group: GuideGroup.docks,
-    realWorld: 'A wooden pier on piles, built out over the water',
+    realWorld: 'Like a pier on piles: the body runs under it',
     art: (final BuildContext context) => const PierArt(),
-    page: (final BuildContext context) => const PierEntry(),
+    page: (final BuildContext context) => const OverlayBarEntry(),
   ),
   GuideEntry(
     id: 'dock-quay',
-    className: 'HarborDock.quay',
+    className: 'HarborBar.solid',
     group: GuideGroup.docks,
-    realWorld: 'A stone quay wall with bollards, a boat moored alongside',
+    realWorld: 'Like a quay: the body stops at it',
     art: (final BuildContext context) => const QuayArt(),
-    page: (final BuildContext context) => const QuayEntry(),
+    page: (final BuildContext context) => const SolidBarEntry(),
   ),
   GuideEntry(
     id: 'dock-stacking',
     className: 'bottom: [composer, tabBar]',
     group: GuideGroup.docks,
-    realWorld: 'Two boats rafted up, one tied outside the other',
+    realWorld: 'Like two boats rafted up: bars stack from the edge in',
     art: (final BuildContext context) => const RaftedArt(),
     page: (final BuildContext context) => const StackingEntry(),
   ),
   GuideEntry(
     id: 'dock-state',
-    className: 'HarborDockState',
+    className: 'HarborBarState',
     group: GuideGroup.docks,
-    realWorld: 'Harbor lights: one lit, one out, a drawbridge raised',
+    realWorld: 'Like harbor lights: lit, out, or a drawbridge raised',
     art: (final BuildContext context) => const HarborLightsArt(),
-    page: (final BuildContext context) => const DockStateEntry(),
+    page: (final BuildContext context) => const BarStateEntry(),
   ),
   GuideEntry(
     id: 'dock-resting-extent',
-    className: 'HarborDock.restingExtent + HarborFollow',
+    className: 'HarborBar.restingExtent + HarborFollow',
     group: GuideGroup.docks,
-    realWorld: 'A bascule drawbridge: one leaf resting down, one raised',
+    realWorld: 'Like a drawbridge: its footing stays as the leaf rises',
     art: (final BuildContext context) => const BasculeArt(),
     page: (final BuildContext context) => const RestingExtentEntry(),
   ),
   GuideEntry(
     id: 'dock-hit-test',
-    className: 'HarborDock.hitTestBehavior',
+    className: 'HarborBar.hitTestBehavior',
     group: GuideGroup.docks,
-    realWorld: 'A gangway gate, one leaf shut and one open',
+    realWorld: 'Like a gangway gate: shut, or open to walk through',
     art: (final BuildContext context) => const GangwayGateArt(),
     page: (final BuildContext context) => const HitTestEntry(),
   ),
   GuideEntry(
     id: 'dock-reserve',
-    className: 'HarborDock.reserve',
+    className: 'HarborBar.reserve',
     group: GuideGroup.docks,
-    realWorld: 'A berth on the quay marked RESERVED, nobody tied up yet',
+    realWorld: 'Like a berth marked RESERVED: held before anything arrives',
     art: (final BuildContext context) => const ReservedBerthArt(),
     page: (final BuildContext context) => const ReserveEntry(),
   ),
 ];
 
-/// `HarborDock.pier`: a dock the body sails under.
-class PierEntry extends StatefulWidget {
-  const PierEntry({super.key});
+/// `HarborBar.overlay`: a bar the body runs under.
+class OverlayBarEntry extends StatefulWidget {
+  const OverlayBarEntry({super.key});
 
   @override
-  State<PierEntry> createState() => _PierEntryState();
+  State<OverlayBarEntry> createState() => _OverlayBarEntryState();
 }
 
-class _PierEntryState extends State<PierEntry> {
-  HarborWakeKind _wake = HarborWakeKind.fade;
+class _OverlayBarEntryState extends State<OverlayBarEntry> {
+  HarborEdgeEffectKind _effect = HarborEdgeEffectKind.fade;
   double _length = 16;
   double _blur = 0;
-  HarborRest _rest = HarborRest.wakeEnd;
+  HarborRest _rest = HarborRest.fadeEnd;
   bool _backdrop = true;
 
-  HarborWake get _harborWake => switch (_wake) {
-    HarborWakeKind.none => HarborWake.none,
-    HarborWakeKind.fade => HarborWake.fade(length: _length, blurSigma: _blur, restsAt: _rest),
-    HarborWakeKind.hairline => const HarborWake.hairline(color: Palette.brass),
+  HarborEdgeEffect get _edgeEffect => switch (_effect) {
+    HarborEdgeEffectKind.none => HarborEdgeEffect.none,
+    HarborEdgeEffectKind.fade => HarborEdgeEffect.fade(length: _length, blurSigma: _blur, restsAt: _rest),
+    HarborEdgeEffectKind.hairline => const HarborEdgeEffect.hairline(color: Palette.brass),
   };
 
-  String get _wakeCode => switch (_wake) {
-    HarborWakeKind.none => 'HarborWake.none',
-    HarborWakeKind.fade =>
-      'HarborWake.fade(length: ${_length.toStringAsFixed(0)}, blurSigma: ${_blur.toStringAsFixed(0)}, restsAt: HarborRest.${_rest.name})',
-    HarborWakeKind.hairline => 'HarborWake.hairline()',
+  String get _edgeEffectCode => switch (_effect) {
+    HarborEdgeEffectKind.none => 'HarborEdgeEffect.none',
+    HarborEdgeEffectKind.fade =>
+      'HarborEdgeEffect.fade(length: ${_length.toStringAsFixed(0)}, blurSigma: ${_blur.toStringAsFixed(0)}, restsAt: HarborRest.${_rest.name})',
+    HarborEdgeEffectKind.hairline => 'HarborEdgeEffect.hairline()',
   };
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborDock.pier',
+    className: 'HarborBar.overlay',
     tryThis: const <TryStep>[
-      TryStep('Scroll the rows up under the pier', 'They slide under the planks and fade out at the pier\'s face: content sails under a pier, and its wake fades it.'),
-      TryStep('Slide length to 40', 'The fade runs further and the first row rests lower: the wake and the resting line move together.'),
-      TryStep('Pick restsAt: dockEdge', 'The first row moves up to the pier\'s face and starts inside the fade: rows can rest under the wake, not past it.'),
-      TryStep('Switch off backdrop, then slide blurSigma to 15', 'With the planks gone you see the rows under the pier frosted: the wake can blur the water as well as fade it.'),
-      TryStep('Pick wake: hairline', 'The fade goes and a brass line marks the pier\'s face, with the first row resting right at it.'),
-      TryStep('Open The stage, switch off Status bar, then pick Device: iPhone SE', 'On the iPhone 17 the pier still pads its title clear of the island; on the SE its planks start at the very top: a dock absorbs whatever coast the hardware leaves.'),
+      TryStep(
+        'Scroll the rows up under the bar',
+        'They slide under the planks and fade out at the bar\'s face: content runs under an overlay bar, and its edge effect fades it.',
+      ),
+      TryStep(
+        'Slide length to 40',
+        'The fade runs further and the first row rests lower: the fade and the resting line move together.',
+      ),
+      TryStep(
+        'Pick restsAt: barFace',
+        'The first row moves up to the bar\'s face and starts inside the fade: rows can rest under the fade, not past it.',
+      ),
+      TryStep(
+        'Switch off backdrop, then slide blurSigma to 15',
+        'With the planks gone you see the rows under the bar frosted: the edge effect can blur the content as well as fade it.',
+      ),
+      TryStep(
+        'Pick edgeEffect: hairline',
+        'The fade goes and a brass line marks the bar\'s face, with the first row resting right at it.',
+      ),
+      TryStep(
+        'Open The stage, switch off Status bar, then pick Device: iPhone SE',
+        'On the iPhone 17 the bar still pads its title clear of the island; on the SE its planks start at the very top: a bar absorbs whatever system edge the hardware leaves.',
+      ),
     ],
     focus: const StageFocus.top(440),
     realWorld:
         'A pier is built out over the water on piles. Boats sail underneath it and tie up beside it; the water runs right '
         'up to the shore beneath the deck.',
     inYourApp:
-        'A header (or any bar) the content scrolls under. The body runs the full height, the pier pads itself below the '
+        'A header (or any bar) the content scrolls under. The body runs the full height, the bar pads itself below the '
         'status bar, and its measured height reaches the body as MediaQuery.padding, so the first row rests clear of it. '
-        'Its wake fades the rows as they pass under.',
+        'Its edge effect fades the rows as they pass under.',
     art: const PierArt(),
     controls: <Widget>[
-      ChoiceControl<HarborWakeKind>(
-        label: 'wake',
-        values: HarborWakeKind.values,
-        value: _wake,
-        labelOf: (final HarborWakeKind k) => k.name,
-        onChanged: (final HarborWakeKind k) => setState(() => _wake = k),
+      ChoiceControl<HarborEdgeEffectKind>(
+        label: 'edgeEffect',
+        values: HarborEdgeEffectKind.values,
+        value: _effect,
+        labelOf: (final HarborEdgeEffectKind k) => k.name,
+        onChanged: (final HarborEdgeEffectKind k) => setState(() => _effect = k),
       ),
-      if (_wake == HarborWakeKind.fade) ...<Widget>[
-        SliderControl(label: 'length', value: _length, min: 0, max: 48, onChanged: (final double v) => setState(() => _length = v)),
-        SliderControl(label: 'blurSigma', value: _blur, min: 0, max: 30, onChanged: (final double v) => setState(() => _blur = v)),
+      if (_effect == HarborEdgeEffectKind.fade) ...<Widget>[
+        SliderControl(
+          label: 'length',
+          value: _length,
+          min: 0,
+          max: 48,
+          onChanged: (final double v) => setState(() => _length = v),
+        ),
+        SliderControl(
+          label: 'blurSigma',
+          value: _blur,
+          min: 0,
+          max: 30,
+          onChanged: (final double v) => setState(() => _blur = v),
+        ),
         ChoiceControl<HarborRest>(
           label: 'restsAt',
           values: HarborRest.values,
@@ -141,30 +171,33 @@ class _PierEntryState extends State<PierEntry> {
       ToggleControl(label: 'backdrop', value: _backdrop, onChanged: (final bool v) => setState(() => _backdrop = v)),
     ],
     code:
-        'Harbor(\n'
+        'HarborFrame(\n'
         '  top: [\n'
-        '    HarborDock.pier(\n'
-        '      wake: $_wakeCode,\n'
+        '    HarborBar.overlay(\n'
+        '      edgeEffect: $_edgeEffectCode,\n'
         '${_backdrop ? '      backdrop: PierPlanks(),\n' : ''}'
         '      child: Header(),\n'
         '    ),\n'
         '  ],\n'
-        '  body: HarborFairway(slivers: [boats]),\n'
+        '  body: HarborScrollView(slivers: [boats]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[
-        HarborDock.pier(
-          wake: _harborWake,
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[
+        HarborBar.overlay(
+          edgeEffect: _edgeEffect,
           backdrop: _backdrop ? ColoredBox(color: Palette.plank.withValues(alpha: 0.82)) : null,
-          debugLabel: 'pier',
-          child: const StageHeader(title: 'HarborDock.pier'),
+          debugLabel: 'overlay bar',
+          child: const StageHeader(title: 'HarborBar.overlay'),
         ),
       ],
       body: StageProbe(
-        label: 'Harbor body (under the pier)',
-        child: HarborFairway(
+        label: 'frame body (under the bar)',
+        child: HarborScrollView(
           slivers: <Widget>[
-            SliverList.builder(itemCount: 30, itemBuilder: (final BuildContext context, final int i) => StageRow(index: i)),
+            SliverList.builder(
+              itemCount: 30,
+              itemBuilder: (final BuildContext context, final int i) => StageRow(index: i),
+            ),
           ],
         ),
       ),
@@ -172,12 +205,16 @@ class _PierEntryState extends State<PierEntry> {
   );
 }
 
-/// A dock of either kind, for the entries that switch between them.
-HarborDock _dockOf(final HarborDockKind kind, {required final Widget child, final Widget? backdrop, final String? debugLabel}) =>
-    kind == HarborDockKind.quay
-    ? HarborDock.quay(backdrop: backdrop, debugLabel: debugLabel, child: child)
-    : HarborDock.pier(
-        wake: const HarborWake.fade(length: 12),
+/// A bar of either kind, for the entries that switch between them.
+HarborBar _barOf(
+  final HarborBarKind kind, {
+  required final Widget child,
+  final Widget? backdrop,
+  final String? debugLabel,
+}) => kind == HarborBarKind.solid
+    ? HarborBar.solid(backdrop: backdrop, debugLabel: debugLabel, child: child)
+    : HarborBar.overlay(
+        edgeEffect: const HarborEdgeEffect.fade(length: 12),
         backdrop: backdrop,
         debugLabel: debugLabel,
         child: child,
@@ -198,79 +235,106 @@ class _MarkedBody extends StatelessWidget {
   );
 }
 
-Widget _rows({final int count = 30}) => HarborFairway(
+Widget _rows({final int count = 30}) => HarborScrollView(
   slivers: <Widget>[
-    SliverList.builder(itemCount: count, itemBuilder: (final BuildContext context, final int i) => StageRow(index: i)),
+    SliverList.builder(
+      itemCount: count,
+      itemBuilder: (final BuildContext context, final int i) => StageRow(index: i),
+    ),
   ],
 );
 
-/// `HarborDock.quay`: a dock the body starts below.
-class QuayEntry extends StatefulWidget {
-  const QuayEntry({super.key});
+/// `HarborBar.solid`: a bar the body starts below.
+class SolidBarEntry extends StatefulWidget {
+  const SolidBarEntry({super.key});
 
   @override
-  State<QuayEntry> createState() => _QuayEntryState();
+  State<SolidBarEntry> createState() => _SolidBarEntryState();
 }
 
-class _QuayEntryState extends State<QuayEntry> {
+class _SolidBarEntryState extends State<SolidBarEntry> {
   bool _top = true;
   bool _bottom = true;
   double _minimum = 16;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    // No focus, the whole phone: its switches take away the top quay as well as the bottom one.
-    className: 'HarborDock.quay',
+    // No focus, the whole phone: its switches take away the top bar as well as the bottom one.
+    className: 'HarborBar.solid',
     tryThis: const <TryStep>[
-      TryStep('Scroll the rows', 'They stop at the quays\' edges and never pass under: a quay takes its ground, and Readings show padding T 0 · B 0.'),
-      TryStep('Switch off top quay', 'The body\'s outline jumps to the top of the screen and Readings show padding T 62: the body now meets the status bar.'),
-      TryStep('Open The stage and pick Device: iPhone SE', 'No home indicator here, yet the bar stays 16 off the bottom edge: that is the quay\'s minimum.'),
-      TryStep('Slide minimum to 0', 'The bar drops onto the bottom edge: with no home indicator and no minimum, nothing holds it off the glass.'),
+      TryStep(
+        'Scroll the rows',
+        'They stop at the bars\' edges and never pass under: a solid bar takes its ground, and Readings show padding T 0 · B 0.',
+      ),
+      TryStep(
+        'Switch off top bar',
+        'The body\'s outline jumps to the top of the screen and Readings show padding T 62: the body now meets the status bar.',
+      ),
+      TryStep(
+        'Open The stage and pick Device: iPhone SE',
+        'No home indicator here, yet the bar stays 16 off the bottom edge: that is the bar\'s minimum.',
+      ),
+      TryStep(
+        'Slide minimum to 0',
+        'The bar drops onto the bottom edge: with no home indicator and no minimum, nothing holds it off the glass.',
+      ),
     ],
     realWorld:
         'A quay is a stone wall built on the shore, with bollards along its edge. Boats lie alongside it; the water '
         'starts where the stone ends, and nothing sails underneath.',
     inYourApp:
         'A bar that takes its ground, like a child of a Column: the body starts where it ends, so content never runs under '
-        'it, and a probe in the body reads padding 0 on that edge. A bottom quay is a tab bar; minimum keeps it 16 off the '
+        'it, and a probe in the body reads padding 0 on that edge. A bottom solid bar is a tab bar; minimum keeps it 16 off the '
         'edge of a phone with no home indicator (try the iPhone SE).',
     art: const QuayArt(),
     controls: <Widget>[
-      ToggleControl(label: 'top quay', value: _top, onChanged: (final bool v) => setState(() => _top = v)),
-      ToggleControl(label: 'bottom quay', value: _bottom, onChanged: (final bool v) => setState(() => _bottom = v)),
+      ToggleControl(label: 'top bar', value: _top, onChanged: (final bool v) => setState(() => _top = v)),
+      ToggleControl(label: 'bottom bar', value: _bottom, onChanged: (final bool v) => setState(() => _bottom = v)),
       if (_bottom)
-        SliderControl(label: 'minimum', value: _minimum, min: 0, max: 40, onChanged: (final double v) => setState(() => _minimum = v)),
+        SliderControl(
+          label: 'minimum',
+          value: _minimum,
+          min: 0,
+          max: 40,
+          onChanged: (final double v) => setState(() => _minimum = v),
+        ),
     ],
     code:
-        'Harbor(\n'
-        '${_top ? '  top: [HarborDock.quay(backdrop: QuayStones(), child: Header())],\n' : ''}'
-        '${_bottom ? '  bottom: [HarborDock.quay(minimum: ${_minimum.toStringAsFixed(0)}, child: TabBar())],\n' : ''}'
-        '  body: HarborFairway(slivers: [boats]),\n'
+        'HarborFrame(\n'
+        '${_top ? '  top: [HarborBar.solid(backdrop: QuayStones(), child: Header())],\n' : ''}'
+        '${_bottom ? '  bottom: [HarborBar.solid(minimum: ${_minimum.toStringAsFixed(0)}, child: TabBar())],\n' : ''}'
+        '  body: HarborScrollView(slivers: [boats]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[
         if (_top)
-          const HarborDock.quay(
+          const HarborBar.solid(
             backdrop: QuayStones(),
-            debugLabel: 'quay',
-            child: StageHeader(key: ValueKey<String>('top quay'), title: 'HarborDock.quay'),
+            debugLabel: 'top bar',
+            child: StageHeader(key: ValueKey<String>('top bar'), title: 'HarborBar.solid'),
           ),
       ],
-      bottom: <HarborDock>[
+      bottom: <HarborBar>[
         if (_bottom)
-          HarborDock.quay(
+          HarborBar.solid(
             minimum: _minimum,
             backdrop: const QuayStones(),
-            debugLabel: 'bottom quay',
-            child: StageBar(key: const ValueKey<String>('bottom quay'), label: 'HarborDock.quay(minimum: ${_minimum.toStringAsFixed(0)})'),
+            debugLabel: 'bottom bar',
+            child: StageBar(
+              key: const ValueKey<String>('bottom bar'),
+              label: 'HarborBar.solid(minimum: ${_minimum.toStringAsFixed(0)})',
+            ),
           ),
       ],
-      body: StageProbe(label: 'Harbor body (below the quay)', child: _MarkedBody(child: _rows())),
+      body: StageProbe(
+        label: 'frame body (below the bar)',
+        child: _MarkedBody(child: _rows()),
+      ),
     ),
   );
 }
 
-/// Docks stacking on one edge.
+/// Bars stacking on one edge.
 class StackingEntry extends StatefulWidget {
   const StackingEntry({super.key});
 
@@ -280,95 +344,116 @@ class StackingEntry extends StatefulWidget {
 
 class _StackingEntryState extends State<StackingEntry> {
   bool _second = true;
-  HarborDockKind _composer = HarborDockKind.quay;
-  HarborDockKind _tabBar = HarborDockKind.quay;
+  HarborBarKind _composer = HarborBarKind.solid;
+  HarborBarKind _tabBar = HarborBarKind.solid;
 
-  /// A quay listed inside a pier: the harbor asserts on it.
-  bool get _quayInsidePier => _second && _composer == HarborDockKind.quay && _tabBar == HarborDockKind.pier;
+  /// A solid bar listed inside an overlay bar: the frame asserts on it.
+  bool get _solidInsideOverlay => _second && _composer == HarborBarKind.solid && _tabBar == HarborBarKind.overlay;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'bottom: [composer, tabBar]',
     tryThis: const <TryStep>[
-      TryStep('Pick composer: pier', 'The body\'s outline drops past the composer to the tab bar: rows sail under a pier but stop at a quay.'),
-      TryStep('Pick tabBar: pier', 'The body runs to the bottom of the screen under both docks, which still stack in the order they are listed.'),
-      TryStep('Pick composer: quay, with tabBar still pier', 'The stage shows the assert: a quay is built on the shore, so it must be listed nearer the edge than any pier.'),
-      TryStep('Switch off second dock (tabBar)', 'The composer quay alone takes the edge, above the home indicator: docks stack from the edge in, like a Column.'),
+      TryStep(
+        'Pick composer: overlay',
+        'The body\'s outline drops past the composer to the tab bar: rows run under an overlay bar but stop at a solid one.',
+      ),
+      TryStep(
+        'Pick tabBar: overlay',
+        'The body runs to the bottom of the screen under both bars, which still stack in the order they are listed.',
+      ),
+      TryStep(
+        'Pick composer: solid, with tabBar still overlay',
+        'The stage shows the assert: a solid bar must be listed nearer the edge than any overlay bar.',
+      ),
+      TryStep(
+        'Switch off second bar (tabBar)',
+        'The solid composer alone takes the edge, above the home indicator: bars stack from the edge in, like a Column.',
+      ),
     ],
     focus: const StageFocus.bottom(480),
     realWorld:
         'When the quay is full, boats raft up: the second boat ties alongside the first instead of the wall, and anyone '
         'going ashore climbs across. The raft is as wide as both boats together.',
     inYourApp:
-        'Docks on one edge are listed in reading order (bottom: top to bottom) and stack from the edge in, like a Column. '
-        'Two quays add up and the body ends above both; a pier over a quay reaches past it, so rows sail under the '
-        'composer but stop at the tab bar. Quays are always nearer the edge than piers.',
+        'Bars on one edge are listed in reading order (bottom: top to bottom) and stack from the edge in, like a Column. '
+        'Two solid bars add up and the body ends above both; an overlay bar over a solid one reaches past it, so rows run '
+        'under the composer but stop at the tab bar. Solid bars are always nearer the edge than overlay bars.',
     art: const RaftedArt(),
     controls: <Widget>[
-      ToggleControl(label: 'second dock (tabBar)', value: _second, onChanged: (final bool v) => setState(() => _second = v)),
-      ChoiceControl<HarborDockKind>(
+      ToggleControl(
+        label: 'second bar (tabBar)',
+        value: _second,
+        onChanged: (final bool v) => setState(() => _second = v),
+      ),
+      ChoiceControl<HarborBarKind>(
         label: 'composer',
-        values: HarborDockKind.values,
+        values: HarborBarKind.values,
         value: _composer,
-        labelOf: (final HarborDockKind k) => k.name,
-        onChanged: (final HarborDockKind k) => setState(() => _composer = k),
+        labelOf: (final HarborBarKind k) => k.name,
+        onChanged: (final HarborBarKind k) => setState(() => _composer = k),
       ),
       if (_second)
-        ChoiceControl<HarborDockKind>(
+        ChoiceControl<HarborBarKind>(
           label: 'tabBar',
-          values: HarborDockKind.values,
+          values: HarborBarKind.values,
           value: _tabBar,
-          labelOf: (final HarborDockKind k) => k.name,
-          onChanged: (final HarborDockKind k) => setState(() => _tabBar = k),
+          labelOf: (final HarborBarKind k) => k.name,
+          onChanged: (final HarborBarKind k) => setState(() => _tabBar = k),
         ),
     ],
     code:
-        'Harbor(\n'
+        'HarborFrame(\n'
         '  bottom: [\n'
-        '    HarborDock.${_composer.name}(child: Composer()),\n'
-        '${_second ? '    HarborDock.${_tabBar.name}(child: TabBar()),\n' : ''}'
+        '    HarborBar.${_composer.name}(child: Composer()),\n'
+        '${_second ? '    HarborBar.${_tabBar.name}(child: TabBar()),\n' : ''}'
         '  ],\n'
-        '  body: HarborFairway(slivers: [messages]),\n'
-        ')${_quayInsidePier ? '\n// Asserts: a quay listed inside a pier.' : ''}',
-    stage: (final BuildContext context) => _quayInsidePier
+        '  body: HarborScrollView(slivers: [messages]),\n'
+        ')${_solidInsideOverlay ? '\n// Asserts: a solid bar listed inside an overlay bar.' : ''}',
+    stage: (final BuildContext context) => _solidInsideOverlay
         ? const _AssertCard(
             message:
-                'A quay on the bottom edge is listed inside a pier, and the harbor asserts.\n\n'
-                'Quays are built on the shore: list them nearer the edge than piers (on the bottom edge, after them).',
+                'A solid bar on the bottom edge is listed inside an overlay bar, and the frame asserts.\n\n'
+                'List solid bars nearer the edge than overlay bars (on the bottom edge, after them).',
           )
-        : Harbor(
-            top: <HarborDock>[
-              HarborDock.pier(
+        : HarborFrame(
+            top: <HarborBar>[
+              HarborBar.overlay(
                 backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.75)),
                 child: const StageHeader(title: 'Stacking'),
               ),
             ],
-            bottom: <HarborDock>[
-              _dockOf(
+            bottom: <HarborBar>[
+              _barOf(
                 _composer,
-                backdrop: _composer == HarborDockKind.quay
+                backdrop: _composer == HarborBarKind.solid
                     ? const QuayStones()
                     : ColoredBox(color: Palette.plank.withValues(alpha: 0.82)),
                 debugLabel: 'composer',
                 child: StageBar(
                   key: const ValueKey<String>('composer'),
-                  label: 'composer: HarborDock.${_composer.name}',
+                  label: 'composer: HarborBar.${_composer.name}',
                   icon: Icons.edit_rounded,
                 ),
               ),
               if (_second)
-                _dockOf(
+                _barOf(
                   _tabBar,
-                  backdrop: _tabBar == HarborDockKind.quay ? const QuayStones() : ColoredBox(color: Palette.plank.withValues(alpha: 0.82)),
+                  backdrop: _tabBar == HarborBarKind.solid
+                      ? const QuayStones()
+                      : ColoredBox(color: Palette.plank.withValues(alpha: 0.82)),
                   debugLabel: 'tabBar',
                   child: StageBar(
                     key: const ValueKey<String>('tabBar'),
-                    label: 'tabBar: HarborDock.${_tabBar.name}',
+                    label: 'tabBar: HarborBar.${_tabBar.name}',
                     icon: Icons.space_dashboard_rounded,
                   ),
                 ),
             ],
-            body: StageProbe(label: 'Harbor body', child: _MarkedBody(child: _rows())),
+            body: StageProbe(
+              label: 'frame body',
+              child: _MarkedBody(child: _rows()),
+            ),
           ),
   );
 }
@@ -379,9 +464,9 @@ class _AssertCard extends StatelessWidget {
   final String message;
 
   @override
-  Widget build(final BuildContext context) => HarborMoored(
-    mooringLine: true,
-    // On the bottom edge, where the docks it refuses would be, so the page's bottom view shows it.
+  Widget build(final BuildContext context) => HarborClear(
+    rowInsets: true,
+    // On the bottom edge, where the bars it refuses would be, so the page's bottom view shows it.
     child: Align(
       alignment: Alignment.bottomCenter,
       child: Container(
@@ -398,16 +483,16 @@ class _AssertCard extends StatelessWidget {
   );
 }
 
-/// `HarborDockState`: open, dark or withdrawn.
-class DockStateEntry extends StatefulWidget {
-  const DockStateEntry({super.key});
+/// `HarborBarState`: open, dark or withdrawn.
+class BarStateEntry extends StatefulWidget {
+  const BarStateEntry({super.key});
 
   @override
-  State<DockStateEntry> createState() => _DockStateEntryState();
+  State<BarStateEntry> createState() => _BarStateEntryState();
 }
 
-class _DockStateEntryState extends State<DockStateEntry> {
-  HarborDockState _state = HarborDockState.open;
+class _BarStateEntryState extends State<BarStateEntry> {
+  HarborBarState _state = HarborBarState.open;
   HarborExtentPolicy _policy = HarborExtentPolicy.hold;
   double _duration = 1200;
   int _taps = 0;
@@ -418,13 +503,13 @@ class _DockStateEntryState extends State<DockStateEntry> {
   Future<void> _play() async {
     setState(() {
       _playing = true;
-      _state = HarborDockState.withdrawn;
+      _state = HarborBarState.withdrawn;
     });
     await Future<void>.delayed(Duration(milliseconds: _duration.round() + 700));
     if (!mounted) {
       return;
     }
-    setState(() => _state = HarborDockState.open);
+    setState(() => _state = HarborBarState.open);
     await Future<void>.delayed(Duration(milliseconds: _duration.round()));
     if (mounted) {
       setState(() => _playing = false);
@@ -432,16 +517,16 @@ class _DockStateEntryState extends State<DockStateEntry> {
   }
 
   String get _hint => switch (_state) {
-    HarborDockState.open =>
+    HarborBarState.open =>
       'open: the lamp is lit, the header is drawn and its button counts taps. The gold outline (the body) starts below it.',
-    HarborDockState.dark =>
+    HarborBarState.dark =>
       'dark: the header is gone, but the rows have not moved: the dashed box is the ground it still holds. Its button '
           'is gone too, so taps there do nothing.',
-    HarborDockState.withdrawn => switch (_policy) {
+    HarborBarState.withdrawn => switch (_policy) {
       HarborExtentPolicy.hold =>
         'withdrawn + hold: the header slides up and away; the body waits until it has gone, then takes the ground.',
       HarborExtentPolicy.follow =>
-        'withdrawn + follow: the body rises with the header as it slides, a frame at a time.',
+        'withdrawn + follow: the body rises with the header as it slides, a drawn frame at a time.',
       HarborExtentPolicy.release =>
         'withdrawn + release: the body takes the ground at once; the header slides away over the rows.',
     },
@@ -449,13 +534,28 @@ class _DockStateEntryState extends State<DockStateEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborDockState',
+    className: 'HarborBarState',
     tryThis: const <TryStep>[
-      TryStep('Tap taps: 0 in the header', 'The count goes up: an open dock is drawn, takes taps, and the body starts below it.'),
-      TryStep('Pick state: dark', 'The header vanishes but the rows stay put under a dashed box: a dark dock keeps its ground, and its button takes no taps.'),
-      TryStep('Pick state: open, tap Withdraw and return (hold)', 'The header slides away and only then does the body rise to the top: hold gives the ground back once the dock has gone.'),
-      TryStep('Pick extentPolicy: follow, tap Withdraw and return', 'The body rises right behind the header as it slides, a frame at a time, and drops back with it on the way in.'),
-      TryStep('Pick extentPolicy: release, tap Withdraw and return', 'The body takes the top at once and the header slides out over the rows: release hands the ground over immediately.'),
+      TryStep(
+        'Tap taps: 0 in the header',
+        'The count goes up: an open bar is drawn, takes taps, and the body starts below it.',
+      ),
+      TryStep(
+        'Pick state: dark',
+        'The header vanishes but the rows stay put under a dashed box: a dark bar keeps its ground, and its button takes no taps.',
+      ),
+      TryStep(
+        'Pick state: open, tap Withdraw and return (hold)',
+        'The header slides away and only then does the body rise to the top: hold gives the ground back once the bar has gone.',
+      ),
+      TryStep(
+        'Pick extentPolicy: follow, tap Withdraw and return',
+        'The body rises right behind the header as it slides, a drawn frame at a time, and drops back with it on the way in.',
+      ),
+      TryStep(
+        'Pick extentPolicy: release, tap Withdraw and return',
+        'The body takes the top at once and the header slides out over the rows: release hands the ground over immediately.',
+      ),
     ],
     focus: const StageFocus.top(440),
     realWorld:
@@ -464,16 +564,16 @@ class _DockStateEntryState extends State<DockStateEntry> {
     inYourApp:
         'open: drawn, tappable, its ground taken. dark: not drawn or tappable, but it keeps its ground, so nothing moves. '
         'withdrawn: it slides out toward its edge and gives its ground back. HarborExtentPolicy says when the body gets '
-        'that ground: hold (once the dock has gone), follow (as it slides) or release (at once).',
+        'that ground: hold (once the bar has gone), follow (as it slides) or release (at once).',
     art: const HarborLightsArt(),
     controls: <Widget>[
       GuideHint(text: _hint),
-      ChoiceControl<HarborDockState>(
+      ChoiceControl<HarborBarState>(
         label: 'state',
-        values: HarborDockState.values,
+        values: HarborBarState.values,
         value: _state,
-        labelOf: (final HarborDockState s) => s.name,
-        onChanged: (final HarborDockState s) => setState(() => _state = s),
+        labelOf: (final HarborBarState s) => s.name,
+        onChanged: (final HarborBarState s) => setState(() => _state = s),
       ),
       ChoiceControl<HarborExtentPolicy>(
         label: 'extentPolicy',
@@ -482,7 +582,13 @@ class _DockStateEntryState extends State<DockStateEntry> {
         labelOf: (final HarborExtentPolicy p) => p.name,
         onChanged: (final HarborExtentPolicy p) => setState(() => _policy = p),
       ),
-      SliderControl(label: 'duration', value: _duration, min: 100, max: 2000, onChanged: (final double v) => setState(() => _duration = v)),
+      SliderControl(
+        label: 'duration',
+        value: _duration,
+        min: 100,
+        max: 2000,
+        onChanged: (final double v) => setState(() => _duration = v),
+      ),
       Align(
         alignment: AlignmentDirectional.centerStart,
         child: OutlinedButton.icon(
@@ -494,8 +600,8 @@ class _DockStateEntryState extends State<DockStateEntry> {
       ),
     ],
     code:
-        'HarborDock.quay(\n'
-        '  state: HarborDockState.${_state.name},\n'
+        'HarborBar.solid(\n'
+        '  state: HarborBarState.${_state.name},\n'
         '  extentPolicy: HarborExtentPolicy.${_policy.name},\n'
         '  duration: const Duration(milliseconds: ${_duration.toStringAsFixed(0)}),\n'
         '  child: Header(),\n'
@@ -503,9 +609,9 @@ class _DockStateEntryState extends State<DockStateEntry> {
     stage: (final BuildContext context) => Stack(
       children: <Widget>[
         Positioned.fill(
-          child: Harbor(
-            top: <HarborDock>[
-              HarborDock.quay(
+          child: HarborFrame(
+            top: <HarborBar>[
+              HarborBar.solid(
                 state: _state,
                 extentPolicy: _policy,
                 duration: Duration(milliseconds: _duration.round()),
@@ -519,14 +625,20 @@ class _DockStateEntryState extends State<DockStateEntry> {
                 ),
               ),
             ],
-            bottom: const <HarborDock>[
-              HarborDock.quay(backdrop: QuayStones(), child: StageBar(label: 'tab bar (stays open)')),
+            bottom: const <HarborBar>[
+              HarborBar.solid(
+                backdrop: QuayStones(),
+                child: StageBar(label: 'tab bar (stays open)'),
+              ),
             ],
-            body: StageProbe(label: 'Harbor body', child: _MarkedBody(child: _rows())),
+            body: StageProbe(
+              label: 'frame body',
+              child: _MarkedBody(child: _rows()),
+            ),
           ),
         ),
-        // Where a dark dock still stands: its ground, held.
-        if (_state == HarborDockState.dark)
+        // Where a dark bar still stands: its ground, held.
+        if (_state == HarborBarState.dark)
           Positioned(
             top: MediaQuery.paddingOf(context).top,
             left: 0,
@@ -539,33 +651,38 @@ class _DockStateEntryState extends State<DockStateEntry> {
   );
 }
 
-/// The header on the dock-state stage: a harbor lamp that's lit while the
-/// dock is open, its state, and a button that counts taps.
+/// The header on the bar-state stage: a harbor lamp that's lit while the
+/// bar is open, its state, and a button that counts taps.
 class _LampHeader extends StatelessWidget {
   const _LampHeader({super.key, required this.state, required this.taps, required this.onTap});
 
   static const double height = 52;
 
-  final HarborDockState state;
+  final HarborBarState state;
   final int taps;
   final VoidCallback onTap;
 
   @override
   Widget build(final BuildContext context) => SizedBox(
     height: height,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Row(
         children: <Widget>[
           Icon(
-            state == HarborDockState.open ? Icons.light_rounded : Icons.light_outlined,
-            color: state == HarborDockState.open ? Palette.brass : Palette.foam.withValues(alpha: 0.5),
+            state == HarborBarState.open ? Icons.light_rounded : Icons.light_outlined,
+            color: state == HarborBarState.open ? Palette.brass : Palette.foam.withValues(alpha: 0.5),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'state: ${state.name}',
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Menlo', fontSize: 15, fontWeight: FontWeight.w700, color: Palette.foam),
+              style: const TextStyle(
+                fontFamily: 'Menlo',
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Palette.foam,
+              ),
             ),
           ),
           FilledButton.tonal(
@@ -579,7 +696,7 @@ class _LampHeader extends StatelessWidget {
   );
 }
 
-/// A dashed outline where a dark dock stands, unseen.
+/// A dashed outline where a dark bar stands, unseen.
 class _HeldGround extends StatelessWidget {
   const _HeldGround();
 
@@ -686,7 +803,7 @@ class _Rail extends StatelessWidget {
   );
 }
 
-/// `HarborDock.restingExtent` and `HarborFollow`: a rail that opens over content, or pushes it.
+/// `HarborBar.restingExtent` and `HarborFollow`: a rail that opens over content, or pushes it.
 class RestingExtentEntry extends StatefulWidget {
   const RestingExtentEntry({super.key});
 
@@ -699,7 +816,7 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
   double _resting = 72;
   HarborFollow _follow = HarborFollow.resting;
 
-  Widget _panel(final String key, final HarborFollow follow, final Color color) => HarborMoored(
+  Widget _panel(final String key, final HarborFollow follow, final Color color) => HarborClear(
     edges: const <HarborEdge>{HarborEdge.start},
     follow: follow,
     child: Container(
@@ -707,9 +824,12 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
       height: 170,
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: color, borderRadius: const BorderRadiusDirectional.horizontal(end: Radius.circular(12))),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: const BorderRadiusDirectional.horizontal(end: Radius.circular(12)),
+      ),
       child: Text(
-        'HarborMoored(\n  follow: HarborFollow.${follow.name},\n)',
+        'HarborClear(\n  follow: HarborFollow.${follow.name},\n)',
         style: const TextStyle(fontFamily: 'Menlo', color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
       ),
     ),
@@ -717,11 +837,20 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborDock.restingExtent + HarborFollow',
+    className: 'HarborBar.restingExtent + HarborFollow',
     tryThis: const <TryStep>[
-      TryStep('Slide restingExtent to 100', 'The closed rail and both panels move to 100: restingExtent is the ground the rail holds at rest.'),
-      TryStep('Tap the rail', 'It opens to 210 and the HarborFollow.live panel moves with it; the resting panel holds still and the rail opens over it.'),
-      TryStep('Pick follow: live', 'The second panel jumps out to the open rail too: live content follows the rail as it grows.'),
+      TryStep(
+        'Slide restingExtent to 100',
+        'The closed rail and both panels move to 100: restingExtent is the ground the rail holds at rest.',
+      ),
+      TryStep(
+        'Tap the rail',
+        'It opens to 210 and the HarborFollow.live panel moves with it; the resting panel holds still and the rail opens over it.',
+      ),
+      TryStep(
+        'Pick follow: live',
+        'The second panel jumps out to the open rail too: live content follows the rail as it grows.',
+      ),
       TryStep('Switch off rail open', 'The rail closes and both panels come back to its resting width.'),
     ],
     realWorld:
@@ -734,7 +863,13 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
     art: const BasculeArt(),
     controls: <Widget>[
       ToggleControl(label: 'rail open', value: _expanded, onChanged: (final bool v) => setState(() => _expanded = v)),
-      SliderControl(label: 'restingExtent', value: _resting, min: 56, max: 110, onChanged: (final double v) => setState(() => _resting = v)),
+      SliderControl(
+        label: 'restingExtent',
+        value: _resting,
+        min: 56,
+        max: 110,
+        onChanged: (final double v) => setState(() => _resting = v),
+      ),
       ChoiceControl<HarborFollow>(
         label: 'follow',
         values: HarborFollow.values,
@@ -744,21 +879,21 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
       ),
     ],
     code:
-        'Harbor(\n'
+        'HarborFrame(\n'
         '  start: [\n'
-        '    HarborDock.pier(\n'
+        '    HarborBar.overlay(\n'
         '      restingExtent: ${_resting.toStringAsFixed(0)},\n'
         '      child: Rail(open: $_expanded),\n'
         '    ),\n'
         '  ],\n'
         '  body: Column(children: [\n'
-        '    HarborMoored(follow: HarborFollow.live, child: panel),\n'
-        '    HarborMoored(follow: HarborFollow.${_follow.name}, child: page),\n'
+        '    HarborClear(follow: HarborFollow.live, child: panel),\n'
+        '    HarborClear(follow: HarborFollow.${_follow.name}, child: page),\n'
         '  ]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      start: <HarborDock>[
-        HarborDock.pier(
+    stage: (final BuildContext context) => HarborFrame(
+      start: <HarborBar>[
+        HarborBar.overlay(
           restingExtent: _resting,
           backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.92)),
           debugLabel: 'rail',
@@ -770,10 +905,10 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
         ),
       ],
       body: StageProbe(
-        label: 'Harbor body (under the rail)',
-        child: HarborMoored(
+        label: 'frame body (under the rail)',
+        child: HarborClear(
           edges: HarborEdge.vertical,
-          extra: const EdgeInsetsDirectional.only(top: 12),
+          padding: const EdgeInsetsDirectional.only(top: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -787,7 +922,7 @@ class _RestingExtentEntryState extends State<RestingExtentEntry> {
   );
 }
 
-/// `HarborDock.hitTestBehavior`: whether taps on a dock reach what's under it.
+/// `HarborBar.hitTestBehavior`: whether taps on a bar reach what's under it.
 class HitTestEntry extends StatefulWidget {
   const HitTestEntry({super.key});
 
@@ -816,18 +951,30 @@ class _HitTestEntryState extends State<HitTestEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborDock.hitTestBehavior',
+    className: 'HarborBar.hitTestBehavior',
     tryThis: const <TryStep>[
-      TryStep('Tap a row below the header', 'The row taps counter in the bottom bar goes up: rows clear of the header take taps.'),
-      TryStep('Tap the header beside its title', 'Nothing counts: opaque, the default, stops taps on the dock\'s ground, even over a row scrolled under it.'),
-      TryStep('Pick hitTestBehavior: translucent, tap beside the title', 'The row under the header counts the tap: translucent lets taps on the dock\'s empty parts through.'),
-      TryStep('Tap the title itself', 'No count: the header\'s own text still takes its tap; only its empty parts pass taps on.'),
+      TryStep(
+        'Tap a row below the header',
+        'The row taps counter in the bottom bar goes up: rows clear of the header take taps.',
+      ),
+      TryStep(
+        'Tap the header beside its title',
+        'Nothing counts: opaque, the default, stops taps on the bar\'s ground, even over a row scrolled under it.',
+      ),
+      TryStep(
+        'Pick hitTestBehavior: translucent, tap beside the title',
+        'The row under the header counts the tap: translucent lets taps on the bar\'s empty parts through.',
+      ),
+      TryStep(
+        'Tap the title itself',
+        'No count: the header\'s own text still takes its tap; only its empty parts pass taps on.',
+      ),
     ],
     realWorld:
         'A gate at the head of the gangway down to the pontoon. Shut, nobody passes it; open, people walk straight '
         'through to the boats beyond.',
     inYourApp:
-        'Whether a tap on a dock\'s ground stops there. Opaque (the default) means a tap on the header never reaches a '
+        'Whether a tap on a bar\'s ground stops there. Opaque (the default) means a tap on the header never reaches a '
         'row scrolled under it. Translucent lets taps on the header\'s empty parts through to the rows beneath; its own '
         'buttons and text still take theirs. Tap the header beside its title and watch the counter.',
     art: const GangwayGateArt(),
@@ -841,25 +988,25 @@ class _HitTestEntryState extends State<HitTestEntry> {
       ),
     ],
     code:
-        'HarborDock.pier(\n'
+        'HarborBar.overlay(\n'
         '  hitTestBehavior: HitTestBehavior.${_behavior.name},\n'
         '  // A backdrop that takes no taps of its own.\n'
         '  backdrop: IgnorePointer(child: Frosting()),\n'
         '  child: Header(),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[
-        HarborDock.pier(
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[
+        HarborBar.overlay(
           hitTestBehavior: _behavior,
-          wake: const HarborWake.fade(length: 10),
+          edgeEffect: const HarborEdgeEffect.fade(length: 10),
           // A ColoredBox takes taps itself, so the backdrop ignores them.
           backdrop: IgnorePointer(child: ColoredBox(color: Palette.night.withValues(alpha: 0.6))),
           debugLabel: 'header',
           child: StageHeader(key: const ValueKey<String>('gate header'), title: 'hitTestBehavior: ${_behavior.name}'),
         ),
       ],
-      bottom: <HarborDock>[
-        HarborDock.quay(
+      bottom: <HarborBar>[
+        HarborBar.solid(
           backdrop: const QuayStones(),
           child: StageBar(
             key: const ValueKey<String>('tap counter'),
@@ -869,8 +1016,8 @@ class _HitTestEntryState extends State<HitTestEntry> {
         ),
       ],
       body: StageProbe(
-        label: 'Harbor body',
-        child: HarborFairway(
+        label: 'frame body',
+        child: HarborScrollView(
           controller: _scroll,
           slivers: <Widget>[
             SliverList.builder(
@@ -887,7 +1034,11 @@ class _HitTestEntryState extends State<HitTestEntry> {
                         top: 16,
                         child: Text(
                           '${_taps[i]} tap${_taps[i] == 1 ? '' : 's'}',
-                          style: const TextStyle(fontFamily: 'Menlo', color: Palette.brass, fontWeight: FontWeight.w700),
+                          style: const TextStyle(
+                            fontFamily: 'Menlo',
+                            color: Palette.brass,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                   ],
@@ -901,7 +1052,7 @@ class _HitTestEntryState extends State<HitTestEntry> {
   );
 }
 
-/// `HarborDock.reserve`: an edge held for something drawn elsewhere.
+/// `HarborBar.reserve`: an edge held for something drawn elsewhere.
 class ReserveEntry extends StatefulWidget {
   const ReserveEntry({super.key});
 
@@ -911,35 +1062,38 @@ class ReserveEntry extends StatefulWidget {
 
 class _ReserveEntryState extends State<ReserveEntry> {
   double _extent = 80;
-  HarborDockKind _kind = HarborDockKind.pier;
+  HarborBarKind _kind = HarborBarKind.overlay;
   bool _tabBar = false;
 
-  /// The tab bar's own height, over the coast it absorbs.
+  /// The tab bar's own height, over the system edge it absorbs.
   static const double _tabBarHeight = 56;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborDock.reserve',
+    className: 'HarborBar.reserve',
     focus: const StageFocus.bottom(440),
     tryThis: const <TryStep>[
       TryStep(
         'Open The stage, pick Device: iPhone 17 and scroll the rows to the end',
         'The last row comes to rest on the brass footer, 80 up: the reserve held its ground, though the footer is drawn '
-            'over the harbor, not in it.',
+            'over the frame, not in it.',
       ),
       TryStep(
         'On iPhone 17, slide extent to 20',
-        'The footer stops at 34, not 20, and Readings show padding B 34: a reserve reaches the larger of the coast and its '
+        'The footer stops at 34, not 20, and Readings show padding B 34: a reserve reaches the larger of the system edge and its '
             'extent, so nothing it stands in for sits on the home indicator.',
       ),
-      TryStep('Pick Device: iPhone SE', 'With no home indicator the footer is exactly 20 high, and Readings show padding B 20.'),
       TryStep(
-        'Pick Device: iPhone 17 and kind: quay',
-        'The brass outline of the body stops at the footer and the rows no longer pass under it: a quay reserve takes its ground.',
+        'Pick Device: iPhone SE',
+        'With no home indicator the footer is exactly 20 high, and Readings show padding B 20.',
+      ),
+      TryStep(
+        'Pick Device: iPhone 17 and kind: solid',
+        'The brass outline of the body stops at the footer and the rows no longer pass under it: a solid reserve takes its ground.',
       ),
       TryStep(
         'On iPhone 17, switch on tab bar outside',
-        'The footer moves up onto the tab bar and keeps its full extent: past the docks outside it, a reserve reaches its '
+        'The footer moves up onto the tab bar and keeps its full extent: past the bars outside it, a reserve reaches its '
             'extent beyond theirs.',
       ),
     ],
@@ -947,57 +1101,72 @@ class _ReserveEntryState extends State<ReserveEntry> {
         'A harbor master paints out a berth and puts up a RESERVED sign before the boat arrives. Nothing is tied up there '
         'yet, but nobody else moors in it.',
     inYourApp:
-        'HarborDock.reserve(extent: 80) holds an edge for something drawn elsewhere: a footer in an overlay, a bar a parent '
-        'paints. It reaches 80 in from the edge, coast included (the larger of the coast and 80 when it is outermost), or '
-        '80 past the docks outside it. It paints nothing and takes no taps, so what it stands in for gets them. It is a pier '
-        'by default, so the body runs under it and rests clear of it; kind: quay makes the body stop at it.',
+        'HarborBar.reserve(extent: 80) holds an edge for something drawn elsewhere: a footer in an overlay, a bar a parent '
+        'paints. It reaches 80 in from the edge, system edge included (the larger of the system edge and 80 when it is '
+        'outermost), or 80 past the bars outside it. It paints nothing and takes no taps, so what it stands in for gets '
+        'them. It is an overlay bar by default, so the body runs under it and rests clear of it; kind: solid makes the body '
+        'stop at it.',
     art: const ReservedBerthArt(),
     controls: <Widget>[
-      SliderControl(label: 'extent', value: _extent, min: 0, max: 140, divisions: 14, onChanged: (final double v) => setState(() => _extent = v)),
-      ChoiceControl<HarborDockKind>(
+      SliderControl(
+        label: 'extent',
+        value: _extent,
+        min: 0,
+        max: 140,
+        divisions: 14,
+        onChanged: (final double v) => setState(() => _extent = v),
+      ),
+      ChoiceControl<HarborBarKind>(
         label: 'kind',
-        values: HarborDockKind.values,
+        values: HarborBarKind.values,
         value: _kind,
-        labelOf: (final HarborDockKind k) => k.name,
-        onChanged: (final HarborDockKind k) => setState(() => _kind = k),
+        labelOf: (final HarborBarKind k) => k.name,
+        onChanged: (final HarborBarKind k) => setState(() => _kind = k),
       ),
       ToggleControl(label: 'tab bar outside', value: _tabBar, onChanged: (final bool v) => setState(() => _tabBar = v)),
     ],
     code:
         'Stack(\n'
         '  children: [\n'
-        '    Harbor(\n'
+        '    HarborFrame(\n'
         '      bottom: [\n'
-        '        HarborDock.reserve(extent: ${_extent.toStringAsFixed(0)}${_kind == HarborDockKind.quay ? ', kind: HarborDockKind.quay' : ''}),\n'
-        '${_tabBar ? '        HarborDock.quay(child: TabBar()),\n' : ''}'
+        '        HarborBar.reserve(extent: ${_extent.toStringAsFixed(0)}${_kind == HarborBarKind.solid ? ', kind: HarborBarKind.solid' : ''}),\n'
+        '${_tabBar ? '        HarborBar.solid(child: TabBar()),\n' : ''}'
         '      ],\n'
-        '      body: HarborFairway(slivers: [boats]),\n'
+        '      body: HarborScrollView(slivers: [boats]),\n'
         '    ),\n'
-        '    // Drawn over the harbor, in the ground the reserve holds.\n'
+        '    // Drawn over the frame, in the ground the reserve holds.\n'
         '    Positioned(bottom: ${_tabBar ? 'tabBar' : '0'}, left: 0, right: 0, child: Footer()),\n'
         '  ],\n'
         ')',
     stage: (final BuildContext context) {
-      // The footer is drawn by the stage, not the harbor: it is told where the reserve is, as a
+      // The footer is drawn by the stage, not the frame: it is told where the reserve is, as a
       // parent painting a bar would be.
-      final double coast = MediaQuery.viewPaddingOf(context).bottom;
-      final double below = _tabBar ? _tabBarHeight + coast : 0;
-      final double reach = _tabBar ? _extent : (_extent > coast ? _extent : coast);
+      final double systemEdge = MediaQuery.viewPaddingOf(context).bottom;
+      final double below = _tabBar ? _tabBarHeight + systemEdge : 0;
+      final double reach = _tabBar ? _extent : (_extent > systemEdge ? _extent : systemEdge);
       return Stack(
         fit: StackFit.expand,
         children: <Widget>[
-          Harbor(
+          HarborFrame(
             debugLabel: 'reserve page',
-            bottom: <HarborDock>[
-              HarborDock.reserve(extent: _extent, kind: _kind, debugLabel: 'reserve'),
+            bottom: <HarborBar>[
+              HarborBar.reserve(extent: _extent, kind: _kind, debugLabel: 'reserve'),
               if (_tabBar)
-                const HarborDock.quay(
+                const HarborBar.solid(
                   debugLabel: 'tab bar',
                   backdrop: QuayStones(),
-                  child: StageBar(key: ValueKey<String>('reserve tab bar'), label: 'HarborDock.quay', height: _tabBarHeight),
+                  child: StageBar(
+                    key: ValueKey<String>('reserve tab bar'),
+                    label: 'HarborBar.solid',
+                    height: _tabBarHeight,
+                  ),
                 ),
             ],
-            body: StageProbe(label: 'Harbor body', child: _MarkedBody(child: _rows())),
+            body: StageProbe(
+              label: 'frame body',
+              child: _MarkedBody(child: _rows()),
+            ),
           ),
           Positioned(
             left: 0,
@@ -1016,7 +1185,12 @@ class _ReserveEntryState extends State<ReserveEntry> {
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     reach >= 20 ? 'Drawn elsewhere · ${reach.toStringAsFixed(0)}' : '',
-                    style: const TextStyle(fontFamily: 'Menlo', fontSize: 12, fontWeight: FontWeight.w700, color: Palette.night),
+                    style: const TextStyle(
+                      fontFamily: 'Menlo',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Palette.night,
+                    ),
                   ),
                 ),
               ),

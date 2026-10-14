@@ -5,18 +5,18 @@ import '../art/docks.dart';
 import '../art/palette.dart';
 import '../game/widgets.dart';
 
-/// Harbor registration: an onboarding form, built as a new port.
+/// Harbor registration: an onboarding form, built as a page.
 ///
-/// Its footer is a quay on pilings, so the keyboard covers the Continue button
-/// while you type and the form ends at the waterline. Each field is a beacon
-/// that keeps itself in sight as the keyboard rises. While the berth password
-/// has focus, the same footer switches to floating, riding the keyboard with
-/// the password rules on it. The crest at the top reads the tide's height and
+/// Its footer is a solid bar that stays, so the keyboard covers the Continue
+/// button while you type and the form ends at the keyboard's top. Each field is a
+/// HarborKeepInSight that keeps itself in sight as the keyboard rises. While the
+/// berth password has focus, the same footer switches to riding the keyboard, with
+/// the password rules on it. The crest at the top reads the keyboard's height and
 /// shrinks as it comes in: information only, never what anything clears.
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
 
-  /// The key on the footer's content, inside its dock.
+  /// The key on the footer's content, inside its bar.
   static const Key footerKey = ValueKey<String>('registration footer');
 
   /// The key on the crest's box.
@@ -67,9 +67,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
   void _continue(final BuildContext context) {
     final String boat = _boatName.text.trim().isEmpty ? 'your boat' : _boatName.text.trim();
     FocusScope.of(context).unfocus();
-    HarborFlares.raise(
+    HarborToasts.show(
       context,
-      slot: HarborFlareSlot.high,
+      slot: HarborToastSlot.high,
       builder: (final BuildContext context) =>
           SignalFlag(message: 'Welcome to the harbor, $boat!', icon: Icons.anchor_rounded),
     );
@@ -77,24 +77,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
   }
 
   @override
-  Widget build(final BuildContext context) => Harbor(
-    newPort: true,
+  Widget build(final BuildContext context) => HarborFrame(
+    isPage: true,
     debugLabel: 'harbor registration',
-    top: <HarborDock>[
-      HarborDock.pier(
+    top: <HarborBar>[
+      HarborBar.overlay(
         debugLabel: 'crest',
-        wake: const HarborWake.fade(length: 16, blurSigma: 12),
+        edgeEffect: const HarborEdgeEffect.fade(length: 16, blurSigma: 12),
         backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.7)),
         child: const _CrestHeader(),
       ),
     ],
-    bottom: <HarborDock>[
-      HarborDock.quay(
-        // The same dock either way: only its stance on the tide changes.
+    bottom: <HarborBar>[
+      HarborBar.solid(
+        // The same bar either way: only its keyboard stance changes.
         key: const ValueKey<String>('registration footer dock'),
         debugLabel: 'registration footer',
-        tide: _passwordFocused ? HarborTideStance.float : HarborTideStance.pilings,
-        wake: const HarborWake.hairline(),
+        keyboard: _passwordFocused ? HarborKeyboardStance.rides : HarborKeyboardStance.stays,
+        edgeEffect: const HarborEdgeEffect.hairline(),
         backdrop: const QuayStones(),
         child: Builder(
           builder: (final BuildContext context) => _Footer(
@@ -107,21 +107,21 @@ class _RegistrationPageState extends State<RegistrationPage> {
     ],
     body: ColoredBox(
       color: Palette.deepSea,
-      child: HarborFairway(
+      child: HarborScrollView(
         padding: const EdgeInsetsDirectional.only(top: 4, bottom: 24),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         slivers: <Widget>[
           SliverToBoxAdapter(
-            child: HarborMooringLine(
+            child: HarborClear.rowInsets(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   const LogbookNote(
-                    pattern: 'Footer on pilings · floating for one field · fields in sight · shrinking crest',
+                    pattern: 'Footer that stays · rides for one field · fields in sight · shrinking crest',
                     tryThis:
-                        'Tap a field: the keyboard covers the Continue quay and the form ends at the waterline, '
-                        'with the field kept in sight. Tap the berth password: the same footer floats up on the tide '
-                        'with the rules. Watch the crest shrink as the tide comes in.',
+                        'Tap a field: the keyboard covers the Continue bar and the form ends at the keyboard\'s top, '
+                        'with the field kept in sight. Tap the berth password: the same footer rides up on the keyboard '
+                        'with the rules. Watch the crest shrink as the keyboard comes in.',
                   ),
                   const SizedBox(height: 8),
                   _Field(
@@ -166,10 +166,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
   );
 }
 
-/// The crest: a lighthouse that stands 120 tall at low tide and shrinks to 48
-/// as the keyboard comes in. It reads the tide's height to decide how tall to
-/// draw itself; nothing clears it by that number. The header it sits in is a
-/// dock, measured like any other.
+/// The crest: a lighthouse that stands 120 tall with the keyboard hidden and
+/// shrinks to 48 as the keyboard comes in. It reads the keyboard's height to
+/// decide how tall to draw itself; nothing clears it by that number. The header
+/// it sits in is a bar, measured like any other.
 class _CrestHeader extends StatelessWidget {
   const _CrestHeader();
 
@@ -178,10 +178,10 @@ class _CrestHeader extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    final HarborTideState tide = HarborTide.of(context);
-    final double risen = tide.highWater <= 0 ? 0.0 : (tide.height / tide.highWater).clamp(0.0, 1.0);
+    final HarborKeyboardState tide = HarborKeyboard.of(context);
+    final double risen = tide.settledHeight <= 0 ? 0.0 : (tide.height / tide.settledHeight).clamp(0.0, 1.0);
     final double size = _lowTide + (_highTide - _lowTide) * risen;
-    return HarborMooringLine(
+    return HarborClear.rowInsets(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Row(
@@ -192,8 +192,8 @@ class _CrestHeader extends StatelessWidget {
             SizedBox(
               key: RegistrationPage.crestKey,
               height: size,
-              // The beam sweeps while the tide is out; at high tide the lamp is trimmed.
-              child: LighthouseArt(key: ValueKey<bool>(tide.isIn), shining: !tide.isIn),
+              // The beam sweeps while the keyboard is hidden; once it is shown the lamp is trimmed.
+              child: LighthouseArt(key: ValueKey<bool>(tide.isShown), shining: !tide.isShown),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -242,7 +242,7 @@ class _Field extends StatelessWidget {
   final bool last;
 
   @override
-  Widget build(final BuildContext context) => HarborBeacon(
+  Widget build(final BuildContext context) => HarborKeepInSight(
     keepInSight: true,
     onlyWhileFocused: true,
     clearance: 24,
@@ -268,7 +268,7 @@ class _Field extends StatelessWidget {
   );
 }
 
-/// The footer on the quay: Continue and the fine print, plus the password
+/// The footer in the solid bar: Continue and the fine print, plus the password
 /// rules while the berth password has focus.
 class _Footer extends StatelessWidget {
   const _Footer({super.key, required this.password, required this.onContinue});
@@ -280,7 +280,7 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final TextEditingController? password = this.password;
-    return HarborMooringLine(
+    return HarborClear.rowInsets(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
@@ -293,7 +293,7 @@ class _Footer extends StatelessWidget {
                 builder: (final BuildContext context, final Widget? _) => _PasswordRules(password: password.text),
               ),
             BrassAction(label: 'Continue', icon: Icons.arrow_forward_rounded, onPressed: onContinue),
-            // Afloat on the tide, the footer travels light: the fine print stays ashore.
+            // Riding the keyboard, the footer travels light: the fine print stays behind.
             if (password == null) ...<Widget>[
               const SizedBox(height: 6),
               Text(

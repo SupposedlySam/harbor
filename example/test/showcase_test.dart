@@ -49,11 +49,14 @@ void main() {
   Rect header(final WidgetTester tester) => tester.getRect(find.byKey(const ValueKey<String>('showcase header')));
   Rect tabBar(final WidgetTester tester) => tester.getRect(find.byKey(const ValueKey<String>('showcase tab bar')));
   Rect composer(final WidgetTester tester) => tester.getRect(find.byKey(const ValueKey<String>('showcase composer')));
-  Iterable<Rect> rows(final WidgetTester tester) => find.byType(HarborMooringLine).evaluate().map((final Element e) {
-    // Transformed whole: the phone is drawn scaled, so a global origin plus a local size is wrong.
-    final RenderBox box = e.renderObject! as RenderBox;
-    return MatrixUtils.transformRect(box.getTransformTo(null), Offset.zero & box.size);
-  });
+  Iterable<Rect> rows(final WidgetTester tester) => find
+      .byWidgetPredicate((final Widget w) => w is HarborClear && w.rowInsets && w.edges == HarborEdge.horizontal)
+      .evaluate()
+      .map((final Element e) {
+        // Transformed whole: the phone is drawn scaled, so a global origin plus a local size is wrong.
+        final RenderBox box = e.renderObject! as RenderBox;
+        return MatrixUtils.transformRect(box.getTransformTo(null), Offset.zero & box.size);
+      });
 
   testWidgets('Pier: rows scroll under the header, which stays put', (final tester) async {
     await start(tester);
@@ -84,7 +87,11 @@ void main() {
     // The difference between a quay and a pier: the list's viewport ends at a quay, and runs on
     // under a pier. Where the last row comes to rest is the same for both, since a fairway rests
     // clear of a pier too, so that alone cannot tell them apart.
-    expect(tester.getRect(find.byType(Scrollable).first).bottom, lessThanOrEqualTo(bar.top + 0.5), reason: 'nothing runs under the tab bar');
+    expect(
+      tester.getRect(find.byType(Scrollable).first).bottom,
+      lessThanOrEqualTo(bar.top + 0.5),
+      reason: 'nothing runs under the tab bar',
+    );
     expect(lowest, lessThanOrEqualTo(bar.top + 0.5));
     expect(lowest, greaterThan(bar.top - 20), reason: 'positive control: the last row has come to rest at it');
   });
@@ -101,7 +108,11 @@ void main() {
     expect(keyboard.height, greaterThan(100), reason: 'positive control: the keyboard is up');
     expect(tabBar(tester), dry, reason: 'on pilings: it does not move');
     expect(keyboard.overlaps(tabBar(tester)), isTrue, reason: 'and the keyboard covers it');
-    expect(composer(tester).bottom, moreOrLessEquals(keyboard.top, epsilon: 0.5), reason: 'afloat: it sits on the keyboard');
+    expect(
+      composer(tester).bottom,
+      moreOrLessEquals(keyboard.top, epsilon: 0.5),
+      reason: 'afloat: it sits on the keyboard',
+    );
   });
 
   // The caption is the narration, word for word, so the video reads the same with the sound off.

@@ -8,111 +8,111 @@ import 'guide_page.dart';
 import 'stage.dart';
 import 'stage_kit.dart';
 
-/// The tide: the keyboard, and how docks meet it.
+/// The keyboard, and how bars meet it.
 final List<GuideEntry> tideEntries = <GuideEntry>[
   GuideEntry(
     id: 'tide-of',
-    className: 'HarborTide.of',
+    className: 'HarborKeyboard.of',
     group: GuideGroup.tide,
-    realWorld: 'A harbor tide clock on a post, and a tide staff in the water',
+    realWorld: 'Like a tide clock and a tide staff: it reads how far up the keyboard is',
     art: (final BuildContext context) => const HarborTideArt(),
     page: (final BuildContext context) => const TideOfEntry(),
   ),
   GuideEntry(
     id: 'tide-float',
-    className: 'HarborTideStance.float',
+    className: 'HarborKeyboardStance.rides',
     group: GuideGroup.tide,
-    realWorld: 'A floating dock on guide piles, rising and falling with the water',
+    realWorld: 'Like a floating dock on guide piles: the bar rises with the keyboard',
     art: (final BuildContext context) => const FloatingDockArt(),
     page: (final BuildContext context) => const FloatEntry(),
   ),
   GuideEntry(
     id: 'tide-pilings',
-    className: 'HarborTideStance.pilings',
+    className: 'HarborKeyboardStance.stays',
     group: GuideGroup.tide,
-    realWorld: 'A fixed pier on tall pilings, the water rising up the piles',
+    realWorld: 'Like a pier on tall pilings: the bar stays put and the keyboard comes up over it',
     art: (final BuildContext context) => const PilingsArt(),
     page: (final BuildContext context) => const PilingsEntry(),
   ),
   GuideEntry(
     id: 'tide-float-pilings',
-    className: 'HarborTideStance.float + .pilings',
+    className: 'HarborKeyboardStance.rides + .stays',
     group: GuideGroup.tide,
-    realWorld: 'A floating pontoon moored beside a fixed pier',
+    realWorld: 'Like a pontoon beside a fixed pier: one bar rides, the other stays',
     art: (final BuildContext context) => const FloatAndPilingsArt(),
     page: (final BuildContext context) => const FloatAndPilingsEntry(),
   ),
   GuideEntry(
     id: 'tide-dry-dock',
-    className: 'HarborTideStance.dryDock',
+    className: 'HarborKeyboardStance.reserves',
     group: GuideGroup.tide,
-    realWorld: 'A graving dry dock: a ship on keel blocks, the gate holding the sea out',
+    realWorld: 'Like a dry dock, the same basin wet or dry: the bar keeps the keyboard\'s space either way',
     art: (final BuildContext context) => const DryDockArt(),
     page: (final BuildContext context) => const DryDockEntry(),
   ),
   GuideEntry(
     id: 'tide-coast',
-    className: 'HarborCoastStance',
+    className: 'HarborSystemEdgeStance',
     group: GuideGroup.tide,
-    realWorld: 'A seawall, with high and low water marked on its face',
+    realWorld: 'Like a seawall marked with high and low water: how much of the system edge a bar takes',
     art: (final BuildContext context) => const SeawallArt(),
     page: (final BuildContext context) => const CoastStanceEntry(),
   ),
   GuideEntry(
     id: 'tide-withdraws',
-    className: 'HarborDock.withdrawsAtHighTide',
+    className: 'HarborBar.withdrawsAtHighTide',
     group: GuideGroup.tide,
-    realWorld: 'A slipway, with a boat hauled out before the tide comes up the ramp',
+    realWorld: 'Like a boat hauled up a slipway: the bar leaves while the keyboard is up',
     art: (final BuildContext context) => const SlipwayArt(),
     page: (final BuildContext context) => const WithdrawsAtHighTideEntry(),
   ),
   GuideEntry(
     id: 'tide-body-clears',
-    className: 'Harbor.bodyClearsTide',
+    className: 'HarborFrame.bodyClearsKeyboard',
     group: GuideGroup.tide,
-    realWorld: 'A lock gate, holding the water back or letting it in',
+    realWorld: 'Like a lock gate: the body ends at the keyboard, or runs on under it',
     art: (final BuildContext context) => const LockGateArt(),
     page: (final BuildContext context) => const BodyClearsTideEntry(),
   ),
 ];
 
-/// The surfaces the tide pages' docks are drawn in.
-const Color _pontoon = Color(0xFF1E6A93);
-final Color _pierDeck = Palette.plank.withValues(alpha: 0.95);
-const Color _stoneDock = Palette.stoneDark;
+/// The surfaces the keyboard pages' bars are drawn in.
+const Color _composerColor = Color(0xFF1E6A93);
+final Color _tabBarColor = Palette.plank.withValues(alpha: 0.95);
+const Color _reserveColor = Palette.stoneDark;
 
-/// The stage's header: a pier naming the page's class.
-HarborDock _header(final String title) => HarborDock.pier(
-  wake: const HarborWake.fade(length: 12),
+/// The stage's header: an overlay bar naming the page's class.
+HarborBar _header(final String title) => HarborBar.overlay(
+  edgeEffect: const HarborEdgeEffect.fade(length: 12),
   backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.85)),
   debugLabel: 'header',
   child: StageHeader(key: const ValueKey<String>('stage header'), title: title),
 );
 
-/// A floating composer: a bottom quay that rides the keyboard.
-HarborDock _composerDock({final HarborTideStance tide = HarborTideStance.float, final String? label}) =>
-    HarborDock.quay(
-      tide: tide,
-      backdrop: const ColoredBox(color: _pontoon),
+/// A composer: a bottom solid bar that rides the keyboard.
+HarborBar _composerBar({final HarborKeyboardStance keyboard = HarborKeyboardStance.rides, final String? label}) =>
+    HarborBar.solid(
+      keyboard: keyboard,
+      backdrop: const ColoredBox(color: _composerColor),
       debugLabel: 'composer',
       child: StageBar(
         key: const ValueKey<String>('composer'),
-        label: label ?? 'tide: ${tide.name}',
+        label: label ?? 'keyboard: ${keyboard.name}',
         icon: Icons.edit_rounded,
       ),
     );
 
-/// A tab bar on pilings: a bottom quay that stays put under the keyboard.
-HarborDock _tabBarDock() => HarborDock.quay(
-  backdrop: ColoredBox(color: _pierDeck),
+/// A tab bar: a bottom solid bar that stays put under the keyboard.
+HarborBar _tabBar() => HarborBar.solid(
+  backdrop: ColoredBox(color: _tabBarColor),
   debugLabel: 'tab bar',
-  child: const StageBar(key: ValueKey<String>('tab bar'), label: 'tide: pilings', icon: Icons.grid_view_rounded),
+  child: const StageBar(key: ValueKey<String>('tab bar'), label: 'keyboard: stays', icon: Icons.grid_view_rounded),
 );
 
-/// The harbor's body on a tide page: a list of boats, marked where it ends
+/// The frame's body on a keyboard page: a list of boats, marked where it ends
 /// and probed for what it's told.
 class _Body extends StatelessWidget {
-  const _Body({this.label = 'Harbor body', this.child});
+  const _Body({this.label = 'HarborFrame body', this.child});
 
   final String label;
   final Widget? child;
@@ -121,13 +121,13 @@ class _Body extends StatelessWidget {
   Widget build(final BuildContext context) => StageProbe(
     label: label,
     child: SizedBox.expand(
-      key: const ValueKey<String>('tide body'),
+      key: const ValueKey<String>('stage body'),
       child: Stack(
         children: <Widget>[
           Positioned.fill(
             child:
                 child ??
-                HarborFairway(
+                HarborScrollView(
                   slivers: <Widget>[
                     SliverList.builder(
                       itemCount: 30,
@@ -166,9 +166,9 @@ class _BodyEnd extends StatelessWidget {
 
 String _f(final double v) => v.toStringAsFixed(0);
 
-// 1. HarborTide.of ------------------------------------------------------------
+// 1. HarborKeyboard.of --------------------------------------------------------
 
-/// `HarborTide.of`: reading the tide.
+/// `HarborKeyboard.of`: reading the keyboard.
 class TideOfEntry extends StatefulWidget {
   const TideOfEntry({super.key});
 
@@ -189,63 +189,67 @@ class _TideOfEntryState extends State<TideOfEntry> {
   @override
   Widget build(final BuildContext context) => GuidePage(
     settings: _settings,
-    className: 'HarborTide.of',
+    className: 'HarborKeyboard.of',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
-        'height climbs to 336, phase goes rising then high, and highWater settles at 336 instead of the 40% estimate.',
+        'height climbs to 336, phase goes opening then shown, and settledHeight settles at 336 instead of the 40% estimate.',
       ),
       TryStep(
-        'Switch bodyClearsTide off',
+        'Switch bodyClearsKeyboard off',
         'remaining jumps from 0 to 336: the body now runs under the keyboard, so all of it reaches the readout.',
       ),
       TryStep(
         'Tap the keyboard button again',
-        'phase reads falling while it slides, then low; highWater keeps 336, the last height the keyboard settled at.',
+        'phase reads closing while it slides, then hidden; settledHeight keeps 336, the last height the keyboard settled at.',
       ),
       TryStep(
-        'Drag the tide gauge to about 5 and let go',
-        'height, remaining and highWater all read 168: high water follows wherever the keyboard settles, down as well as up.',
+        'Drag the gauge beside the stage to about 5 and let go',
+        'height, remaining and settledHeight all read 168: the settled height follows wherever the keyboard settles, down as well as up.',
       ),
     ],
     // The whole phone: the readout sits at the top of the body and the keyboard it reads comes up
-    // from the bottom; a bottom crop cut the readout off until the tide was in.
+    // from the bottom; a bottom crop cut the readout off until the keyboard was up.
     realWorld:
-        'A harbor posts its tide on a clock at the quay, its hand pointing from low water to high, and a tide staff '
-        'stands in the water so anyone can read the height off its bands.',
+        'Like a tide clock at the quay and a tide staff in the water, which anyone can read but nothing is built on: '
+        'it tells you how far up the keyboard is.',
     inYourApp:
-        'Reads the keyboard as the harbor sees it: its full height, how much of it still reaches this spot (remaining), '
-        'its high-water mark and its phase. For information, never for layout. highWater is an estimate (40% of the '
-        'screen) until the keyboard settles high once; drag the tide all the way up and let go to see it settle.',
+        'Reads the keyboard as the frame sees it: its full height, how much of it still reaches this spot (remaining), '
+        'its settled height and its phase. For information, never for layout. settledHeight is an estimate (40% of '
+        'the screen) until the keyboard settles once; bring the keyboard all the way up and let go to see it settle.',
     art: const HarborTideArt(),
     controls: <Widget>[
-      ToggleControl(label: 'bodyClearsTide', value: _clears, onChanged: (final bool v) => setState(() => _clears = v)),
+      ToggleControl(
+        label: 'bodyClearsKeyboard',
+        value: _clears,
+        onChanged: (final bool v) => setState(() => _clears = v),
+      ),
     ],
     code:
-        'Harbor(\n'
-        '  bodyClearsTide: $_clears,\n'
-        '  top: [HarborDock.pier(child: Header())],\n'
+        'HarborFrame(\n'
+        '  bodyClearsKeyboard: $_clears,\n'
+        '  top: [HarborBar.overlay(child: Header())],\n'
         '  body: Builder(builder: (context) {\n'
-        '    final tide = HarborTide.of(context);\n'
-        '    return Text(\'\${tide.height} · \${tide.remaining} · \'\n'
-        '        \'\${tide.highWater} · \${tide.phase}\');\n'
+        '    final keyboard = HarborKeyboard.of(context);\n'
+        '    return Text(\'\${keyboard.height} · \${keyboard.remaining} · \'\n'
+        '        \'\${keyboard.settledHeight} · \${keyboard.phase}\');\n'
         '  }),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      bodyClearsTide: _clears,
-      top: <HarborDock>[_header('HarborTide.of')],
+    stage: (final BuildContext context) => HarborFrame(
+      bodyClearsKeyboard: _clears,
+      top: <HarborBar>[_header('HarborKeyboard.of')],
       body: StageProbe(
-        label: 'Harbor body',
+        label: 'HarborFrame body',
         child: ColoredBox(
-          key: const ValueKey<String>('tide body'),
+          key: const ValueKey<String>('stage body'),
           color: Palette.deepSea,
-          child: HarborMoored(
+          child: HarborClear(
             edges: const <HarborEdge>{HarborEdge.top},
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Align(
                 alignment: Alignment.topCenter,
-                child: _TideReadout(keyboard: _settings.tideHeight),
+                child: _KeyboardReadout(keyboard: _settings.tideHeight),
               ),
             ),
           ),
@@ -255,22 +259,22 @@ class _TideOfEntryState extends State<TideOfEntry> {
   );
 }
 
-/// A tide card: everything `HarborTide.of` says where it sits.
-class _TideReadout extends StatelessWidget {
-  const _TideReadout({required this.keyboard});
+/// A keyboard card: everything `HarborKeyboard.of` says where it sits.
+class _KeyboardReadout extends StatelessWidget {
+  const _KeyboardReadout({required this.keyboard});
 
   /// The stage keyboard's height, to compare with.
   final double keyboard;
 
   @override
   Widget build(final BuildContext context) {
-    final HarborTideState tide = HarborTide.of(context);
+    final HarborKeyboardState state = HarborKeyboard.of(context);
     Widget line(final String name, final String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: <Widget>[
           SizedBox(
-            width: 170,
+            width: 200,
             child: Text(
               name,
               style: TextStyle(fontFamily: 'Menlo', fontSize: 14, color: Palette.foam.withValues(alpha: 0.75)),
@@ -278,7 +282,7 @@ class _TideReadout extends StatelessWidget {
           ),
           Text(
             value,
-            key: ValueKey<String>('tide $name'),
+            key: ValueKey<String>('keyboard $name'),
             style: const TextStyle(
               fontFamily: 'Menlo',
               fontSize: 15,
@@ -289,9 +293,9 @@ class _TideReadout extends StatelessWidget {
         ],
       ),
     );
-    final double fill = tide.highWater <= 0 ? 0.0 : (tide.height / tide.highWater).clamp(0.0, 1.0);
+    final double fill = state.settledHeight <= 0 ? 0.0 : (state.height / state.settledHeight).clamp(0.0, 1.0);
     return Container(
-      key: const ValueKey<String>('tide readout'),
+      key: const ValueKey<String>('keyboard readout'),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Palette.night.withValues(alpha: 0.9),
@@ -303,20 +307,22 @@ class _TideReadout extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'HarborTide.of(context)',
+            'HarborKeyboard.of(context)',
             style: TextStyle(fontFamily: 'Menlo', fontSize: 15, fontWeight: FontWeight.w700, color: Palette.foam),
           ),
           const SizedBox(height: 8),
-          line('height', _f(tide.height)),
-          line('remaining', _f(tide.remaining)),
-          line('highWater', _f(tide.highWater)),
-          line('highWaterIsEstimate', '${tide.highWaterIsEstimate}'),
-          line('phase', tide.phase.name),
-          line('isIn', '${tide.isIn}'),
+          line('height', _f(state.height)),
+          line('remaining', _f(state.remaining)),
+          line('settledHeight', _f(state.settledHeight)),
+          line('settledHeightIsEstimate', '${state.settledHeightIsEstimate}'),
+          line('phase', state.phase.name),
+          line('isShown', '${state.isShown}'),
           const SizedBox(height: 10),
-          // A little tide staff: the height against the high-water mark.
+          // A little gauge: the height against the settled height.
           Text(
-            tide.highWaterIsEstimate ? 'high water: an estimate (40% of the screen)' : 'high water: settled',
+            state.settledHeightIsEstimate
+                ? 'settled height: an estimate (40% of the screen)'
+                : 'settled height: measured',
             style: TextStyle(fontSize: 12, color: Palette.foam.withValues(alpha: 0.7)),
           ),
           const SizedBox(height: 6),
@@ -346,9 +352,9 @@ class _TideReadout extends StatelessWidget {
   }
 }
 
-// 2. HarborTideStance.float ----------------------------------------------------
+// 2. HarborKeyboardStance.rides -----------------------------------------------
 
-/// `HarborTideStance.float`: a dock that rides the keyboard.
+/// `HarborKeyboardStance.rides`: a bar that rides the keyboard.
 class FloatEntry extends StatefulWidget {
   const FloatEntry({super.key});
 
@@ -357,162 +363,162 @@ class FloatEntry extends StatefulWidget {
 }
 
 class _FloatEntryState extends State<FloatEntry> {
-  HarborTideStance _tide = HarborTideStance.float;
+  HarborKeyboardStance _keyboard = HarborKeyboardStance.rides;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborTideStance.float',
+    className: 'HarborKeyboardStance.rides',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
-        'The composer rides up on top of the keyboard: a floating dock rises with the tide, and the list ends just above it.',
+        'The composer rides up on top of the keyboard, and the list ends just above it.',
       ),
       TryStep(
-        'Drag the tide gauge slowly up from the bottom',
-        'The composer waits until the keyboard has covered the home indicator, then sits on the waterline at every height.',
+        'Drag the gauge beside the stage slowly up from the bottom',
+        'The composer waits until the keyboard has covered the home indicator, then sits on the keyboard\'s top at every height.',
       ),
       TryStep(
-        'Pick tide: pilings, with the keyboard up',
+        'Pick keyboard: stays, with the keyboard up',
         'The composer drops back to the bottom and the keyboard covers it, but the list still ends at the keyboard\'s top edge.',
       ),
     ],
     focus: const StageFocus.bottom(460),
     realWorld:
-        'A floating dock sits on air drums and is held to tall guide piles by hoops. When the tide comes in it slides up '
-        'the piles, so its deck is always just above the water and boats can always come alongside.',
+        'Like a floating dock held to guide piles, which slides up them as the tide comes in: the bar rises with the '
+        'keyboard and sits on top of it.',
     inYourApp:
-        'A bottom dock that rides up on the keyboard and sits on the waterline: a composer, a sheet\'s footer. Its coast '
-        'is live, so the home indicator\'s height goes away once the keyboard covers it. Switch to pilings to compare.',
+        'A bottom bar that rides up on the keyboard and sits on its top edge: a composer, a sheet\'s footer. Its system '
+        'edge is live, so the home indicator\'s height goes away once the keyboard covers it. Switch to stays to compare.',
     art: const FloatingDockArt(),
     controls: <Widget>[
-      ChoiceControl<HarborTideStance>(
-        label: 'tide',
-        values: const <HarborTideStance>[HarborTideStance.float, HarborTideStance.pilings],
-        value: _tide,
-        labelOf: (final HarborTideStance t) => t.name,
-        onChanged: (final HarborTideStance t) => setState(() => _tide = t),
+      ChoiceControl<HarborKeyboardStance>(
+        label: 'keyboard',
+        values: const <HarborKeyboardStance>[HarborKeyboardStance.rides, HarborKeyboardStance.stays],
+        value: _keyboard,
+        labelOf: (final HarborKeyboardStance k) => k.name,
+        onChanged: (final HarborKeyboardStance k) => setState(() => _keyboard = k),
       ),
     ],
     code:
-        'Harbor(\n'
-        '  top: [HarborDock.pier(child: Header())],\n'
+        'HarborFrame(\n'
+        '  top: [HarborBar.overlay(child: Header())],\n'
         '  bottom: [\n'
-        '    HarborDock.quay(\n'
-        '      tide: HarborTideStance.${_tide.name},\n'
+        '    HarborBar.solid(\n'
+        '      keyboard: HarborKeyboardStance.${_keyboard.name},\n'
         '      child: Composer(),\n'
         '    ),\n'
         '  ],\n'
-        '  body: HarborFairway(slivers: [messages]),\n'
+        '  body: HarborScrollView(slivers: [messages]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_header('HarborTideStance.float')],
-      bottom: <HarborDock>[_composerDock(tide: _tide)],
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[_header('HarborKeyboardStance.rides')],
+      bottom: <HarborBar>[_composerBar(keyboard: _keyboard)],
       body: const _Body(),
     ),
   );
 }
 
-// 3. HarborTideStance.pilings --------------------------------------------------
+// 3. HarborKeyboardStance.stays -----------------------------------------------
 
-/// `HarborTideStance.pilings`: a dock the keyboard covers.
+/// `HarborKeyboardStance.stays`: a bar the keyboard covers.
 class PilingsEntry extends StatelessWidget {
   const PilingsEntry({super.key});
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborTideStance.pilings',
+    className: 'HarborKeyboardStance.stays',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
-        'The keyboard slides up over the tab bar, which stays put underneath: a dock on pilings does not move with the tide.',
+        'The keyboard slides up over the tab bar, which stays put underneath: a bar that stays does not move with the keyboard.',
       ),
       TryStep(
         'Watch the brass body ends here line',
-        'It sits on the keyboard\'s top edge, not on the hidden tab bar: the body still ends at the waterline.',
+        'It sits on the keyboard\'s top edge, not on the hidden tab bar: the body still ends at the keyboard.',
       ),
       TryStep(
-        'Drag the tide gauge down to about 2',
+        'Drag the gauge beside the stage down to about 2',
         'The keyboard now covers only the tab bar\'s lower part, so the body ends at the tab bar until the keyboard passes it.',
       ),
     ],
     focus: const StageFocus.bottom(460),
     realWorld:
-        'A fixed pier is built high on tall pilings driven into the seabed. The deck never moves: the tide climbs the '
-        'piles underneath it, and the weed and barnacles on them show how high the water reaches.',
+        'Like a fixed pier on tall pilings, whose deck never moves while the tide climbs the piles underneath: the bar '
+        'stays put and the keyboard comes up over it.',
     inYourApp:
-        'A bottom dock that stays where it is while the keyboard comes up over it: a tab bar. It is the default. Its coast '
-        'is steady, so it keeps the home indicator\'s height under the keyboard, and the body still ends at the '
-        'waterline, above the keyboard, not above the hidden tab bar.',
+        'A bottom bar that stays where it is while the keyboard comes up over it: a tab bar. It is the default. Its '
+        'system edge is steady, so it keeps the home indicator\'s height under the keyboard, and the body still ends '
+        'at the keyboard\'s top, not above the hidden tab bar.',
     art: const PilingsArt(),
     code:
-        'Harbor(\n'
-        '  top: [HarborDock.pier(child: Header())],\n'
+        'HarborFrame(\n'
+        '  top: [HarborBar.overlay(child: Header())],\n'
         '  bottom: [\n'
-        '    HarborDock.quay(\n'
-        '      tide: HarborTideStance.pilings, // the default\n'
+        '    HarborBar.solid(\n'
+        '      keyboard: HarborKeyboardStance.stays, // the default\n'
         '      child: TabBar(),\n'
         '    ),\n'
         '  ],\n'
-        '  body: HarborFairway(slivers: [boats]),\n'
+        '  body: HarborScrollView(slivers: [boats]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_header('HarborTideStance.pilings')],
-      bottom: <HarborDock>[_tabBarDock()],
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[_header('HarborKeyboardStance.stays')],
+      bottom: <HarborBar>[_tabBar()],
       body: const _Body(),
     ),
   );
 }
 
-// 4. Float and pilings together ------------------------------------------------
+// 4. Rides and stays together -------------------------------------------------
 
-/// A floating composer over a tab bar on pilings.
+/// A composer that rides the keyboard over a tab bar that stays.
 class FloatAndPilingsEntry extends StatelessWidget {
   const FloatAndPilingsEntry({super.key});
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborTideStance.float + .pilings',
+    className: 'HarborKeyboardStance.rides + .stays',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
         'The composer lifts off the tab bar and rides the keyboard; the tab bar stays where it is, under the keyboard.',
       ),
       TryStep(
-        'Drag the tide gauge down to about 2',
-        'The composer settles back on the tab bar: it only floats once the keyboard rises past the tab bar.',
+        'Drag the gauge beside the stage down to about 2',
+        'The composer settles back on the tab bar: it only rides once the keyboard rises past the tab bar.',
       ),
       TryStep(
         'Watch the body ends here line as you drag',
-        'It always sits on the composer\'s top edge: the body ends at the top dock, wherever the tide has put it.',
+        'It always sits on the composer\'s top edge: the body ends at the top bar, wherever the keyboard has put it.',
       ),
     ],
     focus: const StageFocus.bottom(480),
     realWorld:
-        'A floating pontoon is often moored beside a fixed pier. At low water the pontoon sits well below the pier deck; '
-        'as the tide comes in it rides up its guide piles while the pier stays exactly where it was built.',
+        'Like a floating pontoon moored beside a fixed pier, which rides up its guide piles with the tide while the '
+        'pier stays where it was built: one bar rides the keyboard, the other stays.',
     inYourApp:
-        'bottom: [composer (float), tabBar (pilings)]. At low tide the composer sits on the tab bar. As the keyboard '
-        'rises past the tab bar, the composer rides on the keyboard and the tab bar stays under it.',
+        'bottom: [composer (rides), tabBar (stays)]. With the keyboard down the composer sits on the tab bar. As the '
+        'keyboard rises past the tab bar, the composer rides on the keyboard and the tab bar stays under it.',
     art: const FloatAndPilingsArt(),
     code:
-        'Harbor(\n'
+        'HarborFrame(\n'
         '  bottom: [\n'
-        '    HarborDock.quay(tide: HarborTideStance.float, child: Composer()),\n'
-        '    HarborDock.quay(tide: HarborTideStance.pilings, child: TabBar()),\n'
+        '    HarborBar.solid(keyboard: HarborKeyboardStance.rides, child: Composer()),\n'
+        '    HarborBar.solid(keyboard: HarborKeyboardStance.stays, child: TabBar()),\n'
         '  ],\n'
-        '  body: HarborFairway(slivers: [messages]),\n'
+        '  body: HarborScrollView(slivers: [messages]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_header('float + pilings')],
-      bottom: <HarborDock>[_composerDock(), _tabBarDock()],
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[_header('rides + stays')],
+      bottom: <HarborBar>[_composerBar(), _tabBar()],
       body: const _Body(),
     ),
   );
 }
 
-// 5. HarborTideStance.dryDock + HarborDryDock -----------------------------------
+// 5. HarborKeyboardStance.reserves + HarborKeyboardSpace ---------------------
 
-/// `HarborTideStance.dryDock` with a `HarborDryDock` inside.
+/// `HarborKeyboardStance.reserves` with a `HarborKeyboardSpace` inside.
 class DryDockEntry extends StatefulWidget {
   const DryDockEntry({super.key});
 
@@ -521,54 +527,55 @@ class DryDockEntry extends StatefulWidget {
 }
 
 class _DryDockEntryState extends State<DryDockEntry> {
-  bool _showsAtHighTide = false;
+  bool _showsWhileShown = false;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborTideStance.dryDock',
+    className: 'HarborKeyboardStance.reserves',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
-        'The swatches give way to the keyboard and the tab row reads highWater 336, no longer an estimate.',
+        'The swatches give way to the keyboard and the tab row reads settledHeight 336, no longer an estimate.',
       ),
       TryStep(
         'Tap the keyboard button again',
         'The swatches come back in exactly the keyboard\'s ground, so the tab row and the list above it never move.',
       ),
       TryStep(
-        'Switch showsChildAtHighTide on, tap the keyboard button',
+        'Switch showsChildWhileShown on, tap the keyboard button',
         'The swatches stay drawn while the keyboard slides over them, instead of vanishing the moment it starts in.',
       ),
       TryStep(
-        'Drag the tide gauge to about 5 and let go',
-        'highWater drops to 168 and the ground shrinks to match: the dock keeps the height the keyboard last settled at.',
+        'Drag the gauge beside the stage to about 5 and let go',
+        'settledHeight drops to 168 and the ground shrinks to match: the bar keeps the height the keyboard last settled at.',
       ),
     ],
     focus: const StageFocus.bottom(480),
     realWorld:
-        'A graving dry dock is a stone basin with a gate. With the gate shut and the water pumped out, a ship sits on '
-        'keel blocks on the dry floor; open the gate and the sea fills exactly the same basin.',
+        'Like a dry dock, a stone basin that is the same basin whether it is pumped dry or flooded: the bar keeps the '
+        'keyboard\'s ground whether the keyboard is up or down.',
     inYourApp:
-        'A bottom dock that keeps the keyboard\'s ground at high-water height whether the keyboard is up or down. Its '
-        'child holds a HarborDryDock: at low tide it shows a panel (these swatches) in the keyboard\'s place, and at high '
-        'tide the keyboard covers that exact ground, so nothing above moves. Raise the tide once so high water settles.',
+        'A bottom bar that keeps the keyboard\'s ground at its settled height whether the keyboard is up or down. Its '
+        'child holds a HarborKeyboardSpace: with the keyboard down it shows a panel (these swatches) in the keyboard\'s '
+        'place, and with it up the keyboard covers that exact ground, so nothing above moves. Show the keyboard once '
+        'so its height settles.',
     art: const DryDockArt(),
     controls: <Widget>[
       ToggleControl(
-        label: 'showsChildAtHighTide',
-        value: _showsAtHighTide,
-        onChanged: (final bool v) => setState(() => _showsAtHighTide = v),
+        label: 'showsChildWhileShown',
+        value: _showsWhileShown,
+        onChanged: (final bool v) => setState(() => _showsWhileShown = v),
       ),
     ],
     code:
-        'Harbor(\n'
+        'HarborFrame(\n'
         '  bottom: [\n'
-        '    HarborDock.quay(\n'
-        '      tide: HarborTideStance.dryDock,\n'
+        '    HarborBar.solid(\n'
+        '      keyboard: HarborKeyboardStance.reserves,\n'
         '      child: Column(mainAxisSize: MainAxisSize.min, children: [\n'
         '        StyleTabs(),\n'
-        '        HarborDryDock(\n'
-        '${_showsAtHighTide ? '          showsChildAtHighTide: true,\n' : ''}'
+        '        HarborKeyboardSpace(\n'
+        '${_showsWhileShown ? '          showsChildWhileShown: true,\n' : ''}'
         '          child: ColorSwatches(),\n'
         '        ),\n'
         '      ]),\n'
@@ -576,20 +583,20 @@ class _DryDockEntryState extends State<DryDockEntry> {
         '  ],\n'
         '  body: editor,\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_header('HarborTideStance.dryDock')],
-      bottom: <HarborDock>[
-        HarborDock.quay(
-          tide: HarborTideStance.dryDock,
-          backdrop: const ColoredBox(color: _stoneDock),
-          debugLabel: 'dry dock',
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[_header('HarborKeyboardStance.reserves')],
+      bottom: <HarborBar>[
+        HarborBar.solid(
+          keyboard: HarborKeyboardStance.reserves,
+          backdrop: const ColoredBox(color: _reserveColor),
+          debugLabel: 'reserve',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               const _StyleTabs(),
-              HarborDryDock(
-                key: const ValueKey<String>('dry dock ground'),
-                showsChildAtHighTide: _showsAtHighTide,
+              HarborKeyboardSpace(
+                key: const ValueKey<String>('keyboard space'),
+                showsChildWhileShown: _showsWhileShown,
                 child: const _Swatches(),
               ),
             ],
@@ -601,18 +608,18 @@ class _DryDockEntryState extends State<DryDockEntry> {
   );
 }
 
-/// The dry dock's tab row, reading its high-water mark.
+/// The reserving bar's tab row, reading the keyboard's settled height.
 class _StyleTabs extends StatelessWidget {
   const _StyleTabs();
 
   @override
   Widget build(final BuildContext context) {
-    final HarborTideState tide = HarborTide.of(context);
+    final HarborKeyboardState keyboard = HarborKeyboard.of(context);
     return Container(
-      key: const ValueKey<String>('dry dock tabs'),
+      key: const ValueKey<String>('reserve tabs'),
       height: 48,
       color: Palette.stone,
-      child: HarborMooringLine(
+      child: HarborClear.rowInsets(
         child: Row(
           children: <Widget>[
             const Icon(Icons.format_bold_rounded, color: Palette.foam),
@@ -623,8 +630,8 @@ class _StyleTabs extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'highWater ${_f(tide.highWater)}${tide.highWaterIsEstimate ? ' (estimate)' : ''}',
-                key: const ValueKey<String>('dry dock high water'),
+                'settledHeight ${_f(keyboard.settledHeight)}${keyboard.settledHeightIsEstimate ? ' (estimate)' : ''}',
+                key: const ValueKey<String>('reserve settled height'),
                 textAlign: TextAlign.end,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -656,7 +663,7 @@ class _Swatches extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => ColoredBox(
-    key: const ValueKey<String>('dry dock swatches'),
+    key: const ValueKey<String>('reserve swatches'),
     color: Palette.stoneDark,
     child: Padding(
       padding: const EdgeInsets.all(18),
@@ -683,9 +690,9 @@ class _Swatches extends StatelessWidget {
   );
 }
 
-// 6. HarborCoastStance --------------------------------------------------------
+// 6. HarborSystemEdgeStance ---------------------------------------------------
 
-/// `HarborCoastStance`: how a dock takes the coast on its edge.
+/// `HarborSystemEdgeStance`: how a bar takes the system edge on its edge.
 class CoastStanceEntry extends StatefulWidget {
   const CoastStanceEntry({super.key});
 
@@ -694,65 +701,65 @@ class CoastStanceEntry extends StatefulWidget {
 }
 
 class _CoastStanceEntryState extends State<CoastStanceEntry> {
-  HarborCoastStance _coast = HarborCoastStance.live;
+  HarborSystemEdgeStance _systemEdges = HarborSystemEdgeStance.live;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborCoastStance',
+    className: 'HarborSystemEdgeStance',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
-        'The composer rides the keyboard and the hatched coast 34 band goes: live drops the home indicator under the keyboard.',
+        'The composer rides the keyboard and the hatched system edge 34 band goes: live drops the home indicator under the keyboard.',
       ),
       TryStep(
-        'Pick coast: steady',
-        'The hatched band comes back between composer and keyboard: steady keeps the home indicator\'s height at any tide.',
+        'Pick systemEdges: steady',
+        'The hatched band comes back between composer and keyboard: steady keeps the home indicator\'s height with the keyboard up or down.',
       ),
       TryStep(
-        'Pick coast: none, then tap the keyboard button',
-        'No band at all, even at low tide: the bar runs to the screen\'s edge, for a child that clears the edge itself.',
+        'Pick systemEdges: none, then tap the keyboard button',
+        'No band at all, even with the keyboard down: the bar runs to the screen\'s edge, for a child that clears the edge itself.',
       ),
       TryStep(
-        'Pick coast: live, then Device: Android 3-button',
-        'The band reads coast 48: the coast is whatever the device puts at the bottom, here its three-button bar.',
+        'Pick systemEdges: live, then Device: Android 3-button',
+        'The band reads system edge 48: the system edge is whatever the device puts at the bottom, here its three-button bar.',
       ),
     ],
     focus: const StageFocus.bottom(460),
     realWorld:
-        'A seawall is where the land meets the sea: the coast itself. High and low water are marked on its face, and how '
-        'much of the wall shows depends on the tide.',
+        'Like a seawall, where the land meets the sea, with high and low water marked on its face: how much of the '
+        'system edge a bar takes can change with the keyboard.',
     inYourApp:
-        'How a dock takes the coast on its edge (here, the home indicator). live: as it is now, so it goes to zero while '
-        'the keyboard is up (floating docks). steady: as it is with the keyboard down, so the dock holds its height '
-        '(pilings). none: not at all, for a child that runs to the screen\'s edge itself (dry docks). The hatched band is '
-        'the coast the dock took.',
+        'How a bar takes the system edge on its edge (here, the home indicator). live: as it is now, so it goes to zero '
+        'while the keyboard is up (bars that ride). steady: as it is with the keyboard down, so the bar holds its '
+        'height (bars that stay). none: not at all, for a child that runs to the screen\'s edge itself (bars that '
+        'reserve). The hatched band is the system edge the bar took.',
     art: const SeawallArt(),
     controls: <Widget>[
-      ChoiceControl<HarborCoastStance>(
-        label: 'coast',
-        values: HarborCoastStance.values,
-        value: _coast,
-        labelOf: (final HarborCoastStance c) => c.name,
-        onChanged: (final HarborCoastStance c) => setState(() => _coast = c),
+      ChoiceControl<HarborSystemEdgeStance>(
+        label: 'systemEdges',
+        values: HarborSystemEdgeStance.values,
+        value: _systemEdges,
+        labelOf: (final HarborSystemEdgeStance s) => s.name,
+        onChanged: (final HarborSystemEdgeStance s) => setState(() => _systemEdges = s),
       ),
     ],
     code:
-        'HarborDock.quay(\n'
-        '  tide: HarborTideStance.float,\n'
-        '  coast: HarborCoastStance.${_coast.name},\n'
+        'HarborBar.solid(\n'
+        '  keyboard: HarborKeyboardStance.rides,\n'
+        '  systemEdges: HarborSystemEdgeStance.${_systemEdges.name},\n'
         '  child: Composer(),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_header('HarborCoastStance')],
-      bottom: <HarborDock>[
-        HarborDock.quay(
-          tide: HarborTideStance.float,
-          coast: _coast,
-          backdrop: const _CoastGround(barHeight: 56),
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[_header('HarborSystemEdgeStance')],
+      bottom: <HarborBar>[
+        HarborBar.solid(
+          keyboard: HarborKeyboardStance.rides,
+          systemEdges: _systemEdges,
+          backdrop: const _SystemEdgeGround(barHeight: 56),
           debugLabel: 'composer',
           child: StageBar(
             key: const ValueKey<String>('composer'),
-            label: 'coast: ${_coast.name}',
+            label: 'systemEdges: ${_systemEdges.name}',
             icon: Icons.edit_rounded,
           ),
         ),
@@ -762,33 +769,33 @@ class _CoastStanceEntryState extends State<CoastStanceEntry> {
   );
 }
 
-/// A dock's ground: the bar's part, and the coast it took, hatched, with the
-/// dock's measured height.
-class _CoastGround extends StatelessWidget {
-  const _CoastGround({required this.barHeight});
+/// A bar's ground: the bar's own part, and the system edge it took, hatched,
+/// with the bar's measured height.
+class _SystemEdgeGround extends StatelessWidget {
+  const _SystemEdgeGround({required this.barHeight});
 
   final double barHeight;
 
   @override
   Widget build(final BuildContext context) => LayoutBuilder(
-    key: const ValueKey<String>('coast dock ground'),
+    key: const ValueKey<String>('system edge bar ground'),
     builder: (final BuildContext context, final BoxConstraints constraints) {
       final double height = constraints.maxHeight;
-      final double coast = (height - barHeight).clamp(0.0, double.infinity);
+      final double systemEdge = (height - barHeight).clamp(0.0, double.infinity);
       return Stack(
         children: <Widget>[
-          const Positioned.fill(child: ColoredBox(color: _pontoon)),
-          if (coast > 0)
+          const Positioned.fill(child: ColoredBox(color: _composerColor)),
+          if (systemEdge > 0)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              height: coast,
+              height: systemEdge,
               child: CustomPaint(
                 painter: const _HatchPainter(),
                 child: Center(
                   child: Text(
-                    'coast ${_f(coast)}',
+                    'system edge ${_f(systemEdge)}',
                     style: const TextStyle(
                       fontFamily: 'Menlo',
                       fontSize: 11,
@@ -803,7 +810,7 @@ class _CoastGround extends StatelessWidget {
             top: 4,
             right: 10,
             child: Text(
-              'dock ${_f(height)}',
+              'bar ${_f(height)}',
               style: const TextStyle(
                 fontFamily: 'Menlo',
                 fontSize: 11,
@@ -839,9 +846,9 @@ class _HatchPainter extends CustomPainter {
   bool shouldRepaint(final _HatchPainter oldDelegate) => false;
 }
 
-// 7. HarborDock.withdrawsAtHighTide ---------------------------------------------
+// 7. HarborBar.withdrawsAtHighTide --------------------------------------------
 
-/// `HarborDock.withdrawsAtHighTide`: a tool strip that leaves while the keyboard is up.
+/// `HarborBar.withdrawsAtHighTide`: a tool strip that leaves while the keyboard is up.
 class WithdrawsAtHighTideEntry extends StatefulWidget {
   const WithdrawsAtHighTideEntry({super.key});
 
@@ -854,7 +861,7 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborDock.withdrawsAtHighTide',
+    className: 'HarborBar.withdrawsAtHighTide',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
@@ -865,8 +872,8 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
         'The strip slides back on top of the composer once the keyboard is down.',
       ),
       TryStep(
-        'Drag the tide gauge up to about 3',
-        'The strip is already gone: it withdraws as soon as any keyboard is in, not only at full height.',
+        'Drag the gauge beside the stage up to about 3',
+        'The strip is already gone: it withdraws as soon as any keyboard is up, not only at full height.',
       ),
       TryStep(
         'Switch withdrawsAtHighTide off, keyboard still up',
@@ -875,11 +882,11 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
     ],
     focus: const StageFocus.bottom(480),
     realWorld:
-        'Some boats live on a slipway: a ramp into the water. Before the tide comes up the ramp they are hauled out on '
-        'their cradles by the winch, and launched again when it suits.',
+        'Like a boat on a slipway, hauled out before the tide comes up the ramp and launched again when it suits: the '
+        'bar leaves while the keyboard is up, and comes back after.',
     inYourApp:
-        'A dock that withdraws while the keyboard is up and comes back when it goes down: a tool strip that would '
-        'otherwise park mid-screen on top of a floating composer. It gives its ground back, so the body grows into it.',
+        'A bar that withdraws while the keyboard is up and comes back when it goes down: a tool strip that would '
+        'otherwise park mid-screen on top of a composer that rides the keyboard. It gives its ground back, so the body grows into it.',
     art: const SlipwayArt(),
     controls: <Widget>[
       ToggleControl(
@@ -889,28 +896,28 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
       ),
     ],
     code:
-        'Harbor(\n'
+        'HarborFrame(\n'
         '  bottom: [\n'
-        '    HarborDock.quay(\n'
-        '      tide: HarborTideStance.float,\n'
+        '    HarborBar.solid(\n'
+        '      keyboard: HarborKeyboardStance.rides,\n'
         '      withdrawsAtHighTide: $_withdraws,\n'
         '      child: ToolStrip(),\n'
         '    ),\n'
-        '    HarborDock.quay(tide: HarborTideStance.float, child: Composer()),\n'
+        '    HarborBar.solid(keyboard: HarborKeyboardStance.rides, child: Composer()),\n'
         '  ],\n'
         '  body: notes,\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      top: <HarborDock>[_header('withdrawsAtHighTide')],
-      bottom: <HarborDock>[
-        HarborDock.quay(
-          tide: HarborTideStance.float,
+    stage: (final BuildContext context) => HarborFrame(
+      top: <HarborBar>[_header('withdrawsAtHighTide')],
+      bottom: <HarborBar>[
+        HarborBar.solid(
+          keyboard: HarborKeyboardStance.rides,
           withdrawsAtHighTide: _withdraws,
-          backdrop: ColoredBox(color: _pierDeck),
+          backdrop: ColoredBox(color: _tabBarColor),
           debugLabel: 'tool strip',
           child: _ToolStrip(withdraws: _withdraws),
         ),
-        _composerDock(),
+        _composerBar(),
       ],
       body: const _Body(),
     ),
@@ -926,7 +933,7 @@ class _ToolStrip extends StatelessWidget {
   Widget build(final BuildContext context) => SizedBox(
     key: const ValueKey<String>('tool strip'),
     height: 44,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Row(
         children: <Widget>[
           for (final IconData icon in const <IconData>[
@@ -954,9 +961,9 @@ class _ToolStrip extends StatelessWidget {
   );
 }
 
-// 8. Harbor.bodyClearsTide ------------------------------------------------------
+// 8. HarborFrame.bodyClearsKeyboard -------------------------------------------
 
-/// `Harbor.bodyClearsTide`: whether the body ends at the waterline.
+/// `HarborFrame.bodyClearsKeyboard`: whether the body ends at the keyboard's top.
 class BodyClearsTideEntry extends StatefulWidget {
   const BodyClearsTideEntry({super.key});
 
@@ -969,62 +976,66 @@ class _BodyClearsTideEntryState extends State<BodyClearsTideEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'Harbor.bodyClearsTide',
+    className: 'HarborFrame.bodyClearsKeyboard',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
-        'The body ends here line rises to the keyboard\'s top and the red HarborMoored marker rides above it.',
+        'The body ends here line rises to the keyboard\'s top and the red HarborClear marker rides above it.',
       ),
       TryStep(
-        'Look at Harbor body under Readings',
-        'keyboard reads 0: with bodyClearsTide on, the body never hears of the keyboard, as under a resizing Scaffold.',
+        'Look at HarborFrame body under Readings',
+        'keyboard reads 0: with bodyClearsKeyboard on, the body never hears of the keyboard, as under a resizing Scaffold.',
       ),
       TryStep(
-        'Switch bodyClearsTide off',
-        'The line drops to the screen\'s bottom, under the keyboard, but the marker stays above it: HarborMoored keeps clear.',
+        'Switch bodyClearsKeyboard off',
+        'The line drops to the screen\'s bottom, under the keyboard, but the marker stays above it: HarborClear keeps clear.',
       ),
       TryStep(
-        'Look at Harbor body under Readings again',
+        'Look at HarborFrame body under Readings again',
         'keyboard now reads 336: the body runs under the keyboard and is told how far in MediaQuery.viewInsets.',
       ),
       TryStep(
         'Tap the keyboard button, then flip the switch',
-        'Nothing moves with the keyboard down: the setting only matters while the tide is in.',
+        'Nothing moves with the keyboard down: the setting only matters while the keyboard is up.',
       ),
     ],
     focus: const StageFocus.bottom(480),
     realWorld:
-        'A lock gate holds the water back: on one side the level stays low, on the other it is high. Open the paddles and '
-        'the water comes through until both sides match.',
+        'Like a lock gate, which holds the water back or lets it through: the body ends at the keyboard, or runs on '
+        'under it.',
     inYourApp:
-        'On (the default), the body ends at the waterline, like a resizing Scaffold: the probe reads padding 0 and keyboard '
-        '0. Off, the body runs on under the keyboard and is told how far it reaches in MediaQuery.viewInsets. Either '
-        'way, the HarborMoored box keeps clear of it.',
+        'On (the default), the body ends at the keyboard\'s top, like a resizing Scaffold: the probe reads padding 0 '
+        'and keyboard 0. Off, the body runs on under the keyboard and is told how far it reaches in '
+        'MediaQuery.viewInsets. Either way, the HarborClear box keeps clear of it.',
     art: const LockGateArt(),
     controls: <Widget>[
-      ToggleControl(label: 'bodyClearsTide', value: _clears, onChanged: (final bool v) => setState(() => _clears = v)),
+      ToggleControl(
+        label: 'bodyClearsKeyboard',
+        value: _clears,
+        onChanged: (final bool v) => setState(() => _clears = v),
+      ),
     ],
     code:
-        'Harbor(\n'
-        '  bodyClearsTide: $_clears,\n'
-        '  top: [HarborDock.pier(child: Header())],\n'
+        'HarborFrame(\n'
+        '  bodyClearsKeyboard: $_clears,\n'
+        '  top: [HarborBar.overlay(child: Header())],\n'
         '  body: Stack(children: [\n'
-        '    HarborFairway(slivers: [boats]),\n'
+        '    HarborScrollView(slivers: [boats]),\n'
         '    Align(\n'
         '      alignment: Alignment.bottomCenter,\n'
-        '      child: HarborMoored(edges: {HarborEdge.bottom}, child: SaveButton()),\n'
+        '      child: HarborClear(edges: {HarborEdge.bottom}, child: SaveButton()),\n'
         '    ),\n'
         '  ]),\n'
         ')',
-    stage: (final BuildContext context) => Harbor(
-      bodyClearsTide: _clears,
-      top: <HarborDock>[_header('Harbor.bodyClearsTide')],
+    stage: (final BuildContext context) => HarborFrame(
+      bodyClearsKeyboard: _clears,
+      top: <HarborBar>[_header('HarborFrame.bodyClearsKeyboard')],
       body: _Body(
-        label: 'Harbor body (bodyClearsTide: $_clears)',
+        label: 'HarborFrame body (bodyClearsKeyboard: $_clears)',
         child: Stack(
           children: <Widget>[
             Positioned.fill(
-              child: HarborFairway(
+              child: HarborScrollView(
                 slivers: <Widget>[
                   SliverList.builder(
                     itemCount: 30,
@@ -1035,13 +1046,13 @@ class _BodyClearsTideEntryState extends State<BodyClearsTideEntry> {
             ),
             const Align(
               alignment: Alignment.bottomCenter,
-              child: HarborMoored(
+              child: HarborClear(
                 edges: <HarborEdge>{HarborEdge.bottom},
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 28),
                   child: StageMarker(
-                    key: ValueKey<String>('moored marker'),
-                    label: 'HarborMoored',
+                    key: ValueKey<String>('clear marker'),
+                    label: 'HarborClear',
                     color: Palette.buoyRed,
                   ),
                 ),

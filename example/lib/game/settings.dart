@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// The harbor master's switches: the chart overlay, reading direction and TV mode.
+/// The harbor master's switches: the inspector overlay, reading direction and TV mode.
 class HarborSettings extends ChangeNotifier {
   bool _chart = false;
   bool _rtl = false;
@@ -24,5 +24,6 @@ class HarborSettings extends ChangeNotifier {
 }
 
 class HarborSettingsScope extends InheritedNotifier<HarborSettings> {
-  const HarborSettingsScope({super.key, required HarborSettings settings, required super.child}) : super(notifier: settings);
+  const HarborSettingsScope({super.key, required HarborSettings settings, required super.child})
+    : super(notifier: settings);
 }

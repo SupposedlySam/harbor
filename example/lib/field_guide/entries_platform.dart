@@ -14,29 +14,29 @@ import 'guide_page.dart';
 import 'stage.dart';
 import 'stage_kit.dart';
 
-/// Coast and charts: where insets come from, TV, and seeing it all.
+/// System edges and the inspector: where insets come from, TV, and seeing it all.
 final List<GuideEntry> platformEntries = <GuideEntry>[
   GuideEntry(
     id: 'coast',
-    className: 'HarborCoast',
+    className: 'HarborSystemEdges',
     group: GuideGroup.platform,
-    realWorld: 'A rugged coastline of cliffs and a beach',
+    realWorld: 'Like a coastline: where the screen stops being yours',
     art: (final BuildContext context) => const CoastArt(),
     page: (final BuildContext context) => const CoastEntry(),
   ),
   GuideEntry(
     id: 'coast-title-safe',
-    className: 'HarborCoast.titleSafe',
+    className: 'HarborSystemEdges.titleSafe',
     group: GuideGroup.platform,
-    realWorld: 'An old TV set with the broadcast title-safe frame marked',
+    realWorld: 'Like an old TV’s title-safe frame: captions stay inside it',
     art: (final BuildContext context) => const TitleSafeTvArt(),
     page: (final BuildContext context) => const TitleSafeEntry(),
   ),
   GuideEntry(
     id: 'scale-model',
-    className: 'HarborScaleModel',
+    className: 'HarborScaledScreen',
     group: GuideGroup.platform,
-    realWorld: 'A ship in a bottle',
+    realWorld: 'Like a ship in a bottle: a whole screen at a fixed scale',
     art: (final BuildContext context) => const ShipInBottleArt(),
     page: (final BuildContext context) => const ScaleModelEntry(),
   ),
@@ -44,31 +44,31 @@ final List<GuideEntry> platformEntries = <GuideEntry>[
     id: 'edge',
     className: 'HarborEdge',
     group: GuideGroup.platform,
-    realWorld: 'A ship’s port and starboard running lights',
+    realWorld: 'Like port and starboard: sides that belong to the ship',
     art: (final BuildContext context) => const RunningLightsArt(),
     page: (final BuildContext context) => const EdgeEntry(),
   ),
   GuideEntry(
     id: 'chart',
-    className: 'HarborChart',
+    className: 'HarborInspector',
     group: GuideGroup.platform,
-    realWorld: 'A nautical chart with a compass rose and soundings',
+    realWorld: 'Like a chart: who holds which edge',
     art: (final BuildContext context) => const NauticalChartArt(),
     page: (final BuildContext context) => const ChartEntry(),
   ),
   GuideEntry(
     id: 'sea-trial',
-    className: 'pumpSeaTrial',
+    className: 'pumpHarborTrial',
     group: GuideGroup.platform,
-    realWorld: 'A new ship on her sea trials, a tug alongside',
+    realWorld: 'Like sea trials: every reading checked on a pretend device',
     art: (final BuildContext context) => const SeaTrialsArt(),
     page: (final BuildContext context) => const SeaTrialEntry(),
   ),
   GuideEntry(
     id: 'wake-painter',
-    className: 'HarborWakePainter',
+    className: 'HarborEdgeEffectPainter',
     group: GuideGroup.platform,
-    realWorld: 'The V-shaped wake spreading behind a boat',
+    realWorld: 'Like a boat’s wake: how the fade under a bar is painted',
     art: (final BuildContext context) => const WakeArt(),
     page: (final BuildContext context) => const WakePainterEntry(),
   ),
@@ -96,11 +96,11 @@ class _SizeProbe extends StatelessWidget {
   }
 }
 
-// ─── HarborCoast ──────────────────────────────────────────────────────────────
+// ─── HarborSystemEdges ────────────────────────────────────────────────────────
 
 enum _CoastChoice { ambient, fixed, none }
 
-/// `HarborCoast`: where a harbor's coast comes from.
+/// `HarborSystemEdges`: where a frame's system edges come from.
 class CoastEntry extends StatefulWidget {
   const CoastEntry({super.key});
 
@@ -113,48 +113,64 @@ class _CoastEntryState extends State<CoastEntry> {
 
   static const EdgeInsetsDirectional _fixedInsets = EdgeInsetsDirectional.symmetric(vertical: 24);
 
-  HarborCoast get _coast => switch (_choice) {
-    _CoastChoice.ambient => HarborCoast.ambient,
-    _CoastChoice.fixed => const HarborCoast.fixed(_fixedInsets),
-    _CoastChoice.none => HarborCoast.none,
+  HarborSystemEdges get _coast => switch (_choice) {
+    _CoastChoice.ambient => HarborSystemEdges.ambient,
+    _CoastChoice.fixed => const HarborSystemEdges.fixed(_fixedInsets),
+    _CoastChoice.none => HarborSystemEdges.none,
   };
 
   String _label(final _CoastChoice c) => switch (c) {
-    _CoastChoice.ambient => 'HarborCoast.ambient',
-    _CoastChoice.fixed => 'HarborCoast.fixed(...)',
-    _CoastChoice.none => 'HarborCoast.none',
+    _CoastChoice.ambient => 'HarborSystemEdges.ambient',
+    _CoastChoice.fixed => 'HarborSystemEdges.fixed(...)',
+    _CoastChoice.none => 'HarborSystemEdges.none',
   };
 
   String get _code => switch (_choice) {
-    _CoastChoice.ambient => 'HarborCoast.ambient',
-    _CoastChoice.fixed => 'HarborCoast.fixed(EdgeInsetsDirectional.symmetric(vertical: 24))',
-    _CoastChoice.none => 'HarborCoast.none',
+    _CoastChoice.ambient => 'HarborSystemEdges.ambient',
+    _CoastChoice.fixed => 'HarborSystemEdges.fixed(EdgeInsetsDirectional.symmetric(vertical: 24))',
+    _CoastChoice.none => 'HarborSystemEdges.none',
   };
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    // No focus, the whole phone: the coast is at the bottom as well as the top, and the Home indicator
-    // switch changes only the bottom.
-    className: 'HarborCoast',
+    // No focus, the whole phone: the system edges are at the bottom as well as the top, and the Home
+    // indicator switch changes only the bottom.
+    className: 'HarborSystemEdges',
     tryThis: const <TryStep>[
-      TryStep('Open The stage, switch off Status bar, then pick Device: iPhone SE', 'On the iPhone 17 the top band stays, since the island keeps its inset with no status bar; on the SE it goes and the header moves up to the top: ambient takes the coast the platform reports.'),
-      TryStep('Pick coast: HarborCoast.fixed(...)', 'The coast is 24 top and bottom though Status bar is still off: fixed says what the coast is, whatever the device reports.'),
-      TryStep('Pick HarborCoast.ambient and iPhone 17 landscape', 'Sand bands appear down both sides and the bar sits 21 up: ambient follows the landscape phone\'s side insets.'),
-      TryStep('Pick coast: HarborCoast.none', 'Every band goes and the header and bar sit on the glass: none has no coast, for a frame that must look the same anywhere.'),
-      TryStep('Tap the keyboard button under the tide gauge', 'The rows don\'t make way: none has no tide either, though Readings still show the stage\'s keyboard.'),
+      TryStep(
+        'Open The stage, switch off Status bar, then pick Device: iPhone SE',
+        'On the iPhone 17 the top band stays, since the island keeps its inset with no status bar; on the SE it goes and the header moves up to the top: ambient takes the system edges the platform reports.',
+      ),
+      TryStep(
+        'Pick systemEdges: HarborSystemEdges.fixed(...)',
+        'The system edges are 24 top and bottom though Status bar is still off: fixed says what they are, whatever the device reports.',
+      ),
+      TryStep(
+        'Pick HarborSystemEdges.ambient and iPhone 17 landscape',
+        'Sand bands appear down both sides and the bar sits 21 up: ambient follows the landscape phone\'s side insets.',
+      ),
+      TryStep(
+        'Pick systemEdges: HarborSystemEdges.none',
+        'Every band goes and the header and bar sit on the glass: none has no system edges, for a frame that must look the same anywhere.',
+      ),
+      TryStep(
+        'Tap the keyboard button under the gauge',
+        'The rows don\'t move: none ignores the keyboard too, though Readings still show the stage\'s keyboard.',
+      ),
     ],
     realWorld:
-        'The coast is the land at the water’s edge: cliffs, beaches and rocks. However fine the harbor, no boat can '
-        'moor on the cliffs; the sea simply stops there.',
+        'Drawn as a coastline: cliffs, beaches and rocks, where the sea simply stops and no boat can moor. The system '
+        'edges are the part of the screen where your content stops in the same way.',
     inYourApp:
         'The part of the screen the platform keeps: the status bar, the home indicator, a notch, a TV’s overscan. '
-        'ambient takes MediaQuery as the platform reports it (the default), fixed(...) says exactly what the coast is '
-        'whatever the device says, and none has no coast and no tide at all, for a postcard frame that must render the '
-        'same everywhere (goldens, embeds). Docks absorb it; moored content keeps clear of it.',
+        'ambient takes MediaQuery as the platform reports it (the default), fixed(...) says exactly what the system '
+        'edges are whatever the device says, and none has no system edges and ignores the keyboard, for a postcard '
+        'frame that must render the same everywhere (goldens, embeds). Bars absorb them; HarborClear content keeps '
+        'clear of them.',
     art: const CoastArt(),
     controls: <Widget>[
       ChoiceControl<_CoastChoice>(
-        label: 'coast',
+        label: 'systemEdges',
         values: _CoastChoice.values,
         value: _choice,
         labelOf: _label,
@@ -166,38 +182,38 @@ class _CoastEntryState extends State<CoastEntry> {
       ),
     ],
     code:
-        'Harbor(\n'
-        '  coast: $_code,\n'
-        '  top: [HarborDock.pier(child: Header())],\n'
-        '  bottom: [HarborDock.quay(child: Bar())],\n'
-        '  body: HarborFairway(slivers: [boats]),\n'
+        'HarborFrame(\n'
+        '  systemEdges: $_code,\n'
+        '  top: [HarborBar.overlay(child: Header())],\n'
+        '  bottom: [HarborBar.solid(child: Bar())],\n'
+        '  body: HarborScrollView(slivers: [boats]),\n'
         ')',
     stage: (final BuildContext context) => StageProbe(
       label: 'The stage (what the platform reports)',
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[
-          Harbor(
+          HarborFrame(
             key: const ValueKey<String>('postcard'),
-            coast: _coast,
+            systemEdges: _coast,
             debugLabel: 'postcard',
-            top: <HarborDock>[
-              HarborDock.pier(
+            top: <HarborBar>[
+              HarborBar.overlay(
                 debugLabel: 'header',
                 backdrop: ColoredBox(color: Palette.plank.withValues(alpha: 0.85)),
                 child: StageHeader(key: const ValueKey<String>('coast header'), title: _label(_choice)),
               ),
             ],
-            bottom: const <HarborDock>[
-              HarborDock.quay(
+            bottom: const <HarborBar>[
+              HarborBar.solid(
                 debugLabel: 'bar',
                 backdrop: ColoredBox(color: Palette.night),
-                child: StageBar(key: ValueKey<String>('coast bar'), label: 'HarborDock.quay'),
+                child: StageBar(key: ValueKey<String>('coast bar'), label: 'HarborBar.solid'),
               ),
             ],
             body: StageProbe(
-              label: 'Inside Harbor(coast: ${_label(_choice)})',
-              child: HarborFairway(
+              label: 'Inside HarborFrame(systemEdges: ${_label(_choice)})',
+              child: HarborScrollView(
                 slivers: <Widget>[
                   SliverList.builder(
                     itemCount: 20,
@@ -214,12 +230,12 @@ class _CoastEntryState extends State<CoastEntry> {
   );
 }
 
-/// Shades the coast a [HarborCoast] yields, as sand at the frame's edges, and
+/// Shades the system edges a [HarborSystemEdges] yields, as sand at the frame's edges, and
 /// draws the postcard's frame.
 class _CoastBands extends StatelessWidget {
   const _CoastBands({required this.coast});
 
-  final HarborCoast coast;
+  final HarborSystemEdges coast;
 
   @override
   Widget build(final BuildContext context) {
@@ -248,14 +264,19 @@ class _CoastBandsPainter extends CustomPainter {
         ..drawLine(a, b, edge);
     }
 
-    // Each reading is drawn inside the side coast, so a landscape phone's rounded corner and its
+    // Each reading is drawn inside the side system edge, so a landscape phone's rounded corner and its
     // notch side cannot clip it, and it is drawn even when its band is empty: a reading of 0 (the
     // home indicator off) is the answer the page is there to show, not a reason to hide it.
     void reading(final String label, {required final bool top}) {
       final TextPainter text = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(fontFamily: 'Menlo', fontSize: 11, color: Color(0xFF3E2A18), backgroundColor: Color(0xCCE3CF9A)),
+          style: const TextStyle(
+            fontFamily: 'Menlo',
+            fontSize: 11,
+            color: Color(0xFF3E2A18),
+            backgroundColor: Color(0xCCE3CF9A),
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -278,8 +299,8 @@ class _CoastBandsPainter extends CustomPainter {
       Offset(size.width - padding.right, 0),
       Offset(size.width - padding.right, size.height),
     );
-    reading('coast ${_n(padding.top)}', top: true);
-    reading('coast ${_n(padding.bottom)}', top: false);
+    reading('inset ${_n(padding.top)}', top: true);
+    reading('inset ${_n(padding.bottom)}', top: false);
     // The postcard's own deckle edge.
     canvas.drawRect(
       (Offset.zero & size).deflate(3),
@@ -294,11 +315,11 @@ class _CoastBandsPainter extends CustomPainter {
   bool shouldRepaint(final _CoastBandsPainter oldDelegate) => oldDelegate.padding != padding;
 }
 
-// ─── HarborCoast.titleSafe + HarborTitleSafe ─────────────────────────────────
+// ─── HarborSystemEdges.titleSafe + HarborTitleSafe ───────────────────────────
 
 enum _SafeChoice { fraction, fixedEven, fixedRail }
 
-/// `HarborCoast.titleSafe`: a TV's title-safe band as coast.
+/// `HarborSystemEdges.titleSafe`: a TV's title-safe band as a system edge.
 class TitleSafeEntry extends StatefulWidget {
   const TitleSafeEntry({super.key});
 
@@ -330,12 +351,24 @@ class _TitleSafeEntryState extends State<TitleSafeEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborCoast.titleSafe',
+    className: 'HarborSystemEdges.titleSafe',
     tryThis: const <TryStep>[
-      TryStep('Slide fraction % to 10', 'The brass line moves in to 10% and the header and HarborMoored card follow it: docks and moored content keep clear.'),
-      TryStep('Slide fraction % to 0', 'The line reaches the edges and the card sits in the corner: a TV reports no insets of its own.'),
-      TryStep('Pick HarborTitleSafe: fixed start 96', 'The left band widens to 96 while the others stay 48 and 27: .fixed gives a band per edge.'),
-      TryStep('Open The stage and switch on Right-to-left', 'The wide band moves to the right and the card with it: the start edge follows the reading direction.'),
+      TryStep(
+        'Slide fraction % to 10',
+        'The brass line moves in to 10% and the header and HarborClear card follow it: bars and HarborClear content keep clear.',
+      ),
+      TryStep(
+        'Slide fraction % to 0',
+        'The line reaches the edges and the card sits in the corner: a TV reports no insets of its own.',
+      ),
+      TryStep(
+        'Pick HarborTitleSafe: fixed start 96',
+        'The left band widens to 96 while the others stay 48 and 27: .fixed gives a band per edge.',
+      ),
+      TryStep(
+        'Open The stage and switch on Right-to-left',
+        'The wide band moves to the right and the card with it: the start edge follows the reading direction.',
+      ),
     ],
     device: StageDevice.television,
     tide: false,
@@ -343,10 +376,10 @@ class _TitleSafeEntryState extends State<TitleSafeEntry> {
         'Old tube televisions overscanned: the picture ran past the edges of the glass, and every set cropped a little '
         'differently. Broadcasters drew a title-safe frame inside the picture and kept every caption within it.',
     inYourApp:
-        'A TV reports no insets, but it may still crop the edges. HarborCoast.titleSafe adds a band on top of what the '
-        'platform reports (edge by edge, whichever is larger), so docks absorb it and moored content keeps clear of it '
-        'like any other coast. HarborTitleSafe.fraction(0.05) is the broadcast 5% of the width and height; .fixed gives '
-        'a band per edge. The stage draws the 5% guides dashed; the brass line is this setting.',
+        'A TV reports no insets, but it may still crop the edges. HarborSystemEdges.titleSafe adds a band on top of '
+        'what the platform reports (edge by edge, whichever is larger), so bars absorb it and HarborClear content keeps '
+        'clear of it like any other system edge. HarborTitleSafe.fraction(0.05) is the broadcast 5% of the width and '
+        'height; .fixed gives a band per edge. The stage draws the 5% guides dashed; the brass line is this setting.',
     art: const TitleSafeTvArt(),
     controls: <Widget>[
       ChoiceControl<_SafeChoice>(
@@ -368,8 +401,8 @@ class _TitleSafeEntryState extends State<TitleSafeEntry> {
     ],
     code:
         'MaterialApp(\n'
-        '  builder: (context, child) => HarborSea(\n'
-        '    coast: HarborCoast.titleSafe(\n'
+        '  builder: (context, child) => HarborRoot(\n'
+        '    systemEdges: HarborSystemEdges.titleSafe(\n'
         '      $_safeCode,\n'
         '    ),\n'
         '    child: child!,\n'
@@ -377,37 +410,37 @@ class _TitleSafeEntryState extends State<TitleSafeEntry> {
         ')',
     stage: (final BuildContext context) {
       final EdgeInsets band = _safe.resolve(MediaQuery.sizeOf(context)).resolve(Directionality.of(context));
-      // The television itself reports no insets; the stage's own 5% coast is
+      // The television itself reports no insets; the stage's own 5% band is
       // taken off so this page's title-safe band is the only one.
       return MediaQuery(
         data: MediaQuery.of(context).copyWith(padding: EdgeInsets.zero, viewPadding: EdgeInsets.zero),
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            Harbor(
+            HarborFrame(
               key: const ValueKey<String>('tv harbor'),
-              newPort: true,
-              coast: HarborCoast.titleSafe(_safe),
+              isPage: true,
+              systemEdges: HarborSystemEdges.titleSafe(_safe),
               debugLabel: 'tv page',
-              top: <HarborDock>[
-                HarborDock.pier(
+              top: <HarborBar>[
+                HarborBar.overlay(
                   debugLabel: 'header',
                   backdrop: ColoredBox(color: Palette.plank.withValues(alpha: 0.85)),
                   child: const StageHeader(
                     key: ValueKey<String>('tv header'),
-                    title: 'HarborCoast.titleSafe',
+                    title: 'HarborSystemEdges.titleSafe',
                     height: 64,
                   ),
                 ),
               ],
               body: const StageProbe(
                 label: 'TV body',
-                child: HarborMoored(
+                child: HarborClear(
                   child: Align(
                     alignment: AlignmentDirectional.bottomStart,
                     child: StageMarker(
                       key: ValueKey<String>('moored card'),
-                      label: 'HarborMoored',
+                      label: 'HarborClear',
                       width: 320,
                       height: 120,
                       color: Palette.sea,
@@ -453,11 +486,11 @@ class _SafeLinePainter extends CustomPainter {
   bool shouldRepaint(final _SafeLinePainter oldDelegate) => oldDelegate.band != band;
 }
 
-// ─── HarborScaleModel ─────────────────────────────────────────────────────────
+// ─── HarborScaledScreen ───────────────────────────────────────────────────────
 
 enum _Letterbox { black, night }
 
-/// `HarborScaleModel`: a fixed reference screen, scaled to fit.
+/// `HarborScaledScreen`: a fixed reference screen, scaled to fit.
 class ScaleModelEntry extends StatefulWidget {
   const ScaleModelEntry({super.key});
 
@@ -473,24 +506,34 @@ class _ScaleModelEntryState extends State<ScaleModelEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborScaleModel',
+    className: 'HarborScaledScreen',
     tryThis: const <TryStep>[
-      TryStep('Pick letterbox: night', 'The bars above and below the TV turn dark navy: the letterbox fills what the 16:9 model leaves of the phone.'),
-      TryStep('Open The stage and pick Device: iPhone 17 landscape', 'The model is pillarboxed now, and Readings show the home indicator reaching it, scaled up to B 35 inside the model.'),
-      TryStep('Switch on coast: titleSafe(0.05)', 'The TV\'s header and rail move in from its edges: the model adds its own title-safe coast to what reaches it.'),
+      TryStep(
+        'Pick letterbox: night',
+        'The bands above and below the TV turn dark navy: the letterbox fills what the 16:9 screen leaves of the phone.',
+      ),
+      TryStep(
+        'Open The stage and pick Device: iPhone 17 landscape',
+        'The screen is pillarboxed now, and Readings show the home indicator reaching it, scaled up to B 35 inside the scaled screen.',
+      ),
+      TryStep(
+        'Switch on systemEdges: titleSafe(0.05)',
+        'The TV\'s header and rail move in from its edges: the scaled screen adds its own title-safe band to what reaches it.',
+      ),
     ],
     realWorld:
-        'A ship in a bottle is a whole ship built at a fixed small scale and slipped through the neck. Every mast and '
-        'sail keeps its proportions, and the world outside the glass never touches it.',
+        'Drawn as a ship in a bottle: a whole ship built at a fixed small scale, every mast and sail in proportion, '
+        'and the world outside the glass never touches it.',
     inYourApp:
         'Lays the app out on a fixed reference screen (a TV’s 1200 × 675) and scales it to fit, letterboxed. Inside, '
         'MediaQuery.size is the reference size, and the real insets are re-based: cut to what actually reaches the '
-        'model and scaled into it. A notch or home indicator beside a letterboxed model doesn’t reach it, so its coast '
-        'is 0 there (turn the phone to landscape: the home indicator does reach). Then its own coast applies.',
+        'scaled screen and scaled into it. A notch or home indicator beside a letterboxed screen doesn’t reach it, so '
+        'its system edge is 0 there (turn the phone to landscape: the home indicator does reach). Then its own '
+        'systemEdges apply.',
     art: const ShipInBottleArt(),
     controls: <Widget>[
       ToggleControl(
-        label: 'coast: titleSafe(0.05)',
+        label: 'systemEdges: titleSafe(0.05)',
         value: _titleSafe,
         onChanged: (final bool v) => setState(() => _titleSafe = v),
       ),
@@ -504,26 +547,28 @@ class _ScaleModelEntryState extends State<ScaleModelEntry> {
     ],
     code:
         'MaterialApp(\n'
-        '  builder: (context, child) => HarborScaleModel(\n'
+        '  builder: (context, child) => HarborScaledScreen(\n'
         '    referenceSize: const Size(1200, 675),\n'
-        '${_titleSafe ? '    coast: const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)),\n' : ''}'
+        '${_titleSafe ? '    systemEdges: const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)),\n' : ''}'
         '${_letterbox == _Letterbox.night ? '    letterbox: Palette.night,\n' : ''}'
-        '    child: HarborSea(child: child!),\n'
+        '    child: HarborRoot(child: child!),\n'
         '  ),\n'
         ')',
     stage: (final BuildContext context) => StageProbe(
-      label: 'The phone, outside the model',
+      label: 'The phone, outside the scaled screen',
       child: _SizeProbe(
-        label: 'Size outside the model',
-        child: HarborScaleModel(
+        label: 'Size outside the scaled screen',
+        child: HarborScaledScreen(
           referenceSize: const Size(1200, 675),
-          coast: _titleSafe ? const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05)) : HarborCoast.ambient,
+          systemEdges: _titleSafe
+              ? const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05))
+              : HarborSystemEdges.ambient,
           letterbox: _letterboxColor,
-          child: const HarborSea(
+          child: const HarborRoot(
             margin: EdgeInsetsDirectional.symmetric(horizontal: 32),
             child: StageProbe(
-              label: 'Inside HarborScaleModel',
-              child: _SizeProbe(label: 'Size inside the model', child: _MiniTv()),
+              label: 'Inside HarborScaledScreen',
+              child: _SizeProbe(label: 'Size inside the scaled screen', child: _MiniTv()),
             ),
           ),
         ),
@@ -532,7 +577,7 @@ class _ScaleModelEntryState extends State<ScaleModelEntry> {
   );
 }
 
-/// A little TV harbor: a rail, a header and a row of boat cards.
+/// A little TV frame: a rail, a header and a row of boat cards.
 class _MiniTv extends StatelessWidget {
   const _MiniTv();
 
@@ -540,10 +585,10 @@ class _MiniTv extends StatelessWidget {
   Widget build(final BuildContext context) => ColoredBox(
     key: const ValueKey<String>('scale model screen'),
     color: Palette.deepSea,
-    child: Harbor(
+    child: HarborFrame(
       debugLabel: 'scale model',
-      start: const <HarborDock>[
-        HarborDock.pier(
+      start: const <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'rail',
           backdrop: PierPlanks(postsToward: AxisDirection.right),
           child: SizedBox(
@@ -564,18 +609,18 @@ class _MiniTv extends StatelessWidget {
           ),
         ),
       ],
-      top: const <HarborDock>[
-        HarborDock.pier(
+      top: const <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'header',
           child: StageHeader(
             key: ValueKey<String>('scale model header'),
-            title: 'HarborScaleModel · 1200 × 675',
+            title: 'HarborScaledScreen · 1200 × 675',
             height: 96,
           ),
         ),
       ],
-      body: HarborMoored(
-        mooringLine: true,
+      body: HarborClear(
+        rowInsets: true,
         child: Row(
           children: <Widget>[
             for (int i = 0; i < 4; i++) ...<Widget>[
@@ -628,45 +673,54 @@ class EdgeEntry extends StatefulWidget {
 }
 
 class _EdgeEntryState extends State<EdgeEntry> {
-  HarborDockKind _kind = HarborDockKind.quay;
+  HarborBarKind _kind = HarborBarKind.solid;
 
-  HarborDock _side(final HarborEdge edge) {
+  HarborBar _side(final HarborEdge edge) {
     final Widget child = _RunningLight(edge: edge);
-    return _kind == HarborDockKind.pier
-        ? HarborDock.pier(debugLabel: edge.name, child: child)
-        : HarborDock.quay(debugLabel: edge.name, child: child);
+    return _kind == HarborBarKind.overlay
+        ? HarborBar.overlay(debugLabel: edge.name, child: child)
+        : HarborBar.solid(debugLabel: edge.name, child: child);
   }
 
   @override
   Widget build(final BuildContext context) => GuidePage(
     className: 'HarborEdge',
     tryThis: const <TryStep>[
-      TryStep('Open The stage and switch on Right-to-left', 'The red port light moves to the right and the green to the left: start and end follow the reading direction.'),
-      TryStep('Pick Device: iPhone 17 landscape', 'Each side dock reaches the glass and holds its light past the 62-point inset: side docks absorb the coast too.'),
-      TryStep('Pick side docks: HarborDock.pier', 'The body widens under both lights, but its text still keeps clear of them: piers on start and end, like top and bottom.'),
+      TryStep(
+        'Open The stage and switch on Right-to-left',
+        'The red port light moves to the right and the green to the left: start and end follow the reading direction.',
+      ),
+      TryStep(
+        'Pick Device: iPhone 17 landscape',
+        'Each side bar reaches the glass and holds its light past the 62-point inset: side bars absorb the system edges too.',
+      ),
+      TryStep(
+        'Pick side bars: HarborBar.overlay',
+        'The body widens under both lights, but its text still keeps clear of them: overlay bars on start and end, like top and bottom.',
+      ),
     ],
     realWorld:
-        'A ship shows a red running light on her port side and a green one to starboard. Port and starboard belong to '
-        'the ship, not to whoever is watching: turn her around and the red light is still on her port side.',
+        'Drawn as a ship’s running lights: red on her port side, green to starboard. Port and starboard belong to the '
+        'ship, not to whoever is watching: turn her around and the red light is still on her port side.',
     inYourApp:
-        'An edge of a harbor: top, bottom, start, end. start and end follow the reading direction rather than the '
-        'screen, so a dock on start is on the left in English and on the right in Arabic. Flip the stage’s '
+        'An edge of a frame: top, bottom, start, end. start and end follow the reading direction rather than the '
+        'screen, so a bar on start is on the left in English and on the right in Arabic. Flip the stage’s '
         'Right-to-left switch and watch them swap. HarborEdges does the arithmetic on EdgeInsetsDirectional by edge: '
         'of, only, keep, without, max, min, directional (EdgeInsets → start/end) and physical (edges → sides).',
     art: const RunningLightsArt(),
     controls: <Widget>[
-      ChoiceControl<HarborDockKind>(
-        label: 'side docks',
-        values: HarborDockKind.values,
+      ChoiceControl<HarborBarKind>(
+        label: 'side bars',
+        values: HarborBarKind.values,
         value: _kind,
-        labelOf: (final HarborDockKind k) => 'HarborDock.${k.name}',
-        onChanged: (final HarborDockKind k) => setState(() => _kind = k),
+        labelOf: (final HarborBarKind k) => 'HarborBar.${k.name}',
+        onChanged: (final HarborBarKind k) => setState(() => _kind = k),
       ),
     ],
     code:
-        'Harbor(\n'
-        '  start: [HarborDock.${_kind.name}(child: PortLight())],\n'
-        '  end: [HarborDock.${_kind.name}(child: StarboardLight())],\n'
+        'HarborFrame(\n'
+        '  start: [HarborBar.${_kind.name}(child: PortLight())],\n'
+        '  end: [HarborBar.${_kind.name}(child: StarboardLight())],\n'
         '  body: body,\n'
         ')\n'
         '\n'
@@ -676,17 +730,17 @@ class _EdgeEntryState extends State<EdgeEntry> {
         ');\n'
         'final start = HarborEdges.of(insets, HarborEdge.start);\n'
         'final sides = HarborEdges.physical({HarborEdge.start}, Directionality.of(context));',
-    stage: (final BuildContext context) => Harbor(
+    stage: (final BuildContext context) => HarborFrame(
       debugLabel: 'edges',
-      top: <HarborDock>[
-        HarborDock.pier(
+      top: <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'header',
           backdrop: ColoredBox(color: Palette.plank.withValues(alpha: 0.85)),
           child: const StageHeader(title: 'HarborEdge'),
         ),
       ],
-      start: <HarborDock>[_side(HarborEdge.start)],
-      end: <HarborDock>[_side(HarborEdge.end)],
+      start: <HarborBar>[_side(HarborEdge.start)],
+      end: <HarborBar>[_side(HarborEdge.end)],
       body: const StageProbe(label: 'Body, between start and end', child: _EdgeReadout()),
     ),
   );
@@ -753,8 +807,8 @@ class _EdgeReadout extends StatelessWidget {
       'HarborEdges.directional(padding):',
       for (final HarborEdge e in HarborEdge.values) '  ${e.name}: ${_n(HarborEdges.of(padding, e))}',
     ];
-    return HarborMoored(
-      mooringLine: true,
+    return HarborClear(
+      rowInsets: true,
       child: Align(
         alignment: AlignmentDirectional.topStart,
         child: Padding(
@@ -769,9 +823,9 @@ class _EdgeReadout extends StatelessWidget {
   }
 }
 
-// ─── HarborChart + HarborChartOverlay ─────────────────────────────────────────
+// ─── HarborInspector + HarborInspectorOverlay ─────────────────────────────────
 
-/// `HarborChart`: who holds which edge, at which layer.
+/// `HarborInspector`: who holds which edge, at which layer.
 class ChartEntry extends StatefulWidget {
   const ChartEntry({super.key});
 
@@ -793,7 +847,7 @@ class _ChartEntryState extends State<ChartEntry> {
     super.dispose();
   }
 
-  /// Opens the breakwater sheet on the stage, or closes it. The switch follows the sheet, so it
+  /// Opens the covering sheet on the stage, or closes it. The switch follows the sheet, so it
   /// goes off when the sheet is dismissed on the stage too.
   void _setSheet(final bool open) {
     final BuildContext? page = _page.currentContext;
@@ -808,15 +862,15 @@ class _ChartEntryState extends State<ChartEntry> {
     unawaited(
       showHarborSheet<void>(
         page,
-        breakwater: true,
+        coversPage: true,
         builder: (final BuildContext context) => HarborSheet(
-          debugLabel: 'breakwater sheet',
-          header: const StageHeader(title: 'breakwater sheet'),
+          debugLabel: 'covering sheet',
+          header: const StageHeader(title: 'covering sheet'),
           body: Padding(
-            key: const ValueKey<String>('breakwater sheet body'),
+            key: const ValueKey<String>('covering sheet body'),
             padding: const EdgeInsets.all(16),
             child: Text(
-              'This sheet is a harbor of its own: see it on the chart and in the snapshot.',
+              'This sheet is a frame of its own: see it in the inspector and in the snapshot.',
               style: TextStyle(color: Palette.foam.withValues(alpha: 0.85)),
             ),
           ),
@@ -832,73 +886,86 @@ class _ChartEntryState extends State<ChartEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborChart',
+    className: 'HarborInspector',
     tryThis: const <TryStep>[
-      TryStep('Tap the keyboard button under the tide gauge', 'A blue band covers the keyboard: the chart draws the tide over the teal piers and sand quays.'),
-      TryStep('Switch on breakwater sheet', 'A sheet opens and its harbor joins the chart and the Readings\' list: every harbor on screen is charted.'),
-      TryStep('Switch off list HarborChart.snapshot', 'The listing leaves Readings: it was HarborChart.snapshot(context), the same data the overlay draws.'),
-      TryStep('Open The stage and switch off HarborChartOverlay', 'The shading goes but nothing moves: the overlay is a debug drawing over the layout, not part of it.'),
+      TryStep(
+        'Tap the keyboard button under the gauge',
+        'A blue band covers the keyboard: the inspector draws it over the teal overlay bars and sand solid bars.',
+      ),
+      TryStep(
+        'Switch on covering sheet',
+        'A sheet opens and its frame joins the inspector and the Readings\' list: every frame on screen is shown.',
+      ),
+      TryStep(
+        'Switch off list HarborInspector.snapshot',
+        'The listing leaves Readings: it was HarborInspector.snapshot(context), the same data the overlay draws.',
+      ),
+      TryStep(
+        'Open The stage and switch off HarborInspectorOverlay',
+        'The shading goes but nothing moves: the overlay is a debug drawing over the layout, not part of it.',
+      ),
     ],
     settings: _settings,
     realWorld:
-        'A nautical chart shows a harbor from above: where the land is, how deep the water runs (the soundings), where '
-        'the piers and breakwaters stand, with a compass rose to take bearings by.',
+        'Drawn as a nautical chart, which shows a harbor from above: where the land is, how deep the water runs, where '
+        'the piers and breakwaters stand. The inspector shows a screen the same way: who holds which edge.',
     inYourApp:
-        'HarborChartOverlay draws every dock’s ground (piers teal, quays sand), each harbor’s clear water outlined, and '
-        'the tide in blue: it’s the stage’s HarborChartOverlay switch. HarborChart.snapshot(context) returns the same '
-        'as data (listed in the readings, live), and in debug and profile builds the ext.harbor.chart VM-service '
-        'extension serves it as JSON, so a tool driving the app can ask where everything is.',
+        'HarborInspectorOverlay draws every bar’s ground (overlay bars teal, solid bars sand), each frame’s room '
+        'outlined, and the keyboard in blue: it’s the stage’s HarborInspectorOverlay switch. '
+        'HarborInspector.snapshot(context) returns the same as data (listed in the readings, live), and in debug and '
+        'profile builds the ext.harbor.inspector VM-service extension serves it as JSON, so a tool driving the app can '
+        'ask where everything is.',
     art: const NauticalChartArt(),
     controls: <Widget>[
       ToggleControl(
-        label: 'list HarborChart.snapshot',
+        label: 'list HarborInspector.snapshot',
         value: _list,
         onChanged: (final bool v) => setState(() => _list = v),
       ),
       // In an app a button on the page opens the sheet; here the switch stands in for it, so
       // the whole phone stays in view while you flip it.
-      ToggleControl(label: 'breakwater sheet', value: _sheet, onChanged: _setSheet),
+      ToggleControl(label: 'covering sheet', value: _sheet, onChanged: _setSheet),
       Text(
-        'Open the breakwater sheet: its harbor joins the chart.',
+        'Open the covering sheet: its frame joins the inspector.',
         style: TextStyle(color: Palette.foam.withValues(alpha: 0.7), fontSize: 12),
       ),
     ],
     code:
         'MaterialApp(\n'
-        '  builder: (context, child) => HarborChartOverlay(\n'
+        '  builder: (context, child) => HarborInspectorOverlay(\n'
         '    enabled: kDebugMode,\n'
-        '    child: HarborSea(child: child!),\n'
+        '    child: HarborRoot(child: child!),\n'
         '  ),\n'
         ')\n'
         '\n'
-        'for (final harbor in HarborChart.snapshot(context)) {\n'
-        '  for (final dock in harbor.docks) {\n'
-        '    print(\'\${dock.label} \${dock.kind.name} \${dock.edge.name} \${dock.extent}\');\n'
+        'for (final frame in HarborInspector.snapshot(context)) {\n'
+        '  for (final bar in frame.bars) {\n'
+        '    print(\'\${bar.label} \${bar.kind.name} \${bar.edge.name} \${bar.extent}\');\n'
         '  }\n'
         '}\n'
         '\n'
-        '// Over the VM service: ext.harbor.chart → {"harbors": [...]}',
-    stage: (final BuildContext context) => Harbor(
+        '// Over the VM service: ext.harbor.inspector → {"frames": [...]}',
+    stage: (final BuildContext context) => HarborFrame(
       key: _page,
-      debugLabel: 'chart page',
-      top: <HarborDock>[
-        HarborDock.pier(
-          debugLabel: 'pier header',
-          wake: const HarborWake.fade(length: 12),
+      debugLabel: 'inspector page',
+      top: <HarborBar>[
+        HarborBar.overlay(
+          debugLabel: 'header',
+          edgeEffect: const HarborEdgeEffect.fade(length: 12),
           backdrop: ColoredBox(color: Palette.plank.withValues(alpha: 0.8)),
-          child: const StageHeader(title: 'HarborChart'),
+          child: const StageHeader(title: 'HarborInspector'),
         ),
       ],
-      bottom: const <HarborDock>[
-        HarborDock.quay(
-          debugLabel: 'quay tab bar',
+      bottom: const <HarborBar>[
+        HarborBar.solid(
+          debugLabel: 'tab bar',
           backdrop: QuayStones(),
-          child: StageBar(key: ValueKey<String>('chart tab bar'), label: 'quay tab bar'),
+          child: StageBar(key: ValueKey<String>('chart tab bar'), label: 'solid tab bar'),
         ),
       ],
       body: _ChartLog(
         enabled: _list,
-        child: HarborFairway(
+        child: HarborScrollView(
           slivers: <Widget>[
             SliverList.builder(
               itemCount: 20,
@@ -911,7 +978,7 @@ class _ChartEntryState extends State<ChartEntry> {
   );
 }
 
-/// Lists [HarborChart.snapshot] in the readings, refreshed twice a second.
+/// Lists [HarborInspector.snapshot] in the readings, refreshed twice a second.
 class _ChartLog extends StatefulWidget {
   const _ChartLog({required this.enabled, required this.child});
 
@@ -932,7 +999,7 @@ class _ChartLogState extends State<_ChartLog> {
     WidgetsBinding.instance.addPostFrameCallback((final Duration _) => _report());
   }
 
-  static const String _label = 'HarborChart.snapshot(context)';
+  static const String _label = 'HarborInspector.snapshot(context)';
   StageSettings? _settings;
 
   @override
@@ -955,16 +1022,12 @@ class _ChartLogState extends State<_ChartLog> {
     if (!mounted || !widget.enabled) {
       return;
     }
-    final List<HarborChartEntry> chart = HarborChart.snapshot(context);
+    final List<HarborInspectorEntry> frames = HarborInspector.snapshot(context);
     final StringBuffer text = StringBuffer();
-    for (final HarborChartEntry harbor in chart) {
-      text.writeln(
-        "'${harbor.label}' · depth ${harbor.depth} · clear water ${_n(harbor.clearWater.width)} × ${_n(harbor.clearWater.height)}",
-      );
-      for (final HarborDockRecord dock in harbor.docks) {
-        text.writeln(
-          '  ${dock.label ?? '(no label)'} · ${dock.kind.name} · ${dock.edge.name} · extent ${_n(dock.extent)}',
-        );
+    for (final HarborInspectorEntry frame in frames) {
+      text.writeln("'${frame.label}' · depth ${frame.depth} · room ${_n(frame.room.width)} × ${_n(frame.room.height)}");
+      for (final HarborBarRecord bar in frame.bars) {
+        text.writeln('  ${bar.label ?? '(no label)'} · ${bar.kind.name} · ${bar.edge.name} · extent ${_n(bar.extent)}');
       }
     }
     _settings = StageScope.settingsOf(context)?..report(_label, text.toString().trimRight(), reporter: this);
@@ -974,9 +1037,9 @@ class _ChartLogState extends State<_ChartLog> {
   Widget build(final BuildContext context) => widget.child;
 }
 
-// ─── Sea trials ───────────────────────────────────────────────────────────────
+// ─── Trials ───────────────────────────────────────────────────────────────────
 
-/// `pumpSeaTrial` and `HarborTrialDevice`: widget tests on pretend devices.
+/// `pumpHarborTrial` and `HarborTrialDevice`: widget tests on pretend devices.
 class SeaTrialEntry extends StatefulWidget {
   const SeaTrialEntry({super.key});
 
@@ -1010,37 +1073,49 @@ class _SeaTrialEntryState extends State<SeaTrialEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    // No focus, the whole phone: a device chip changes the whole screen, and the readout of its size, coast
-    // and waterline is at the top, with the keyboard and the composer at the bottom.
-    className: 'pumpSeaTrial',
+    // No focus, the whole phone: a device chip changes the whole screen, and the readout of its size, system
+    // edges and keyboard top is at the top, with the keyboard and the composer at the bottom.
+    className: 'pumpHarborTrial',
     tryThis: const <TryStep>[
-      TryStep('Tap the keyboard button under the tide gauge', 'The composer rides up to the red waterline and the readout says tideIn true: what trial.raiseTide() does in a test.'),
-      TryStep('Open The stage and pick Device: iPhone SE', 'The readout and the code card switch to HarborTrialDevice.iPhoneSE, with its own size, coast and waterline.'),
-      TryStep('Pick Device: iPhone 17 landscape', 'A short keyboard on a short screen: the waterline is 202, and the composer still rides it.'),
-      TryStep('Lower the tide and switch off Home indicator', 'The composer drops to the bottom edge: a floating dock sits on the home indicator until the keyboard comes.'),
+      TryStep(
+        'Tap the keyboard button under the gauge',
+        'The composer rides up to the red keyboardTop line and the readout says keyboardShown true: what trial.showKeyboard() does in a test.',
+      ),
+      TryStep(
+        'Open The stage and pick Device: iPhone SE',
+        'The readout and the code card switch to HarborTrialDevice.iPhoneSE, with its own size, system edges and keyboardTop.',
+      ),
+      TryStep(
+        'Pick Device: iPhone 17 landscape',
+        'A short keyboard on a short screen: keyboardTop is 202, and the composer still rides it.',
+      ),
+      TryStep(
+        'Hide the keyboard and switch off Home indicator',
+        'The composer drops to the bottom edge: a bar that rides the keyboard sits on the home indicator until the keyboard comes.',
+      ),
     ],
     settings: _settings,
     realWorld:
-        'Before a new ship is handed over she goes out on sea trials: flags flying, a tug standing by, she is run at '
-        'speed, turned hard and stopped, and every reading is checked against what the yard promised.',
+        'Drawn as sea trials: before a new ship is handed over she is run at speed, turned hard and stopped, a tug '
+        'standing by, and every reading is checked against what the yard promised.',
     inYourApp:
-        'package:harbor_test puts a widget test on a pretend device. tester.pumpSeaTrial(app, device:) sets the '
-        'test view to the HarborTrialDevice’s size and coast; trial.raiseTide() brings its keyboard in, and '
-        'trial.waterline is where the keyboard’s top is. The stage’s device chips are the trial devices (the list '
-        'also has television). Pick one and raise the tide.',
+        'package:harbor_test puts a widget test on a pretend device. tester.pumpHarborTrial(app, device:) sets the '
+        'test view to the HarborTrialDevice’s size and system edges; trial.showKeyboard() brings its keyboard in, and '
+        'trial.keyboardTop is where the keyboard’s top is. The stage’s device chips are the trial devices (the list '
+        'also has television). Pick one and show the keyboard.',
     art: const SeaTrialsArt(),
     code:
         "import 'package:harbor_test/harbor_test.dart';\n"
         '\n'
         "testWidgets('the composer rides the keyboard', (tester) async {\n"
-        '  final trial = await tester.pumpSeaTrial(\n'
+        '  final trial = await tester.pumpHarborTrial(\n'
         '    app,\n'
         '    device: HarborTrialDevice.${_trialName(_device)},\n'
         '  );\n'
-        '  await trial.raiseTide();\n'
+        '  await trial.showKeyboard();\n'
         '  expect(\n'
         '    tester.getRect(find.byType(Composer)).bottom,\n'
-        '    trial.waterline, // ${_n(_device.size.height)} − ${_n(_device.tideHeight)} = ${_n(_device.size.height - _device.tideHeight)}\n'
+        '    trial.keyboardTop, // ${_n(_device.size.height)} − ${_n(_device.tideHeight)} = ${_n(_device.size.height - _device.tideHeight)}\n'
         '  );\n'
         '});',
     stage: (final BuildContext context) {
@@ -1050,38 +1125,38 @@ class _SeaTrialEntryState extends State<SeaTrialEntry> {
       return Stack(
         fit: StackFit.expand,
         children: <Widget>[
-          Harbor(
-            debugLabel: 'sea trial',
-            top: <HarborDock>[
-              HarborDock.pier(
+          HarborFrame(
+            debugLabel: 'trial',
+            top: <HarborBar>[
+              HarborBar.overlay(
                 debugLabel: 'header',
                 backdrop: ColoredBox(color: Palette.plank.withValues(alpha: 0.85)),
-                child: const StageHeader(title: 'HarborSeaTrial'),
+                child: const StageHeader(title: 'HarborTrial'),
               ),
             ],
-            bottom: const <HarborDock>[
-              HarborDock.quay(
+            bottom: const <HarborBar>[
+              HarborBar.solid(
                 debugLabel: 'composer',
-                tide: HarborTideStance.float,
+                keyboard: HarborKeyboardStance.rides,
                 backdrop: ColoredBox(color: Palette.night),
                 child: _Composer(),
               ),
             ],
             body: StageProbe(
               label: 'Trial body',
-              child: HarborMoored(
-                mooringLine: true,
+              child: HarborClear(
+                rowInsets: true,
                 child: Align(
                   alignment: AlignmentDirectional.topStart,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
                       'HarborTrialDevice.${_trialName(device)}\n'
-                      'size        ${_n(device.size.width)} × ${_n(device.size.height)}\n'
-                      'coast       ${_insets(device.coast)}\n'
-                      'tideHeight  ${_n(device.tideHeight)}\n'
-                      'tideIn      ${settings.tide >= 1}\n'
-                      'waterline   ${_n(waterline)}',
+                      'size            ${_n(device.size.width)} × ${_n(device.size.height)}\n'
+                      'systemEdges     ${_insets(device.coast)}\n'
+                      'keyboardHeight  ${_n(device.tideHeight)}\n'
+                      'keyboardShown   ${settings.tide >= 1}\n'
+                      'keyboardTop     ${_n(waterline)}',
                       key: const ValueKey<String>('trial readout'),
                       style: const TextStyle(fontFamily: 'Menlo', fontSize: 13, color: Palette.foam, height: 1.5),
                     ),
@@ -1125,7 +1200,7 @@ class _Composer extends StatelessWidget {
   const _Composer();
 
   @override
-  Widget build(final BuildContext context) => HarborMooringLine(
+  Widget build(final BuildContext context) => HarborClear.rowInsets(
     child: Padding(
       key: const ValueKey<String>('trial composer'),
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1152,19 +1227,19 @@ class _Composer extends StatelessWidget {
   );
 }
 
-// ─── HarborWakePainter / HarborWakeMask.alphaWake ─────────────────────────────
+// ─── HarborEdgeEffectPainter / HarborFadeMask.alphaFade ───────────────────────
 
 enum _WakeChoice { fairway, alpha, tinted }
 
-/// The color of the custom wake painter's haze.
+/// The color of the custom edge effect painter's haze.
 const Color _tint = Palette.brass;
 
-/// A [HarborWakePainter] of your own: instead of fading the body out, it lays
-/// a brass haze over each wake band, solid at the body's edge, half at the
-/// dock's inner face, and gone where the wake ends.
-Widget tintedWake(final BuildContext context, final Map<HarborEdge, HarborWakeBand> wakes, final Widget body) {
-  Widget haze(final HarborEdge edge, final HarborWakeBand band) {
-    final double dock = band.wakeEnd <= 0 ? 0 : (band.dockEdge / band.wakeEnd).clamp(0.0, 1.0);
+/// A [HarborEdgeEffectPainter] of your own: instead of fading the body out, it lays
+/// a brass haze over each fade band, solid at the body's edge, half at the
+/// bar's inner face, and gone where the fade ends.
+Widget tintedFade(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) {
+  Widget haze(final HarborEdge edge, final HarborFadeBand band) {
+    final double dock = band.fadeEnd <= 0 ? 0 : (band.barFace / band.fadeEnd).clamp(0.0, 1.0);
     final (AlignmentGeometry, AlignmentGeometry) ends = switch (edge) {
       HarborEdge.top => (Alignment.topCenter, Alignment.bottomCenter),
       HarborEdge.bottom => (Alignment.bottomCenter, Alignment.topCenter),
@@ -1191,21 +1266,21 @@ Widget tintedWake(final BuildContext context, final Map<HarborEdge, HarborWakeBa
     fit: StackFit.expand,
     children: <Widget>[
       body,
-      for (final MapEntry<HarborEdge, HarborWakeBand> wake in wakes.entries)
-        if (wake.value.wakeEnd > 0)
+      for (final MapEntry<HarborEdge, HarborFadeBand> wake in bands.entries)
+        if (wake.value.fadeEnd > 0)
           switch (wake.key) {
             HarborEdge.top => Positioned(
               top: 0,
               left: 0,
               right: 0,
-              height: wake.value.wakeEnd,
+              height: wake.value.fadeEnd,
               child: haze(wake.key, wake.value),
             ),
             HarborEdge.bottom => Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              height: wake.value.wakeEnd,
+              height: wake.value.fadeEnd,
               child: haze(wake.key, wake.value),
             ),
             HarborEdge.start => Positioned.directional(
@@ -1213,7 +1288,7 @@ Widget tintedWake(final BuildContext context, final Map<HarborEdge, HarborWakeBa
               start: 0,
               top: 0,
               bottom: 0,
-              width: wake.value.wakeEnd,
+              width: wake.value.fadeEnd,
               child: haze(wake.key, wake.value),
             ),
             HarborEdge.end => Positioned.directional(
@@ -1221,7 +1296,7 @@ Widget tintedWake(final BuildContext context, final Map<HarborEdge, HarborWakeBa
               end: 0,
               top: 0,
               bottom: 0,
-              width: wake.value.wakeEnd,
+              width: wake.value.fadeEnd,
               child: haze(wake.key, wake.value),
             ),
           },
@@ -1229,7 +1304,7 @@ Widget tintedWake(final BuildContext context, final Map<HarborEdge, HarborWakeBa
   );
 }
 
-/// `HarborWakePainter` and `HarborWakeMask.alphaWake`: how the wake is painted.
+/// `HarborEdgeEffectPainter` and `HarborFadeMask.alphaFade`: how the edge effect is painted.
 class WakePainterEntry extends StatefulWidget {
   const WakePainterEntry({super.key});
 
@@ -1242,63 +1317,63 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
   double _length = 24;
 
   String _label(final _WakeChoice c) => switch (c) {
-    _WakeChoice.fairway => 'null (fairway wake)',
-    _WakeChoice.alpha => 'HarborWakeMask.alphaWake',
-    _WakeChoice.tinted => 'tintedWake (your own)',
+    _WakeChoice.fairway => 'null (scroll view fade)',
+    _WakeChoice.alpha => 'HarborFadeMask.alphaFade',
+    _WakeChoice.tinted => 'tintedFade (your own)',
   };
 
-  HarborWakePainter? get _painter => switch (_choice) {
+  HarborEdgeEffectPainter? get _painter => switch (_choice) {
     _WakeChoice.fairway => null,
-    _WakeChoice.alpha => HarborWakeMask.alphaWake,
-    _WakeChoice.tinted => tintedWake,
+    _WakeChoice.alpha => HarborFadeMask.alphaFade,
+    _WakeChoice.tinted => tintedFade,
   };
 
   String get _code {
     final String header =
         '  top: [\n'
-        '    HarborDock.pier(\n'
-        '      wake: HarborWake.fade(length: ${_n(_length)}),\n'
+        '    HarborBar.overlay(\n'
+        '      edgeEffect: HarborEdgeEffect.fade(length: ${_n(_length)}),\n'
         '      child: Header(),\n'
         '    ),\n'
         '  ],\n';
     return switch (_choice) {
       _WakeChoice.fairway =>
-        'Harbor(\n'
+        'HarborFrame(\n'
             '$header'
-            '  // No wakePainter: the fairway fades its rows;\n'
-            '  // the open water behind them stays as it is.\n'
-            '  body: Stack(children: [NightSky(), HarborFairway(slivers: [boats])]),\n'
+            '  // No edgeEffectPainter: the scroll view fades its rows;\n'
+            '  // the background behind them stays as it is.\n'
+            '  body: Stack(children: [NightSky(), HarborScrollView(slivers: [boats])]),\n'
             ')',
       _WakeChoice.alpha =>
-        'Harbor(\n'
+        'HarborFrame(\n'
             '$header'
-            '  wakePainter: HarborWakeMask.alphaWake, // the whole body fades\n'
+            '  edgeEffectPainter: HarborFadeMask.alphaFade, // the whole body fades\n'
             '  body: Stack(children: [\n'
             '    NightSky(),\n'
-            '    HarborFairway(wake: false, slivers: [boats]),\n'
+            '    HarborScrollView(edgeEffects: false, slivers: [boats]),\n'
             '  ]),\n'
             ')',
       _WakeChoice.tinted =>
-        'Widget tintedWake(\n'
+        'Widget tintedFade(\n'
             '  BuildContext context,\n'
-            '  Map<HarborEdge, HarborWakeBand> wakes,\n'
+            '  Map<HarborEdge, HarborFadeBand> bands,\n'
             '  Widget body,\n'
             ') => Stack(fit: StackFit.expand, children: [\n'
             '  body,\n'
-            '  for (final MapEntry(:key, :value) in wakes.entries)\n'
+            '  for (final MapEntry(:key, :value) in bands.entries)\n'
             '    Positioned(\n'
             '      top: 0, left: 0, right: 0,\n'
-            '      height: value.wakeEnd, // dock face at value.dockEdge\n'
+            '      height: value.fadeEnd, // bar face at value.barFace\n'
             '      child: BrassHaze(),\n'
             '    ),\n'
             ']);\n'
             '\n'
-            'Harbor(\n'
+            'HarborFrame(\n'
             '$header'
-            '  wakePainter: tintedWake,\n'
+            '  edgeEffectPainter: tintedFade,\n'
             '  body: Stack(children: [\n'
             '    NightSky(),\n'
-            '    HarborFairway(wake: false, slivers: [boats]),\n'
+            '    HarborScrollView(edgeEffects: false, slivers: [boats]),\n'
             '  ]),\n'
             ')',
     };
@@ -1306,27 +1381,39 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborWakePainter',
+    className: 'HarborEdgeEffectPainter',
     tryThis: const <TryStep>[
-      TryStep('Scroll the rows up under the header', 'The rows fade at the header but the moon and stars behind them stay sharp: with no wakePainter, a fairway fades its rows.'),
-      TryStep('Pick wakePainter: HarborWakeMask.alphaWake', 'Now the night sky fades under the header too: alphaWake fades the whole body, background and all.'),
-      TryStep('Pick wakePainter: tintedWake (your own)', 'A brass haze lies over the band instead of a fade: your own painter is handed each band\'s dockEdge and wakeEnd.'),
-      TryStep('Slide length to 48', 'The haze now reaches 48 past the header: length sets wakeEnd, and the painter draws the new band.'),
+      TryStep(
+        'Scroll the rows up under the header',
+        'The rows fade at the header but the moon and stars behind them stay sharp: with no edgeEffectPainter, a scroll view fades its rows.',
+      ),
+      TryStep(
+        'Pick edgeEffectPainter: HarborFadeMask.alphaFade',
+        'Now the night sky fades under the header too: alphaFade fades the whole body, background and all.',
+      ),
+      TryStep(
+        'Pick edgeEffectPainter: tintedFade (your own)',
+        'A brass haze lies over the band instead of a fade: your own painter is handed each band\'s barFace and fadeEnd.',
+      ),
+      TryStep(
+        'Slide length to 48',
+        'The haze now reaches 48 past the header: length sets fadeEnd, and the painter draws the new band.',
+      ),
     ],
     focus: const StageFocus.top(440),
     realWorld:
-        'A moving boat leaves a wake: a V of waves spreading out behind her at the same angle whatever her size, '
-        'fading as it goes, with churned water right astern.',
+        'Drawn as a boat’s wake: a V of waves spreading out behind her, fading as it goes. The edge effect is the fade '
+        'where content passes under a bar.',
     inYourApp:
-        'How a harbor paints the wake where content passes under a dock with a fade wake. With no wakePainter (the '
-        'default) each fairway fades its own rows and open water stays put. HarborWakeMask.alphaWake is the default '
-        'painter as a function: give it to Harbor(wakePainter:) to fade the whole body, background and all. Or write '
-        'your own (context, wakes, body) → Widget: each band says where the dock’s face (dockEdge) and the wake’s end '
-        '(wakeEnd) are, from the body’s edge. Here, a brass haze.',
+        'How a frame paints the edge effect where content passes under a bar with a fade. With no edgeEffectPainter '
+        '(the default) each scroll view fades its own rows and the rest of the body stays put. HarborFadeMask.alphaFade '
+        'is the default painter as a function: give it to HarborFrame(edgeEffectPainter:) to fade the whole body, '
+        'background and all. Or write your own (context, bands, body) → Widget: each band says where the bar’s face '
+        '(barFace) and the fade’s end (fadeEnd) are, from the body’s edge. Here, a brass haze.',
     art: const WakeArt(),
     controls: <Widget>[
       ChoiceControl<_WakeChoice>(
-        label: 'wakePainter',
+        label: 'edgeEffectPainter',
         values: _WakeChoice.values,
         value: _choice,
         labelOf: _label,
@@ -1341,15 +1428,15 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
       ),
     ],
     code: _code,
-    stage: (final BuildContext context) => Harbor(
-      debugLabel: 'wake page',
-      wakePainter: _painter,
-      top: <HarborDock>[
-        HarborDock.pier(
+    stage: (final BuildContext context) => HarborFrame(
+      debugLabel: 'edge effect page',
+      edgeEffectPainter: _painter,
+      top: <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'header',
-          wake: HarborWake.fade(length: _length),
+          edgeEffect: HarborEdgeEffect.fade(length: _length),
           backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.55)),
-          child: const StageHeader(key: ValueKey<String>('wake header'), title: 'HarborWakePainter'),
+          child: const StageHeader(key: ValueKey<String>('wake header'), title: 'HarborEdgeEffectPainter'),
         ),
       ],
       body: StageProbe(
@@ -1358,8 +1445,8 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
           fit: StackFit.expand,
           children: <Widget>[
             const CustomPaint(painter: _NightSkyPainter()),
-            HarborFairway(
-              wake: _choice == _WakeChoice.fairway,
+            HarborScrollView(
+              edgeEffects: _choice == _WakeChoice.fairway,
               slivers: <Widget>[
                 SliverList.builder(
                   itemCount: 30,
@@ -1374,8 +1461,8 @@ class _WakePainterEntryState extends State<WakePainterEntry> {
   );
 }
 
-/// Open water behind the rows: a night sky with a moon near the top, so the
-/// difference between a fairway's wake and a whole-body wake shows.
+/// A background behind the rows: a night sky with a moon near the top, so the
+/// difference between a scroll view's fade and a whole-body fade shows.
 class _NightSkyPainter extends CustomPainter {
   const _NightSkyPainter();
 

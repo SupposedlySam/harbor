@@ -56,18 +56,20 @@ Future<BuildContext> _page(
   final Widget Function(Widget page)? wrap,
 }) async {
   late BuildContext pageContext;
-  final Widget page = Harbor(
+  final Widget page = HarborFrame(
     body: Builder(
       builder: (final BuildContext context) {
         pageContext = context;
-        return Center(child: TextButton(onPressed: () {}, child: const Text('Page action')));
+        return Center(
+          child: TextButton(onPressed: () {}, child: const Text('Page action')),
+        );
       },
     ),
   );
-  await tester.pumpSeaTrial(
+  await tester.pumpHarborTrial(
     MaterialApp(
       navigatorObservers: observers,
-      builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
       home: Material(child: wrap?.call(page) ?? page),
     ),
   );
@@ -87,28 +89,30 @@ Future<BuildContext> _open(
   final bool settle = true,
 }) async {
   late BuildContext dialog;
-  unawaited(showHarborDialog<void>(
-    page,
-    routeSettings: routeSettings,
-    barrierLabel: barrierLabel,
-    semanticLabel: semanticLabel,
-    traversalEdgeBehavior: traversalEdgeBehavior,
-    requestFocus: requestFocus,
-    animationStyle: animationStyle,
-    builder: (final BuildContext context) {
-      dialog = context;
-      return Center(
-        child: Column(
-          key: const ValueKey<String>('dialog'),
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TextButton(onPressed: () {}, child: const Text('Keep')),
-            TextButton(onPressed: () {}, child: const Text('Delete')),
-          ],
-        ),
-      );
-    },
-  ));
+  unawaited(
+    showHarborDialog<void>(
+      page,
+      routeSettings: routeSettings,
+      barrierLabel: barrierLabel,
+      semanticLabel: semanticLabel,
+      traversalEdgeBehavior: traversalEdgeBehavior,
+      requestFocus: requestFocus,
+      animationStyle: animationStyle,
+      builder: (final BuildContext context) {
+        dialog = context;
+        return Center(
+          child: Column(
+            key: const ValueKey<String>('dialog'),
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextButton(onPressed: () {}, child: const Text('Keep')),
+              TextButton(onPressed: () {}, child: const Text('Delete')),
+            ],
+          ),
+        );
+      },
+    ),
+  );
   if (settle) {
     await tester.pumpAndSettle();
   } else {
@@ -118,7 +122,9 @@ Future<BuildContext> _open(
 }
 
 double _opacity(final WidgetTester tester) => tester
-    .widget<FadeTransition>(find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byType(FadeTransition)).first)
+    .widget<FadeTransition>(
+      find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byType(FadeTransition)).first,
+    )
     .opacity
     .value;
 
@@ -162,7 +168,9 @@ void main() {
 
   // harbor's core imports no design library, so a Material app passes Material's localized
   // label itself; the default is the English that Material and Cupertino fall back to.
-  testWidgets("a dialog barrier is announced with the label given, Material's by the documented recipe", (final tester) async {
+  testWidgets("a dialog barrier is announced with the label given, Material's by the documented recipe", (
+    final tester,
+  ) async {
     final BuildContext page = await _page(tester);
     BuildContext dialog = await _open(tester, page);
     expect(ModalRoute.of(dialog)!.barrierLabel, 'Dismiss');
@@ -179,7 +187,9 @@ void main() {
     expect(ModalRoute.of(dialog)!.barrierColor, const Color(0x80000000));
   });
 
-  testWidgets("a dialog's content is a route of its own for screen readers, named by semanticLabel", (final tester) async {
+  testWidgets("a dialog's content is a route of its own for screen readers, named by semanticLabel", (
+    final tester,
+  ) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final BuildContext page = await _page(tester);
     await _open(tester, page, semanticLabel: 'Delete message');
@@ -189,7 +199,10 @@ void main() {
     final SemanticsNode? scope = _nearest(named, (final SemanticsNode node) => node.flagsCollection.scopesRoute);
     expect(scope, isNotNull);
     // The page's own button is outside the dialog's route scope.
-    expect(_nearest(tester.getSemantics(find.text('Page action')), (final SemanticsNode node) => identical(node, scope)), isNull);
+    expect(
+      _nearest(tester.getSemantics(find.text('Page action')), (final SemanticsNode node) => identical(node, scope)),
+      isNull,
+    );
     semantics.dispose();
   });
 
@@ -211,7 +224,8 @@ void main() {
     for (int i = 0; i < 3; i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
-      final Text? label = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>()?.child as Text?;
+      final Text? label =
+          FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>()?.child as Text?;
       order.add(label?.data ?? '');
     }
     expect(order, <String>['Keep', 'Delete', 'Keep']);
@@ -220,12 +234,21 @@ void main() {
   testWidgets('requestFocus: false leaves focus where it was on the page', (final tester) async {
     final FocusNode field = FocusNode();
     addTearDown(field.dispose);
-    final BuildContext page = await _page(tester, wrap: (final Widget page) => Column(
-      children: <Widget>[
-        EditableText(controller: TextEditingController(), focusNode: field, style: const TextStyle(), cursorColor: const Color(0xFF000000), backgroundCursorColor: const Color(0xFF000000)),
-        Expanded(child: page),
-      ],
-    ));
+    final BuildContext page = await _page(
+      tester,
+      wrap: (final Widget page) => Column(
+        children: <Widget>[
+          EditableText(
+            controller: TextEditingController(),
+            focusNode: field,
+            style: const TextStyle(),
+            cursorColor: const Color(0xFF000000),
+            backgroundCursorColor: const Color(0xFF000000),
+          ),
+          Expanded(child: page),
+        ],
+      ),
+    );
     field.requestFocus();
     await tester.pump();
     await _open(tester, page, requestFocus: false);
@@ -237,7 +260,10 @@ void main() {
     final BuildContext dialog = await _open(
       tester,
       page,
-      animationStyle: const AnimationStyle(duration: Duration(milliseconds: 400), reverseDuration: Duration(milliseconds: 100)),
+      animationStyle: const AnimationStyle(
+        duration: Duration(milliseconds: 400),
+        reverseDuration: Duration(milliseconds: 100),
+      ),
       settle: false,
     );
     await tester.pump(const Duration(milliseconds: 200));
@@ -256,16 +282,19 @@ void main() {
 
   testWidgets("a Hero on the page does not fly into a dialog, as it does not into showDialog's", (final tester) async {
     late BuildContext page;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
-        builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
-        home: Harbor(
+        builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+        home: HarborFrame(
           body: Builder(
             builder: (final BuildContext context) {
               page = context;
               return const Align(
                 alignment: Alignment.topLeft,
-                child: Hero(tag: 'avatar', child: SizedBox(key: ValueKey<String>('page avatar'), width: 40, height: 40)),
+                child: Hero(
+                  tag: 'avatar',
+                  child: SizedBox(key: ValueKey<String>('page avatar'), width: 40, height: 40),
+                ),
               );
             },
           ),
@@ -273,12 +302,17 @@ void main() {
       ),
     );
     final Rect resting = tester.getRect(find.byKey(const ValueKey<String>('page avatar')));
-    unawaited(showHarborDialog<void>(
-      page,
-      builder: (final BuildContext _) => const Center(
-        child: Hero(tag: 'avatar', child: SizedBox(key: ValueKey<String>('dialog avatar'), width: 200, height: 200)),
+    unawaited(
+      showHarborDialog<void>(
+        page,
+        builder: (final BuildContext _) => const Center(
+          child: Hero(
+            tag: 'avatar',
+            child: SizedBox(key: ValueKey<String>('dialog avatar'), width: 200, height: 200),
+          ),
+        ),
       ),
-    ));
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 90));
     // In a flight both heroes' children are swapped for placeholders and a shuttle crosses between them.
@@ -291,16 +325,18 @@ void main() {
   testWidgets('a draggable sheet in a dialog closes the dialog when flung below its floor', (final tester) async {
     final BuildContext page = await _page(tester);
     bool closed = false;
-    unawaited(showHarborDialog<void>(
-      page,
-      builder: (final BuildContext _) => HarborSheet.draggable(
-        header: const SizedBox(key: ValueKey<String>('handle'), height: 40, width: double.infinity),
-        builder: (final BuildContext context, final ScrollController controller) => HarborFairway(
-          controller: controller,
-          slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+    unawaited(
+      showHarborDialog<void>(
+        page,
+        builder: (final BuildContext _) => HarborSheet.draggable(
+          header: const SizedBox(key: ValueKey<String>('handle'), height: 40, width: double.infinity),
+          builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
+            controller: controller,
+            slivers: const <Widget>[SliverToBoxAdapter(child: SizedBox(height: 2000))],
+          ),
         ),
-      ),
-    ).then((final void _) => closed = true));
+      ).then((final void _) => closed = true),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('handle')), findsOneWidget);
     await tester.fling(find.byKey(const ValueKey<String>('handle')), const Offset(0, 300), 2000);
@@ -311,45 +347,75 @@ void main() {
   });
 
   group('transitionBuilder (#63)', () {
-    Widget dialogContent(final BuildContext _) => const Center(child: SizedBox(key: ValueKey<String>('dialog'), width: 100, height: 100));
+    Widget dialogContent(final BuildContext _) =>
+        const Center(child: SizedBox(key: ValueKey<String>('dialog'), width: 100, height: 100));
 
     testWidgets('replaces the fade, and is handed the animation curved by animationStyle', (final tester) async {
       final BuildContext page = await _page(tester);
       Animation<double>? handed;
-      unawaited(showHarborDialog<void>(
-        page,
-        animationStyle: const AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn),
-        transitionBuilder: (final BuildContext context, final Animation<double> animation, final Animation<double> _, final Widget child) {
-          handed = animation;
-          return ScaleTransition(key: const ValueKey<String>('entrance'), scale: animation, child: child);
-        },
-        builder: dialogContent,
-      ));
+      unawaited(
+        showHarborDialog<void>(
+          page,
+          animationStyle: const AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn),
+          transitionBuilder:
+              (
+                final BuildContext context,
+                final Animation<double> animation,
+                final Animation<double> _,
+                final Widget child,
+              ) {
+                handed = animation;
+                return ScaleTransition(key: const ValueKey<String>('entrance'), scale: animation, child: child);
+              },
+          builder: dialogContent,
+        ),
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       expect(handed!.value, closeTo(Curves.easeIn.transform(0.5), 0.001));
-      expect(find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byKey(const ValueKey<String>('entrance'))), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byKey(const ValueKey<String>('dialog')),
+          matching: find.byKey(const ValueKey<String>('entrance')),
+        ),
+        findsOneWidget,
+      );
       // The builder replaces the fade rather than running inside it.
-      expect(find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byType(FadeTransition)), findsNothing);
+      expect(
+        find.ancestor(of: find.byKey(const ValueKey<String>('dialog')), matching: find.byType(FadeTransition)),
+        findsNothing,
+      );
       await tester.pumpAndSettle();
       expect(handed!.value, 1.0);
     });
 
-    testWidgets('under reduced motion is handed kAlwaysCompleteAnimation, so the dialog is simply there', (final tester) async {
-      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    testWidgets('under reduced motion is handed kAlwaysCompleteAnimation, so the dialog is simply there', (
+      final tester,
+    ) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
       addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       final BuildContext page = await _page(tester);
       Animation<double>? handed;
       Animation<double>? handedSecondary;
-      unawaited(showHarborDialog<void>(
-        page,
-        transitionBuilder: (final BuildContext context, final Animation<double> animation, final Animation<double> secondary, final Widget child) {
-          handed = animation;
-          handedSecondary = secondary;
-          return ScaleTransition(scale: animation, child: child);
-        },
-        builder: dialogContent,
-      ));
+      unawaited(
+        showHarborDialog<void>(
+          page,
+          transitionBuilder:
+              (
+                final BuildContext context,
+                final Animation<double> animation,
+                final Animation<double> secondary,
+                final Widget child,
+              ) {
+                handed = animation;
+                handedSecondary = secondary;
+                return ScaleTransition(scale: animation, child: child);
+              },
+          builder: dialogContent,
+        ),
+      );
       await tester.pump();
       expect(handed, same(kAlwaysCompleteAnimation));
       expect(handedSecondary, same(kAlwaysDismissedAnimation));
@@ -365,7 +431,9 @@ void main() {
       expect(ModalRoute.of(dialog), isA<HarborDialogRoute<void>>());
     });
 
-    testWidgets("pushed by hand, it keeps the page's themes and completes with the popped result", (final tester) async {
+    testWidgets("pushed by hand, it keeps the page's themes and completes with the popped result", (
+      final tester,
+    ) async {
       late BuildContext dialog;
       final BuildContext page = await _page(
         tester,
@@ -390,18 +458,20 @@ void main() {
       expect(await result, 'blue');
     });
 
-    testWidgets('inheritClearWater measures the clear water when the route is pushed, not when it is made', (final tester) async {
+    testWidgets('inheritClearWater measures the clear water when the route is pushed, not when it is made', (
+      final tester,
+    ) async {
       final ValueNotifier<double> header = ValueNotifier<double>(40);
       addTearDown(header.dispose);
       late BuildContext page;
       late BuildContext dialog;
-      await tester.pumpSeaTrial(
+      await tester.pumpHarborTrial(
         MaterialApp(
-          builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
           home: ValueListenableBuilder<double>(
             valueListenable: header,
-            builder: (final BuildContext context, final double height, final Widget? _) => Harbor(
-              top: <HarborDock>[HarborDock.quay(child: SizedBox(height: height))],
+            builder: (final BuildContext context, final double height, final Widget? _) => HarborFrame(
+              top: <HarborBar>[HarborBar.solid(child: SizedBox(height: height))],
               body: Builder(
                 builder: (final BuildContext context) {
                   page = context;
@@ -414,7 +484,7 @@ void main() {
       );
       final HarborDialogRoute<void> route = HarborDialogRoute<void>(
         context: page,
-        inheritClearWater: true,
+        inheritRoom: true,
         builder: (final BuildContext context) {
           dialog = context;
           return const SizedBox.expand();
@@ -422,7 +492,7 @@ void main() {
       );
       header.value = 120;
       await tester.pump();
-      final Rect clear = Harbor.of(page).clearWaterInGlobal()!;
+      final Rect clear = HarborFrame.of(page).roomInGlobal()!;
       unawaited(Navigator.of(page).push(route));
       await tester.pumpAndSettle();
       expect(clear.top, greaterThan(120));

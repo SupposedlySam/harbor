@@ -10,14 +10,18 @@ import 'package:harbor_test/harbor_test.dart';
 
 Future<BuildContext> _page(final WidgetTester tester, {final bool sea = true}) async {
   late BuildContext inside;
-  final Widget body = Builder(builder: (final BuildContext context) {
-    inside = context;
-    return const SizedBox.expand();
-  });
-  await tester.pumpSeaTrial(MaterialApp(
-    builder: sea ? (final BuildContext context, final Widget? child) => HarborSea(child: child!) : null,
-    home: sea ? Harbor(body: body) : body,
-  ));
+  final Widget body = Builder(
+    builder: (final BuildContext context) {
+      inside = context;
+      return const SizedBox.expand();
+    },
+  );
+  await tester.pumpHarborTrial(
+    MaterialApp(
+      builder: sea ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
+      home: sea ? HarborFrame(body: body) : body,
+    ),
+  );
   return inside;
 }
 
@@ -28,12 +32,14 @@ void main() {
         final BuildContext page = await _page(tester);
         final HarborSheetController controller = HarborSheetController();
         addTearDown(controller.dispose);
-        unawaited(showHarborSheet<void>(
-          page,
-          barrier: HarborSheetBarrier.none,
-          controller: controller,
-          builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
-        ));
+        unawaited(
+          showHarborSheet<void>(
+            page,
+            barrier: HarborSheetBarrier.none,
+            controller: controller,
+            builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
+          ),
+        );
         await tester.pumpAndSettle();
         expect(controller.isAttached, isTrue, reason: 'positive control');
         if (how == 'closed by the controller') {
@@ -60,12 +66,14 @@ void main() {
       final HarborSheetController controller = HarborSheetController();
       addTearDown(controller.dispose);
       int results = 0;
-      unawaited(showHarborSheet<void>(
-        page,
-        barrier: HarborSheetBarrier.none,
-        controller: controller,
-        builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
-      ).then((final _) => results++));
+      unawaited(
+        showHarborSheet<void>(
+          page,
+          barrier: HarborSheetBarrier.none,
+          controller: controller,
+          builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
+        ).then((final _) => results++),
+      );
       await tester.pumpAndSettle();
       controller.close();
       await tester.pump(const Duration(milliseconds: 50));
@@ -80,39 +88,55 @@ void main() {
     for (final bool sea in <bool>[true, false]) {
       testWidgets('lowered while it waits its turn: closed at once, never shown (sea: $sea)', (final tester) async {
         final BuildContext page = await _page(tester, sea: sea);
-        final HarborFlareEntry up = HarborFlares.raise(page, builder: (final BuildContext _) => const Text('up'), duration: null);
-        final HarborFlareEntry waiting = HarborFlares.raise(page, builder: (final BuildContext _) => const Text('next'), duration: null);
+        final HarborToastEntry up = HarborToasts.show(
+          page,
+          builder: (final BuildContext _) => const Text('up'),
+          duration: null,
+        );
+        final HarborToastEntry waiting = HarborToasts.show(
+          page,
+          builder: (final BuildContext _) => const Text('next'),
+          duration: null,
+        );
         for (int i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
-        expect(up.phase, HarborFlarePhase.shown);
+        expect(up.phase, HarborToastPhase.shown);
         expect(up.wasShown, isTrue);
-        expect(waiting.phase, HarborFlarePhase.waiting);
-        waiting.lower();
-        expect(waiting.phase, HarborFlarePhase.closed, reason: 'answered on the spot, before closed completes');
+        expect(waiting.phase, HarborToastPhase.waiting);
+        waiting.hide();
+        expect(waiting.phase, HarborToastPhase.closed, reason: 'answered on the spot, before closed completes');
         expect(waiting.wasShown, isFalse);
       });
 
       testWidgets('raised and lowered in the same frame: closed, never shown (sea: $sea)', (final tester) async {
         final BuildContext page = await _page(tester, sea: sea);
-        final HarborFlareEntry entry = HarborFlares.raise(page, builder: (final BuildContext _) => const Text('cancelled'), duration: null);
-        entry.lower();
+        final HarborToastEntry entry = HarborToasts.show(
+          page,
+          builder: (final BuildContext _) => const Text('cancelled'),
+          duration: null,
+        );
+        entry.hide();
         await tester.pump();
-        expect(entry.phase, HarborFlarePhase.closed);
+        expect(entry.phase, HarborToastPhase.closed);
         expect(entry.wasShown, isFalse);
       });
     }
 
     testWidgets('shown, then lowered: closed once it has left, and it was shown', (final tester) async {
       final BuildContext page = await _page(tester);
-      final HarborFlareEntry entry = HarborFlares.raise(page, builder: (final BuildContext _) => const Text('saved'), duration: null);
+      final HarborToastEntry entry = HarborToasts.show(
+        page,
+        builder: (final BuildContext _) => const Text('saved'),
+        duration: null,
+      );
       await tester.pump();
-      expect(entry.phase, HarborFlarePhase.shown);
-      entry.lower();
-      expect(entry.phase, HarborFlarePhase.shown, reason: 'still running its exit');
+      expect(entry.phase, HarborToastPhase.shown);
+      entry.hide();
+      expect(entry.phase, HarborToastPhase.shown, reason: 'still running its exit');
       // Its exit, then the 300 ms it lingers: a timer pumpAndSettle does not wait for.
       await tester.pump(const Duration(milliseconds: 500));
-      expect(entry.phase, HarborFlarePhase.closed);
+      expect(entry.phase, HarborToastPhase.closed);
       expect(entry.wasShown, isTrue);
     });
   });

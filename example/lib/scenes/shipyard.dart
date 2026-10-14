@@ -10,19 +10,19 @@ import '../art/sea.dart';
 import '../game/fleet.dart';
 import '../game/widgets.dart';
 
-/// The Shipyard: a pushed route and a new port where you arrange and paint
+/// The Shipyard: a pushed route and a page where you arrange and paint
 /// boats (scenes #21 to #24).
 ///
 /// - **Shipyard canvas (#21):** the body runs under the keyboard
-///   (`bodyClearsTide: false`). Boats sit in a [HarborLighthouseRegion], each
-///   one a [HarborBeacon] that lifts while selected, so a boat the paint sheet
+///   (`bodyClearsKeyboard: false`). Boats sit in a [HarborKeepInSightRegion], each
+///   one a [HarborKeepInSight] that lifts while selected, so a boat the paint sheet
 ///   would cover rises until it is 80 clear of the sheet's top.
-/// - **Paint shop (#22):** a non-modal breakwater sheet whose footer is a dry
-///   dock: the color tray takes exactly the keyboard's ground, so nothing
+/// - **Paint shop (#22):** a non-modal sheet that covers the page, whose footer
+///   is a HarborKeyboardSpace: the color tray takes exactly the keyboard's ground, so nothing
 ///   moves when you switch tabs or the keyboard comes and goes.
-/// - **Tool strip (#23):** a bottom pier that withdraws at high tide and holds
+/// - **Tool strip (#23):** a bottom overlay bar that withdraws while the keyboard is shown and holds
 ///   its ground until it has fully slid out.
-/// - **Unsaved changes (#24):** a [HarborPontoon] moored from deep in the
+/// - **Unsaved changes (#24):** a [HarborAttachedBar] attached from deep in the
 ///   canvas stacks an "Unsaved changes" bar above the tool strip.
 class ShipyardPage extends StatefulWidget {
   const ShipyardPage({super.key});
@@ -43,12 +43,12 @@ class _ShipyardPageState extends State<ShipyardPage> {
 
   @override
   Widget build(final BuildContext context) => HarborPage(
-    child: Harbor(
-      newPort: true,
-      bodyClearsTide: false,
+    child: HarborFrame(
+      isPage: true,
+      bodyClearsKeyboard: false,
       debugLabel: 'shipyard',
-      top: <HarborDock>[
-        HarborDock.pier(
+      top: <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'shipyard header',
           backdrop: const PierPlanks(),
           child: PierHeader(
@@ -80,8 +80,8 @@ class _ShipyardPageState extends State<ShipyardPage> {
           ),
         ),
       ],
-      bottom: <HarborDock>[
-        HarborDock.pier(
+      bottom: <HarborBar>[
+        HarborBar.overlay(
           debugLabel: 'tool strip',
           withdrawsAtHighTide: true,
           extentPolicy: HarborExtentPolicy.hold,
@@ -94,12 +94,12 @@ class _ShipyardPageState extends State<ShipyardPage> {
   );
 }
 
-/// Raises a flare sending every boat on the water down the slipway.
+/// Shows a toast sending every boat on the water down the slipway.
 void _launchFleet(final BuildContext context, final ShipyardYard yard) {
   final int count = yard.boats.length;
-  HarborFlares.raise(
+  HarborToasts.show(
     context,
-    slot: HarborFlareSlot.low,
+    slot: HarborToastSlot.low,
     builder: (final BuildContext context) => SignalFlag(
       message: count == 0 ? 'Nothing on the slipway yet' : '$count ${count == 1 ? 'boat' : 'boats'} down the slipway!',
       icon: Icons.sailing_rounded,
@@ -284,8 +284,8 @@ class ShipyardYard extends ChangeNotifier {
   }
 }
 
-/// The shipyard's open water: the sea, the boats and crates on it, and the
-/// logbook note. Moors the "Unsaved changes" pontoon from down here.
+/// The shipyard's background: the sea, the boats and crates on it, and the
+/// logbook note. Attaches the "Unsaved changes" bar from down here.
 class ShipyardCanvas extends StatefulWidget {
   const ShipyardCanvas({super.key, required this.yard});
 
@@ -314,7 +314,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
     unawaited(
       showHarborSheet<void>(
         context,
-        breakwater: true,
+        coversPage: true,
         barrier: HarborSheetBarrier.none,
         builder: (final BuildContext context) => PaintShop(yard: _yard),
       ).then((final void _) {
@@ -328,9 +328,9 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
 
   void _save() {
     _yard.save();
-    HarborFlares.raise(
+    HarborToasts.show(
       context,
-      slot: HarborFlareSlot.low,
+      slot: HarborToastSlot.low,
       builder: (final BuildContext context) => const SignalFlag(message: 'Shipyard saved!', icon: Icons.save_rounded),
     );
   }
@@ -340,10 +340,10 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
     final bool still = MediaQuery.disableAnimationsOf(context);
     return ListenableBuilder(
       listenable: _yard,
-      builder: (final BuildContext context, final Widget? note) => HarborPontoon(
+      builder: (final BuildContext context, final Widget? note) => HarborAttachedBar(
         edge: HarborEdge.bottom,
         active: _yard.dirty,
-        dock: HarborDock.pier(
+        bar: HarborBar.overlay(
           key: const ValueKey<String>('unsaved'),
           debugLabel: 'unsaved changes',
           withdrawsAtHighTide: true,
@@ -357,7 +357,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
               child: TickerMode(enabled: !still, child: const Sea()),
             ),
             Positioned.fill(
-              child: HarborLighthouseRegion(
+              child: HarborKeepInSightRegion(
                 child: LayoutBuilder(
                   builder: (final BuildContext context, final BoxConstraints constraints) =>
                       _pieces(constraints.biggest, still: still),
@@ -367,7 +367,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
             Positioned(top: 0, left: 0, right: 0, child: note!),
             if (_yard.ceremony)
               Positioned.fill(
-                // Centered on the screen, never more than 12 under a dock or the sheet.
+                // Centered on the screen, never more than 12 under a bar or the sheet.
                 child: HarborCenter(
                   overlapBudget: 12,
                   child: LaunchCeremony(
@@ -380,14 +380,14 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
           ],
         ),
       ),
-      child: const HarborMoored(
+      child: const HarborClear(
         edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
-        mooringLine: true,
+        rowInsets: true,
         child: LogbookNote(
-          pattern: 'Body under the keyboard · beacon lift · dry dock · tool strip · pontoon',
+          pattern: 'Body under the keyboard · keep-in-sight lift · keyboard space · tool strip · attached bar',
           tryThis:
               'Drag boats around and tap one to paint it: a low boat rises 80 clear of the paint sheet. '
-              'Rename it and the keyboard takes the color tray\'s exact ground. Any change moors an '
+              'Rename it and the keyboard takes the color tray\'s exact ground. Any change attaches an '
               'Unsaved bar above the tool strip, which withdraws while the keyboard is up.',
         ),
       ),
@@ -402,7 +402,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
       final bool selected = piece.id == _yard.selectedId;
       Widget art = boat ? YardBoat(piece: piece, selected: selected, bob: !still) : const CrateArt(size: 40);
       if (boat) {
-        art = HarborBeacon(lift: selected, clearance: 80, holdPosition: _yard.draggingId == piece.id, child: art);
+        art = HarborKeepInSight(lift: selected, clearance: 80, holdPosition: _yard.draggingId == piece.id, child: art);
       }
       children.add(
         Positioned(
@@ -530,7 +530,7 @@ class YardBoat extends StatelessWidget {
   );
 }
 
-/// The tool strip on the bottom pier: add a boat, add a crate, clear the slipway.
+/// The tool strip on the bottom overlay bar: add a boat, add a crate, clear the slipway.
 class ToolStrip extends StatelessWidget {
   const ToolStrip({super.key, required this.yard});
 
@@ -540,7 +540,7 @@ class ToolStrip extends StatelessWidget {
   Widget build(final BuildContext context) => SizedBox(
     key: const ValueKey<String>('tool strip'),
     height: 64,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Row(
         children: <Widget>[
           _Tool(
@@ -593,7 +593,7 @@ class _Tool extends StatelessWidget {
   );
 }
 
-/// The "Unsaved changes · Save" bar the canvas moors as a pontoon.
+/// The "Unsaved changes · Save" bar the canvas attaches.
 class UnsavedBar extends StatelessWidget {
   const UnsavedBar({super.key, required this.onSave});
 
@@ -603,7 +603,7 @@ class UnsavedBar extends StatelessWidget {
   Widget build(final BuildContext context) => SizedBox(
     key: const ValueKey<String>('unsaved bar'),
     height: 48,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Row(
         children: <Widget>[
           const Icon(Icons.edit_note_rounded, color: Palette.brass),
@@ -634,10 +634,10 @@ enum PaintTab {
   final IconData icon;
 }
 
-/// The paint shop: a non-modal breakwater sheet with one height across its
-/// tabs. Its header holds the tab row; its body is a deck of fixed height (the
-/// name field, or a preview); its footer is a dry dock as tall as the tide's
-/// high-water mark, filled by the color tray while the keyboard is down and
+/// The paint shop: a non-modal sheet that covers the page, with one height across
+/// its tabs. Its header holds the tab row; its body is a deck of fixed height (the
+/// name field, or a preview); its footer is a keyboard space as tall as the
+/// keyboard's settled height, filled by the color tray while the keyboard is down and
 /// covered by the keyboard while it is up.
 class PaintShop extends StatefulWidget {
   const PaintShop({super.key, required this.yard});
@@ -710,7 +710,7 @@ class _PaintShopState extends State<PaintShop> {
         key: const ValueKey<String>('paint panel'),
         debugLabel: 'paint shop',
         surface: const Sailcloth(),
-        headerWake: HarborWake.none,
+        headerEdgeEffect: HarborEdgeEffect.none,
         header: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -720,16 +720,16 @@ class _PaintShopState extends State<PaintShop> {
             _TabRow(current: _tab, onPick: _pick),
           ],
         ),
-        body: HarborMoored(
+        body: HarborClear(
           edges: const <HarborEdge>{HarborEdge.top},
-          tide: false,
-          child: SizedBox(height: 64, child: HarborMooringLine(child: _deck(boat))),
+          keyboard: false,
+          child: SizedBox(height: 64, child: HarborClear.rowInsets(child: _deck(boat))),
         ),
-        // A dry dock: the keyboard's ground, kept at high water either way.
-        footerTide: HarborTideStance.dryDock,
+        // A keyboard space: the keyboard's ground, kept at its settled height either way.
+        footerKeyboard: HarborKeyboardStance.reserves,
         footerMinimum: 0,
-        footerWake: HarborWake.none,
-        footer: HarborDryDock(key: const ValueKey<String>('dry dock'), child: boat == null ? null : _tray(boat)),
+        footerEdgeEffect: HarborEdgeEffect.none,
+        footer: HarborKeyboardSpace(key: const ValueKey<String>('dry dock'), child: boat == null ? null : _tray(boat)),
       ),
     );
   }
@@ -792,12 +792,12 @@ class _PaintShopState extends State<PaintShop> {
           ),
       ],
     };
-    final HarborTideState tide = HarborTide.of(context);
+    final HarborKeyboardState tide = HarborKeyboard.of(context);
     return ColoredBox(
       color: Palette.night.withValues(alpha: 0.35),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
-        child: HarborMooringLine(
+        child: HarborClear.rowInsets(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -806,7 +806,7 @@ class _PaintShopState extends State<PaintShop> {
                 PaintTab.hull => 'Paint pots',
                 PaintTab.flag => 'Signal locker',
               }, style: const TextStyle(color: Palette.rope, fontWeight: FontWeight.w700)),
-              if (tide.highWaterIsEstimate)
+              if (tide.settledHeightIsEstimate)
                 Text(
                   'estimate: this tray is sized to a guessed keyboard until one has risen',
                   key: const ValueKey<String>('estimate hint'),
@@ -850,7 +850,7 @@ class _TabRow extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => SizedBox(
     height: 44,
-    child: HarborMooringLine(
+    child: HarborClear.rowInsets(
       child: Row(
         children: <Widget>[
           for (final PaintTab tab in PaintTab.values)

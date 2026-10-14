@@ -37,7 +37,13 @@ abstract final class _Light {
 
   /// A red-and-white banded tower from [base] up [height], [width] at its foot;
   /// returns where its lantern is.
-  static Offset tower(final Canvas canvas, final Offset base, final double height, final double width, {final bool lit = true}) {
+  static Offset tower(
+    final Canvas canvas,
+    final Offset base,
+    final double height,
+    final double width, {
+    final bool lit = true,
+  }) {
     final double topWidth = width * 0.62;
     final Path body = Path()
       ..moveTo(base.dx - width / 2, base.dy)
@@ -58,8 +64,17 @@ abstract final class _Light {
     canvas.restore();
     // Gallery, lantern room, cupola.
     final double galleryY = base.dy - height;
-    final Rect gallery = Rect.fromCenter(center: Offset(base.dx, galleryY), width: topWidth * 1.5, height: height * 0.04);
-    final Rect lantern = Rect.fromLTRB(base.dx - topWidth * 0.4, galleryY - height * 0.15, base.dx + topWidth * 0.4, galleryY - gallery.height / 2);
+    final Rect gallery = Rect.fromCenter(
+      center: Offset(base.dx, galleryY),
+      width: topWidth * 1.5,
+      height: height * 0.04,
+    );
+    final Rect lantern = Rect.fromLTRB(
+      base.dx - topWidth * 0.4,
+      galleryY - height * 0.15,
+      base.dx + topWidth * 0.4,
+      galleryY - gallery.height / 2,
+    );
     canvas
       ..drawRect(gallery, Paint()..color = const Color(0xFF263238))
       ..drawRect(lantern, Paint()..color = lit ? glow : const Color(0xFF546E7A))
@@ -73,15 +88,25 @@ abstract final class _Light {
       );
     for (int i = 1; i < 3; i++) {
       final double x = lantern.left + lantern.width * i / 3;
-      canvas.drawLine(Offset(x, lantern.top), Offset(x, lantern.bottom), Paint()
-        ..color = const Color(0xFF263238)
-        ..strokeWidth = 1);
+      canvas.drawLine(
+        Offset(x, lantern.top),
+        Offset(x, lantern.bottom),
+        Paint()
+          ..color = const Color(0xFF263238)
+          ..strokeWidth = 1,
+      );
     }
     return lantern.center;
   }
 
   /// A beam of light from [from] toward [to], spreading to [spread] wide.
-  static void beam(final Canvas canvas, final Offset from, final Offset to, final double spread, {final double strength = 0.55}) {
+  static void beam(
+    final Canvas canvas,
+    final Offset from,
+    final Offset to,
+    final double spread, {
+    final double strength = 0.55,
+  }) {
     final Offset along = to - from;
     final Offset normal = Offset(-along.dy, along.dx) / along.distance * (spread / 2);
     final Path cone = Path()
@@ -96,7 +121,10 @@ abstract final class _Light {
         ..shader = LinearGradient(
           begin: Alignment(from.dx < to.dx ? -1 : 1, 0),
           end: Alignment(from.dx < to.dx ? 1 : -1, 0),
-          colors: <Color>[glow.withValues(alpha: strength), glow.withValues(alpha: 0.04)],
+          colors: <Color>[
+            glow.withValues(alpha: strength),
+            glow.withValues(alpha: 0.04),
+          ],
         ).createShader(cone.getBounds()),
     );
   }
@@ -106,7 +134,10 @@ abstract final class _Light {
     final math.Random random = math.Random(seed);
     for (double x = left; x < right; x += 8 + random.nextDouble() * 8) {
       final double r = 8 + random.nextDouble() * 8;
-      canvas.drawOval(Rect.fromCenter(center: Offset(x, y + random.nextDouble() * 4), width: r * 2.2, height: r * 1.4), Paint()..color = Color.lerp(const Color(0xFF263238), const Color(0xFF37474F), random.nextDouble())!);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(x, y + random.nextDouble() * 4), width: r * 2.2, height: r * 1.4),
+        Paint()..color = Color.lerp(const Color(0xFF263238), const Color(0xFF37474F), random.nextDouble())!,
+      );
     }
   }
 
@@ -116,20 +147,41 @@ abstract final class _Light {
     final Path body = Path()
       ..moveTo(center.dx - length / 2, center.dy - depth)
       ..lineTo(center.dx + length / 2, center.dy - depth * 1.3)
-      ..quadraticBezierTo(center.dx + length * 0.4, center.dy + depth * 0.5, center.dx + length * 0.25, center.dy + depth * 0.5)
+      ..quadraticBezierTo(
+        center.dx + length * 0.4,
+        center.dy + depth * 0.5,
+        center.dx + length * 0.25,
+        center.dy + depth * 0.5,
+      )
       ..lineTo(center.dx - length * 0.38, center.dy + depth * 0.5)
       ..close();
-    final Rect cabin = Rect.fromLTRB(center.dx - length * 0.22, center.dy - depth * 2.6, center.dx + length * 0.12, center.dy - depth);
+    final Rect cabin = Rect.fromLTRB(
+      center.dx - length * 0.22,
+      center.dy - depth * 2.6,
+      center.dx + length * 0.12,
+      center.dy - depth,
+    );
     canvas
       ..drawRect(cabin, Paint()..color = const Color(0xFFF5F5F5))
-      ..drawRect(Rect.fromLTWH(cabin.left + 3, cabin.top + 3, cabin.width * 0.5, cabin.height * 0.4), Paint()..color = const Color(0xFF263238))
+      ..drawRect(
+        Rect.fromLTWH(cabin.left + 3, cabin.top + 3, cabin.width * 0.5, cabin.height * 0.4),
+        Paint()..color = const Color(0xFF263238),
+      )
       ..drawPath(body, Paint()..color = hull)
-      ..drawLine(Offset(center.dx - length / 2, center.dy - depth), Offset(center.dx + length / 2, center.dy - depth * 1.3), Paint()
-        ..color = Colors.white
-        ..strokeWidth = 1.6)
-      ..drawLine(Offset(cabin.center.dx, cabin.top), Offset(cabin.center.dx, cabin.top - depth * 2), Paint()
-        ..color = const Color(0xFF455A64)
-        ..strokeWidth = 1.4);
+      ..drawLine(
+        Offset(center.dx - length / 2, center.dy - depth),
+        Offset(center.dx + length / 2, center.dy - depth * 1.3),
+        Paint()
+          ..color = Colors.white
+          ..strokeWidth = 1.6,
+      )
+      ..drawLine(
+        Offset(cabin.center.dx, cabin.top),
+        Offset(cabin.center.dx, cabin.top - depth * 2),
+        Paint()
+          ..color = const Color(0xFF455A64)
+          ..strokeWidth = 1.4,
+      );
   }
 }
 
@@ -169,7 +221,10 @@ class _BeamPainter extends CustomPainter {
     canvas.drawCircle(lantern, h * 0.08, Paint()..color = _Light.glow.withValues(alpha: 0.4));
     _Light.boat(canvas, boat, w * 0.18, Palette.hulls[0]);
     // The light it catches, on the water round it.
-    canvas.drawOval(Rect.fromCenter(center: boat + Offset(0, h * 0.05), width: w * 0.3, height: h * 0.06), Paint()..color = _Light.glow.withValues(alpha: 0.18));
+    canvas.drawOval(
+      Rect.fromCenter(center: boat + Offset(0, h * 0.05), width: w * 0.3, height: h * 0.06),
+      Paint()..color = _Light.glow.withValues(alpha: 0.18),
+    );
   }
 
   @override
@@ -245,7 +300,10 @@ class _HeadlandPainter extends CustomPainter {
       ..drawLine(Offset(w * 0.68, towerTop), Offset(w * 0.68, waterline), mark..color = Colors.white38)
       ..drawLine(Offset(w * 0.68, hiddenTop), Offset(w * 0.68, waterline), mark..color = _Light.glow);
     final TextPainter label = TextPainter(
-      text: const TextSpan(text: 'half hidden', style: TextStyle(color: _Light.glow, fontSize: 10, fontStyle: FontStyle.italic)),
+      text: const TextSpan(
+        text: 'half hidden',
+        style: TextStyle(color: _Light.glow, fontSize: 10, fontStyle: FontStyle.italic),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     label.paint(canvas, Offset(w * 0.7, (hiddenTop + waterline) / 2 - 6));
@@ -302,7 +360,10 @@ class _LiftPainter extends CustomPainter {
       canvas
         ..drawCircle(Offset(x - 7, deck - 6), 6, Paint()..color = const Color(0xFF212121))
         ..drawCircle(Offset(x + 7, deck - 6), 6, Paint()..color = const Color(0xFF212121))
-        ..drawRect(Rect.fromCenter(center: Offset(x, deck - 12), width: 26, height: 6), Paint()..color = const Color(0xFF0D47A1));
+        ..drawRect(
+          Rect.fromCenter(center: Offset(x, deck - 12), width: 26, height: 6),
+          Paint()..color = const Color(0xFF0D47A1),
+        );
     }
     // The boat, raised clear of the water.
     final Offset hull = Offset(w * 0.5, h * 0.55);
@@ -315,10 +376,18 @@ class _LiftPainter extends CustomPainter {
       ..lineTo(hull.dx - length * 0.38, hull.dy + depth * 0.5)
       ..quadraticBezierTo(hull.dx - length * 0.48, hull.dy + depth * 0.2, hull.dx - length / 2, hull.dy - depth * 0.5)
       ..close();
-    final Rect cabin = Rect.fromLTRB(hull.dx - length * 0.2, hull.dy - depth * 1.3, hull.dx + length * 0.14, hull.dy - depth * 0.6);
+    final Rect cabin = Rect.fromLTRB(
+      hull.dx - length * 0.2,
+      hull.dy - depth * 1.3,
+      hull.dx + length * 0.14,
+      hull.dy - depth * 0.6,
+    );
     canvas
       ..drawRect(cabin, Paint()..color = Colors.white)
-      ..drawRect(Rect.fromLTWH(cabin.left + 4, cabin.top + 4, cabin.width * 0.6, cabin.height * 0.4), Paint()..color = const Color(0xFF263238))
+      ..drawRect(
+        Rect.fromLTWH(cabin.left + 4, cabin.top + 4, cabin.width * 0.6, cabin.height * 0.4),
+        Paint()..color = const Color(0xFF263238),
+      )
       ..drawPath(boat, Paint()..color = Palette.hulls[3])
       ..drawPath(
         Path()
@@ -340,12 +409,27 @@ class _LiftPainter extends CustomPainter {
     for (final double t in <double>[-0.26, 0.24]) {
       final double x = hull.dx + length * t;
       canvas
-        ..drawRect(Rect.fromCenter(center: Offset(x, beamY + 8), width: 12, height: 10), Paint()..color = const Color(0xFF424242))
+        ..drawRect(
+          Rect.fromCenter(center: Offset(x, beamY + 8), width: 12, height: 10),
+          Paint()..color = const Color(0xFF424242),
+        )
         ..drawLine(Offset(x - 3, beamY + 12), Offset(x - length * 0.16, hull.dy - depth * 0.4), sling)
         ..drawLine(Offset(x + 3, beamY + 12), Offset(x + length * 0.16, hull.dy - depth * 0.4), sling)
-        ..drawLine(Offset(x - length * 0.16, hull.dy - depth * 0.4), Offset(x - length * 0.1, hull.dy + depth * 0.55), strap)
-        ..drawLine(Offset(x - length * 0.1, hull.dy + depth * 0.55), Offset(x + length * 0.1, hull.dy + depth * 0.55), strap)
-        ..drawLine(Offset(x + length * 0.1, hull.dy + depth * 0.55), Offset(x + length * 0.16, hull.dy - depth * 0.4), strap);
+        ..drawLine(
+          Offset(x - length * 0.16, hull.dy - depth * 0.4),
+          Offset(x - length * 0.1, hull.dy + depth * 0.55),
+          strap,
+        )
+        ..drawLine(
+          Offset(x - length * 0.1, hull.dy + depth * 0.55),
+          Offset(x + length * 0.1, hull.dy + depth * 0.55),
+          strap,
+        )
+        ..drawLine(
+          Offset(x + length * 0.1, hull.dy + depth * 0.55),
+          Offset(x + length * 0.16, hull.dy - depth * 0.4),
+          strap,
+        );
     }
     // Water streaming off the keel, and the gap of air under it.
     final Paint drip = Paint()..color = Palette.foam.withValues(alpha: 0.85);

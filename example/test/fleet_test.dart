@@ -9,16 +9,16 @@ import 'package:harbor_example/scenes/fleet.dart';
 
 const ValueKey<String> _tabs = ValueKey<String>('tabs');
 
-/// The Fleet tab inside a stand-in for Harbor Town: a new port whose tab bar
-/// is a quay on pilings.
+/// The Fleet tab inside a stand-in for Harbor Town: a page whose tab bar
+/// is a solid bar that stays.
 Widget _townWithFleet() => MaterialApp(
   theme: Palette.theme(),
   builder: (final BuildContext context, final Widget? child) =>
-      HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+      HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
   home: const HarborPage(
-    child: Harbor(
-      newPort: true,
-      bottom: <HarborDock>[HarborDock.quay(child: SizedBox(key: _tabs, height: 56))],
+    child: HarborFrame(
+      isPage: true,
+      bottom: <HarborBar>[HarborBar.solid(child: SizedBox(key: _tabs, height: 56))],
       body: FleetTab(),
     ),
   ),
@@ -27,7 +27,7 @@ Widget _townWithFleet() => MaterialApp(
 Widget _detail(final Boat boat) => MaterialApp(
   theme: Palette.theme(),
   builder: (final BuildContext context, final Widget? child) =>
-      HarborSea(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
+      HarborRoot(margin: const EdgeInsetsDirectional.symmetric(horizontal: 16), child: child!),
   home: BoatDetailPage(boat: boat),
 );
 
@@ -55,8 +55,8 @@ Future<void> _sailToEnd(final WidgetTester tester, final Finder scrollable) asyn
   } while (position.pixels < position.maxScrollExtent);
 }
 
-HarborDockRecord _dock(final HarborSeaTrial trial, final Finder around, final String label) =>
-    trial.docksAround(around).singleWhere((final HarborDockRecord d) => d.label == label);
+HarborBarRecord _dock(final HarborTrial trial, final Finder around, final String label) =>
+    trial.barsAround(around).singleWhere((final HarborBarRecord d) => d.label == label);
 
 double _headerTitleOpacity(final WidgetTester tester, final Boat boat) => tester
     .widget<Opacity>(
@@ -74,17 +74,17 @@ void main() {
 
   for (final HarborTrialDevice device in HarborTrialDevice.phones) {
     group('$device', () {
-      testWidgets('fleet registry: rows rest past the wake; the tab bar stays put on the tide', (
+      testWidgets('fleet registry: rows rest past the fade; the tab bar stays put for the keyboard', (
         final WidgetTester tester,
       ) async {
-        final HarborSeaTrial trial = await tester.pumpSeaTrial(_townWithFleet(), device: device);
+        final HarborTrial trial = await tester.pumpHarborTrial(_townWithFleet(), device: device);
         await tester.pumpAndSettle();
 
-        // The first sliver rests just past the header's wake, and the first
+        // The first sliver rests just past the header's fade, and the first
         // boat below it.
         final Finder note = find.byType(LogbookNote);
-        final Rect clear = trial.clearWaterAround(note);
-        final HarborDockRecord header = _dock(trial, note, 'registry header');
+        final Rect clear = trial.roomAround(note);
+        final HarborBarRecord header = _dock(trial, note, 'registry header');
         expect(clear.top, moreOrLessEquals(header.rect.bottom + 12));
         expect(tester.getRect(note).top, moreOrLessEquals(clear.top));
         final Finder firstRow = find.byKey(ValueKey<String>('boat row ${Fleet.boats.first.id}'));
@@ -94,11 +94,11 @@ void main() {
         final Rect tabsBefore = tester.getRect(find.byKey(_tabs));
         await tester.tap(find.byKey(const ValueKey<String>('registry search')));
         await tester.pump();
-        await trial.raiseTide();
+        await trial.showKeyboard();
         expect(tester.getRect(find.byKey(_tabs)), tabsBefore);
-        expect(tabsBefore.top, greaterThanOrEqualTo(trial.waterline));
+        expect(tabsBefore.top, greaterThanOrEqualTo(trial.keyboardTop));
 
-        // The last boat is still reachable, and docks above the keyboard.
+        // The last boat is still reachable, and rests above the keyboard.
         // A lazy list only estimates its extent until it has built its end,
         // so sail on until the extent stops growing.
         final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
@@ -108,19 +108,19 @@ void main() {
         } while (position.pixels < position.maxScrollExtent);
         final Finder lastRow = find.byKey(ValueKey<String>('boat row ${Fleet.boats.last.id}'));
         expect(lastRow, findsOneWidget);
-        expect(tester.getRect(lastRow).bottom, moreOrLessEquals(trial.waterline));
+        expect(tester.getRect(lastRow).bottom, moreOrLessEquals(trial.keyboardTop));
       });
 
-      testWidgets('boat detail: hero, title handoff, pinned strips, carousel, pontoon', (
+      testWidgets('boat detail: hero, title handoff, pinned strips, carousel, attached bar', (
         final WidgetTester tester,
       ) async {
-        final HarborSeaTrial trial = await tester.pumpSeaTrial(_detail(boat), device: device);
+        final HarborTrial trial = await tester.pumpHarborTrial(_detail(boat), device: device);
         await _settle(tester);
 
         final Finder page = find.byType(Scrollable).first;
         final Finder headerFinder = find.byKey(const ValueKey<String>('boat header'));
-        final HarborDockRecord header = _dock(trial, headerFinder, 'boat header');
-        final Rect clear = trial.clearWaterAround(headerFinder);
+        final HarborBarRecord header = _dock(trial, headerFinder, 'boat header');
+        final Rect clear = trial.roomAround(headerFinder);
         expect(clear.top, moreOrLessEquals(header.rect.bottom + 8));
 
         // #10: the hero's title block clears the status bar, under the header.
@@ -128,7 +128,7 @@ void main() {
         // status bar.
         expect(tester.getRect(find.byKey(const ValueKey<String>('boat hero'))).top, 0.0);
         final Rect titleBlock = tester.getRect(find.byKey(const ValueKey<String>('hero title block')));
-        expect(titleBlock.top, greaterThanOrEqualTo(device.coast.top));
+        expect(titleBlock.top, greaterThanOrEqualTo(device.systemEdges.top));
         expect(titleBlock.top, lessThan(header.rect.bottom));
 
         // #11: the header's title fades in as the hero title passes under it.
@@ -155,7 +155,7 @@ void main() {
           moreOrLessEquals(sort.bottom + 8),
         );
 
-        // #13: the carousel runs edge to edge, padded by the mooring line.
+        // #13: the carousel runs edge to edge, padded by the row insets.
         final Finder carousel = find.byKey(const ValueKey<String>('crew carousel'));
         await tester.scrollUntilVisible(carousel, 100, scrollable: page);
         await Scrollable.ensureVisible(tester.element(carousel), alignment: 0.5);
@@ -166,10 +166,10 @@ void main() {
         await _sailToEnd(tester, find.descendant(of: carousel, matching: find.byType(Scrollable)).first);
         expect(tester.getRect(find.byKey(ValueKey<String>('crew ${Fleet.crew.last.name}'))).right, width - 16);
 
-        // #14: the charter pill rests above the bottom coast, and the last
+        // #14: the charter pill rests above the bottom system edge, and the last
         // voyage tile rests above the pill.
         final Rect pill = tester.getRect(find.byKey(const ValueKey<String>('charter pill')));
-        expect(pill.bottom, lessThanOrEqualTo(device.size.height - device.coast.bottom));
+        expect(pill.bottom, lessThanOrEqualTo(device.size.height - device.systemEdges.bottom));
         await _sailToEnd(tester, page);
         final Rect lastTile = tester.getRect(find.byKey(const ValueKey<String>('voyage tile 11')));
         expect(lastTile.bottom, lessThanOrEqualTo(pill.top));

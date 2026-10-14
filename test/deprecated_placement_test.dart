@@ -74,18 +74,28 @@ void main() {
 
   testWidgets('raise forwards the old parameters to a placement, with their old defaults', (final tester) async {
     late BuildContext page;
-    await tester.pumpSeaTrial(
+    await tester.pumpHarborTrial(
       MaterialApp(
         builder: (final BuildContext context, final Widget? child) => HarborSea(child: child!),
         home: Harbor(
-          body: Builder(builder: (final BuildContext context) {
-            page = context;
-            return Center(child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)));
-          }),
+          body: Builder(
+            builder: (final BuildContext context) {
+              page = context;
+              return Center(
+                child: HarborAnchorPoint(anchor: anchor, child: const SizedBox(width: 40, height: 40)),
+              );
+            },
+          ),
         ),
       ),
     );
-    final HarborFlareEntry anchored = HarborFlares.raise(page, anchor: anchor, gap: 2, duration: null, builder: (final BuildContext _) => const SizedBox());
+    final HarborFlareEntry anchored = HarborFlares.raise(
+      page,
+      anchor: anchor,
+      gap: 2,
+      duration: null,
+      builder: (final BuildContext _) => const SizedBox(),
+    );
     expect(anchored.placement, HarborAnchored(anchor, gap: 2));
     expect(anchored.side, HarborAnchorSide.below);
     expect(anchored.gap, 2);
@@ -100,7 +110,12 @@ void main() {
     expect(low.placement, const HarborAligned(margin: EdgeInsets.only(left: 4)));
     expect(low.alignment, Alignment.bottomCenter);
     expect(
-      () => HarborFlares.raise(page, placement: const HarborAligned(), margin: EdgeInsets.zero, builder: (final BuildContext _) => const SizedBox()),
+      () => HarborFlares.raise(
+        page,
+        placement: const HarborAligned(),
+        margin: EdgeInsets.zero,
+        builder: (final BuildContext _) => const SizedBox(),
+      ),
       throwsAssertionError,
     );
     anchored.lower();

@@ -29,12 +29,10 @@ abstract final class Palette {
   ];
 
   static ThemeData theme() {
-    final ColorScheme scheme = ColorScheme.fromSeed(seedColor: shallows, brightness: Brightness.dark).copyWith(
-      surface: deepSea,
-      primary: brass,
-      onPrimary: night,
-      secondary: shallows,
-    );
+    final ColorScheme scheme = ColorScheme.fromSeed(
+      seedColor: shallows,
+      brightness: Brightness.dark,
+    ).copyWith(surface: deepSea, primary: brass, onPrimary: night, secondary: shallows);
     return ThemeData(
       colorScheme: scheme,
       scaffoldBackgroundColor: deepSea,
