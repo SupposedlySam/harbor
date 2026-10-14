@@ -1,0 +1,54 @@
+# `dart fix` transforms for the names flares had through 0.3.0, when they were signals (renamed in
+# 0.3.1). Each old name is a deprecated typedef of the new one; renamed, a call such as
+# HarborSignals.raise(alignment: ...) then takes the placement transforms in placement.yaml too.
+# Checked by test_fixes/signals.dart.
+version: 1
+transforms:
+  - title: "Rename to 'HarborFlares'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborSignals'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFlares'
+  - title: "Rename to 'HarborFlareSlot'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborSignalSlot'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFlareSlot'
+  - title: "Rename to 'HarborFlareTarget'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborSignalTarget'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFlareTarget'
+  - title: "Rename to 'HarborFlareEntry'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborSignalEntry'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFlareEntry'
+  - title: "Rename to 'HarborFlareTransitionBuilder'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborSignalTransitionBuilder'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFlareTransitionBuilder'
+  - title: "Rename to 'HarborFlareClosedReason'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborSignalClosedReason'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborFlareClosedReason'

@@ -9,12 +9,17 @@
 // optional arguments is a branch of its own, and writing them by hand would be hundreds of lines
 // to keep in step. This generates them. Edit this file, not the YAML.
 //
-// Two things about the format, found by running it (Dart 3.13):
-//  * Parameter changes do not fire from the diagnostic on a deprecated NAMED constructor, only
-//    from one on a deprecated parameter or an undefined one. So `HarborBuoy.anchored` is fixed in
-//    two passes, both made by one `dart fix --apply`: renamed to `HarborBuoy`, after which its old
-//    arguments are undefined, and the unnamed constructor's transform rewrites them.
+// What the format does, found by running it (Dart 3.13):
+//  * Parameter changes, and conditions on arguments, do not fire from the diagnostic on a
+//    deprecated constructor's NAME, only from one on an argument (a deprecated parameter, or an
+//    undefined one). A rename alone does fire from the name, and applies to a tear-off too, which
+//    for a named constructor renamed to the unnamed one gives a type literal: broken code. So
+//    `HarborBuoy.anchored`'s anchor is a deprecated (optional, asserted) parameter, and one
+//    transform keyed on that argument renames the constructor and moves its arguments. A tear-off
+//    has no arguments, gets no fix, and stays deprecated and compiling.
 //  * A condition reads a missing argument as ''.
+//  * A static constant inside an enum (HarborAnchorSide.before) is a `field` `inClass`; `inEnum`
+//    does not match it.
 
 import 'dart:io';
 
@@ -33,7 +38,10 @@ class _Arg {
 /// One branch: the old arguments present in this shape of call (all others absent), and the
 /// placement expression that replaces them.
 class _Branch {
-  _Branch(this.present, this.absent, this.expression);
+  _Branch(this.present, this.absent, this.expression, {this.renameTo});
+
+  /// A new name for the constructor, renamed as the arguments move.
+  final String? renameTo;
 
   /// Where the placement goes among the arguments: after `raise`'s context, first otherwise.
   int index = 0;
@@ -50,6 +58,10 @@ class _Branch {
     ].join(' && ');
     b.writeln('      - if: "$condition"');
     b.writeln('        changes:');
+    if (renameTo != null) {
+      b.writeln("          - kind: 'rename'");
+      b.writeln("            newName: '$renameTo'");
+    }
     b.writeln("          - kind: 'addParameter'");
     b.writeln('            index: $index');
     b.writeln("            name: 'placement'");
@@ -78,8 +90,8 @@ class _Branch {
   }
 }
 
-/// Every subset of [items] with at most [max] members, smallest first, in [items]' order.
-List<List<T>> _subsets<T>(final List<T> items, {final int? max}) {
+/// Every subset of [items], smallest first, in [items]' order.
+List<List<T>> _subsets<T>(final List<T> items) {
   final List<List<T>> all = <List<T>>[
     for (int mask = 0; mask < 1 << items.length; mask++)
       <T>[
@@ -87,10 +99,7 @@ List<List<T>> _subsets<T>(final List<T> items, {final int? max}) {
           if (mask & (1 << i) != 0) items[i],
       ],
   ];
-  return <List<T>>[
-    for (final List<T> s in all)
-      if (max == null || s.length <= max) s,
-  ]..sort((final List<T> a, final List<T> b) => a.length.compareTo(b.length));
+  return all..sort((final List<T> a, final List<T> b) => a.length.compareTo(b.length));
 }
 
 String _transform({
@@ -132,14 +141,14 @@ List<_Branch> _anchored({
   required final List<_Arg> optional,
   required final bool anchorAlways,
   required final String? sideDefault,
-  final int? max,
   final List<String> alsoAbsent = const <String>[],
+  final String? renameTo,
 }) {
   final List<String> names = <String>[for (final _Arg a in optional) a.name];
   final List<List<String>> anchorChoices = anchorAlways ? <List<String>>[<String>['anchor']] : <List<String>>[<String>[], <String>['anchor']];
   return <_Branch>[
     for (final List<String> anchor in anchorChoices)
-      for (final List<_Arg> given in _subsets(optional, max: max == null ? null : max - anchor.length))
+      for (final List<_Arg> given in _subsets(optional))
         if (anchor.isNotEmpty || given.isNotEmpty)
           _Branch(
             <String>[...anchor, for (final _Arg a in given) a.name],
@@ -154,6 +163,7 @@ List<_Branch> _anchored({
               if (sideDefault != null && !given.any((final _Arg a) => a.name == 'side')) 'side: $sideDefault',
               for (final _Arg a in given) a.write(),
             ].join(', ')})',
+            renameTo: renameTo,
           ),
   ];
 }
@@ -205,26 +215,40 @@ String generate() {
       ..writeln("        newName: '$now'");
   }
 
-  out
-    ..writeln('  # HarborBuoy.anchored(anchor: a, ...) becomes HarborBuoy(placement: HarborAnchored(a, ...)).')
-    ..writeln('  # First pass: the rename. Its arguments are then undefined, and the next transform moves them.')
-    ..writeln('  - title: "Migrate to \'placement\'"')
-    ..writeln('    date: $_date')
-    ..writeln('    element:')
-    ..writeln("      uris: [ 'harbor.dart' ]")
-    ..writeln("      constructor: 'anchored'")
-    ..writeln("      inClass: 'HarborBuoy'")
-    ..writeln('    changes:')
-    ..writeln("      - kind: 'rename'")
-    ..writeln("        newName: ''");
+  // Reached through the old typedef too: HarborBuoySide.before is renamed HarborAnchorSide.before
+  // first, then this.
+  for (final (String old, String now) in <(String, String)>[('before', 'start'), ('after', 'end')]) {
+    out
+      ..writeln('  # HarborAnchorSide.$old, the name of $now through 0.2.0.')
+      ..writeln('  - title: "Rename to \'$now\'"')
+      ..writeln('    date: $_date')
+      ..writeln('    element:')
+      ..writeln("      uris: [ 'harbor.dart' ]")
+      ..writeln("      field: '$old'")
+      ..writeln("      inClass: 'HarborAnchorSide'")
+      ..writeln('    changes:')
+      ..writeln("      - kind: 'rename'")
+      ..writeln("        newName: '$now'");
+  }
 
   out.write(
     _transform(
       title: "Migrate to 'placement'",
       comment:
-          'HarborBuoy(alignment:, margin:) becomes HarborBuoy(placement: HarborAligned(...)), and the arguments a\n'
-          'renamed HarborBuoy.anchored left behind become HarborBuoy(placement: HarborAnchored(anchor, ...)). The old\n'
-          "anchored buoy's side was above, a HarborAnchored's is below, so side: above is written where it was left out.",
+          'HarborBuoy.anchored(anchor: a, ...) becomes HarborBuoy(placement: HarborAnchored(a, ...)), from the diagnostic\n'
+          "on its deprecated anchor argument, so a tear-off (no arguments) is left alone. The old anchored buoy's side\n"
+          "was above, a HarborAnchored's is below, so side: above is written where it was left out.",
+      element: "      constructor: 'anchored'\n      inClass: 'HarborBuoy'\n",
+      branches: _anchored(optional: buoyAnchored, anchorAlways: true, sideDefault: above, renameTo: ''),
+      variables: <String>['anchor', for (final _Arg a in buoyAnchored) a.name],
+    ),
+  );
+
+  out.write(
+    _transform(
+      title: "Migrate to 'placement'",
+      comment:
+          'HarborBuoy(alignment:, margin:) becomes HarborBuoy(placement: HarborAligned(...)).',
       element: "      constructor: ''\n      inClass: 'HarborBuoy'\n",
       branches: <_Branch>[
         for (final List<_Arg> given in _subsets(const <_Arg>[_Arg('alignment'), _Arg('margin')]))
@@ -238,9 +262,8 @@ String generate() {
               ],
               '{% HarborAligned %}(${given.map((final _Arg a) => a.write()).join(', ')})',
             ),
-        ..._anchored(optional: buoyAnchored, anchorAlways: true, sideDefault: above),
       ],
-      variables: <String>['anchor', 'alignment', for (final _Arg a in buoyAnchored) a.name],
+      variables: <String>['anchor', 'alignment', 'margin'],
     ),
   );
 
@@ -250,9 +273,9 @@ String generate() {
       comment:
           'HarborPortalBuoy(anchor:, side:, gap:, overlap:, crossAlignment:, crossOffset:, margin:, flips:) becomes\n'
           "HarborPortalBuoy(placement: HarborAnchored(anchor or null, ...)). A portal buoy's old side was above, so\n"
-          'side: above is written where it was left out. Calls giving more than four of these are left for hand.',
+          'side: above is written where it was left out.',
       element: "      constructor: ''\n      inClass: 'HarborPortalBuoy'\n",
-      branches: _anchored(optional: portal, anchorAlways: false, sideDefault: above, max: 4),
+      branches: _anchored(optional: portal, anchorAlways: false, sideDefault: above),
       variables: <String>['anchor', for (final _Arg a in portal) a.name],
     ),
   );

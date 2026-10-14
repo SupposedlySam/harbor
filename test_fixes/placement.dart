@@ -9,6 +9,10 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
   const HarborBuoySide side = HarborBuoySide.below;
   const HarborBuoyCrossAlignment cross = HarborBuoyCrossAlignment.start;
 
+  // before and after, the names of start and end through 0.2.0, through either enum name.
+  const HarborBuoySide before = HarborBuoySide.before;
+  const HarborAnchorSide after = HarborAnchorSide.after;
+
   // An aligned buoy.
   const HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: SizedBox());
   const HarborBuoy(margin: EdgeInsets.zero, child: SizedBox());
@@ -31,6 +35,11 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
     onDismiss: close,
     child: const SizedBox(),
   );
+
+  // A tear-off is left alone: it has no arguments to move, and renamed it would be a type, not a
+  // constructor. It stays deprecated, for a hand to change.
+  final HarborBuoy Function({required HarborAnchor anchor, required Widget child}) tearOff = HarborBuoy.anchored;
+  tearOff(anchor: anchor, child: const SizedBox());
 }
 
 void portals(HarborAnchor anchor, OverlayPortalController menu) {
@@ -47,6 +56,31 @@ void portals(HarborAnchor anchor, OverlayPortalController menu) {
   );
   HarborPortalBuoy(controller: menu, anchor: anchor, gap: 2, flips: false, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
   HarborPortalBuoy(controller: menu, overlap: 4, crossOffset: 8, margin: EdgeInsets.zero, buoyBuilder: (_) => const SizedBox(), child: const SizedBox());
+  // A dropdown passes five or more.
+  HarborPortalBuoy(
+    controller: menu,
+    side: HarborBuoySide.end,
+    gap: 1,
+    overlap: 2,
+    crossOffset: 3,
+    margin: EdgeInsets.zero,
+    buoyBuilder: (_) => const SizedBox(),
+    child: const SizedBox(),
+  );
+  // All eight.
+  HarborPortalBuoy(
+    controller: menu,
+    anchor: anchor,
+    side: HarborBuoySide.below,
+    gap: 1,
+    overlap: 2,
+    crossAlignment: HarborBuoyCrossAlignment.end,
+    crossOffset: 3,
+    margin: const EdgeInsets.all(4),
+    flips: false,
+    buoyBuilder: (_) => const SizedBox(),
+    child: const SizedBox(),
+  );
 }
 
 void flares(BuildContext context, HarborAnchor anchor) {
