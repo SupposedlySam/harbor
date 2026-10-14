@@ -349,12 +349,12 @@ class _HingePageState extends State<_HingePage> {
         _flare = HarborToasts.show(
           page,
           slot: HarborToastSlot.low,
-          duration: null,
           builder: (final BuildContext _) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(color: Palette.night, borderRadius: BorderRadius.circular(24)),
             child: const Text('Berth 4 booked', style: TextStyle(fontSize: 18, color: Colors.white)),
           ),
+          timing: HarborToastTiming.untilHidden,
         );
       }
       if (wantSheet && !_sheet) {

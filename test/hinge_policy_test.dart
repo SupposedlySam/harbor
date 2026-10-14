@@ -202,7 +202,7 @@ void main() {
         slot: HarborToastSlot.low,
         hinge: HarborHinge.never,
         builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('flare'), width: 100, height: 20),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       for (int i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -242,7 +242,7 @@ void main() {
         raiser,
         slot: HarborToastSlot.middle,
         builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('flare'), width: 100, height: 20),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       for (int i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));

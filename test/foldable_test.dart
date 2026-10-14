@@ -122,8 +122,8 @@ void main() {
     HarborToasts.show(
       page,
       slot: HarborToastSlot.low,
-      duration: null,
       builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'toast').overlaps(_hinge), isFalse);

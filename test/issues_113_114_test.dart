@@ -34,9 +34,8 @@ void main() {
       );
       final HarborToastEntry entry = HarborToasts.show(
         page,
-        countsWhileCovered: counts,
         builder: (final BuildContext _) => const Text('saved'),
-        duration: const Duration(seconds: 2),
+        timing: HarborToastTiming(duration: const Duration(seconds: 2), countsWhileCovered: counts),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300)); // the entrance

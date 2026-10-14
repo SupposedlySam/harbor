@@ -52,8 +52,8 @@ void main() {
       final HarborToastEntry entry = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor, flips: false),
-        duration: null,
         builder: (final BuildContext _) => const SizedBox(),
+        timing: HarborToastTiming.untilHidden,
       );
       entry.hide();
       await _settle(tester);
@@ -85,7 +85,7 @@ void main() {
         device: _dual,
       );
       expect(MediaQuery.paddingOf(page), const EdgeInsets.only(right: 40, bottom: 20), reason: 'positive control');
-      HarborToasts.show(page, slot: HarborToastSlot.low, duration: null, builder: toast);
+      HarborToasts.show(page, slot: HarborToastSlot.low, builder: toast, timing: HarborToastTiming.untilHidden);
       await _settle(tester);
       expect(padding, const EdgeInsets.only(bottom: 20));
       expect(features, isEmpty);
@@ -107,7 +107,7 @@ void main() {
         ),
         device: _dual,
       );
-      HarborToasts.show(page, slot: HarborToastSlot.low, duration: null, builder: toast);
+      HarborToasts.show(page, slot: HarborToastSlot.low, builder: toast, timing: HarborToastTiming.untilHidden);
       await _settle(tester);
       expect(padding.right, 0);
       expect(features, isEmpty);
@@ -126,7 +126,13 @@ void main() {
         ),
         device: _dual,
       );
-      HarborToasts.show(page, slot: HarborToastSlot.low, hinge: HarborHinge.never, duration: null, builder: toast);
+      HarborToasts.show(
+        page,
+        slot: HarborToastSlot.low,
+        hinge: HarborHinge.never,
+        builder: toast,
+        timing: HarborToastTiming.untilHidden,
+      );
       await _settle(tester);
       expect(padding, const EdgeInsets.only(right: 40, bottom: 20));
       expect(features, hasLength(1));
@@ -156,8 +162,8 @@ void main() {
       HarborToasts.show(
         page,
         slot: HarborToastSlot.low,
-        duration: null,
         builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('t'), width: 200, height: 30),
+        timing: HarborToastTiming.untilHidden,
       );
       await settle(tester);
       final Rect toast = tester.getRect(find.byKey(const ValueKey<String>('t')));
@@ -191,8 +197,8 @@ void main() {
       HarborToasts.show(
         page,
         placement: HarborAnchored(anchor),
-        duration: null,
         builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('t'), width: 200, height: 30),
+        timing: HarborToastTiming.untilHidden,
       );
       await settle(tester);
       expect(tester.getRect(find.byKey(const ValueKey<String>('t'))).right, 532);

@@ -93,7 +93,7 @@ void main() {
       page,
       anchor: anchor,
       gap: 2,
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
       builder: (final BuildContext _) => const SizedBox(),
     );
     expect(anchored.placement, HarborAnchored(anchor, gap: 2));
@@ -104,7 +104,7 @@ void main() {
       page,
       slot: HarborFlareSlot.low,
       margin: const EdgeInsetsDirectional.only(start: 4),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
       builder: (final BuildContext _) => const SizedBox(),
     );
     expect(low.placement, const HarborAligned(margin: EdgeInsets.only(left: 4)));

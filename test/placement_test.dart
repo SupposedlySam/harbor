@@ -181,8 +181,8 @@ void main() {
       HarborToasts.show(
         inHarbor,
         slot: HarborToastSlot.low,
-        duration: null,
         builder: (final BuildContext _) => _box('flare'),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       final Rect harbor = _rect(tester, 'flare');
@@ -190,8 +190,8 @@ void main() {
       HarborToasts.show(
         bare,
         slot: HarborToastSlot.low,
-        duration: null,
         builder: (final BuildContext _) => _box('bare'),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       expect(_rect(tester, 'bare').center.dx, harbor.center.dx);
@@ -272,8 +272,8 @@ void main() {
       final HarborToastEntry entry = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor, overlap: 4, crossOffset: 10),
-        duration: null,
         builder: (final BuildContext _) => _box('flare', width: 80),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       final Rect flare = _rect(tester, 'flare');
@@ -294,8 +294,8 @@ void main() {
           alignment: AlignmentDirectional.bottomEnd,
           margin: EdgeInsetsDirectional.only(end: 30),
         ),
-        duration: null,
         builder: (final BuildContext _) => _box('flare', width: 80),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       expect(
@@ -423,11 +423,11 @@ void main() {
         page,
         placement: const HarborAligned(margin: EdgeInsets.all(10)),
         reachesSystemEdges: true,
-        duration: null,
         builder: (final BuildContext context) {
           padding = MediaQuery.paddingOf(context);
           return _box('bar', width: double.infinity);
         },
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       // The phone on its side has 62 at each side and 21 at the bottom.

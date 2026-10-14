@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
+// What frame shows a toast, and why it closed, are harbor's to read: the entry a caller holds says neither.
+import 'package:harbor/src/controller.dart' show ShownToast;
 import 'package:harbor_test/harbor_test.dart';
 
 final Finder _button = find.byKey(const ValueKey<String>('button'));
@@ -69,8 +71,8 @@ void main() {
     HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: null,
       builder: (final BuildContext _) => _toast('toast'),
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     final Rect button = tester.getRect(_button);
@@ -95,8 +97,8 @@ void main() {
         gap: 12,
         crossAlignment: HarborCrossAlignment.start,
       ),
-      duration: null,
       builder: (final BuildContext _) => _toast('toast'),
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     final Rect button = tester.getRect(_button);
@@ -117,8 +119,8 @@ void main() {
     final HarborToastEntry entry = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: null,
       builder: (final BuildContext _) => const Text('Copied'),
+      timing: HarborToastTiming.untilHidden,
     );
     HarborToastClosedReason? reason;
     unawaited(entry.closed.then((final HarborToastClosedReason r) => reason = r));
@@ -181,28 +183,28 @@ void main() {
       final HarborToastEntry first = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor),
-        duration: null,
         builder: (final BuildContext _) => _toast('first'),
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToasts.show(
         page,
         placement: HarborAnchored(anchor),
-        duration: null,
         builder: (final BuildContext _) => _toast('second'),
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToasts.show(
         page,
         placement: HarborAnchored(anchor, side: HarborAnchorSide.above),
-        duration: null,
         builder: (final BuildContext _) => _toast('above'),
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToasts.show(
         page,
         placement: HarborAnchored(other),
-        duration: null,
         builder: (final BuildContext _) => _toast('other'),
+        timing: HarborToastTiming.untilHidden,
       );
-      HarborToasts.show(page, duration: null, builder: (final BuildContext _) => _toast('slot'));
+      HarborToasts.show(page, builder: (final BuildContext _) => _toast('slot'), timing: HarborToastTiming.untilHidden);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('first')), findsOneWidget);
       expect(
@@ -235,8 +237,8 @@ void main() {
     final HarborToastEntry entry = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: const Duration(seconds: 1),
       builder: (final BuildContext _) => _toast('toast'),
+      timing: const HarborToastTiming(duration: Duration(seconds: 1)),
     );
     await tester.pumpAndSettle();
     expect(
@@ -286,13 +288,13 @@ void main() {
     final HarborToastEntry anchored = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: null,
       builder: (final BuildContext _) => _toast('anchored'),
+      timing: HarborToastTiming.untilHidden,
     );
     final HarborToastEntry slotted = HarborToasts.show(
       page,
-      duration: null,
       builder: (final BuildContext _) => _toast('slotted'),
+      timing: HarborToastTiming.untilHidden,
     );
     HarborToastClosedReason? reason;
     unawaited(anchored.closed.then((final HarborToastClosedReason r) => reason = r));
@@ -327,18 +329,18 @@ void main() {
     final HarborToastEntry anchored = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: null,
       builder: (final BuildContext _) => _toast('anchored'),
+      timing: HarborToastTiming.untilHidden,
     );
     final HarborToastEntry slotted = HarborToasts.show(
       page,
-      duration: null,
       builder: (final BuildContext _) => _toast('slotted'),
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pump();
-    expect(anchored.owner, same(HarborFrame.of(page)));
+    expect((anchored as ShownToast).owner, same(HarborFrame.of(page)));
     expect(
-      slotted.owner,
+      (slotted as ShownToast).owner,
       isNot(same(HarborFrame.of(page))),
       reason: 'positive control: a flare at a slot goes to the port on top',
     );
@@ -359,8 +361,8 @@ void main() {
     final HarborToastEntry entry = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: null,
       builder: (final BuildContext _) => _toast('toast'),
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     final Rect button = tester.getRect(_button);
