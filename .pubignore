@@ -46,6 +46,8 @@ CLAUDE.md
 tool/
 example/tool/
 doc/
+# The dart fix goldens: code written against deprecated API to test lib/fix_data/, not to ship.
+test_fixes/
 
 # harbor_test/ is a package of its own, published from its own directory, and it is NOT listed
 # here: pub applies these rules to a nested package too, so excluding it would leave its own
