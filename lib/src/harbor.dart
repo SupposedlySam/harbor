@@ -604,7 +604,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
 
     children.add(
       HarborSlot.floats(
-        child: HarborBuoyLayer(floats: widget.floats, toasts: controller.toasts),
+        child: HarborBuoyLayer(floats: widget.floats, toasts: controller.shownToasts),
       ),
     );
 

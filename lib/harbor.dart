@@ -37,6 +37,7 @@ export 'src/controller.dart'
         HarborToastHold,
         HarborToastPhase,
         HarborToastQueue,
+        HarborToastTiming,
         HarborToastTransitionBuilder,
         HarborYield;
 export 'src/deprecated.dart';
