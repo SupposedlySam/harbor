@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'hinge.dart';
@@ -214,14 +215,36 @@ class HarborFloat with Diagnosticable {
       'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
-    this.modal = false,
+    final HarborBarrier barrier = HarborBarrier.none,
+    @Deprecated(
+      'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
+      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.0.',
+    )
+    final bool modal = false,
     this.onDismiss,
-    this.barrierColor = const Color(0x00000000),
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    final Color? barrierColor,
     this.requestFocus = true,
-    this.barrierLabel = harborBarrierDismissLabel,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    final String? barrierLabel,
     this.within,
     this.hinge,
-  }) : assert(!modal || onDismiss != null, 'A modal float needs onDismiss: a tap outside it and back both call it.'),
+  }) : assert(
+         !modal || identical(barrier, HarborBarrier.none),
+         'Give a float a barrier, or the deprecated modal, not both.',
+       ),
+       assert(
+         (!modal && identical(barrier, HarborBarrier.none)) || onDismiss != null,
+         'A modal float needs onDismiss: a tap on its barrier, back and Escape call it.',
+       ),
+       assert(
+         (barrierColor == null && barrierLabel == null) || identical(barrier, HarborBarrier.none),
+         'barrierColor and barrierLabel are for the deprecated modal. Give them to the barrier.',
+       ),
+       _barrier = barrier,
+       _modal = modal,
+       _barrierColor = barrierColor,
+       _barrierLabel = barrierLabel,
        assert(
          placement == null || (alignment == null && margin == null),
          'Give a float a placement, or the deprecated alignment and margin, not both.',
@@ -262,13 +285,35 @@ class HarborFloat with Diagnosticable {
     this._crossAlignment = HarborCrossAlignment.center,
     this._crossOffset = 0.0,
     EdgeInsetsGeometry this._margin = HarborAnchored.defaultMargin,
-    this.modal = false,
+    final HarborBarrier barrier = HarborBarrier.none,
+    @Deprecated(
+      'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
+      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.0.',
+    )
+    final bool modal = false,
     this.onDismiss,
-    this.barrierColor = const Color(0x00000000),
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    final Color? barrierColor,
     this.requestFocus = true,
-    this.barrierLabel = harborBarrierDismissLabel,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    final String? barrierLabel,
     this.hinge,
-  }) : assert(!modal || onDismiss != null, 'A modal float needs onDismiss: a tap outside it and back both call it.'),
+  }) : assert(
+         !modal || identical(barrier, HarborBarrier.none),
+         'Give a float a barrier, or the deprecated modal, not both.',
+       ),
+       assert(
+         (!modal && identical(barrier, HarborBarrier.none)) || onDismiss != null,
+         'A modal float needs onDismiss: a tap on its barrier, back and Escape call it.',
+       ),
+       assert(
+         (barrierColor == null && barrierLabel == null) || identical(barrier, HarborBarrier.none),
+         'barrierColor and barrierLabel are for the deprecated modal. Give them to the barrier.',
+       ),
+       _barrier = barrier,
+       _modal = modal,
+       _barrierColor = barrierColor,
+       _barrierLabel = barrierLabel,
        assert(_anchor != null, 'HarborFloat.anchored needs an anchor.'),
        _placement = null,
        _alignment = null,
@@ -328,19 +373,42 @@ class HarborFloat with Diagnosticable {
   @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
   EdgeInsetsGeometry get margin => placement.margin;
 
-  /// Whether this float is modal while it is up (quick actions, a menu): a barrier blocks taps to
-  /// the page and its bars and tells screen readers to leave the page alone, a tap outside the
-  /// float, back and Escape all call [onDismiss], and the floats listed before it are hidden.
+  /// What the float puts between itself and the page: [HarborBarrier.none] by default, so the
+  /// float is not modal. With a barrier ([HarborBarrier.clear] for quick actions or a menu, so the
+  /// page shows as it is; [HarborBarrier.dimmed] to tint it) the float is modal while it is up: the
+  /// barrier blocks taps to the page and its bars and tells screen readers to leave the page alone,
+  /// a tap on it calls [onDismiss] unless it is not `dismissible`, back and Escape always call it,
+  /// and the floats listed before it are hidden.
   ///
   /// It is modal for the keyboard as a dialog route is: the float is a [FocusScope] that takes
   /// focus when it opens (see [requestFocus]), keeps Tab in a closed loop and stops arrow keys at
   /// its edges, and gives focus back to what had it when it closes.
   ///
-  /// Until 0.2.0 a modal float only hid the floats before it, with taps and back reaching the page.
-  final bool modal;
+  /// The barrier's `label` is what a screen reader announces for it ('Dismiss' when none is
+  /// given); a Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+  ///
+  /// Through 0.9 this was `modal: true`, with `barrierColor` and `barrierLabel`: a clear barrier, or
+  /// one tinted by `barrierColor`. Those still work, deprecated, and this reads what they made.
+  HarborBarrier get barrier => _modal
+      ? (_barrierColor ?? const Color(0x00000000)).a == 0
+            ? HarborBarrier.clear(label: _barrierLabel)
+            : HarborBarrier.dimmed(color: _barrierColor!, label: _barrierLabel)
+      : _barrier;
 
-  /// Called when a modal float is dismissed by a tap outside it, by back or by Escape. Required
-  /// when [modal]: the float is yours, so you take it away.
+  // The barrier given, or the deprecated modal, barrierColor and barrierLabel, which are kept so the
+  // float can be made in a const constructor.
+  final HarborBarrier _barrier;
+  final bool _modal;
+  final Color? _barrierColor;
+  final String? _barrierLabel;
+
+  /// Whether this float is modal while it is up: whether it has a [barrier].
+  ///
+  /// Until 0.2.0 a modal float only hid the floats before it, with taps and back reaching the page.
+  bool get modal => barrier.blocks;
+
+  /// Called when a modal float is dismissed by a tap on its barrier, by back or by Escape. Required
+  /// when it has a [barrier]: the float is yours, so you take it away.
   final VoidCallback? onDismiss;
 
   /// Whether a modal float takes focus when it opens, as [Route.requestFocus]: its scope is
@@ -350,12 +418,13 @@ class HarborFloat with Diagnosticable {
   /// float that is not [modal].
   final bool requestFocus;
 
-  /// The colour of a modal float's barrier; clear by default, so the page shows as it is.
-  final Color barrierColor;
+  /// The colour of a modal float's barrier.
+  @Deprecated('Read barrier.color. Deprecated after 0.9.0.')
+  Color get barrierColor => barrier.color;
 
-  /// What a screen reader announces for a modal float's barrier, as [ModalBarrier.semanticsLabel].
-  /// A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
-  final String barrierLabel;
+  /// What a screen reader announces for a modal float's barrier.
+  @Deprecated('Read barrier.label. Deprecated after 0.9.0.')
+  String get barrierLabel => barrier.label ?? harborBarrierDismissLabel;
 
   /// What an anchored float sits by; null for an aligned one.
   @Deprecated('Read placement. Deprecated after 0.7.0.')
@@ -432,12 +501,11 @@ class HarborFloat with Diagnosticable {
       );
     }
     properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
+    properties.add(DiagnosticsProperty<HarborBarrier>('barrier', barrier, defaultValue: HarborBarrier.none));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onDismiss', onDismiss));
     properties.add(
       FlagProperty('requestFocus', value: requestFocus, ifFalse: 'does not take focus', defaultValue: true),
     );
-    properties.add(ColorProperty('barrierColor', barrierColor, defaultValue: const Color(0x00000000)));
-    properties.add(StringProperty('barrierLabel', barrierLabel, defaultValue: harborBarrierDismissLabel));
   }
 }
 
@@ -457,10 +525,14 @@ class HarborBuoy extends HarborFloat {
     super.alignment,
     @Deprecated('Use placement: HarborAligned(margin: ...). `dart fix` applies it. Deprecated after 0.7.0.')
     super.margin,
+    super.barrier,
+    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.0.')
     super.modal,
     super.onDismiss,
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
     super.barrierColor,
     super.requestFocus,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
     super.barrierLabel,
     super.within,
     super.hinge,
@@ -485,10 +557,14 @@ class HarborBuoy extends HarborFloat {
     super.crossAlignment,
     super.crossOffset,
     super.margin,
+    super.barrier,
+    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.0.')
     super.modal,
     super.onDismiss,
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
     super.barrierColor,
     super.requestFocus,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
     super.barrierLabel,
     super.hinge,
   }) : super.anchored();
@@ -596,9 +672,11 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
         if (modal != null)
           Positioned.fill(
             child: ModalBarrier(
-              color: modal.barrierColor,
-              onDismiss: modal.onDismiss,
-              semanticsLabel: modal.barrierLabel,
+              color: modal.barrier.color,
+              dismissible: modal.barrier.isDismissible,
+              onDismiss: modal.barrier.isDismissible ? modal.onDismiss : null,
+              semanticsLabel: modal.barrier.label ?? harborBarrierDismissLabel,
+              semanticsOnTapHint: modal.barrier.onTapHint,
             ),
           ),
         ListenableBuilder(

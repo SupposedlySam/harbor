@@ -68,10 +68,9 @@ void main() {
         // ignore: deprecated_member_use_from_same_package
         anchor: anchor,
         side: HarborAnchorSide.below,
-        modal: true,
         onDismiss: () {},
         requestFocus: false,
-        barrierLabel: 'Close menu',
+        barrier: const HarborBarrier.clear(label: 'Close menu'),
         child: _child,
       );
       expect(menu.toStringShort(), 'HarborFloat.anchored');
@@ -79,9 +78,9 @@ void main() {
         'anchor: ${describeIdentity(anchor)}(more button)',
         'side: below',
         'modal',
+        'barrier: HarborBarrier.clear(label: "Close menu")',
         'has onDismiss',
         'does not take focus',
-        'barrierLabel: "Close menu"',
       ]);
     });
 
@@ -232,12 +231,12 @@ void main() {
         _shown(
           HarborSheet.draggable(
             extent: const HarborSheetExtent(rest: 0.6),
-            footerMinimum: 0.0,
+            footerBar: const HarborBar.solid(child: _child),
             debugLabel: 'comments',
             builder: (final BuildContext context, final ScrollController controller) => _child,
           ),
         ),
-        <String>['extent: HarborSheetExtent(rest: 60.0%)', 'footerMinimum: 0.0', 'debugLabel: "comments"'],
+        <String>['extent: HarborSheetExtent(rest: 60.0%)', 'footerBar: HarborBar.solid', 'debugLabel: "comments"'],
       );
     });
   });
