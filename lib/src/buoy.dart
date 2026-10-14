@@ -218,14 +218,14 @@ class HarborFloat with Diagnosticable {
     final HarborBarrier barrier = HarborBarrier.none,
     @Deprecated(
       'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
-      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.0.',
+      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.1.',
     )
     final bool modal = false,
     this.onDismiss,
-    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final Color? barrierColor,
     this.requestFocus = true,
-    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final String? barrierLabel,
     this.within,
     this.hinge,
@@ -288,14 +288,14 @@ class HarborFloat with Diagnosticable {
     final HarborBarrier barrier = HarborBarrier.none,
     @Deprecated(
       'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
-      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.0.',
+      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.1.',
     )
     final bool modal = false,
     this.onDismiss,
-    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final Color? barrierColor,
     this.requestFocus = true,
-    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final String? barrierLabel,
     this.hinge,
   }) : assert(
@@ -419,11 +419,11 @@ class HarborFloat with Diagnosticable {
   final bool requestFocus;
 
   /// The colour of a modal float's barrier.
-  @Deprecated('Read barrier.color. Deprecated after 0.9.0.')
+  @Deprecated('Read barrier.color. Deprecated after 0.9.1.')
   Color get barrierColor => barrier.color;
 
   /// What a screen reader announces for a modal float's barrier.
-  @Deprecated('Read barrier.label. Deprecated after 0.9.0.')
+  @Deprecated('Read barrier.label. Deprecated after 0.9.1.')
   String get barrierLabel => barrier.label ?? harborBarrierDismissLabel;
 
   /// What an anchored float sits by; null for an aligned one.
@@ -526,13 +526,13 @@ class HarborBuoy extends HarborFloat {
     @Deprecated('Use placement: HarborAligned(margin: ...). `dart fix` applies it. Deprecated after 0.7.0.')
     super.margin,
     super.barrier,
-    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.1.')
     super.modal,
     super.onDismiss,
-    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierColor,
     super.requestFocus,
-    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierLabel,
     super.within,
     super.hinge,
@@ -558,13 +558,13 @@ class HarborBuoy extends HarborFloat {
     super.crossOffset,
     super.margin,
     super.barrier,
-    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.1.')
     super.modal,
     super.onDismiss,
-    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierColor,
     super.requestFocus,
-    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierLabel,
     super.hinge,
   }) : super.anchored();

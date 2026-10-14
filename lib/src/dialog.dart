@@ -55,13 +55,11 @@ Future<T?> showHarborDialog<T>(
   final bool inheritRoom = false,
   @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
   final HarborBarrier barrier = const HarborBarrier.dimmed(),
-  @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+  @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Color? barrierColor,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.0.',
-  )
+  @Deprecated('Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final bool? barrierDismissible,
-  @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+  @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final String? barrierLabel,
   final String? semanticLabel,
   final bool useRootNavigator = true,
@@ -80,12 +78,7 @@ Future<T?> showHarborDialog<T>(
       builder: builder,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
       inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
-      barrier: harborBarrierWith(
-        barrier,
-        color: barrierColor,
-        dismissible: barrierDismissible,
-        label: barrierLabel,
-      ),
+      barrier: harborBarrierWith(barrier, color: barrierColor, dismissible: barrierDismissible, label: barrierLabel),
       semanticLabel: semanticLabel,
       settings: routeSettings,
       anchorPoint: anchorPoint,
@@ -133,14 +126,12 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final HarborBarrier barrier = const HarborBarrier.dimmed(),
     @Deprecated(
       'Use barrier: HarborBarrier.dimmed(color: ...), or HarborBarrier.clear() where it was null. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it to null. Deprecated after 0.9.1.',
     )
     final Color? barrierColor = HarborBarrier.defaultColor,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.0.',
-    )
+    @Deprecated('Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final bool? barrierDismissible,
-    @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final String? barrierLabel,
     final String? semanticLabel,
     final RouteSettings? settings,

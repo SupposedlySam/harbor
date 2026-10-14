@@ -269,14 +269,36 @@ void main() {
         expect(ModalRoute.of(tester.element(find.text('sheet'))), ModalRoute.of(page));
       });
 
-      testWidgets('with no barrier they did nothing, and now they are an assert', (final tester) async {
-        final BuildContext page = await _page(tester);
-        expect(
-          // ignore: deprecated_member_use_from_same_package
-          () => showHarborSheet<void>(page, barrier: HarborBarrier.none, isDismissible: false, builder: _sheet),
-          throwsAssertionError,
-        );
-      });
+      // As on 0.9.1: with no barrier they do nothing, and are ignored rather than asserted, while
+      // they exist. Whether the barrier is none can depend on a variable dart fix leaves alone.
+      for (final HarborBarrier none in <HarborBarrier>[
+        HarborBarrier.none,
+        // ignore: deprecated_member_use_from_same_package
+        HarborSheetBarrier.none,
+      ]) {
+        testWidgets('with no barrier ($none) they are ignored, as they were', (final tester) async {
+          final BuildContext page = await _page(tester);
+          unawaited(
+            showHarborSheet<void>(
+              page,
+              barrier: none,
+              // ignore: deprecated_member_use_from_same_package
+              isDismissible: false,
+              // ignore: deprecated_member_use_from_same_package
+              barrierLabel: 'x',
+              // ignore: deprecated_member_use_from_same_package
+              barrierColor: _tint,
+              // ignore: deprecated_member_use_from_same_package
+              barrierOnTapHint: 'close',
+              builder: _sheet,
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(find.text('sheet'), findsOneWidget);
+          expect(ModalRoute.of(tester.element(find.text('sheet'))), ModalRoute.of(page), reason: 'still no route');
+        });
+      }
     });
   });
 

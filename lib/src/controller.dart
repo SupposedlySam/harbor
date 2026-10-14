@@ -53,7 +53,7 @@ class HarborPageCover {
 
   /// Whether the listenable holds the cover's top edge in global coordinates
   /// rather than how far it reaches up from the bottom of the screen.
-  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.0.')
+  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
   bool get measuresTop => _measuresTop;
 
   double get _reach => _controller == null || _measuresTop ? 0.0 : _coverage.value;
@@ -61,11 +61,11 @@ class HarborPageCover {
   double? get _top => _controller == null || !_measuresTop ? null : _coverage.value;
 
   /// How far the cover reaches up from the bottom of the screen.
-  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.0.')
+  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
   double get coverage => _reach;
 
   /// The cover's top edge in global coordinates, for a page cover that measures it.
-  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.0.')
+  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
   double? get topInGlobal => _top;
 
   /// Takes the cover away: call it when the cover leaves.

@@ -127,29 +127,35 @@ class HarborSheet extends StatelessWidget {
     this.surface,
     @Deprecated(
       'Give headerBar: HarborSheet.defaultHeaderBar(header) or a HarborBar of your own, with its edgeEffect. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the header can be null. Deprecated after 0.9.1.',
     )
     final HarborEdgeEffect? headerEdgeEffect,
-    @Deprecated('Renamed headerEdgeEffect, itself deprecated: give headerBar: a HarborBar with its edgeEffect. `dart fix` renames it.')
+    @Deprecated(
+      'Renamed headerEdgeEffect, itself deprecated: give headerBar: a HarborBar with its edgeEffect. `dart fix` applies it.',
+    )
     final HarborEdgeEffect? headerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its edgeEffect. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
     )
     final HarborEdgeEffect? footerEdgeEffect,
-    @Deprecated('Renamed footerEdgeEffect, itself deprecated: give footerBar: a HarborBar with its edgeEffect. `dart fix` renames it.')
+    @Deprecated(
+      'Renamed footerEdgeEffect, itself deprecated: give footerBar: a HarborBar with its edgeEffect. `dart fix` applies it.',
+    )
     final HarborEdgeEffect? footerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its minimum. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
     )
     final double? footerMinimum,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its keyboard. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
     )
     final HarborKeyboardStance? footerKeyboard,
-    @Deprecated('Renamed footerKeyboard, itself deprecated: give footerBar: a HarborBar with its keyboard. `dart fix` renames it.')
+    @Deprecated(
+      'Renamed footerKeyboard, itself deprecated: give footerBar: a HarborBar with its keyboard. `dart fix` applies it.',
+    )
     final HarborKeyboardStance? footerTide,
     this.maxExtentFraction = 0.9,
     this.debugLabel,
@@ -231,29 +237,35 @@ class HarborSheet extends StatelessWidget {
     this.surface,
     @Deprecated(
       'Give headerBar: HarborSheet.defaultHeaderBar(header) or a HarborBar of your own, with its edgeEffect. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the header can be null. Deprecated after 0.9.1.',
     )
     final HarborEdgeEffect? headerEdgeEffect,
-    @Deprecated('Renamed headerEdgeEffect, itself deprecated: give headerBar: a HarborBar with its edgeEffect. `dart fix` renames it.')
+    @Deprecated(
+      'Renamed headerEdgeEffect, itself deprecated: give headerBar: a HarborBar with its edgeEffect. `dart fix` applies it.',
+    )
     final HarborEdgeEffect? headerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its edgeEffect. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
     )
     final HarborEdgeEffect? footerEdgeEffect,
-    @Deprecated('Renamed footerEdgeEffect, itself deprecated: give footerBar: a HarborBar with its edgeEffect. `dart fix` renames it.')
+    @Deprecated(
+      'Renamed footerEdgeEffect, itself deprecated: give footerBar: a HarborBar with its edgeEffect. `dart fix` applies it.',
+    )
     final HarborEdgeEffect? footerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its minimum. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
     )
     final double? footerMinimum,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its keyboard. '
-      'Deprecated after 0.9.0.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
     )
     final HarborKeyboardStance? footerKeyboard,
-    @Deprecated('Renamed footerKeyboard, itself deprecated: give footerBar: a HarborBar with its keyboard. `dart fix` renames it.')
+    @Deprecated(
+      'Renamed footerKeyboard, itself deprecated: give footerBar: a HarborBar with its keyboard. `dart fix` applies it.',
+    )
     final HarborKeyboardStance? footerTide,
     this.debugLabel,
     this.contentBuilder,
@@ -371,7 +383,7 @@ class HarborSheet extends StatelessWidget {
   final HarborKeyboardStance _footerKeyboard;
 
   /// The edge effect of a plain [header]'s bar.
-  @Deprecated('Read headerBar, or HarborSheet.defaultHeaderBar. Deprecated after 0.9.0.')
+  @Deprecated('Read headerBar, or HarborSheet.defaultHeaderBar. Deprecated after 0.9.1.')
   HarborEdgeEffect get headerEdgeEffect => _headerEdgeEffect;
 
   /// The old name of [headerEdgeEffect].
@@ -379,7 +391,7 @@ class HarborSheet extends StatelessWidget {
   HarborEdgeEffect get headerWake => _headerEdgeEffect;
 
   /// The edge effect of a plain [footer]'s bar.
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.0.')
+  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.1.')
   HarborEdgeEffect get footerEdgeEffect => _footerEdgeEffect;
 
   /// The old name of [footerEdgeEffect].
@@ -387,11 +399,11 @@ class HarborSheet extends StatelessWidget {
   HarborEdgeEffect get footerWake => _footerEdgeEffect;
 
   /// The minimum of a plain [footer]'s bar.
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.0.')
+  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.1.')
   double get footerMinimum => _footerMinimum;
 
   /// How a plain [footer]'s bar meets the keyboard.
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.0.')
+  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.1.')
   HarborKeyboardStance get footerKeyboard => _footerKeyboard;
 
   /// The old name of [footerKeyboard].
@@ -523,10 +535,18 @@ class HarborSheet extends StatelessWidget {
     properties.add(DiagnosticsProperty<HarborBar>('headerBar', headerBar, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborBar>('footerBar', footerBar, defaultValue: null));
     properties.add(
-      DiagnosticsProperty<HarborEdgeEffect>('headerEdgeEffect', _headerEdgeEffect, defaultValue: _defaultHeaderEdgeEffect),
+      DiagnosticsProperty<HarborEdgeEffect>(
+        'headerEdgeEffect',
+        _headerEdgeEffect,
+        defaultValue: _defaultHeaderEdgeEffect,
+      ),
     );
     properties.add(
-      DiagnosticsProperty<HarborEdgeEffect>('footerEdgeEffect', _footerEdgeEffect, defaultValue: _defaultFooterEdgeEffect),
+      DiagnosticsProperty<HarborEdgeEffect>(
+        'footerEdgeEffect',
+        _footerEdgeEffect,
+        defaultValue: _defaultFooterEdgeEffect,
+      ),
     );
     properties.add(DoubleProperty('footerMinimum', _footerMinimum, defaultValue: _defaultFooterMinimum));
     properties.add(
@@ -985,7 +1005,7 @@ class HarborSheetController extends ChangeNotifier {
 /// `isDismissible`, `barrierColor`, `barrierLabel` and `barrierOnTapHint` are the spellings of the
 /// barrier through 0.9, deprecated: given, each overrides the matching field of [barrier]
 /// (`barrierColor` only tints a dimmed barrier, as it only ever did). With [HarborBarrier.none]
-/// they do nothing, and giving them is an assert.
+/// they do nothing, and are ignored, as they always were.
 ///
 /// See also:
 ///
@@ -997,11 +1017,9 @@ Future<T?> showHarborSheet<T>(
   final bool coversPage = false,
   @Deprecated('Renamed coversPage. `dart fix` applies it.') final bool? breakwater,
   final HarborBarrier barrier = const HarborBarrier.dimmed(),
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.0.',
-  )
+  @Deprecated('Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final bool? isDismissible,
-  @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+  @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Color? barrierColor,
   final double? maxWidth,
   final bool useRootNavigator = false,
@@ -1010,24 +1028,21 @@ Future<T?> showHarborSheet<T>(
   final bool reachesTop = false,
   @Deprecated('Renamed reachesTop. `dart fix` applies it.') final bool? keepsTopCoast,
   final RouteSettings? routeSettings,
-  @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+  @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final String? barrierLabel,
   final AnimationStyle? sheetAnimationStyle,
   final HarborSheetController? controller,
   final AnimationController? transitionAnimationController,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(onTapHint: ...). `dart fix` applies it. Deprecated after 0.9.0.',
-  )
+  @Deprecated('Use barrier: HarborBarrier.dimmed(onTapHint: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final String? barrierOnTapHint,
   final String? semanticLabel,
   final HarborHinge? hinge,
   final bool fillsScreenAtHinge = false,
 }) {
-  assert(
-    barrier.blocks || (isDismissible == null && barrierColor == null && barrierLabel == null && barrierOnTapHint == null),
-    'A sheet with HarborBarrier.none has no barrier, so isDismissible, barrierColor, barrierLabel and '
-    'barrierOnTapHint do nothing. Leave them out.',
-  );
+  // With HarborBarrier.none the deprecated loose arguments do nothing, and are ignored, as they were
+  // through 0.9.1: whether the barrier is none can turn on a variable `dart fix` leaves alone, so an
+  // assert here would break calls that worked. When they are removed at 1.0 there is nothing to
+  // assert on.
   final HarborBarrier effective = harborBarrierWith(
     barrier,
     color: barrierColor,
