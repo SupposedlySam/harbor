@@ -26,3 +26,5 @@ One line per reading, newest last:
   "it goes in the next release" for testing.dart was ambiguous; foldables and dialogs added where
   they belong; the FAB example used the physical `Alignment.bottomRight` the accessibility section
   steers away from. Claims checked against the code only where a fix touched them.
+- README.md — read whole at 7814ea3 on 2026-10-14 — for the sheets step: its float, sheet and
+  dialog sections moved onto `HarborBarrier` and `headerBar:`/`footerBar:`; nothing else changed.

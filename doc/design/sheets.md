@@ -1,8 +1,9 @@
 # Sheets: one barrier, docks for the header and footer
 
-Status: proposal, 2026-10-13. Nothing here is implemented. Line numbers are against `987db9c`.
-It assumes `doc/design/placement.md` lands, and changes the barrier half of the `HarborBuoy`
-signature that proposal writes out.
+Status: implemented on 2026-10-14, as decided in `DECISIONS.md` (Q15-Q18) and in the 0.9 names:
+`headerDock:` is `headerBar:`, the buoy is `HarborFloat`, and the breakwater is `coversPage:`.
+[As shipped](#as-shipped) at the end lists where the code departs from this proposal. The proposal
+below is kept as written. Its line numbers are against `987db9c`.
 
 ## The problem, measured
 
@@ -269,3 +270,37 @@ writing out three overrides.
    / `.top` / `.screenAtHinge`)? Today one silently implies the other.
    *Recommendation: not yet. They can both be set (reach the top and fill a split screen), so an
    enum would need a fourth value. Document the implication instead.*
+
+## As shipped
+
+Where the implementation (after 0.9.0) departs from the proposal, and why:
+
+- **The getter is `isDismissible`, not `dismissible`.** The deprecated `HarborSheetBarrier`
+  implements `HarborBarrier`, so `barrier: HarborSheetBarrier.none` keeps compiling. Its value
+  `dismissible` would collide with an instance getter of that name. The constructors still take
+  `dismissible:`, as decided.
+- **A modal float with a `barrierColor` reads as `HarborBarrier.dimmed(color:)`.** The proposal's
+  fallback, `HarborBarrier.clear(color: barrierColor, ...)`, does not exist, since a clear barrier
+  has no colour. A transparent `barrierColor`, the old default, reads as `HarborBarrier.clear()`.
+- **`HarborDialogRoute(barrierColor:)` keeps its old default.** It takes a `Color?`, and null meant
+  a barrier with no colour, so null still gives a clear barrier.
+- **`dart fix` covers more of the barrier than the proposal planned, and less of the bars**
+  (`tool/fix_data/sheets.dart`, `test_fixes/sheets.dart`):
+  - Every combination of a call's loose barrier arguments is a generated branch, not only one
+    argument at a time, beside the literal `HarborSheetBarrier` values or none. An argument that
+    did nothing (a colour with a clear barrier, anything with no barrier) is dropped rather than
+    carried into a value where it would assert.
+  - `HarborFloat(modal: true)` and `modal: false` are fixed. fix_data compares an argument's text,
+    so the literals are told apart from a variable, which is left alone.
+  - `HarborSheetBarrier.none` on its own is **not** fixed. A `replacedBy` rewrites it wherever it is
+    written, and a variable typed `HarborSheetBarrier` then fails to compile. Found by running it on
+    the example's field guide. Inside a call that a loose argument already rewrites, it is.
+  - The header and footer knobs are **not** fixed, as the proposal said. The specific reason: the
+    template puts the header in a bar's non-nullable `child:`, and `footer: done ? actions : null`
+    is nullable. The first version of the fix broke the field guide this way.
+  - `HarborDialogRoute(barrierColor:)` is not fixed (above).
+- **`HarborPageCover`'s getters are deprecated, not removed.** Making them private at once would
+  break a caller before 1.0. The breakwater and the two top switches were settled by the rename
+  release: `coversPage:`, `reachesTop:`, `clearsTopSystemEdge:` and `HarborPageCover`.
+- **`HarborFloat`'s diagnostics** show `barrier:` beside `modal`. A sheet's show `headerBar` and
+  `footerBar`.

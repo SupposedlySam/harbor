@@ -228,7 +228,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | Old | New | Fix | Note |
 |---|---|---|---|
 | `HarborBuoy` | `HarborFloat` | **SUB** | Declared in the tree. `.anchored` is deprecated by the placement work and keeps its name. SUB, not T, as shipped: the placement fix renames `.anchored(anchor:)` to the unnamed constructor (§2) |
-| `HarborBuoy` (every parameter) | unchanged | | `modal`, `barrierColor`, `barrierLabel` are reshaped by `HarborBarrier` later |
+| `HarborBuoy` (every parameter) | unchanged | | `modal`, `barrierColor`, `barrierLabel` are reshaped by `HarborBarrier` in the sheets step (`sheets.md`, as shipped) |
 | `HarborPortalBuoy` | `HarborPopover` | **SUB** | Opened on demand by an anchor. Decided. SUB, not T, as shipped (owner review): it takes the old parameter name `buoyBuilder:`, so the new constructor keeps `popoverBuilder:` `required`; `sideOf`, `maybeSideOf` are statics of both |
 | `HarborPortalBuoy.buoyBuilder` | `popoverBuilder` | RP | As `OverlayPortal.overlayChildBuilder` names its content |
 | `HarborPortalBuoy.sideOf` / `maybeSideOf`, `flips`, `consumeOutsideTaps`, the rest | unchanged | | |
@@ -264,7 +264,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborSheet.footerTide` | `footerKeyboard` | RP | |
 | `HarborSheet.clearsTopCoast` | `clearsTopSystemEdge` | RP | |
 | `HarborSheet.bodyClearsTide` | `bodyClearsKeyboard` | RP | |
-| `HarborSheet`, `HarborSheetExtent`, `HarborSheetController`, `HarborSheetBarrier`, `showHarborSheet`, `showHarborDialog`, `HarborDialogRoute` | unchanged | | Plain. `HarborSheetBarrier` is replaced by `HarborBarrier` later |
+| `HarborSheet`, `HarborSheetExtent`, `HarborSheetController`, `HarborSheetBarrier`, `showHarborSheet`, `showHarborDialog`, `HarborDialogRoute` | unchanged | | Plain. `HarborSheetBarrier` is replaced by `HarborBarrier` in the sheets step, and the header and footer knobs by `headerBar:`/`footerBar:` (`sheets.md`, as shipped) |
 | `HarborBreakwater` | `HarborPageCover` | T | Going `@internal` |
 | `HarborController.addBreakwater` / `addBreakwaterEdge` / `breakwaterTopsInGlobal` / `breakwaterCoverage` / `breakwaterChanges` | `addPageCover` / `addPageCoverEdge` / `pageCoverTopsInGlobal` / `pageCoverage` / `pageCoverChanges` | rename | Going `@internal` |
 | `showHarborDialog(inheritClearWater:)` | `inheritRoom:` | RP | And on `HarborDialogRoute` |
