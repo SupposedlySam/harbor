@@ -48,7 +48,7 @@ void main() {
       await tester.pumpSeaTrial(MaterialApp(
         home: HarborMoored(
           edges: HarborEdge.horizontal,
-          clear: HarborClear.coast,
+          bars: false,
           tide: false,
           // A new port reads its coast from the waters above it, as a sheet's does.
           child: Harbor(newPort: true, body: Builder(builder: (final c) {

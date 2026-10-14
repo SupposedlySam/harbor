@@ -342,7 +342,7 @@ class HarborSheet extends StatelessWidget {
     if (clearsSides) {
       // Moored to the side coast alone, inside the surface, so the surface still runs edge to edge
       // and the new port beneath is handed no side coast. The mooring line stays.
-      port = HarborMoored(edges: HarborEdge.horizontal, clear: HarborClear.coast, tide: false, child: port);
+      port = HarborMoored(edges: HarborEdge.horizontal, bars: false, tide: false, child: port);
     }
     return port;
   }

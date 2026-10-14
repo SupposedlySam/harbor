@@ -70,5 +70,8 @@ analyzer:
     - "**/*.freezed.dart"
     - "build/**"
     - "**/build/**"
+    # The dart fix goldens are written against the deprecated API on purpose; tool/check.sh runs
+    # `dart fix --compare-to-golden` on them, with their own analysis_options.yaml.
+    - "test_fixes/**"
   errors:
     invalid_annotation_target: ignore

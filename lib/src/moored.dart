@@ -16,7 +16,14 @@ enum HarborFollow {
   resting,
 }
 
-/// What a moored widget keeps clear of.
+/// What a moored widget keeps clear of: the old spelling of `bars:`.
+///
+/// [coast] is `bars: false`, and [everything] is `bars: true`, the default. The name is going to
+/// [HarborMoored], which becomes `HarborClear` in the rename (#120).
+@Deprecated(
+  'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
+  'The name HarborClear goes to the widget HarborMoored. Deprecated after 0.6.3.',
+)
 enum HarborClear {
   /// The coast, the docks, and the tide. The default.
   everything,
@@ -41,22 +48,44 @@ class HarborMoored extends StatelessWidget {
   const HarborMoored({
     super.key,
     this.edges = HarborEdge.all,
-    this.clear = HarborClear.everything,
+    final bool bars = true,
+    @Deprecated(
+      'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborClear? clear,
     this.follow = HarborFollow.live,
     this.tide = true,
     this.mooringLine = false,
     this.minimum = EdgeInsetsDirectional.zero,
     this.extra = EdgeInsetsDirectional.zero,
     required this.child,
-  });
+  }) : assert(clear == null || bars || clear == HarborClear.coast, _barsConflict),
+       bars = bars && clear != HarborClear.coast;
 
   /// The edges kept clear of and cast off.
   final Set<HarborEdge> edges;
 
-  final HarborClear clear;
+  /// Whether [edges] keep clear of the bars (the docks: headers, tab bars, rails) as well as the
+  /// coast. True, the default, keeps clear of everything in the way.
+  ///
+  /// False keeps clear of the coast (the system edges: the status bar, the home indicator, a
+  /// cutout) alone, and leaves the bars **and the keyboard** out: [tide] is not read. [edges] are
+  /// still cast off, the docks with the coast, but the keyboard is not, so content inside can keep
+  /// clear of it itself. For something that sits under a translucent header on purpose but must not
+  /// touch the status bar, like a hero image's title. To keep clear of the coast and the keyboard
+  /// but not a header, moor the bottom edge alone. (A fairway's `bars: false` keeps the keyboard
+  /// while its `tide` is true; this one does not.)
+  final bool bars;
+
+  /// The old spelling of [bars]: [HarborClear.coast] where [bars] is false.
+  @Deprecated('Use bars. Deprecated after 0.6.3.')
+  HarborClear get clear => bars ? HarborClear.everything : HarborClear.coast;
+
   final HarborFollow follow;
 
-  /// Whether the bottom keeps clear of the keyboard too.
+  /// Whether the bottom keeps clear of the keyboard too. Not read where [bars] is false, which
+  /// leaves the keyboard to the content.
   final bool tide;
 
   /// Whether the harbor's margin is added on [edges].
@@ -74,7 +103,7 @@ class HarborMoored extends StatelessWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(IterableProperty<HarborEdge>('edges', edges, defaultValue: HarborEdge.all));
-    properties.add(EnumProperty<HarborClear>('clear', clear, defaultValue: HarborClear.everything));
+    properties.add(FlagProperty('bars', value: bars, ifFalse: 'bars not cleared'));
     properties.add(EnumProperty<HarborFollow>('follow', follow, defaultValue: HarborFollow.live));
     properties.add(FlagProperty('tide', value: tide, ifFalse: 'tide ignored'));
     properties.add(FlagProperty('mooringLine', value: mooringLine, ifTrue: 'mooring line'));
@@ -90,13 +119,20 @@ class HarborMoored extends StatelessWidget {
   static EdgeInsetsDirectional clearanceOf(
     final BuildContext context, {
     final Set<HarborEdge> edges = HarborEdge.all,
-    final HarborClear clear = HarborClear.everything,
+    final bool bars = true,
+    @Deprecated(
+      'Use bars: false for HarborClear.coast, and leave bars out for HarborClear.everything. '
+      'Deprecated after 0.6.3.',
+    )
+    final HarborClear? clear,
     final HarborFollow follow = HarborFollow.live,
     final bool tide = true,
     final bool mooringLine = false,
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
   }) {
+    assert(clear == null || bars || clear == HarborClear.coast, _barsConflict);
+    final bool clearsBars = bars && clear != HarborClear.coast;
     EdgeInsetsDirectional resolved(final EdgeInsetsGeometry insets) =>
         insets is EdgeInsetsDirectional ? insets : HarborEdges.resolve(insets, Directionality.of(context));
     final EdgeInsetsDirectional minimumHere = resolved(minimum);
@@ -107,15 +143,15 @@ class HarborMoored extends StatelessWidget {
       if (!edges.contains(edge)) {
         return HarborEdges.of(extraHere, edge);
       }
-      double value = switch ((clear, follow)) {
-        (HarborClear.coast, _) => HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
-        (HarborClear.everything, HarborFollow.resting) => math.max(
+      double value = switch ((clearsBars, follow)) {
+        (false, _) => HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
+        (true, HarborFollow.resting) => math.max(
           HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.coast).coast, edge),
           HarborEdges.of(HarborWaters.of(context, aspect: HarborWatersAspect.docks).docksResting, edge),
         ),
-        (HarborClear.everything, HarborFollow.live) => HarborWaters.clearanceOf(context, edge, tide: false),
+        (true, HarborFollow.live) => HarborWaters.clearanceOf(context, edge, tide: false),
       };
-      if (tide && clear == HarborClear.everything && edge == HarborEdge.bottom) {
+      if (tide && clearsBars && edge == HarborEdge.bottom) {
         value = math.max(value, MediaQuery.viewInsetsOf(context).bottom);
       }
       if (mooringLine) {
@@ -132,7 +168,7 @@ class HarborMoored extends StatelessWidget {
     final EdgeInsetsDirectional padding = clearanceOf(
       context,
       edges: edges,
-      clear: clear,
+      bars: bars,
       follow: follow,
       tide: tide,
       mooringLine: mooringLine,
@@ -143,13 +179,16 @@ class HarborMoored extends StatelessWidget {
       padding: padding,
       child: HarborCastOff(
         edges: edges,
-        tide: tide && clear == HarborClear.everything && edges.contains(HarborEdge.bottom),
+        tide: tide && bars && edges.contains(HarborEdge.bottom),
         margin: mooringLine,
         child: child,
       ),
     );
   }
 }
+
+/// What `bars:` and the deprecated `clear:` say when both are given and disagree.
+const String _barsConflict = 'clear: HarborClear.everything and bars: false disagree. Give bars: alone.';
 
 /// Moors [child] to the mooring line on its sides: the harbor's margin plus
 /// whatever is in the way there (a side cutout, a rail). For a row in a list,

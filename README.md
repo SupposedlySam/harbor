@@ -102,7 +102,7 @@ If you know the Flutter widget, this is where to look in harbor, and what is dif
 | **Quay** (`HarborDock.quay`) | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured rather than declared, and on any edge: a start dock holds a `NavigationRail` as a `Row` would. Several stack |
 | **Pier** (`HarborDock.pier`) | An app bar under `Scaffold(extendBodyBehindAppBar: true)`, a bottom bar under `extendBody: true` | The same mechanism: the body runs under it and its `MediaQuery.padding` says how far. A pier does it on any edge, and for a stack of docks |
 | **Wake** | A `ShaderMask` fade, with a `BackdropFilter` frost under the bar | The fade's length counts toward where content rests, so the band and the first row's resting line never drift apart |
-| **Moored** | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. A moored widget keeps clear of it at the bottom too, can clear the coast alone (`clear:`) or the docks at rest (`follow:`), and takes directional edges. Both cast off what they cleared, and `minimum:` is a floor on both |
+| **Moored** | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. A moored widget keeps clear of it at the bottom too, can clear the coast alone (`bars: false`) or the docks at rest (`follow:`), and takes directional edges. Both cast off what they cleared, and `minimum:` is a floor on both |
 | **Mooring line** | Horizontal page padding: a `Padding` on each row | It adds whatever is in the way on the sides (a side cutout, a rail) to the harbor's margin, and only the rows that ask get it, so the list itself still runs to the frame's edge |
 | **Fairway** | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A fairway clears both ends, keyboard included (unless `tide: false`), and widens every reveal by what covers its edges. `HarborFairwaySliver` is the `SliverSafeArea` of a scroll view you build yourself |
 | **Pinned header** (`HarborSliverDock`) | `PinnedHeaderSliver`, `SliverAppBar(pinned: true)` | It pins at the docks' face rather than the viewport's edge, several stack, and reveals keep clear of it |
@@ -256,11 +256,11 @@ focus (`restingExtent:`) holds the header at its resting width.
 
 | Stance | Widget | Use it for |
 |---|---|---|
-| Moored | `HarborMoored(edges:, clear:, follow:, tide:, mooringLine:, minimum:, extra:)` | Forms, fixed buttons, static blocks |
+| Moored | `HarborMoored(edges:, bars:, follow:, tide:, mooringLine:, minimum:, extra:)` | Forms, fixed buttons, static blocks |
 | Moored to one edge | `HarborMoored(edges: {HarborEdge.bottom})` | A form footer under a page header: it clears the coast and the keyboard at the bottom, and leaves the header to the rest of the page |
 | Mooring line | `HarborMooringLine(child:)` | A row that lines up with the page margin |
-| Fairway | `HarborFairway(slivers:, minimum:, clear:, tide:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
-| One sliver | `HarborFairwaySliver(sliver:, minimum:, clear:, tide:)` | A sliver in your own `CustomScrollView` |
+| Fairway | `HarborFairway(slivers:, minimum:, bars:, tide:)` / `HarborFairway.box(child:)` | Lists, grids, carousels (`scrollDirection: Axis.horizontal`) |
+| One sliver | `HarborFairwaySliver(sliver:, minimum:, bars:, tide:)` | A sliver in your own `CustomScrollView` |
 | Pinned header | `HarborSliverDock(child:)` | A header or tab strip inside the scroll that pins at the docks' face and stacks |
 | Sticky | `HarborSticky(child:)` | A pill that rides with its item, then sticks below the docks and pinned headers |
 | Centered | `HarborCenter(overlapBudget:)` | Controls centered in the frame that may overlap the docks by at most a budget |
@@ -295,15 +295,17 @@ still rests on a frosted tab bar: beneath, the docks, their wakes and
 such option across its scroll: it casts off only its own ends, so a carousel's
 items are handed the docks above and below it as they are.
 
-`HarborFairway(clear: HarborClear.coast)` rests its ends clear of the coast
-alone: a list that keeps its last row off the home indicator but scrolls on
+`HarborFairway(bars: false)` rests its ends clear of the coast alone, not the
+bars (the docks): a list that keeps its last row off the home indicator but scrolls on
 under a frosted tab bar, or a carousel that runs under a rail. Its ends cast off
 the coast alone, as `HarborCastOff(docks: false)` does, so its rows still read
 how far the docks reach, measured from the fairway's edge, and can pad
 themselves under them. Pinned sliver docks still pin at the docks' face, reveals
 still bring a row clear of the docks, and the bottom end still keeps clear of
-the keyboard. `HarborFairwaySliver` and `HarborFairway.paddingOf` take the same
-`clear:`.
+the keyboard while `tide` is true. `HarborFairwaySliver` and
+`HarborFairway.paddingOf` take the same `bars:`. (`bars:` replaces `clear:` and
+its `HarborClear` enum, now deprecated: `clear: HarborClear.coast` is
+`bars: false`, and `HarborClear.everything` is the default.)
 
 `HarborFairway(tide: false)` leaves the keyboard to someone else, as
 `HarborMoored(tide: false)` does: a list in a host whose body already ends at
@@ -318,8 +320,8 @@ lines up under a frosted header. It holds still while the keyboard moves. It
 reads zero inside a fairway, which has cast its ends off; start the fairway in
 open water to lay artwork under the header.
 
-`HarborMoored(clear: HarborClear.coast)` keeps clear of the coast alone, without
-the keyboard: a hero title under a translucent header that must not touch the
+`HarborMoored(bars: false)` keeps clear of the coast alone, without the bars
+and, unlike a fairway, without the keyboard whatever its `tide`: a hero title under a translucent header that must not touch the
 status bar. To keep clear of the coast and the keyboard but not a header, moor
 the bottom edge alone: the header is on the top edge, so it is left to the page.
 `follow: HarborFollow.resting` holds still while a dock grows over it.
