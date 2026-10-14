@@ -235,7 +235,12 @@ edge (for a top or bottom bar, the part between any side bars) and picks its
 own depth. A `NavigationRail` in a `start` bar is as wide as
 it is in a `Row`, and an `AppBar` in a `top` bar is as tall as its toolbar.
 Something that fills whatever it is given, like a `ListView`, needs a size, just
-as it would in a `Row`.
+as it would in a `Row`. A `PreferredSizeWidget` in a `top` or `bottom` bar is held
+to its own height, as `Scaffold` holds its `appBar`, so an `AppBar` with a `bottom:`
+(a `TabBar`) is its toolbar and its bottom high, below the status bar, and keeps a
+toolbar height that comes from `AppBarTheme`. That height is the child's intrinsic
+height, or its `preferredSize` where the child holds a `LayoutBuilder` or a `ListView`,
+which cannot be asked. A side bar's child is left alone: a preferred size is a height.
 
 `HarborBar.reserve(extent: 80)` holds an edge for something drawn elsewhere
 (a footer in an overlay, a bar a parent paints): it reaches 80 in from the

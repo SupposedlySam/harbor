@@ -155,7 +155,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
     final Widget content = Padding(
       padding: widget.coastPadding,
       child: reserved == null
-          ? MediaQuery(data: widget.mediaQuery, child: dock.child)
+          ? MediaQuery(data: widget.mediaQuery, child: _preferredHeight(dock.child))
           // Whatever system edge it took counts toward its extent, so it reaches the larger of the two.
           : SizedBox.square(dimension: math.max(0.0, reserved - HarborEdges.of(widget.coastPadding, widget.edge))),
     );
@@ -201,6 +201,13 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
           : Listener(behavior: dock.hitTestBehavior, child: dockBody),
     );
   }
+
+  /// A top or bottom bar's child held to its own height when it is a [PreferredSizeWidget], as
+  /// `Scaffold` bounds its app bar. A side bar's child is left alone: a preferred size is a height
+  /// (`Size.fromHeight`), and no Flutter slot reads its width.
+  Widget _preferredHeight(final Widget child) => widget.edge.isVertical && child is PreferredSizeWidget
+      ? _PreferredHeight(preferredHeight: child.preferredSize.height, child: child)
+      : child;
 
   double _extentFactor(final double presence) {
     final bool leaving = widget.state == HarborBarState.withdrawn;
@@ -444,5 +451,81 @@ class RenderHarborDockFrame extends RenderProxyBox {
   void dispose() {
     _clip.layer = null;
     super.dispose();
+  }
+}
+
+/// Bounds a [PreferredSizeWidget] in a top or bottom bar at the height it would take.
+///
+/// A bar leaves its child's height unbounded, as a `Column` does, and an `AppBar` with a `bottom:`
+/// lays its toolbar out in a `Column` with a `Flexible`, which needs a bound. `Scaffold` bounds its
+/// app bar at `AppBar.preferredHeightFor`, which corrects the `AppBar`'s `preferredSize` for
+/// `AppBarTheme.toolbarHeight`; harbor imports no Material, so it asks the child for its maximum
+/// intrinsic height instead, which takes the theme's toolbar height and the `bottom:` both. The
+/// `preferredSize` is the fallback, for a child whose intrinsic height is zero or infinite, or one
+/// that cannot be asked (see [_answersIntrinsics]).
+///
+/// The bar pads the child for the system edge and takes that edge out of its `MediaQuery`, so
+/// neither is in the bound. Under a bounded height (none, in a bar today) the child is laid out as
+/// it is given.
+class _PreferredHeight extends SingleChildRenderObjectWidget {
+  const _PreferredHeight({required this.preferredHeight, required super.child});
+
+  final double preferredHeight;
+
+  @override
+  _RenderPreferredHeight createRenderObject(final BuildContext context) =>
+      _RenderPreferredHeight(preferredHeight: preferredHeight);
+
+  @override
+  void updateRenderObject(final BuildContext context, final _RenderPreferredHeight renderObject) {
+    renderObject.preferredHeight = preferredHeight;
+  }
+}
+
+class _RenderPreferredHeight extends RenderProxyBox {
+  _RenderPreferredHeight({required this._preferredHeight});
+
+  double _preferredHeight;
+  set preferredHeight(final double value) {
+    if (_preferredHeight != value) {
+      _preferredHeight = value;
+      markNeedsLayout();
+    }
+  }
+
+  @override
+  void performLayout() {
+    final RenderBox? child = this.child;
+    if (child == null || constraints.hasBoundedHeight) {
+      super.performLayout();
+      return;
+    }
+    double height = _answersIntrinsics(child) ? child.getMaxIntrinsicHeight(constraints.maxWidth) : 0.0;
+    if (height <= 0.0 || !height.isFinite) {
+      height = _preferredHeight;
+    }
+    if (!height.isFinite) {
+      super.performLayout();
+      return;
+    }
+    child.layout(constraints.copyWith(maxHeight: math.max(height, constraints.minHeight)), parentUsesSize: true);
+    size = constraints.constrain(child.size);
+  }
+
+  /// Whether [box] can be asked for its intrinsic size without an assertion: nothing in it is one of
+  /// the framework's render objects that refuse to answer. Those are a `LayoutBuilder`'s (a
+  /// `FlexibleSpaceBar` is built in one), a sliver viewport's and a two-dimensional viewport's. A
+  /// `SingleChildScrollView`, which a scrolling `TabBar` is built in, answers, so it is asked.
+  ///
+  /// It walks the child's render tree, which is small for a bar, on each layout. A render object
+  /// from another package that refuses to answer is not known here, and asserts as it would under
+  /// an `IntrinsicHeight`.
+  static bool _answersIntrinsics(final RenderObject box) {
+    if (box is RenderAbstractLayoutBuilderMixin || box is RenderViewportBase || box is RenderTwoDimensionalViewport) {
+      return false;
+    }
+    bool answers = true;
+    box.visitChildren((final RenderObject child) => answers = answers && _answersIntrinsics(child));
+    return answers;
   }
 }
