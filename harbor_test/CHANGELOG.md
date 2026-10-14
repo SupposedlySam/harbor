@@ -1,3 +1,8 @@
+## 0.3.0 (unreleased)
+
+* `HarborTrialDevice.androidThreeButtonLandscape` and `androidGestureLandscape`: the Android phones on their side, turned the usual way (`ROTATION_90`). Both are 915 × 412 at 2.625 with the status bar's 24 on top, as AOSP keeps it in landscape. With three buttons the navigation bar moves to the right, 48 wide (`navigation_bar_width`); with gestures it stays at the bottom, 24 high, and the camera's cutout moves to the left (24, an estimate). Their 200-point keyboards are estimates too.
+* **Breaking:** `HarborTrialDevice.all` now includes both, after `iPhone17Landscape`, so a test run over `all` gains two cases. `phones` is unchanged.
+
 ## 0.2.4
 
 Needs harbor 0.6.0. Nothing in harbor_test changes.

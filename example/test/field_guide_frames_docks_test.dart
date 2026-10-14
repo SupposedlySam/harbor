@@ -321,6 +321,41 @@ void main() {
       expect(find.text('coast B 0'), findsOneWidget, reason: 'a 0 coast still reads 0');
     });
 
+    // An Android phone on its side keeps its status bar (Jonah asked for it), and with three
+    // buttons its navigation bar moves to the right, where the home indicator switch hides it.
+    testWidgets('an Android phone on its side keeps its status bar, and its navigation bar is on the right', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const HarborSeaEntry());
+      await _stageSetting(tester, 'Device: Android 3-button landscape');
+      await _showStage(tester);
+      final StatusBarArt bar = tester.widget<StatusBarArt>(find.byType(StatusBarArt));
+      expect(bar.icons, isTrue);
+      expect(bar.camera, isFalse);
+      expect(find.byKey(const ValueKey<String>('side navigation bar')), findsOneWidget);
+      final (:Rect screen, scale: _) = _screen(tester);
+      final double scale = screen.width / 915;
+      _near(_rect(tester, 'moored marker').top - screen.top, (24 + 12) * scale, 'below the status bar');
+      _near(screen.right - _rect(tester, 'moored marker').right, (48 + 16) * scale, 'clear of the navigation bar');
+      _near(_rect(tester, 'moored marker').left - screen.left, 16 * scale, 'no coast on the left');
+      await _tapKey(tester, 'toggle Home indicator');
+      expect(find.byKey(const ValueKey<String>('side navigation bar')), findsNothing);
+      _near(screen.right - _rect(tester, 'moored marker').right, 16 * scale, 'the navigation bar gives its side back');
+    });
+
+    testWidgets('an Android gesture phone on its side has its camera on the left, which stays when the status bar is hidden', (final WidgetTester tester) async {
+      await _pumpEntry(tester, const HarborSeaEntry());
+      await _stageSetting(tester, 'Device: Android gesture landscape');
+      await _showStage(tester);
+      expect(tester.widget<StatusBarArt>(find.byType(StatusBarArt)).camera, isFalse, reason: 'the camera has left the top');
+      expect(find.byKey(const ValueKey<String>('side camera')), findsOneWidget);
+      final (:Rect screen, scale: _) = _screen(tester);
+      final double scale = screen.width / 915;
+      _near(_rect(tester, 'moored marker').left - screen.left, (24 + 16) * scale, 'clear of the camera');
+      expect(find.text('coast B 24'), findsOneWidget);
+      await _stageSetting(tester, 'toggle Status bar');
+      expect(find.byType(StatusBarArt), findsNothing, reason: 'the cutout is on the side: the top is all status bar');
+      expect(find.byKey(const ValueKey<String>('side camera')), findsOneWidget, reason: 'the camera is hardware');
+    });
+
     testWidgets('nested HarborSea: the outer pier reads as coast', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HarborSeaEntry());
       await _tapKey(tester, 'toggle nested HarborSea');

@@ -24,6 +24,57 @@ wins.
   timing, defaults). Nautical names stay on harbor's own ideas (buoy, flare, dock, clear water).
   Whether harbor's own ideas get renamed (#120) is decided last, once the surface is smaller.
 
+## Naming (#120): adopt the rename
+
+Harbor's capabilities are worth learning; the harbour words are a tax on top of them. The README
+needs a 27-row table to translate them back into layout ideas, and a consumer that wrapped harbor
+in its own adapters reached for plain words (root, bar, padding, scroll view, keep in sight,
+anchor, toast) without being steered. So the API is renamed after the model it implements: **every
+edge of the screen is claimed once, by the layer that owns it, and everything inside gets what is
+left.** The `Harbor` prefix stays as the brand.
+
+The RFC's table is adopted, with these choices on its open questions and one correction:
+
+- **`room`** for what is left (clear water, waters).
+- **`HarborBar`**, not `HarborEdgeBar`: `HarborBar.solid` (quay), `.overlay` (pier),
+  `.attached` (pontoon).
+- **`HarborClear`** for content that keeps clear of what is in the way (moored). It does more than
+  `SafeArea`, so it should not borrow that name.
+- **`HarborToast`** / **`HarborToasts.show`**, not `HarborNotice`. Toast is what developers search
+  for, and harbor's flare is a transient message whatever it carries.
+- **`HarborFrame`** with a **`HarborFrame.page`** constructor for a route boundary, and the
+  boundary is inferred where the route changes, so `.page` is rarely written.
+- **Correction:** the portal buoy becomes **`HarborPopover`**, not `HarborAnchored`.
+  `HarborAnchored` is the anchored placement value from the placement work. The three overlays
+  then read by their lifetime, in words developers know: `HarborFloat` (declared in the tree,
+  formerly buoy), `HarborPopover` (opened on demand by an anchor, formerly portal buoy) and
+  `HarborToast` (transient, formerly flare).
+
+The complete old-to-new table is `naming.md`, reviewed and accepted on 2026-10-14 with its six
+recommendations:
+
+1. A small release before the rename adds `bars: bool` and deprecates the `HarborClear` enum, so the
+   widget can take the name.
+2. Pontoon and make way become the widgets `HarborAttachedBar` and `HarborHideBar`.
+3. The keyboard reader is `HarborKeyboard`, and the stance is `HarborKeyboardStance`
+   (`rides`, `stays`, `reserves`).
+4. The wake becomes `HarborEdgeEffect` (`.fade`, `.hairline`, `.none`).
+5. The harbour stays as illustration and brand in the field guide and the videos, but no longer as
+   the meaning.
+6. `room` serves for both clear water and waters.
+
+Order of work:
+
+1. The placement change, already in progress. Its new types are plain names already.
+2. **One rename release**: new names, every old name kept as a deprecated typedef or forwarding
+   member, `lib/fix_data/rename.yaml` covering every rename, and the README and field guide on the
+   new names, with a short "Renamed in 0.x" table. Before it is applied, a complete old-to-new
+   table for every public symbol is drafted in `doc/design/naming.md` and reviewed. The rename
+   runs alone, because it touches every file.
+3. The flares, sheets, defaults and smaller structural steps, written in the new vocabulary. So
+   it is `HarborToastTiming`, not `HarborFlareTiming`.
+4. One release before 1.0 removes every deprecated name.
+
 ## Placement (`placement.md`)
 
 - Ship the sealed `HarborPlacement` with two variants, `HarborAligned` and `HarborAnchored`, and

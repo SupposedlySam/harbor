@@ -58,6 +58,8 @@ Future<void> _tap(final WidgetTester tester, final String key) async {
     await tester.ensureVisible(_key('stage settings'));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(_key('stage settings'));
+    // One frame to start the panel growing and one to finish, so the quay can scroll to all of it.
+    await tester.pump();
     await tester.pump(_step);
   }
   expect(finder, findsOneWidget, reason: key);
