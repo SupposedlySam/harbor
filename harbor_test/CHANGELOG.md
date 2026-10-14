@@ -5,8 +5,8 @@ Needs harbor 0.9.0, which renamed its API (#120); harbor_test's names follow it.
 * `HarborSeaTrials` is `HarborTrials`, and `tester.pumpSeaTrial(tideIn:)` is `tester.pumpHarborTrial(keyboardShown:)`.
 * `HarborSeaTrial` is `HarborTrial`: `raiseTide` and `lowerTide` are `showKeyboard` and `hideKeyboard`, `setTide(tideIn:)` is `setKeyboard(shown:)`, `tideIn` is `keyboardShown`, `waterline` is `keyboardTop`, `clearWaterAround` is `roomAround`, and `docksAround` is `barsAround`.
 * `isInClearWater` is `isInRoom`.
-* `HarborTrialDevice(coast:, tideHeight:, reportsCoastUnderTide:)` is `HarborTrialDevice(systemEdges:, keyboardHeight:, reportsSystemEdgesUnderKeyboard:)`, in `copyWith` too, and `coastWhen(tideIn:)` is `systemEdgesWhen(keyboardShown:)`.
-* Every 0.3 name still works, deprecated, until 1.0. `HarborSeaTrials` stays an extension of its own, holding only `pumpSeaTrial`, since an extension cannot be aliased.
+* **Breaking:** `HarborTrialDevice(coast:, tideHeight:, reportsCoastUnderTide:)` is `HarborTrialDevice(systemEdges:, keyboardHeight:, reportsSystemEdgesUnderKeyboard:)`, in `copyWith` too. The class keeps its name, so its constructor and `copyWith` take only the new names, which stay `required`; `dart fix` renames the old ones in a call. The old getters (`coast`, `tideHeight`, `reportsCoastUnderTide`) still read, deprecated. `coastWhen(tideIn:)` is `systemEdgesWhen(keyboardShown:)`.
+* Every other 0.3 name still works, deprecated, until 1.0. `HarborSeaTrials` stays an extension of its own, holding only `pumpSeaTrial`, since an extension cannot be aliased.
 * **Migrating:** `dart fix --apply` (harbor_test ships its own fix data), then `dart format`. It rewrites `tester.pumpSeaTrial(...)` and `HarborSeaTrials(tester).pumpSeaTrial(...)` alike.
 
 ## 0.3.1

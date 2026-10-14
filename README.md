@@ -47,18 +47,21 @@ MIT licensed.
 |---|---|
 | `HarborSea` | `HarborRoot` |
 | `Harbor` | `HarborFrame` |
-| `Harbor(newPort: true)` | `HarborFrame.page(...)` (`isPage: true`) |
+| `Harbor(newPort: true)` | `HarborFrame(isPage: true)`, which `dart fix` writes; `HarborFrame.page(...)` says the same and reads better |
 | `HarborDock.pier` / `.quay` / `.reserve` | `HarborBar.overlay` / `.solid` / `.reserve` |
 | `HarborDockState`, `HarborDockKind.pier` / `.quay` | `HarborBarState`, `HarborBarKind.overlay` / `.solid` |
 | `HarborCoast`, `coast:` | `HarborSystemEdges`, `systemEdges:` |
 | `HarborCoastStance` | `HarborSystemEdgeStance` |
 | `HarborTide.of` / `.isInOf` | `HarborKeyboard.of` / `.isShownOf` |
 | `HarborTideState.highWater` / `.isIn` | `HarborKeyboardState.settledHeight` / `.isShown` |
-| `HarborTideStance.float` / `.pilings` / `.dryDock`, `tide:` | `HarborKeyboardStance.rides` / `.stays` / `.reserves`, `keyboard:` |
-| `HarborDryDock`, `HarborTideSource` | `HarborKeyboardSpace`, `HarborKeyboardSource` |
+| `HarborTideStance.float` / `.pilings` / `.dryDock`, a bar's `tide:` | `HarborKeyboardStance.rides` / `.stays` / `.reserves`, a bar's `keyboard:` |
+| `tide:` on `HarborMoored`, `HarborFairway`, `HarborFairwaySliver`, `HarborCastOff`, `paddingOf` | `clearsKeyboard:` |
+| `bars:` (0.8.0) on the same, and `HarborCastOff(docks:)` | `clearsBars:` |
+| `HarborDryDock(showsChildAtHighTide:)`, `HarborTideSource` | `HarborKeyboardSpace(showsChildWithKeyboard:)`, `HarborKeyboardSource` |
 | `bodyClearsTide:` | `bodyClearsKeyboard:` |
 | `HarborWake`, `wake:` | `HarborEdgeEffect`, `edgeEffect:` (`edgeEffects:` on a scroll view) |
-| `HarborWakeMask.alphaWake`, `wakePainter:` | `HarborFadeMask.alphaFade`, `edgeEffectPainter:` |
+| `HarborWakeMask(wakes:)`, `.alphaWake`, `wakePainter:` | `HarborFadeMask(bands:)`, `.alphaFade`, `edgeEffectPainter:` |
+| `HarborWatersData.wakes` / `.wakeOf`, `HarborWakeBand` | `HarborRoomData.fadeBands` / `.fadeBandOf`, `HarborFadeBand` |
 | `HarborController.clearWater` | `HarborController.room` |
 | `HarborWaters`, `HarborWatersData` | `HarborRoom`, `HarborRoomData` |
 | `HarborWaters.dockFaceOf` / `.steadyCoastOf` | `HarborRoom.barFaceOf` / `.steadySystemEdgeOf` |
@@ -83,9 +86,13 @@ MIT licensed.
 | `pumpSeaTrial`, `raiseTide()`, `waterline`, `isInClearWater` | `pumpHarborTrial`, `showKeyboard()`, `keyboardTop`, `isInRoom` |
 
 `HarborOpenWater` is retired rather than renamed, and has no automatic fix. The `HarborClear`
-enum is removed so the widget can take its name: `clear: HarborClear.coast` is `bars: false`,
-and `HarborClear.everything` was the default. The complete table, every member and parameter, is
-[`doc/design/naming.md`](doc/design/naming.md).
+enum is removed so the widget can take its name: `clear: HarborClear.coast` is
+`clearsBars: false`, and `HarborClear.everything` was the default. `HarborMooringLine(child:)`
+becomes `HarborClear.rowInsets(child:)`, which builds a `HarborClear`, so a test that found rows
+with `find.byType(HarborMooringLine)` finds none after the fix: give the row a `Key`, or find it
+with `find.byWidgetPredicate((w) => w is HarborClear && w.rowInsets)`. The complete table, every
+member and parameter, is [`doc/design/naming.md`](doc/design/naming.md); the CHANGELOG lists the
+names not renamed yet.
 
 ## The one rule
 
@@ -106,6 +113,8 @@ padding for everything beneath it.**
 
 That's the whole difference between a header your list scrolls under and a
 header your list starts below. What no edge and no bar covers is the **room**.
+`HarborRoom.of(context)` describes what bounds the room at a point in the tree: how far the
+system edges, the bars and their fades reach in on each edge, and the margin.
 
 ### In Flutter's terms
 
@@ -121,12 +130,12 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborBar.solid` | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured rather than declared, and on any edge: a start bar holds a `NavigationRail` as a `Row` would. Several stack |
 | `HarborBar.overlay` | An app bar under `Scaffold(extendBodyBehindAppBar: true)`, a bottom bar under `extendBody: true` | The same mechanism: the body runs under it and its `MediaQuery.padding` says how far. An overlay bar does it on any edge, and for a stack of bars |
 | `HarborEdgeEffect` | A `ShaderMask` fade, with a `BackdropFilter` frost under the bar | The fade's length counts toward where content rests, so the band and the first row's resting line never drift apart |
-| `HarborClear` | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. `HarborClear` keeps clear of it at the bottom too, can clear the system edges alone (`bars: false`) or the bars at rest (`follow:`), and takes directional edges. Both mark what they cleared as handled, and `minimum:` is a floor on both |
+| `HarborClear` | `SafeArea` | `SafeArea` reads `MediaQuery.padding` alone, so it misses the keyboard. `HarborClear` keeps clear of it at the bottom too, can clear the system edges alone (`clearsBars: false`) or the bars at rest (`follow:`), and takes directional edges. Both mark what they cleared as handled, and `minimum:` is a floor on both |
 | `HarborClear.rowInsets` | Horizontal page padding: a `Padding` on each row | It adds whatever is in the way on the sides (a side cutout, a rail) to the frame's margin, and only the rows that ask get it, so the list itself still runs to the frame's edge |
-| `HarborScrollView` | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A `HarborScrollView` clears both ends, keyboard included (unless `keyboard: false`), and widens every reveal by what covers its edges. `HarborSliverClear` is the `SliverSafeArea` of a scroll view you build yourself |
+| `HarborScrollView` | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A `HarborScrollView` clears both ends, keyboard included (unless `clearsKeyboard: false`), and widens every reveal by what covers its edges. `HarborSliverClear` is the `SliverSafeArea` of a scroll view you build yourself |
 | `HarborSliverBar` | `PinnedHeaderSliver`, `SliverAppBar(pinned: true)` | It pins at the bars' face rather than the viewport's edge, several stack, and reveals keep clear of it |
 | `HarborRoom.of(context)` | Content outside any `SafeArea` that reads `MediaQuery.padding` itself | The room data splits each edge into system edges and bars, which `MediaQuery.padding` adds together |
-| `HarborHandled` | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; `HarborHandled` zeroes it, and with `keyboard:` the keyboard, and zeroes harbor's own room data, so harbor widgets beneath read zero too. `bars: false` handles the system edges alone and leaves the bars, which `removePadding` cannot tell apart |
+| `HarborHandled` | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; `HarborHandled` zeroes it, and with `clearsKeyboard:` the keyboard, and zeroes harbor's own room data, so harbor widgets beneath read zero too. `clearsBars: false` handles the system edges alone and leaves the bars, which `removePadding` cannot tell apart |
 | `HarborKeyboardStance.rides` / `.stays` | Rides: the bottom of a resizing `Scaffold`'s body. Stays: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per bar, so a composer can ride the keyboard while the tab bar under it stays |
 | `HarborKeyboardStance.reserves` | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
 | `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the space back |
@@ -280,7 +289,7 @@ focus (`restingExtent:`) holds the header at its resting width.
 | Pinned header | `HarborSliverBar(child:)` | A header or tab strip inside the scroll that pins at the bars' face and stacks |
 | Sticky | `HarborSticky(child:)` | A pill that rides with its item, then sticks below the bars and pinned headers |
 | Centered | `HarborCenter(overlapBudget:)` | Controls centered in the frame that may overlap the bars by at most a budget |
-| Ignores the bars | `Builder(builder: (context) { final room = HarborRoom.of(context); ... })` | Backgrounds, heroes; `room.systemEdges`, `.bars`, `.edgeEffects`, `.frameSize` |
+| Ignores the bars | `Builder(builder: (context) { final room = HarborRoom.of(context); ... })` | Backgrounds, heroes; `room.systemEdges`, `.bars`, `.fadeBands`, `.frameSize` |
 
 Each one marks what it cleared as **handled**, so nothing beneath clears it again.
 `HarborHandled` does the same for a layer you pad by hand, and
@@ -305,24 +314,24 @@ instead, use `startsUnderBars` (below).
 
 A layer that pads by the system edges alone (a page's safe-area margin, read from
 `HarborRoom.of(context).systemEdges`) handles the system edges and keeps the bars with
-`HarborHandled(edges: {HarborEdge.bottom}, bars: false)`. A list inside it
+`HarborHandled(edges: {HarborEdge.bottom}, clearsBars: false)`. A list inside it
 still rests on a frosted tab bar: beneath, the bars, their fades and
 `MediaQuery.padding` are measured from the layer's edge. A scroll view needs no
 such option across its scroll: it handles only its own ends, so a carousel's
 items are handed the bars above and below it as they are.
 
-`HarborScrollView(bars: false)` rests its ends clear of the system edges alone, not the
+`HarborScrollView(clearsBars: false)` rests its ends clear of the system edges alone, not the
 bars: a list that keeps its last row off the home indicator but scrolls on
 under a frosted tab bar, or a carousel that runs under a rail. Its ends handle
-the system edges alone, as `HarborHandled(bars: false)` does, so its rows still read
+the system edges alone, as `HarborHandled(clearsBars: false)` does, so its rows still read
 how far the bars reach, measured from the scroll view's edge, and can pad
 themselves under them. Pinned sliver bars still pin at the bars' face, reveals
 still bring a row clear of the bars, and the bottom end still keeps clear of
 the keyboard while `keyboard` is true. `HarborSliverClear` and
-`HarborScrollView.paddingOf` take the same `bars:`.
+`HarborScrollView.paddingOf` take the same `clearsBars:`.
 
-`HarborScrollView(keyboard: false)` leaves the keyboard to someone else, as
-`HarborClear(keyboard: false)` does: a list in a host whose body already ends at
+`HarborScrollView(clearsKeyboard: false)` leaves the keyboard to someone else, as
+`HarborClear(clearsKeyboard: false)` does: a list in a host whose body already ends at
 the keyboard, or one that stays put while a keyboard opens over it. Its bottom
 end and its reveals leave the keyboard out, and it does not mark the keyboard
 handled, so a `HarborClear` block inside can still keep clear of it, and the scroll view
@@ -334,7 +343,7 @@ lines up under a frosted header. It holds still while the keyboard moves. It
 reads zero inside a scroll view, which has handled its ends; start the scroll view
 under the bars to lay artwork under the header.
 
-`HarborClear(bars: false)` keeps clear of the system edges alone, without the bars
+`HarborClear(clearsBars: false)` keeps clear of the system edges alone, without the bars
 and, unlike a scroll view, without the keyboard whatever its `keyboard`: a hero title
 under a translucent header that must not touch the
 status bar. To keep clear of the system edges and the keyboard but not a header, keep clear
@@ -586,7 +595,7 @@ without being shown. Toasts at different slots show together.
 `queue: HarborToastQueue.replace` takes the turn at once instead: the toast goes
 first and the one up leaves, closed with `HarborToastClosedReason.replaced`, for
 an Undo whose window is tied to a pending action. `HarborFlarePolicy(queue:,
-child:)` sets that for a subtree, such as a remote-driven TV screen where a newer
+child:)` (its 0.8 name, kept until it folds into `HarborDefaultsScope`) sets that for a subtree, such as a remote-driven TV screen where a newer
 "Saved" should replace the one up rather than arrive late. `closed`
 completes once a toast has left, with why. `entry.phase` (`waiting`, `shown`,
 `closed`) and `entry.wasShown` say where it is synchronously, before `closed`
@@ -1122,8 +1131,9 @@ are `Diagnosticable`, so they print the same way in a test failure or a log.
 
 Two fields are reserved and not yet read: `HarborSystemEdgeFeature.hinge` (sheets,
 dialogs, toasts and floats keep off a hinge through `MediaQuery.displayFeatures`,
-not through the system edges) and `HarborController.isPage` (toasts find their page by
-route instead).
+not through the system edges) and `HarborController.isPage`, which records whether the
+controller's frame was built as a page (`HarborFrame.page`, or `isPage: true`); toasts find their
+page by route instead.
 
 ## Trials
 
