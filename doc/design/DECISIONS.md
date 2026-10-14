@@ -50,6 +50,19 @@ The RFC's table is adopted, with these choices on its open questions and one cor
   formerly buoy), `HarborPopover` (opened on demand by an anchor, formerly portal buoy) and
   `HarborToast` (transient, formerly flare).
 
+The complete old-to-new table is `naming.md`, reviewed and accepted on 2026-10-14 with its six
+recommendations:
+
+1. A small release before the rename adds `bars: bool` and deprecates the `HarborClear` enum, so the
+   widget can take the name.
+2. Pontoon and make way become the widgets `HarborAttachedBar` and `HarborHideBar`.
+3. The keyboard reader is `HarborKeyboard`, and the stance is `HarborKeyboardStance`
+   (`rides`, `stays`, `reserves`).
+4. The wake becomes `HarborEdgeEffect` (`.fade`, `.hairline`, `.none`).
+5. The harbour stays as illustration and brand in the field guide and the videos, but no longer as
+   the meaning.
+6. `room` serves for both clear water and waters.
+
 Order of work:
 
 1. The placement change, already in progress. Its new types are plain names already.
