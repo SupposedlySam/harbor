@@ -35,7 +35,7 @@ void main() {
         unawaited(
           showHarborSheet<void>(
             page,
-            barrier: HarborSheetBarrier.none,
+            barrier: HarborBarrier.none,
             controller: controller,
             builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
           ),
@@ -69,7 +69,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           page,
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           controller: controller,
           builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
         ).then((final _) => results++),

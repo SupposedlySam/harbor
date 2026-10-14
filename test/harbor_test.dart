@@ -306,7 +306,7 @@ void main() {
       showHarborSheet<void>(
         pageContext,
         coversPage: true,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 200)),
       ),
     );

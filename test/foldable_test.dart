@@ -50,11 +50,8 @@ void main() {
     expect(_rect(tester, 'material').overlaps(_hinge), isFalse);
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-    HarborSheetBarrier.dismissible,
-    HarborSheetBarrier.none,
-  ]) {
-    testWidgets('a sheet keeps off the hinge (barrier: ${barrier.name})', (final tester) async {
+  for (final HarborBarrier barrier in const <HarborBarrier>[HarborBarrier.dimmed(), HarborBarrier.none]) {
+    testWidgets('a sheet keeps off the hinge (barrier: $barrier)', (final tester) async {
       final BuildContext page = await _pump(tester);
       unawaited(
         showHarborSheet<void>(
@@ -69,11 +66,8 @@ void main() {
     });
   }
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-    HarborSheetBarrier.dismissible,
-    HarborSheetBarrier.none,
-  ]) {
-    testWidgets('a sheet opens on the screen its anchorPoint is on (barrier: ${barrier.name})', (final tester) async {
+  for (final HarborBarrier barrier in const <HarborBarrier>[HarborBarrier.dimmed(), HarborBarrier.none]) {
+    testWidgets('a sheet opens on the screen its anchorPoint is on (barrier: $barrier)', (final tester) async {
       final BuildContext page = await _pump(tester);
       unawaited(
         showHarborSheet<void>(

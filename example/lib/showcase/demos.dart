@@ -811,9 +811,8 @@ class _BuoyDemoState extends State<_BuoyDemo> {
             if (t >= modal && t < closes)
               HarborFloat(
                 placement: const HarborAligned(alignment: Alignment.center),
-                modal: true,
+                barrier: const HarborBarrier.dimmed(color: Color(0x66000000)),
                 onDismiss: () {},
-                barrierColor: const Color(0x66000000),
                 child: Container(
                   width: 260,
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1119,7 +1118,7 @@ class _BreakwaterDemoState extends _OverPageState<_BreakwaterDemo> {
   Future<void> show(final BuildContext context) => showHarborSheet<void>(
     context,
     coversPage: true,
-    barrier: HarborSheetBarrier.none,
+    barrier: HarborBarrier.none,
     builder: (final BuildContext _) => const HarborSheet(
       surface: ColoredBox(color: Palette.deepSea),
       body: SizedBox(

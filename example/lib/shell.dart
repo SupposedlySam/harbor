@@ -74,7 +74,7 @@ class _HarborTownState extends State<HarborTown> {
             HarborFloat(
               placement: const HarborAligned(alignment: Alignment.bottomCenter),
               key: const ValueKey<String>('quick actions'),
-              modal: true,
+              barrier: const HarborBarrier.clear(),
               onDismiss: () => setState(() => _quickActions = false),
               child: _QuickActions(onClose: () => setState(() => _quickActions = false), onShipyard: _openShipyard),
             ),

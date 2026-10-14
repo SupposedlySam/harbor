@@ -116,7 +116,7 @@ void main() {
     unawaited(
       showHarborSheet<void>(
         page,
-        barrierLabel: MaterialLocalizations.of(page).modalBarrierDismissLabel,
+        barrier: HarborBarrier.dimmed(label: MaterialLocalizations.of(page).modalBarrierDismissLabel),
         builder: (final BuildContext context) {
           sheet = context;
           return const HarborSheet(body: SizedBox(height: 200));
@@ -192,11 +192,11 @@ void main() {
     expect(tester.renderObject(footer), paints..rect(color: const Color(0x1F000000)));
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-    HarborSheetBarrier.dismissible,
-    HarborSheetBarrier.clear,
+  for (final HarborBarrier barrier in const <HarborBarrier>[
+    HarborBarrier.dimmed(dismissible: false),
+    HarborBarrier.clear(dismissible: false),
   ]) {
-    testWidgets('a sheet that is not dismissible ignores a barrier tap and closes on back (barrier: ${barrier.name})', (
+    testWidgets('a sheet that is not dismissible ignores a barrier tap and closes on back ($barrier)', (
       final tester,
     ) async {
       final BuildContext page = await _page(tester);
@@ -205,7 +205,6 @@ void main() {
         showHarborSheet<void>(
           page,
           barrier: barrier,
-          isDismissible: false,
           builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
         ).then((final void _) => closed = true),
       );
@@ -490,7 +489,7 @@ void main() {
     Future<double> rest(
       final WidgetTester tester,
       final BuildContext page, {
-      final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
+      final HarborBarrier barrier = const HarborBarrier.dimmed(),
     }) async {
       unawaited(
         showHarborSheet<void>(
@@ -514,7 +513,7 @@ void main() {
     void open(
       final BuildContext page,
       final AnimationStyle style, {
-      final HarborSheetBarrier barrier = HarborSheetBarrier.dismissible,
+      final HarborBarrier barrier = const HarborBarrier.dimmed(),
       final bool dragToClose = false,
     }) => unawaited(
       showHarborSheet<void>(
@@ -525,11 +524,8 @@ void main() {
       ),
     );
 
-    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-      HarborSheetBarrier.dismissible,
-      HarborSheetBarrier.none,
-    ]) {
-      testWidgets('its duration and curve set how a sheet opens (${barrier.name})', (final tester) async {
+    for (final HarborBarrier barrier in const <HarborBarrier>[HarborBarrier.dimmed(), HarborBarrier.none]) {
+      testWidgets('its duration and curve set how a sheet opens ($barrier)', (final tester) async {
         final BuildContext page = await _page(tester);
         final double restTop = await rest(tester, page, barrier: barrier);
         open(
@@ -545,7 +541,7 @@ void main() {
         expect(_rect(tester, 'content').top, restTop);
       });
 
-      testWidgets('its reverse duration and curve set how a sheet closes (${barrier.name})', (final tester) async {
+      testWidgets('its reverse duration and curve set how a sheet closes ($barrier)', (final tester) async {
         final BuildContext page = await _page(tester);
         final double restTop = await rest(tester, page, barrier: barrier);
         open(
@@ -562,9 +558,7 @@ void main() {
         expect(find.byKey(const ValueKey<String>('content')), findsNothing);
       });
 
-      testWidgets('AnimationStyle.noAnimation opens and closes a sheet at once (${barrier.name})', (
-        final tester,
-      ) async {
+      testWidgets('AnimationStyle.noAnimation opens and closes a sheet at once ($barrier)', (final tester) async {
         final BuildContext page = await _page(tester);
         final double restTop = await rest(tester, page, barrier: barrier);
         open(page, AnimationStyle.noAnimation, barrier: barrier);
@@ -859,7 +853,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           page,
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           controller: controller,
           builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
         ),
@@ -886,7 +880,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           page,
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           controller: controller,
           builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
         ),
@@ -942,7 +936,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           page,
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           controller: controller,
           builder: (final BuildContext context) => HarborSheet(body: _bar('sheet body', 100)),
         ),
@@ -953,11 +947,8 @@ void main() {
       expect(heard, <bool>[true, false]);
     });
 
-    for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-      HarborSheetBarrier.none,
-      HarborSheetBarrier.dismissible,
-    ]) {
-      testWidgets('rebuilds a sheet (${barrier.name}) with state the page holds', (final tester) async {
+    for (final HarborBarrier barrier in const <HarborBarrier>[HarborBarrier.none, HarborBarrier.dimmed()]) {
+      testWidgets('rebuilds a sheet ($barrier) with state the page holds', (final tester) async {
         final HarborSheetController controller = HarborSheetController();
         addTearDown(controller.dispose);
         expect(() => controller.setState(() {}), throwsAssertionError, reason: 'no sheet is attached yet');
@@ -979,7 +970,7 @@ void main() {
         expect(find.text('second'), findsOneWidget);
       });
 
-      testWidgets('a sheet (${barrier.name}) slides by the transition it is given', (final tester) async {
+      testWidgets('a sheet ($barrier) slides by the transition it is given', (final tester) async {
         final AnimationController transition = AnimationController(
           vsync: const TestVSync(),
           duration: const Duration(milliseconds: 300),
@@ -1017,10 +1008,12 @@ void main() {
   });
 
   // A picker sheet ("choose a folder") is awaited for its answer, as showModalBottomSheet is.
-  for (final HarborSheetBarrier barrier in HarborSheetBarrier.values) {
-    testWidgets('a sheet with barrier ${barrier.name} completes with the result it is closed with', (
-      final tester,
-    ) async {
+  for (final HarborBarrier barrier in const <HarborBarrier>[
+    HarborBarrier.dimmed(),
+    HarborBarrier.clear(),
+    HarborBarrier.none,
+  ]) {
+    testWidgets('a sheet with barrier $barrier completes with the result it is closed with', (final tester) async {
       final BuildContext page = await _page(tester);
       late BuildContext sheet;
       String? chosen;
@@ -1055,7 +1048,7 @@ void main() {
     unawaited(
       showHarborSheet<String>(
         page,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) => HarborSheet(body: _bar('folders', 200)),
       ).then((final String? result) {
         chosen = result;
@@ -1153,7 +1146,7 @@ void main() {
     unawaited(
       showHarborSheet<void>(
         page,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         semanticLabel: 'Reply',
         builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
       ),
@@ -1164,20 +1157,17 @@ void main() {
     semantics.dispose();
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-    HarborSheetBarrier.dismissible,
-    HarborSheetBarrier.clear,
+  for (final HarborBarrier barrier in const <HarborBarrier>[
+    HarborBarrier.dimmed(onTapHint: 'Close the reply'),
+    HarborBarrier.clear(onTapHint: 'Close the reply'),
   ]) {
-    testWidgets('a ${barrier.name} sheet barrier says what tapping it does with barrierOnTapHint', (
-      final tester,
-    ) async {
+    testWidgets('a sheet barrier says what tapping it does with its onTapHint ($barrier)', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await _page(tester);
       unawaited(
         showHarborSheet<void>(
           page,
           barrier: barrier,
-          barrierOnTapHint: 'Close the reply',
           builder: (final BuildContext context) => HarborSheet(body: _bar('content', 200)),
         ),
       );

@@ -149,7 +149,7 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
     await showHarborSheet<void>(
       context,
       coversPage: true,
-      barrier: HarborSheetBarrier.none,
+      barrier: HarborBarrier.none,
       useRootNavigator: true,
       // A non-modal sheet: it closes itself if this frame leaves first.
       builder: (final BuildContext _) => _ShantyDrawer(key: const ValueKey<String>('shanty drawer'), boat: boat),
