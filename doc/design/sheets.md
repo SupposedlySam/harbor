@@ -273,7 +273,7 @@ writing out three overrides.
 
 ## As shipped
 
-Where the implementation (after 0.9.0) departs from the proposal, and why:
+Where the implementation (after 0.9.1) departs from the proposal, and why:
 
 - **The getter is `isDismissible`, not `dismissible`.** The deprecated `HarborSheetBarrier`
   implements `HarborBarrier`, so `barrier: HarborSheetBarrier.none` keeps compiling. Its value
@@ -284,21 +284,25 @@ Where the implementation (after 0.9.0) departs from the proposal, and why:
   has no colour. A transparent `barrierColor`, the old default, reads as `HarborBarrier.clear()`.
 - **`HarborDialogRoute(barrierColor:)` keeps its old default.** It takes a `Color?`, and null meant
   a barrier with no colour, so null still gives a clear barrier.
-- **`dart fix` covers more of the barrier than the proposal planned, and less of the bars**
-  (`tool/fix_data/sheets.dart`, `test_fixes/sheets.dart`):
+- **`dart fix` covers more than the proposal planned** (`tool/fix_data/sheets.dart`, `test_fixes/sheets.dart`):
   - Every combination of a call's loose barrier arguments is a generated branch, not only one
     argument at a time, beside the literal `HarborSheetBarrier` values or none. An argument that
-    did nothing (a colour with a clear barrier, anything with no barrier) is dropped rather than
-    carried into a value where it would assert.
+    did nothing (a colour with a clear barrier, anything with no barrier) is dropped.
   - `HarborFloat(modal: true)` and `modal: false` are fixed. fix_data compares an argument's text,
     so the literals are told apart from a variable, which is left alone.
-  - `HarborSheetBarrier.none` on its own is **not** fixed. A `replacedBy` rewrites it wherever it is
-    written, and a variable typed `HarborSheetBarrier` then fails to compile. Found by running it on
-    the example's field guide. Inside a call that a loose argument already rewrites, it is.
-  - The header and footer knobs are **not** fixed, as the proposal said. The specific reason: the
-    template puts the header in a bar's non-nullable `child:`, and `footer: done ? actions : null`
-    is nullable. The first version of the fix broke the field guide this way.
-  - `HarborDialogRoute(barrierColor:)` is not fixed (above).
+  - The header and footer knobs are fixed (owner review), the bar spelled out with its const
+    constructor and the sheet's defaults for the knobs a call left out. The known break: a header or
+    footer that can be null comes out as a type error, because the bar's `child:` is not nullable. It
+    is in the CHANGELOG's hand-edit list.
+  - `HarborDialogRoute(barrierColor: null)` becomes `HarborBarrier.clear(...)`. Any other colour is
+    left alone: the parameter is a `Color?`, and a fix compares text, not types.
+  - `HarborSheetBarrier` on its own is **not** fixed. The owner's review showed every transform
+    either never fires (the deprecation is reported on the enum identifier, not on the call) or
+    breaks a variable, `.values` or a comparison. Inside a call that a loose argument already
+    rewrites, it is.
+- **A sheet with no barrier ignores the loose arguments, as 0.9.1 did.** The proposal had them
+  assert. But whether the barrier is none can turn on a variable `dart fix` leaves alone, so the
+  assert would break calls that worked. It can return when they are removed at 1.0.
 - **`HarborPageCover`'s getters are deprecated, not removed.** Making them private at once would
   break a caller before 1.0. The breakwater and the two top switches were settled by the rename
   release: `coversPage:`, `reachesTop:`, `clearsTopSystemEdge:` and `HarborPageCover`.

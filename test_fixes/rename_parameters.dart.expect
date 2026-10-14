@@ -60,14 +60,11 @@ void overlays(BuildContext context, OverlayPortalController menu) {
   HarborToasts.show(context, reachesSystemEdges: true, builder: (_) => const SizedBox());
   showHarborSheet<void>(context, coversPage: true, reachesTop: true, builder: (_) => const SizedBox());
   const HarborSheet(
-    headerEdgeEffect: HarborEdgeEffect.none,
-    footerEdgeEffect: HarborEdgeEffect.none,
-    footerKeyboard: HarborKeyboardStance.stays,
     clearsTopSystemEdge: false,
     bodyClearsKeyboard: false,
     body: SizedBox(),
   );
-  HarborSheet.draggable(footerKeyboard: HarborKeyboardStance.rides, builder: (context, controller) => const SizedBox());
+  HarborSheet.draggable(builder: (context, controller) => const SizedBox());
   showHarborDialog<void>(context, inheritRoom: true, builder: (_) => const SizedBox());
   HarborDialogRoute<void>(context: context, inheritRoom: true, builder: (_) => const SizedBox());
 }

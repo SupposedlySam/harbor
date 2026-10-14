@@ -59,7 +59,15 @@ void dialogs(BuildContext context, String label) {
   );
   HarborDialogRoute<void>(context: context, builder: (_) => const SizedBox(), barrier: const HarborBarrier.dimmed(dismissible: false));
   HarborDialogRoute<void>(context: context, inheritRoom: true, barrier: HarborBarrier.dimmed(label: label), builder: (_) => const SizedBox());
-  // A route's barrierColor is a Color?, and null was a clear barrier: left for you.
+  // A route's barrierColor: null was a barrier with no colour, a clear one, with whatever else the call
+  // gave. Any other colour is left for you: the parameter is a Color?, and a fix compares text.
+  HarborDialogRoute<void>(context: context, builder: (_) => const SizedBox(), barrier: const HarborBarrier.clear());
+  HarborDialogRoute<void>(context: context, barrier: const HarborBarrier.clear(dismissible: false), builder: (_) => const SizedBox());
+  HarborDialogRoute<void>(
+    context: context,
+    barrier: HarborBarrier.clear(dismissible: false, label: label),
+    builder: (_) => const SizedBox(),
+  );
   HarborDialogRoute<void>(context: context, barrierColor: tint, barrierDismissible: false, builder: (_) => const SizedBox());
 }
 
@@ -85,33 +93,27 @@ void floats(VoidCallback close, HarborAnchor anchor, bool open) {
 void headersAndFooters() {
   const Widget title = SizedBox();
   const Widget actions = SizedBox();
-  // The knobs of a plain header and footer are left for you: headerBar:/footerBar: take a bar whose
-  // child cannot be null, and a header or footer often can (`footer: done ? actions : null`).
-  const HarborSheet(header: title, headerEdgeEffect: HarborEdgeEffect.none, body: SizedBox());
-  const HarborSheet(footer: actions, footerMinimum: 0, body: SizedBox());
+  // A knob of a plain header or footer puts it in its own bar, spelled out with the sheet's defaults
+  // for the knobs the call left out. Without the header or footer it belongs to, a knob did nothing,
+  // and goes. (A header or footer that can be null comes out as a type error; see sheets.dart in
+  // tool/fix_data/.)
+  const HarborSheet(headerBar: HarborBar.overlay(edgeEffect: HarborEdgeEffect.none, debugLabel: 'sheet header', child: title), body: SizedBox());
+  const HarborSheet(body: SizedBox(), footerBar: HarborBar.solid(edgeEffect: HarborEdgeEffect.hairline(), minimum: 0, keyboard: HarborKeyboardStance.rides, debugLabel: 'sheet footer', child: actions));
   const HarborSheet(
-    header: title,
-    headerEdgeEffect: HarborEdgeEffect.none,
-    footer: actions,
-    footerKeyboard: HarborKeyboardStance.reserves,
-    footerMinimum: 0,
-    footerEdgeEffect: HarborEdgeEffect.none,
+    headerBar: HarborBar.overlay(edgeEffect: HarborEdgeEffect.none, debugLabel: 'sheet header', child: title),
+    footerBar: HarborBar.solid(edgeEffect: HarborEdgeEffect.none, minimum: 0, keyboard: HarborKeyboardStance.reserves, debugLabel: 'sheet footer', child: actions),
     body: SizedBox(),
   );
   HarborSheet.draggable(
-    header: title,
-    headerEdgeEffect: const HarborEdgeEffect.hairline(),
-    footer: actions,
-    footerKeyboard: HarborKeyboardStance.stays,
+    headerBar: const HarborBar.overlay(edgeEffect: HarborEdgeEffect.hairline(), debugLabel: 'sheet header', child: title),
+    footerBar: const HarborBar.solid(edgeEffect: HarborEdgeEffect.hairline(), minimum: 16.0, keyboard: HarborKeyboardStance.stays, debugLabel: 'sheet footer', child: actions),
     builder: (context, controller) => const SizedBox(),
   );
-  const HarborSheet(headerEdgeEffect: HarborEdgeEffect.none, footerMinimum: 0, body: SizedBox());
-  // The 0.8 names are renamed to the knobs, which are deprecated in turn.
+  const HarborSheet(body: SizedBox());
+  // The 0.8 names are renamed to the knobs on the way.
   const HarborSheet(
-    header: title,
-    headerEdgeEffect: HarborEdgeEffect.none,
-    footer: actions,
-    footerKeyboard: HarborKeyboardStance.stays,
+    headerBar: HarborBar.overlay(edgeEffect: HarborEdgeEffect.none, debugLabel: 'sheet header', child: title),
+    footerBar: HarborBar.solid(edgeEffect: HarborEdgeEffect.hairline(), minimum: 16.0, keyboard: HarborKeyboardStance.stays, debugLabel: 'sheet footer', child: actions),
     body: SizedBox(),
   );
 }

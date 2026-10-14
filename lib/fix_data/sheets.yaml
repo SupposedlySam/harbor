@@ -1453,8 +1453,9 @@ transforms:
       barrierLabel:
         kind: 'fragment'
         value: 'arguments[barrierLabel]'
-  # HarborDialogRoute(barrierDismissible:, barrierLabel:) becomes barrier: HarborBarrier.dimmed(...). Its
-  # barrierColor is a Color?, where null was a clear barrier, so a call that gives one is left for you.
+  # HarborDialogRoute(barrierDismissible:, barrierLabel:) becomes barrier: HarborBarrier.dimmed(...), and with the
+  # literal barrierColor: null, a barrier with no colour, HarborBarrier.clear(...). Its barrierColor is a
+  # Color?, so any other colour is left for you: a fix compares text, not types.
   - title: "Migrate to 'barrier'"
     date: 2026-10-14
     element:
@@ -1507,6 +1508,78 @@ transforms:
             argumentValue:
               expression: "{% HarborBarrier %}.dimmed(dismissible: {% barrierDismissible %}, label: {% barrierLabel %})"
               requiredIf: "barrierDismissible != '' && barrierLabel != '' && barrier == '' && barrierColor == ''"
+              variables:
+                HarborBarrier:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarrier'
+      - if: "barrierColor == 'null' && barrier == '' && barrierDismissible == '' && barrierLabel == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'barrierColor'
+          - kind: 'addParameter'
+            index: 3
+            name: 'barrier'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBarrier %}.clear()"
+              requiredIf: "barrierColor == 'null' && barrier == '' && barrierDismissible == '' && barrierLabel == ''"
+              variables:
+                HarborBarrier:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarrier'
+      - if: "barrierColor == 'null' && barrierDismissible != '' && barrier == '' && barrierLabel == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'barrierColor'
+          - kind: 'removeParameter'
+            name: 'barrierDismissible'
+          - kind: 'addParameter'
+            index: 3
+            name: 'barrier'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBarrier %}.clear(dismissible: {% barrierDismissible %})"
+              requiredIf: "barrierColor == 'null' && barrierDismissible != '' && barrier == '' && barrierLabel == ''"
+              variables:
+                HarborBarrier:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarrier'
+      - if: "barrierColor == 'null' && barrierLabel != '' && barrier == '' && barrierDismissible == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'barrierColor'
+          - kind: 'removeParameter'
+            name: 'barrierLabel'
+          - kind: 'addParameter'
+            index: 3
+            name: 'barrier'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBarrier %}.clear(label: {% barrierLabel %})"
+              requiredIf: "barrierColor == 'null' && barrierLabel != '' && barrier == '' && barrierDismissible == ''"
+              variables:
+                HarborBarrier:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarrier'
+      - if: "barrierColor == 'null' && barrierDismissible != '' && barrierLabel != '' && barrier == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'barrierColor'
+          - kind: 'removeParameter'
+            name: 'barrierDismissible'
+          - kind: 'removeParameter'
+            name: 'barrierLabel'
+          - kind: 'addParameter'
+            index: 3
+            name: 'barrier'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBarrier %}.clear(dismissible: {% barrierDismissible %}, label: {% barrierLabel %})"
+              requiredIf: "barrierColor == 'null' && barrierDismissible != '' && barrierLabel != '' && barrier == ''"
               variables:
                 HarborBarrier:
                   kind: 'import'
@@ -2057,3 +2130,535 @@ transforms:
       barrierLabel:
         kind: 'fragment'
         value: 'arguments[barrierLabel]'
+  # HarborSheet(header: h, headerEdgeEffect: e) becomes headerBar: HarborBar.overlay(edgeEffect: e, ..., child: h),
+  # the bar a plain header is put in. Without a header the knob did nothing, and goes. A nullable header
+  # comes out as a type error, fixed by hand (tool/fix_data/sheets.dart says why).
+  - title: "Migrate to 'headerBar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborSheet'
+    oneOf:
+      - if: "header != '' && headerEdgeEffect != '' && headerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'header'
+          - kind: 'removeParameter'
+            name: 'headerEdgeEffect'
+          - kind: 'addParameter'
+            index: 2
+            name: 'headerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.overlay(edgeEffect: {% headerEdgeEffect %}, debugLabel: 'sheet header', child: {% header %})"
+              requiredIf: "header != '' && headerEdgeEffect != '' && headerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+      - if: "headerEdgeEffect != '' && header == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'headerEdgeEffect'
+    variables:
+      header:
+        kind: 'fragment'
+        value: 'arguments[header]'
+      headerBar:
+        kind: 'fragment'
+        value: 'arguments[headerBar]'
+      headerEdgeEffect:
+        kind: 'fragment'
+        value: 'arguments[headerEdgeEffect]'
+  # HarborSheet(footer: f, footerEdgeEffect:, footerMinimum:, footerKeyboard:) becomes
+  # footerBar: HarborBar.solid(..., child: f), the bar a plain footer is put in, with the knobs the call
+  # left out at the sheet's defaults. Without a footer the knobs did nothing, and go.
+  - title: "Migrate to 'footerBar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborSheet'
+    oneOf:
+      - if: "footer != '' && footerEdgeEffect != '' && footerMinimum == '' && footerKeyboard == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: 16.0, keyboard: {% HarborKeyboardStance %}.rides, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerMinimum == '' && footerKeyboard == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+      - if: "footerEdgeEffect != '' && footerMinimum == '' && footerKeyboard == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+      - if: "footer != '' && footerMinimum != '' && footerEdgeEffect == '' && footerKeyboard == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% HarborEdgeEffect %}.hairline(), minimum: {% footerMinimum %}, keyboard: {% HarborKeyboardStance %}.rides, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerMinimum != '' && footerEdgeEffect == '' && footerKeyboard == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborEdgeEffect:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborEdgeEffect'
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+      - if: "footerMinimum != '' && footerEdgeEffect == '' && footerKeyboard == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+      - if: "footer != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerMinimum == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% HarborEdgeEffect %}.hairline(), minimum: 16.0, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerMinimum == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborEdgeEffect:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborEdgeEffect'
+      - if: "footerKeyboard != '' && footerEdgeEffect == '' && footerMinimum == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+      - if: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: {% footerMinimum %}, keyboard: {% HarborKeyboardStance %}.rides, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+      - if: "footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+      - if: "footer != '' && footerEdgeEffect != '' && footerKeyboard != '' && footerMinimum == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: 16.0, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerKeyboard != '' && footerMinimum == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+      - if: "footerEdgeEffect != '' && footerKeyboard != '' && footerMinimum == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+      - if: "footer != '' && footerMinimum != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% HarborEdgeEffect %}.hairline(), minimum: {% footerMinimum %}, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerMinimum != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborEdgeEffect:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborEdgeEffect'
+      - if: "footerMinimum != '' && footerKeyboard != '' && footerEdgeEffect == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+      - if: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard != '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: {% footerMinimum %}, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard != '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+      - if: "footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard != '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+    variables:
+      footer:
+        kind: 'fragment'
+        value: 'arguments[footer]'
+      footerBar:
+        kind: 'fragment'
+        value: 'arguments[footerBar]'
+      footerEdgeEffect:
+        kind: 'fragment'
+        value: 'arguments[footerEdgeEffect]'
+      footerMinimum:
+        kind: 'fragment'
+        value: 'arguments[footerMinimum]'
+      footerKeyboard:
+        kind: 'fragment'
+        value: 'arguments[footerKeyboard]'
+  # HarborSheet.draggable(header: h, headerEdgeEffect: e) becomes headerBar: HarborBar.overlay(edgeEffect: e, ..., child: h),
+  # the bar a plain header is put in. Without a header the knob did nothing, and goes. A nullable header
+  # comes out as a type error, fixed by hand (tool/fix_data/sheets.dart says why).
+  - title: "Migrate to 'headerBar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'draggable'
+      inClass: 'HarborSheet'
+    oneOf:
+      - if: "header != '' && headerEdgeEffect != '' && headerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'header'
+          - kind: 'removeParameter'
+            name: 'headerEdgeEffect'
+          - kind: 'addParameter'
+            index: 2
+            name: 'headerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.overlay(edgeEffect: {% headerEdgeEffect %}, debugLabel: 'sheet header', child: {% header %})"
+              requiredIf: "header != '' && headerEdgeEffect != '' && headerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+      - if: "headerEdgeEffect != '' && header == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'headerEdgeEffect'
+    variables:
+      header:
+        kind: 'fragment'
+        value: 'arguments[header]'
+      headerBar:
+        kind: 'fragment'
+        value: 'arguments[headerBar]'
+      headerEdgeEffect:
+        kind: 'fragment'
+        value: 'arguments[headerEdgeEffect]'
+  # HarborSheet.draggable(footer: f, footerEdgeEffect:, footerMinimum:, footerKeyboard:) becomes
+  # footerBar: HarborBar.solid(..., child: f), the bar a plain footer is put in, with the knobs the call
+  # left out at the sheet's defaults. Without a footer the knobs did nothing, and go.
+  - title: "Migrate to 'footerBar'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'draggable'
+      inClass: 'HarborSheet'
+    oneOf:
+      - if: "footer != '' && footerEdgeEffect != '' && footerMinimum == '' && footerKeyboard == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: 16.0, keyboard: {% HarborKeyboardStance %}.rides, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerMinimum == '' && footerKeyboard == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+      - if: "footerEdgeEffect != '' && footerMinimum == '' && footerKeyboard == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+      - if: "footer != '' && footerMinimum != '' && footerEdgeEffect == '' && footerKeyboard == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% HarborEdgeEffect %}.hairline(), minimum: {% footerMinimum %}, keyboard: {% HarborKeyboardStance %}.rides, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerMinimum != '' && footerEdgeEffect == '' && footerKeyboard == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborEdgeEffect:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborEdgeEffect'
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+      - if: "footerMinimum != '' && footerEdgeEffect == '' && footerKeyboard == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+      - if: "footer != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerMinimum == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% HarborEdgeEffect %}.hairline(), minimum: 16.0, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerMinimum == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborEdgeEffect:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborEdgeEffect'
+      - if: "footerKeyboard != '' && footerEdgeEffect == '' && footerMinimum == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+      - if: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: {% footerMinimum %}, keyboard: {% HarborKeyboardStance %}.rides, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+      - if: "footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+      - if: "footer != '' && footerEdgeEffect != '' && footerKeyboard != '' && footerMinimum == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: 16.0, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerKeyboard != '' && footerMinimum == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+      - if: "footerEdgeEffect != '' && footerKeyboard != '' && footerMinimum == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+      - if: "footer != '' && footerMinimum != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% HarborEdgeEffect %}.hairline(), minimum: {% footerMinimum %}, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerMinimum != '' && footerKeyboard != '' && footerEdgeEffect == '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+                HarborEdgeEffect:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborEdgeEffect'
+      - if: "footerMinimum != '' && footerKeyboard != '' && footerEdgeEffect == '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+      - if: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard != '' && footerBar == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footer'
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+          - kind: 'addParameter'
+            index: 3
+            name: 'footerBar'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborBar %}.solid(edgeEffect: {% footerEdgeEffect %}, minimum: {% footerMinimum %}, keyboard: {% footerKeyboard %}, debugLabel: 'sheet footer', child: {% footer %})"
+              requiredIf: "footer != '' && footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard != '' && footerBar == ''"
+              variables:
+                HarborBar:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBar'
+      - if: "footerEdgeEffect != '' && footerMinimum != '' && footerKeyboard != '' && footer == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'footerEdgeEffect'
+          - kind: 'removeParameter'
+            name: 'footerMinimum'
+          - kind: 'removeParameter'
+            name: 'footerKeyboard'
+    variables:
+      footer:
+        kind: 'fragment'
+        value: 'arguments[footer]'
+      footerBar:
+        kind: 'fragment'
+        value: 'arguments[footerBar]'
+      footerEdgeEffect:
+        kind: 'fragment'
+        value: 'arguments[footerEdgeEffect]'
+      footerMinimum:
+        kind: 'fragment'
+        value: 'arguments[footerMinimum]'
+      footerKeyboard:
+        kind: 'fragment'
+        value: 'arguments[footerKeyboard]'

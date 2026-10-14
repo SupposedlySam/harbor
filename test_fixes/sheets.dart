@@ -75,7 +75,17 @@ void dialogs(BuildContext context, String label) {
   );
   HarborDialogRoute<void>(context: context, barrierDismissible: false, builder: (_) => const SizedBox());
   HarborDialogRoute<void>(context: context, barrierLabel: label, inheritClearWater: true, builder: (_) => const SizedBox());
-  // A route's barrierColor is a Color?, and null was a clear barrier: left for you.
+  // A route's barrierColor: null was a barrier with no colour, a clear one, with whatever else the call
+  // gave. Any other colour is left for you: the parameter is a Color?, and a fix compares text.
+  HarborDialogRoute<void>(context: context, barrierColor: null, builder: (_) => const SizedBox());
+  HarborDialogRoute<void>(context: context, barrierColor: null, barrierDismissible: false, builder: (_) => const SizedBox());
+  HarborDialogRoute<void>(
+    context: context,
+    barrierColor: null,
+    barrierDismissible: false,
+    barrierLabel: label,
+    builder: (_) => const SizedBox(),
+  );
   HarborDialogRoute<void>(context: context, barrierColor: tint, barrierDismissible: false, builder: (_) => const SizedBox());
 }
 
@@ -104,8 +114,10 @@ void floats(VoidCallback close, HarborAnchor anchor, bool open) {
 void headersAndFooters() {
   const Widget title = SizedBox();
   const Widget actions = SizedBox();
-  // The knobs of a plain header and footer are left for you: headerBar:/footerBar: take a bar whose
-  // child cannot be null, and a header or footer often can (`footer: done ? actions : null`).
+  // A knob of a plain header or footer puts it in its own bar, spelled out with the sheet's defaults
+  // for the knobs the call left out. Without the header or footer it belongs to, a knob did nothing,
+  // and goes. (A header or footer that can be null comes out as a type error; see sheets.dart in
+  // tool/fix_data/.)
   const HarborSheet(header: title, headerEdgeEffect: HarborEdgeEffect.none, body: SizedBox());
   const HarborSheet(footer: actions, footerMinimum: 0, body: SizedBox());
   const HarborSheet(
@@ -125,7 +137,7 @@ void headersAndFooters() {
     builder: (context, controller) => const SizedBox(),
   );
   const HarborSheet(headerEdgeEffect: HarborEdgeEffect.none, footerMinimum: 0, body: SizedBox());
-  // The 0.8 names are renamed to the knobs, which are deprecated in turn.
+  // The 0.8 names are renamed to the knobs on the way.
   const HarborSheet(
     header: title,
     headerWake: HarborEdgeEffect.none,
