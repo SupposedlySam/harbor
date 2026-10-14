@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'hinge.dart';
+import 'renamed.dart';
 
 /// Opens [builder]'s dialog over [context].
 ///
@@ -63,7 +64,7 @@ Future<T?> showHarborDialog<T>(
       context: context,
       builder: builder,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
-      inheritRoom: inheritClearWater ?? inheritRoom,
+      inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
       barrierColor: barrierColor,
       barrierDismissible: barrierDismissible,
       barrierLabel: barrierLabel,
@@ -124,7 +125,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final HarborHinge? hinge,
   }) : this._(
          builder: builder,
-         inheritRoom: inheritClearWater ?? inheritRoom,
+         inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
          barrierColor: barrierColor,
          barrierDismissible: barrierDismissible,
          barrierLabel: barrierLabel,

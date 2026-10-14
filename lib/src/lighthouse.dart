@@ -89,10 +89,10 @@ class HarborKeepInSight extends StatefulWidget {
     target.showOnScreen(rect: bounds, duration: still ? Duration.zero : duration, curve: curve);
   }
 
-  /// How much of [box] (0 to 1) the bars and system edges on [edge] of its nearest
-  /// frame cover, from the last layout.
-  static double coverageOf(final RenderBox box, final HarborController harbor, final HarborEdge edge) {
-    final Rect? clear = harbor.roomInGlobal();
+  /// How much of [box] (0 to 1) the bars and system edges on [edge] of [frame] cover, from its last
+  /// layout.
+  static double coverageOf(final RenderBox box, final HarborController frame, final HarborEdge edge) {
+    final Rect? clear = frame.roomInGlobal();
     if (clear == null || !box.attached || !box.hasSize || box.size.isEmpty) {
       return 0.0;
     }

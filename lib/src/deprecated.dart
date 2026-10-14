@@ -95,17 +95,9 @@ typedef HarborDockState = HarborBarState;
 @Deprecated('Renamed HarborSystemEdgeStance. `dart fix` applies it.')
 typedef HarborCoastStance = HarborSystemEdgeStance;
 
-/// The old name of [HarborBarRecord].
-@Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
-typedef HarborDockRecord = HarborBarRecord;
-
 /// The old name of [HarborSliverBar].
 @Deprecated('Renamed HarborSliverBar. `dart fix` applies it.')
 typedef HarborSliverDock = HarborSliverBar;
-
-/// The old name of [HarborAttachedBar].
-@Deprecated('Renamed HarborAttachedBar. `dart fix` applies it.')
-typedef HarborPontoon = HarborAttachedBar;
 
 /// The old name of [HarborAttachedBarHandle].
 @Deprecated('Renamed HarborAttachedBarHandle. `dart fix` applies it.')
@@ -122,10 +114,6 @@ typedef HarborCoastFeature = HarborSystemEdgeFeature;
 /// The old name of [HarborKeyboard].
 @Deprecated('Renamed HarborKeyboard. `dart fix` applies it.')
 typedef HarborTide = HarborKeyboard;
-
-/// The old name of [HarborKeyboardState].
-@Deprecated('Renamed HarborKeyboardState. `dart fix` applies it.')
-typedef HarborTideState = HarborKeyboardState;
 
 /// The old name of [HarborKeyboardPhase].
 @Deprecated('Renamed HarborKeyboardPhase. `dart fix` applies it.')
@@ -171,21 +159,9 @@ typedef HarborFairwaySliver = HarborSliverClear;
 @Deprecated('Renamed HarborEdgeEffectKind. `dart fix` applies it.')
 typedef HarborWakeKind = HarborEdgeEffectKind;
 
-/// The old name of [HarborFadeBand].
-@Deprecated('Renamed HarborFadeBand. `dart fix` applies it.')
-typedef HarborWakeBand = HarborFadeBand;
-
 /// The old name of [HarborEdgeEffectPainter].
 @Deprecated('Renamed HarborEdgeEffectPainter. `dart fix` applies it.')
 typedef HarborWakePainter = HarborEdgeEffectPainter;
-
-/// The old name of [HarborFadeMask].
-@Deprecated('Renamed HarborFadeMask. `dart fix` applies it.')
-typedef HarborWakeMask = HarborFadeMask;
-
-/// The old name of [HarborPopover].
-@Deprecated('Renamed HarborPopover. `dart fix` applies it.')
-typedef HarborPortalBuoy = HarborPopover;
 
 /// The old name of [HarborToasts].
 @Deprecated('Renamed HarborToasts. `dart fix` applies it.')
@@ -242,10 +218,6 @@ typedef HarborLighthouseRegion = HarborKeepInSightRegion;
 /// The old name of [HarborInspector].
 @Deprecated('Renamed HarborInspector. `dart fix` applies it.')
 typedef HarborChart = HarborInspector;
-
-/// The old name of [HarborInspectorEntry].
-@Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it.')
-typedef HarborChartEntry = HarborInspectorEntry;
 
 /// The old name of [HarborInspectorOverlay].
 @Deprecated('Renamed HarborInspectorOverlay. `dart fix` applies it.')

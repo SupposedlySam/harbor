@@ -75,7 +75,25 @@ class HarborFrame extends StatefulWidget {
     this.hinge,
     final HarborHinge? barHinge,
     @Deprecated('Renamed barHinge. `dart fix` applies it.') final HarborHinge? dockHinge,
-  }) : floats = buoys ?? floats,
+  }) : assert(
+         buoys == null || identical(floats, const <HarborFloat>[]) || identical(buoys, floats),
+         'floats and the deprecated buoys disagree. Give floats alone.',
+       ),
+       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
+       assert(
+         newPort == null || !isPage || newPort == isPage,
+         'isPage and the deprecated newPort disagree. Give isPage alone.',
+       ),
+       assert(
+         bodyClearsTide == null || bodyClearsKeyboard || bodyClearsTide == bodyClearsKeyboard,
+         'bodyClearsKeyboard and the deprecated bodyClearsTide disagree. Give bodyClearsKeyboard alone.',
+       ),
+       assert(
+         wakePainter == null || edgeEffectPainter == null,
+         'Give edgeEffectPainter or the deprecated wakePainter, not both.',
+       ),
+       assert(dockHinge == null || barHinge == null, 'Give barHinge or the deprecated dockHinge, not both.'),
+       floats = buoys ?? floats,
        systemEdges = systemEdges ?? coast,
        isPage = newPort ?? isPage,
        bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
@@ -503,11 +521,11 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
               ),
               child: HarborRoom(
                 data: payload.waters.copyWith(
-                  edgeEffectsPainted: <HarborEdge>{
+                  fadeBandsPainted: <HarborEdge>{
                     if (widget.edgeEffectPainter != null) ...payload.ownWakes.keys,
                     if (outer != null)
-                      for (final HarborEdge e in outer.edgeEffectsPainted)
-                        if (payload.waters.edgeEffects.containsKey(e) && !payload.ownWakes.containsKey(e)) e,
+                      for (final HarborEdge e in outer.fadeBandsPainted)
+                        if (payload.waters.fadeBands.containsKey(e) && !payload.ownWakes.containsKey(e)) e,
                   },
                 ),
                 child: widget.edgeEffectPainter?.call(context, payload.ownWakes, widget.body) ?? widget.body,
@@ -599,7 +617,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         coastOnly: coastOnly,
         coastOnlySteady: coastOnlySteady,
         inheritedDocks: inheritedDocks,
-        inheritedWakes: widget.isPage || outer == null ? const <HarborEdge, HarborFadeBand>{} : outer.edgeEffects,
+        inheritedWakes: widget.isPage || outer == null ? const <HarborEdge, HarborFadeBand>{} : outer.fadeBands,
         keyboard: keyboard,
         bodyClearsKeyboard: widget.bodyClearsKeyboard,
         minimum: minimum,
@@ -723,7 +741,11 @@ class HarborRoot extends StatelessWidget {
     this.observers = const <HarborFrameObserver>[],
     this.hinge = HarborHinge.avoidSeparating,
     required this.child,
-  }) : systemEdges = coast ?? systemEdges;
+  }) : assert(
+         coast == null || identical(systemEdges, HarborSystemEdges.ambient) || identical(coast, systemEdges),
+         'systemEdges and the deprecated coast disagree. Give systemEdges alone.',
+       ),
+       systemEdges = coast ?? systemEdges;
 
   final HarborSystemEdges systemEdges;
 

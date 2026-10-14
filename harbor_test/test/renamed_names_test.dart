@@ -32,15 +32,17 @@ void main() {
     expect(trial.docksAround(body), trial.barsAround(body));
     expect(body, isInClearWater(trial.roomAround(body)));
 
+    // HarborTrialDevice kept its name, so its constructor and copyWith take the new parameter names
+    // only (0.4.0 is breaking there; `dart fix` renames the old ones). Its old getters still read.
     const HarborTrialDevice device = HarborTrialDevice(
-      name: 'old',
+      name: 'new',
       size: Size(400, 800),
-      coast: EdgeInsets.only(bottom: 20),
-      tideHeight: 300,
+      systemEdges: EdgeInsets.only(bottom: 20),
+      keyboardHeight: 300,
     );
-    expect(device.systemEdges, device.coast);
-    expect(device.keyboardHeight, 300);
+    expect(device.coast, device.systemEdges);
+    expect(device.tideHeight, 300);
+    expect(device.reportsCoastUnderTide, isFalse);
     expect(device.coastWhen(tideIn: true), device.systemEdgesWhen(keyboardShown: true));
-    expect(device.copyWith(tideHeight: 200).keyboardHeight, 200);
   });
 }

@@ -54,7 +54,7 @@ void main() {
         const HarborCoast.fixed(EdgeInsets.zero, calmTide: true),
         const HarborSystemEdges.fixed(EdgeInsets.zero, ignoresKeyboard: true),
       );
-      expect(const HarborFairway(tide: false, slivers: <Widget>[]).keyboard, isFalse);
+      expect(const HarborFairway(tide: false, slivers: <Widget>[]).clearsKeyboard, isFalse);
       expect(HarborFairway.box(wake: false, child: const SizedBox()).edgeEffects, isFalse);
       expect(const HarborBuoy(child: SizedBox()).modal, isFalse);
     });
@@ -79,10 +79,13 @@ void main() {
         extra: EdgeInsets.all(4),
         child: SizedBox(),
       );
-      expect(<Object>[clear.keyboard, clear.rowInsets, clear.padding], <Object>[false, true, const EdgeInsets.all(4)]);
-      const HarborFadeBand band = HarborFadeBand(dockEdge: 10, wakeEnd: 30, dockOpacity: 0.5);
+      expect(
+        <Object>[clear.clearsKeyboard, clear.rowInsets, clear.padding],
+        <Object>[false, true, const EdgeInsets.all(4)],
+      );
+      const HarborWakeBand band = HarborWakeBand(dockEdge: 10, wakeEnd: 30, dockOpacity: 0.5);
       expect(<double?>[band.barFace, band.fadeEnd, band.faceOpacity, band.dockEdge], <double?>[10, 30, 0.5, 10]);
-      const HarborKeyboardState state = HarborKeyboardState(
+      const HarborTideState state = HarborTideState(
         height: 300,
         remaining: 300,
         highWater: 300,
@@ -90,6 +93,50 @@ void main() {
         phase: HarborKeyboardPhase.shown,
       );
       expect(<Object>[state.settledHeight, state.isIn, state.highWaterIsEstimate], <Object>[300.0, true, false]);
+      expect(band, const HarborFadeBand(barFace: 10, fadeEnd: 30, faceOpacity: 0.5));
+    });
+
+    // Breaks if: the agreement check on an old parameter makes a const call that gives it stop
+    // compiling. The check compares with `identical`, as a constant can; `==` on a type with its own
+    // equality is not a constant expression. Each of these is a 0.8 const call.
+    test('const calls with the old parameters still compile', () {
+      const List<Object> calls = <Object>[
+        HarborSea(coast: HarborCoast.none, child: SizedBox()),
+        HarborScaleModel(referenceSize: Size(1200, 675), coast: HarborCoast.ambient, child: SizedBox()),
+        HarborMoored(extra: EdgeInsets.all(8), child: SizedBox()),
+        HarborWatersData(coast: EdgeInsetsDirectional.only(top: 20), docks: EdgeInsetsDirectional.only(top: 50)),
+        HarborSheet(headerWake: HarborWake.none, footerWake: HarborWake.none, body: SizedBox()),
+        HarborWake.fade(dockOpacity: 0.5),
+        HarborCoast.fixed(EdgeInsets.zero, calmTide: true),
+      ];
+      expect(calls, hasLength(7));
+      expect((calls[3] as HarborRoomData).systemEdges.top, 20);
+    });
+
+    // Breaks if: a call that gives a new parameter and its old one, in disagreement, quietly takes
+    // one of them.
+    test('an old parameter and its new one must agree', () {
+      HarborClear make({bool? tide, bool clearsKeyboard = true}) =>
+          HarborClear(tide: tide, clearsKeyboard: clearsKeyboard, child: const SizedBox());
+      expect(make(tide: false).clearsKeyboard, isFalse, reason: 'the old one alone is honoured');
+      expect(make(tide: false, clearsKeyboard: false).clearsKeyboard, isFalse, reason: 'agreeing is fine');
+      expect(() => HarborClear(tide: true, clearsKeyboard: false, child: const SizedBox()), throwsAssertionError);
+      expect(() => HarborFrame(newPort: false, isPage: true, body: const SizedBox()), throwsAssertionError);
+      expect(
+        () => const HarborBar.overlay(
+          child: SizedBox(),
+        ).copyWith(keyboard: HarborKeyboardStance.rides, tide: HarborKeyboardStance.stays),
+        throwsAssertionError,
+      );
+      expect(() => HarborScrollView.box(bars: true, clearsBars: false, child: const SizedBox()), throwsAssertionError);
+    });
+
+    // Breaks if: an old bar describes itself by the new constructor names.
+    test('a HarborDock prints as the constructor that made it', () {
+      expect(const HarborDock.pier(child: SizedBox()).toStringShort(), 'HarborDock.pier');
+      expect(const HarborDock.quay(child: SizedBox()).toStringShort(), 'HarborDock.quay');
+      expect(const HarborDock.reserve(extent: 8).toStringShort(), 'HarborDock.reserve');
+      expect(const HarborBar.overlay(child: SizedBox()).toStringShort(), 'HarborBar.overlay');
     });
 
     // Breaks if: a renamed method, a renamed static or the old row widget lays out differently.

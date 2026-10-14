@@ -447,19 +447,11 @@ class HarborLayoutRecord {
   const HarborLayoutRecord({
     required this.frame,
     required this.body,
-    final Rect? room,
-    @Deprecated('Renamed room. `dart fix` applies it.') final Rect? clearWater,
-    final List<HarborBarRecord>? bars,
-    @Deprecated('Renamed bars. `dart fix` applies it.') final List<HarborBarRecord>? docks,
+    required this.room,
+    required this.bars,
     required this.obstruction,
-    final double? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final double? tide,
-  }) : assert(room != null || clearWater != null, 'room is required.'),
-       assert(bars != null || docks != null, 'bars is required.'),
-       assert(keyboard != null || tide != null, 'keyboard is required.'),
-       room = room ?? clearWater ?? Rect.zero,
-       bars = bars ?? docks ?? const <HarborBarRecord>[],
-       keyboard = keyboard ?? tide ?? 0.0;
+    required this.keyboard,
+  });
 
   final Rect frame;
   final Rect body;
@@ -491,11 +483,9 @@ class HarborBarRecord {
     required this.extent,
     required this.restingExtent,
     required this.state,
-    final HarborKeyboardStance? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final HarborKeyboardStance? tide,
+    required this.keyboard,
     this.label,
-  }) : assert(keyboard != null || tide != null, 'keyboard is required.'),
-       keyboard = keyboard ?? tide ?? HarborKeyboardStance.stays;
+  });
 
   final HarborEdge edge;
   final HarborBarKind kind;
@@ -509,6 +499,27 @@ class HarborBarRecord {
   /// The old name of [keyboard].
   @Deprecated('Renamed keyboard. `dart fix` applies it.')
   HarborKeyboardStance get tide => keyboard;
+}
+
+/// The old name of [HarborBarRecord], which takes the old name of its keyboard stance.
+///
+/// A subclass rather than a typedef, so the new constructor can keep [HarborBarRecord.keyboard]
+/// required.
+@Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
+class HarborDockRecord extends HarborBarRecord {
+  /// The old name of [HarborBarRecord.new].
+  @Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
+  const HarborDockRecord({
+    required super.edge,
+    required super.kind,
+    required super.rect,
+    required super.extent,
+    required super.restingExtent,
+    required super.state,
+    @Deprecated('Renamed keyboard. `dart fix` applies it.') final HarborKeyboardStance? tide,
+    super.label,
+  }) : assert(tide != null, 'tide is required.'),
+       super(keyboard: tide ?? HarborKeyboardStance.stays);
 }
 
 /// Hears frames join and leave a [HarborFrameRegistry], as a `NavigatorObserver`
@@ -534,13 +545,13 @@ abstract class HarborFrameObserver {
   /// Const so that subclasses can be const.
   const HarborFrameObserver();
 
-  /// [harbor] has joined the registry: a page, a sheet, a dialog or a frame
+  /// [frame] has joined the registry: a page, a sheet, a dialog or a frame
   /// inside one has been built.
-  void didJoin(final HarborController harbor) {}
+  void didJoin(final HarborController frame) {}
 
-  /// [harbor] has left the registry: it was removed from the tree. Its handle
+  /// [frame] has left the registry: it was removed from the tree. Its handle
   /// no longer changes anything.
-  void didLeave(final HarborController harbor) {}
+  void didLeave(final HarborController frame) {}
 }
 
 /// Everything frames in one view know about each other: which is on top
@@ -840,10 +851,10 @@ class HarborController {
 
   // Attached bars.
 
-  /// Attaches [dock] to [edge] of this frame, as a [HarborAttachedBar] does, until
+  /// Attaches [bar] to [edge] of this frame, as a [HarborAttachedBar] does, until
   /// the returned handle is given to [detachBar].
-  HarborAttachedBarHandle attachBar(final HarborEdge edge, final HarborBar dock) {
-    final HarborAttachedBarHandle pontoon = HarborAttachedBarHandle._(edge, dock);
+  HarborAttachedBarHandle attachBar(final HarborEdge edge, final HarborBar bar) {
+    final HarborAttachedBarHandle pontoon = HarborAttachedBarHandle._(edge, bar);
     _pontoons.add(pontoon);
     _changed();
     return pontoon;
@@ -853,14 +864,14 @@ class HarborController {
   @Deprecated('Renamed attachBar. `dart fix` applies it.')
   HarborAttachedBarHandle addPontoon(final HarborEdge edge, final HarborBar dock) => attachBar(edge, dock);
 
-  /// Moves the attached bar [handle] stands for to [edge] and rebuilds it as [dock].
-  void updateAttachedBar(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar dock) {
-    if (handle._edge == edge && identical(handle._dock, dock)) {
+  /// Moves the attached bar [handle] stands for to [edge] and rebuilds it as [bar].
+  void updateAttachedBar(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar bar) {
+    if (handle._edge == edge && identical(handle._dock, bar)) {
       return;
     }
     handle
       .._edge = edge
-      .._dock = dock;
+      .._dock = bar;
     _changed();
   }
 

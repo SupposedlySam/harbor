@@ -9,33 +9,35 @@ import 'edge.dart';
 import 'moored.dart';
 import 'wake.dart';
 import 'waters.dart';
+import 'renamed.dart';
 
 /// What a scroll view's end on [edge] keeps clear of: everything in the way there, or without
-/// [bars] the system edges alone; and at the bottom, while [keyboard], the keyboard.
+/// [clearsBars] the system edges alone; and at the bottom, while [clearsKeyboard], the keyboard.
 ///
 /// Each part is read through its own aspect, so a scroll view that clears the system edges alone,
 /// or leaves the keyboard, does not rebuild as the keyboard moves.
 double _endClearance(
   final BuildContext context,
   final HarborEdge edge, {
-  required final bool bars,
-  required final bool keyboard,
+  required final bool clearsBars,
+  required final bool clearsKeyboard,
 }) {
-  if (bars) {
-    return HarborRoom.clearanceOf(context, edge, keyboard: keyboard);
+  if (clearsBars) {
+    return HarborRoom.clearanceOf(context, edge, clearsKeyboard: clearsKeyboard);
   }
   final double systemEdges = HarborEdges.of(
     HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges,
     edge,
   );
-  if (keyboard && edge == HarborEdge.bottom) {
+  if (clearsKeyboard && edge == HarborEdge.bottom) {
     return math.max(systemEdges, MediaQuery.viewInsetsOf(context).bottom);
   }
   return systemEdges;
 }
 
-/// A `StatelessWidget`, not a `ScrollView` subclass: a scroll view whose viewport runs to the
-/// frame's edges, under the bars, while its content comes to rest clear of them at both ends.
+/// A scroll view whose viewport runs to the frame's edges, under the bars, while its content comes
+/// to rest clear of them at both ends. It is a `StatelessWidget` that builds a `CustomScrollView`,
+/// not a `ScrollView` subclass: `is ScrollView` is false, and it has no `buildSlivers`.
 ///
 /// Vertical, it keeps clear of the top and bottom (the keyboard included) and
 /// leaves the sides to its rows ([HarborClear.rowInsets]) and to any horizontal
@@ -74,9 +76,10 @@ class HarborScrollView extends StatelessWidget {
     this.minimum = EdgeInsetsDirectional.zero,
     final bool rowInsets = true,
     @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
-    this.bars = true,
-    final bool keyboard = true,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
     this.revealMargin = 0.0,
     final bool edgeEffects = true,
     @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final bool? wake,
@@ -91,8 +94,29 @@ class HarborScrollView extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
     required this.slivers,
-  }) : rowInsets = mooringLine ?? rowInsets,
-       keyboard = tide ?? keyboard,
+  }) : assert(
+         mooringLine == null || rowInsets || mooringLine == rowInsets,
+         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
+       ),
+       assert(
+         bars == null || clearsBars || bars == clearsBars,
+         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
+       ),
+       assert(
+         tide == null || clearsKeyboard || tide == clearsKeyboard,
+         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
+       ),
+       assert(
+         wake == null || edgeEffects || wake == edgeEffects,
+         'edgeEffects and the deprecated wake disagree. Give edgeEffects alone.',
+       ),
+       assert(
+         startsInOpenWater == null || !startsUnderBars || startsInOpenWater == startsUnderBars,
+         'startsUnderBars and the deprecated startsInOpenWater disagree. Give startsUnderBars alone.',
+       ),
+       clearsBars = bars ?? clearsBars,
+       rowInsets = mooringLine ?? rowInsets,
+       clearsKeyboard = tide ?? clearsKeyboard,
        edgeEffects = wake ?? edgeEffects,
        startsUnderBars = startsInOpenWater ?? startsUnderBars,
        assert(!shrinkWrap || center == null),
@@ -120,9 +144,10 @@ class HarborScrollView extends StatelessWidget {
     this.minimum = EdgeInsetsDirectional.zero,
     final bool rowInsets = true,
     @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
-    this.bars = true,
-    final bool keyboard = true,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
     this.revealMargin = 0.0,
     final bool edgeEffects = true,
     @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final bool? wake,
@@ -135,8 +160,29 @@ class HarborScrollView extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
     required final Widget child,
-  }) : rowInsets = mooringLine ?? rowInsets,
-       keyboard = tide ?? keyboard,
+  }) : assert(
+         mooringLine == null || rowInsets || mooringLine == rowInsets,
+         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
+       ),
+       assert(
+         bars == null || clearsBars || bars == clearsBars,
+         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
+       ),
+       assert(
+         tide == null || clearsKeyboard || tide == clearsKeyboard,
+         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
+       ),
+       assert(
+         wake == null || edgeEffects || wake == edgeEffects,
+         'edgeEffects and the deprecated wake disagree. Give edgeEffects alone.',
+       ),
+       assert(
+         startsInOpenWater == null || !startsUnderBars || startsInOpenWater == startsUnderBars,
+         'startsUnderBars and the deprecated startsInOpenWater disagree. Give startsUnderBars alone.',
+       ),
+       clearsBars = bars ?? clearsBars,
+       rowInsets = mooringLine ?? rowInsets,
+       clearsKeyboard = tide ?? clearsKeyboard,
        edgeEffects = wake ?? edgeEffects,
        startsUnderBars = startsInOpenWater ?? startsUnderBars,
        center = null,
@@ -193,27 +239,31 @@ class HarborScrollView extends StatelessWidget {
   /// False is the system edges (the status bar, the home indicator, a cutout)
   /// alone, for a list that rests clear of the status bar and the home
   /// indicator but under a translucent header or tab bar: the ends mark the
-  /// system edges alone handled, as `HarborHandled(bars: false)` does, so
+  /// system edges alone handled, as `HarborHandled(clearsBars: false)` does, so
   /// its rows still read the bars, measured from the scroll view's edge.
   /// Pinned [HarborSliverBar]s still pin at the bars' face, and reveals still
   /// keep clear of everything over the viewport.
   ///
-  /// The bottom end keeps clear of the keyboard either way, unless [keyboard] is
+  /// The bottom end keeps clear of the keyboard either way, unless [clearsKeyboard] is
   /// false, as a reveal needs that room to bring a row above it. (This is
-  /// where a scroll view differs from [HarborClear.bars], whose false leaves the
-  /// keyboard out whatever its `keyboard`.)
-  final bool bars;
+  /// where a scroll view differs from [HarborClear.clearsBars], whose false leaves the
+  /// keyboard out whatever its `clearsKeyboard`.)
+  final bool clearsBars;
+
+  /// The old name of [clearsBars].
+  @Deprecated('Renamed clearsBars. `dart fix` applies it.')
+  bool get bars => clearsBars;
 
   /// Whether a vertical scroll view keeps clear of the keyboard, as on
-  /// [HarborClear.keyboard]. False leaves it to something else: a list in a host
+  /// [HarborClear.clearsKeyboard]. False leaves it to something else: a list in a host
   /// whose body already ends at the keyboard, or one that stays put while a
   /// keyboard opens over it. The bottom end and reveals then leave the keyboard
   /// out, and it is not handled, so content inside can still keep clear of it.
-  final bool keyboard;
+  final bool clearsKeyboard;
 
-  /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it.')
-  bool get tide => keyboard;
+  /// The old name of [clearsKeyboard].
+  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.')
+  bool get tide => clearsKeyboard;
 
   /// Extra space kept around a revealed row, beyond what covers the edge: a TV
   /// row that keeps the focused card a step in from the rail.
@@ -275,8 +325,8 @@ class HarborScrollView extends StatelessWidget {
       DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
     properties.add(FlagProperty('rowInsets', value: rowInsets, ifFalse: 'no row insets'));
-    properties.add(FlagProperty('bars', value: bars, ifFalse: 'bars not cleared'));
-    properties.add(FlagProperty('keyboard', value: keyboard, ifFalse: 'keyboard ignored'));
+    properties.add(FlagProperty('clearsBars', value: clearsBars, ifFalse: 'bars not cleared'));
+    properties.add(FlagProperty('clearsKeyboard', value: clearsKeyboard, ifFalse: 'keyboard ignored'));
     properties.add(DoubleProperty('revealMargin', revealMargin, defaultValue: 0.0));
     properties.add(FlagProperty('edgeEffects', value: edgeEffects, ifFalse: 'no edge effects'));
     properties.add(FlagProperty('startsUnderBars', value: startsUnderBars, ifTrue: 'starts under bars'));
@@ -294,7 +344,7 @@ class HarborScrollView extends StatelessWidget {
   /// The scroll padding a third-party list should use to keep clear as this
   /// scroll view does: clearance at both ends along [axis], at least [minimum], plus
   /// [extra]. Mark the same edges handled beneath it with [HarborHandled]
-  /// (`bars: false` where [bars] is false, and `keyboard: true` unless [keyboard] is
+  /// (`clearsBars: false` where [clearsBars] is false, and `clearsKeyboard: true` unless [clearsKeyboard] is
   /// false).
   static EdgeInsets paddingOf(
     final BuildContext context, {
@@ -303,17 +353,19 @@ class HarborScrollView extends StatelessWidget {
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final bool rowInsets = true,
     @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
-    final bool bars = true,
-    final bool keyboard = true,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
   }) {
-    final bool insetsRows = mooringLine ?? rowInsets;
-    final bool clearsKeyboard = tide ?? keyboard;
+    final bool insetsRows = renamed(mooringLine, rowInsets, true, 'rowInsets', 'mooringLine');
+    final bool barsHere = renamed(bars, clearsBars, true, 'clearsBars', 'bars');
+    final bool keyboardHere = renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide');
     final TextDirection direction = Directionality.of(context);
     final EdgeInsetsDirectional extraHere = HarborEdges.resolve(extra, direction);
     final EdgeInsetsDirectional minimumHere = HarborEdges.resolve(minimum, direction);
     double end(final HarborEdge edge) {
-      double value = _endClearance(context, edge, bars: bars, keyboard: clearsKeyboard);
+      double value = _endClearance(context, edge, clearsBars: barsHere, clearsKeyboard: keyboardHere);
       if (!edge.isVertical && insetsRows) {
         value += HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin, edge);
       }
@@ -353,8 +405,8 @@ class HarborScrollView extends StatelessWidget {
     final HarborEdge leadingEdge = vertical
         ? (reverse ? HarborEdge.bottom : HarborEdge.top)
         : (reverse ? HarborEdge.end : HarborEdge.start);
-    double clearance(final HarborEdge edge, final bool bars) {
-      double value = _endClearance(context, edge, bars: bars, keyboard: keyboard);
+    double clearance(final HarborEdge edge, final bool clearsBars) {
+      double value = _endClearance(context, edge, clearsBars: clearsBars, clearsKeyboard: clearsKeyboard);
       if (!vertical && rowInsets) {
         value += HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin, edge);
       }
@@ -363,12 +415,12 @@ class HarborScrollView extends StatelessWidget {
 
     // Where each end rests, and (`All`) what is over the viewport there, which the cover and
     // reveals keep clear of whatever the ends clear.
-    final double clearLeading = clearance(leadingEdge, bars);
-    final double clearLeadingAll = bars ? clearLeading : clearance(leadingEdge, true);
+    final double clearLeading = clearance(leadingEdge, clearsBars);
+    final double clearLeadingAll = clearsBars ? clearLeading : clearance(leadingEdge, true);
     double leading = clearLeading;
     double leadingAll = clearLeadingAll;
-    final double trailing = clearance(leadingEdge.opposite, bars);
-    final double trailingAll = bars ? trailing : clearance(leadingEdge.opposite, true);
+    final double trailing = clearance(leadingEdge.opposite, clearsBars);
+    final double trailingAll = clearsBars ? trailing : clearance(leadingEdge.opposite, true);
 
     // A sliver bar first in the scroll view takes the system edge on the leading edge
     // itself, so its surface runs under the status bar.
@@ -382,11 +434,11 @@ class HarborScrollView extends StatelessWidget {
 
     // How far pinned slivers stay from the leading edge: the bars' face,
     // not the end of their fade.
-    final HarborFadeBand? band = waters.edgeEffects[leadingEdge];
+    final HarborFadeBand? band = waters.fadeBands[leadingEdge];
     double cover = band == null
         ? leadingAll
         : math.max(
-            HarborRoom.clearanceOf(context, leadingEdge, keyboard: keyboard) - band.length,
+            HarborRoom.clearanceOf(context, leadingEdge, clearsKeyboard: clearsKeyboard) - band.length,
             HarborEdges.of(systemEdges(), leadingEdge),
           );
     cover = math.max(0.0, math.min(cover, leadingAll + absorbed) - absorbed);
@@ -403,13 +455,13 @@ class HarborScrollView extends StatelessWidget {
         ? const <HarborEdge, HarborFadeBand>{}
         : <HarborEdge, HarborFadeBand>{
             for (final HarborEdge e in handled)
-              if (waters.edgeEffects.containsKey(e) &&
-                  !waters.edgeEffectsPainted.contains(e) &&
+              if (waters.fadeBands.containsKey(e) &&
+                  !waters.fadeBandsPainted.contains(e) &&
                   !(hasSliverDock && e == leadingEdge))
-                e: waters.edgeEffects[e]!,
+                e: waters.fadeBands[e]!,
           };
     final Widget fairway = HarborFadeMask(
-      edgeEffects: bands,
+      bands: bands,
       child: _fairway(
         context,
         leadingEdge,
@@ -490,15 +542,15 @@ class HarborScrollView extends StatelessWidget {
     final bool margin = !vertical && rowInsets;
     return HarborHandled(
       edges: <HarborEdge>{leadingEdge.opposite},
-      keyboard: vertical && keyboard,
+      clearsKeyboard: vertical && clearsKeyboard,
       margin: margin,
-      bars: bars,
+      clearsBars: clearsBars,
       child: _HarborOpenWaterView(
         enabled: startsUnderBars,
         child: HarborHandled(
           edges: <HarborEdge>{leadingEdge},
           margin: margin,
-          bars: bars,
+          clearsBars: clearsBars,
           child: _HarborScrollView(
             reveal: reveal(reveals.leading),
             reverseReveal: reveal(reveals.reverseLeading),
@@ -1052,9 +1104,10 @@ class HarborFairway extends HarborScrollView {
     super.minimum,
     super.rowInsets,
     @Deprecated('Renamed rowInsets. `dart fix` applies it.') super.mooringLine,
-    super.bars,
-    super.keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') super.tide,
+    super.clearsBars,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') super.bars,
+    super.clearsKeyboard,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') super.tide,
     super.revealMargin,
     super.edgeEffects,
     @Deprecated('Renamed edgeEffects. `dart fix` applies it.') super.wake,
@@ -1086,9 +1139,10 @@ class HarborFairway extends HarborScrollView {
     super.minimum,
     super.rowInsets,
     @Deprecated('Renamed rowInsets. `dart fix` applies it.') super.mooringLine,
-    super.bars,
-    super.keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') super.tide,
+    super.clearsBars,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') super.bars,
+    super.clearsKeyboard,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') super.tide,
     super.revealMargin,
     super.edgeEffects,
     @Deprecated('Renamed edgeEffects. `dart fix` applies it.') super.wake,
@@ -1112,17 +1166,18 @@ class HarborFairway extends HarborScrollView {
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final bool rowInsets = true,
     @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
-    final bool bars = true,
-    final bool keyboard = true,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
   }) => HarborScrollView.paddingOf(
     context,
     axis: axis,
     extra: extra,
     minimum: minimum,
-    rowInsets: mooringLine ?? rowInsets,
-    bars: bars,
-    keyboard: tide ?? keyboard,
+    rowInsets: renamed(mooringLine, rowInsets, true, 'rowInsets', 'mooringLine'),
+    clearsBars: renamed(bars, clearsBars, true, 'clearsBars', 'bars'),
+    clearsKeyboard: renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide'),
   );
 }
 
@@ -1142,30 +1197,44 @@ class HarborSliverClear extends StatelessWidget {
     super.key,
     this.clearLeading = true,
     this.clearTrailing = true,
-    this.bars = true,
-    final bool keyboard = true,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final bool? tide,
+    final bool clearsBars = true,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    final bool clearsKeyboard = true,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
     required this.sliver,
-  }) : keyboard = tide ?? keyboard;
+  }) : assert(
+         bars == null || clearsBars || bars == clearsBars,
+         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
+       ),
+       assert(
+         tide == null || clearsKeyboard || tide == clearsKeyboard,
+         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
+       ),
+       clearsBars = bars ?? clearsBars,
+       clearsKeyboard = tide ?? clearsKeyboard;
 
   final bool clearLeading;
   final bool clearTrailing;
 
   /// Whether the ends it clears keep clear of the bars as well as the system edges, as
-  /// on [HarborScrollView.bars]: false handles the system edges alone, keeps the
-  /// keyboard while [keyboard], and reveals still keep clear of everything over the
+  /// on [HarborScrollView.clearsBars]: false handles the system edges alone, keeps the
+  /// keyboard while [clearsKeyboard], and reveals still keep clear of everything over the
   /// viewport.
-  final bool bars;
+  final bool clearsBars;
+
+  /// The old name of [clearsBars].
+  @Deprecated('Renamed clearsBars. `dart fix` applies it.')
+  bool get bars => clearsBars;
 
   /// Whether a bottom end it clears keeps clear of the keyboard, and marks it
-  /// handled, as on [HarborScrollView.keyboard].
-  final bool keyboard;
+  /// handled, as on [HarborScrollView.clearsKeyboard].
+  final bool clearsKeyboard;
 
-  /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it.')
-  bool get tide => keyboard;
+  /// The old name of [clearsKeyboard].
+  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.')
+  bool get tide => clearsKeyboard;
   final EdgeInsetsGeometry padding;
 
   /// A floor on the clearance at each end it clears, as on [HarborScrollView.minimum].
@@ -1177,8 +1246,8 @@ class HarborSliverClear extends StatelessWidget {
     super.debugFillProperties(properties);
     properties.add(FlagProperty('clearLeading', value: clearLeading, ifFalse: 'leading end not cleared'));
     properties.add(FlagProperty('clearTrailing', value: clearTrailing, ifFalse: 'trailing end not cleared'));
-    properties.add(FlagProperty('bars', value: bars, ifFalse: 'bars not cleared'));
-    properties.add(FlagProperty('keyboard', value: keyboard, ifFalse: 'keyboard ignored'));
+    properties.add(FlagProperty('clearsBars', value: clearsBars, ifFalse: 'bars not cleared'));
+    properties.add(FlagProperty('clearsKeyboard', value: clearsKeyboard, ifFalse: 'keyboard ignored'));
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
     );
@@ -1201,13 +1270,15 @@ class HarborSliverClear extends StatelessWidget {
     };
     final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
     final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
-    double clearance(final HarborEdge edge, final bool bars) =>
-        math.max(_endClearance(context, edge, bars: bars, keyboard: keyboard), HarborEdges.of(minimum, edge));
-    final double leading = clearLeading ? clearance(leadingEdge, bars) : 0.0;
-    final double trailing = clearTrailing ? clearance(trailingEdge, bars) : 0.0;
+    double clearance(final HarborEdge edge, final bool clearsBars) => math.max(
+      _endClearance(context, edge, clearsBars: clearsBars, clearsKeyboard: clearsKeyboard),
+      HarborEdges.of(minimum, edge),
+    );
+    final double leading = clearLeading ? clearance(leadingEdge, clearsBars) : 0.0;
+    final double trailing = clearTrailing ? clearance(trailingEdge, clearsBars) : 0.0;
     // Reveals keep clear of everything over the viewport, whatever the ends clear.
-    final double revealLeading = bars || !clearLeading ? leading : clearance(leadingEdge, true);
-    final double revealTrailing = bars || !clearTrailing ? trailing : clearance(trailingEdge, true);
+    final double revealLeading = clearsBars || !clearLeading ? leading : clearance(leadingEdge, true);
+    final double revealTrailing = clearsBars || !clearTrailing ? trailing : clearance(trailingEdge, true);
     final EdgeInsetsDirectional insets = HarborEdges.build((final HarborEdge e) {
       final double own = HarborEdges.of(padding, e);
       if (e == leadingEdge) {
@@ -1229,9 +1300,9 @@ class HarborSliverClear extends StatelessWidget {
         padding: insets.resolve(direction),
         sliver: HarborHandled(
           edges: cleared,
-          keyboard: keyboard && cleared.contains(HarborEdge.bottom),
+          clearsKeyboard: clearsKeyboard && cleared.contains(HarborEdge.bottom),
           margin: false,
-          bars: bars,
+          clearsBars: clearsBars,
           child: sliver,
         ),
       ),

@@ -14,19 +14,12 @@ class HarborTrialDevice {
   const HarborTrialDevice({
     required this.name,
     required this.size,
-    final EdgeInsets? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final EdgeInsets? coast,
-    final double? keyboardHeight,
-    @Deprecated('Renamed keyboardHeight. `dart fix` applies it.') final double? tideHeight,
+    required this.systemEdges,
+    required this.keyboardHeight,
     this.devicePixelRatio = 1.0,
-    final bool reportsSystemEdgesUnderKeyboard = false,
-    @Deprecated('Renamed reportsSystemEdgesUnderKeyboard. `dart fix` applies it.') final bool? reportsCoastUnderTide,
+    this.reportsSystemEdgesUnderKeyboard = false,
     this.displayFeatures = const <DisplayFeature>[],
-  }) : assert(systemEdges != null || coast != null, 'systemEdges is required.'),
-       assert(keyboardHeight != null || tideHeight != null, 'keyboardHeight is required.'),
-       systemEdges = systemEdges ?? coast ?? EdgeInsets.zero,
-       keyboardHeight = keyboardHeight ?? tideHeight ?? 0.0,
-       reportsSystemEdgesUnderKeyboard = reportsCoastUnderTide ?? reportsSystemEdgesUnderKeyboard;
+  });
 
   final String name;
   final Size size;
@@ -218,21 +211,17 @@ class HarborTrialDevice {
     final String? name,
     final Size? size,
     final EdgeInsets? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final EdgeInsets? coast,
     final double? keyboardHeight,
-    @Deprecated('Renamed keyboardHeight. `dart fix` applies it.') final double? tideHeight,
     final double? devicePixelRatio,
     final bool? reportsSystemEdgesUnderKeyboard,
-    @Deprecated('Renamed reportsSystemEdgesUnderKeyboard. `dart fix` applies it.') final bool? reportsCoastUnderTide,
     final List<DisplayFeature>? displayFeatures,
   }) => HarborTrialDevice(
     name: name ?? this.name,
     size: size ?? this.size,
-    systemEdges: systemEdges ?? coast ?? this.systemEdges,
-    keyboardHeight: keyboardHeight ?? tideHeight ?? this.keyboardHeight,
+    systemEdges: systemEdges ?? this.systemEdges,
+    keyboardHeight: keyboardHeight ?? this.keyboardHeight,
     devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-    reportsSystemEdgesUnderKeyboard:
-        reportsSystemEdgesUnderKeyboard ?? reportsCoastUnderTide ?? this.reportsSystemEdgesUnderKeyboard,
+    reportsSystemEdgesUnderKeyboard: reportsSystemEdgesUnderKeyboard ?? this.reportsSystemEdgesUnderKeyboard,
     displayFeatures: displayFeatures ?? this.displayFeatures,
   );
 

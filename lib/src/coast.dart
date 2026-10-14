@@ -89,7 +89,13 @@ class HarborSystemEdges with Diagnosticable {
     final EdgeInsetsGeometry insets, {
     final bool ignoresKeyboard = false,
     @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.') final bool? calmTide,
-  }) : this._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
+  }) : assert(
+         calmTide == null || !ignoresKeyboard || calmTide == ignoresKeyboard,
+         'ignoresKeyboard and the deprecated calmTide disagree. Give ignoresKeyboard alone.',
+       ),
+       titleSafe = null,
+       fixedInsets = insets,
+       ignoresKeyboard = calmTide ?? ignoresKeyboard;
 
   /// A TV's title-safe band on top of what the platform reports, edge by edge
   /// whichever is larger.
@@ -217,7 +223,11 @@ class HarborCoast extends HarborSystemEdges {
     final EdgeInsetsGeometry insets, {
     final bool ignoresKeyboard = false,
     @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.') final bool? calmTide,
-  }) : this._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
+  }) : assert(
+         calmTide == null || !ignoresKeyboard || calmTide == ignoresKeyboard,
+         'ignoresKeyboard and the deprecated calmTide disagree. Give ignoresKeyboard alone.',
+       ),
+       super._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
 
   /// The old name of [HarborSystemEdges.titleSafe].
   @Deprecated('Renamed HarborSystemEdges.titleSafe. `dart fix` applies it.')

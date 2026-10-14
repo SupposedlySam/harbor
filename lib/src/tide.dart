@@ -65,15 +65,10 @@ class HarborKeyboardState {
   const HarborKeyboardState({
     required this.height,
     required this.remaining,
-    final double? settledHeight,
-    @Deprecated('Renamed settledHeight. `dart fix` applies it.') final double? highWater,
-    final bool? settledHeightIsEstimate,
-    @Deprecated('Renamed settledHeightIsEstimate. `dart fix` applies it.') final bool? highWaterIsEstimate,
+    required this.settledHeight,
+    required this.settledHeightIsEstimate,
     required this.phase,
-  }) : assert(settledHeight != null || highWater != null, 'settledHeight is required.'),
-       assert(settledHeightIsEstimate != null || highWaterIsEstimate != null, 'settledHeightIsEstimate is required.'),
-       settledHeight = settledHeight ?? highWater ?? 0.0,
-       settledHeightIsEstimate = settledHeightIsEstimate ?? highWaterIsEstimate ?? true;
+  });
 
   /// How far the keyboard reaches up from the bottom of the screen, before any
   /// frame moved out of its way. For information, never for layout.
@@ -127,6 +122,24 @@ class HarborKeyboardState {
   @override
   String toString() =>
       'HarborKeyboardState(height: $height, remaining: $remaining, settledHeight: $settledHeight, phase: $phase)';
+}
+
+/// The old name of [HarborKeyboardState], which takes the old names of its parameters.
+///
+/// A subclass rather than a typedef, so the new constructor can keep its parameters required.
+@Deprecated('Renamed HarborKeyboardState. `dart fix` applies it.')
+class HarborTideState extends HarborKeyboardState {
+  /// The old name of [HarborKeyboardState.new].
+  @Deprecated('Renamed HarborKeyboardState. `dart fix` applies it.')
+  const HarborTideState({
+    required super.height,
+    required super.remaining,
+    @Deprecated('Renamed settledHeight. `dart fix` applies it.') final double? highWater,
+    @Deprecated('Renamed settledHeightIsEstimate. `dart fix` applies it.') final bool? highWaterIsEstimate,
+    required super.phase,
+  }) : assert(highWater != null, 'highWater is required.'),
+       assert(highWaterIsEstimate != null, 'highWaterIsEstimate is required.'),
+       super(settledHeight: highWater ?? 0.0, settledHeightIsEstimate: highWaterIsEstimate ?? true);
 }
 
 /// Keeps the keyboard's phase and its settled heights for one view. Owned by
@@ -386,26 +399,30 @@ class HarborKeyboardSpace extends StatelessWidget {
   const HarborKeyboardSpace({
     super.key,
     this.child,
-    final bool showsChildWhileShown = false,
-    @Deprecated('Renamed showsChildWhileShown. `dart fix` applies it.') final bool? showsChildAtHighTide,
-  }) : showsChildWhileShown = showsChildAtHighTide ?? showsChildWhileShown;
+    final bool showsChildWithKeyboard = false,
+    @Deprecated('Renamed showsChildWithKeyboard. `dart fix` applies it.') final bool? showsChildAtHighTide,
+  }) : assert(
+         showsChildAtHighTide == null || !showsChildWithKeyboard || showsChildAtHighTide == showsChildWithKeyboard,
+         'showsChildWithKeyboard and the deprecated showsChildAtHighTide disagree. Give showsChildWithKeyboard alone.',
+       ),
+       showsChildWithKeyboard = showsChildAtHighTide ?? showsChildWithKeyboard;
 
   /// What fills the space while the keyboard is hidden.
   final Widget? child;
 
   /// Whether [child] stays visible under a keyboard that does not cover it,
   /// such as a floating one.
-  final bool showsChildWhileShown;
+  final bool showsChildWithKeyboard;
 
-  /// The old name of [showsChildWhileShown].
-  @Deprecated('Renamed showsChildWhileShown. `dart fix` applies it.')
-  bool get showsChildAtHighTide => showsChildWhileShown;
+  /// The old name of [showsChildWithKeyboard].
+  @Deprecated('Renamed showsChildWithKeyboard. `dart fix` applies it.')
+  bool get showsChildAtHighTide => showsChildWithKeyboard;
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(
-      FlagProperty('showsChildWhileShown', value: showsChildWhileShown, ifTrue: 'shows child while shown'),
+      FlagProperty('showsChildWithKeyboard', value: showsChildWithKeyboard, ifTrue: 'shows child with keyboard'),
     );
   }
 
@@ -413,7 +430,7 @@ class HarborKeyboardSpace extends StatelessWidget {
   Widget build(final BuildContext context) {
     // Not `HarborKeyboard.of`, which rebuilds on every drawn frame the keyboard moves.
     final bool isShown = HarborKeyboard.isShownOf(context) || MediaQuery.viewInsetsOf(context).bottom > 0.0;
-    final bool show = showsChildWhileShown || !isShown;
+    final bool show = showsChildWithKeyboard || !isShown;
     return SizedBox(
       height: HarborKeyboard._highWaterOf(context),
       width: double.infinity,

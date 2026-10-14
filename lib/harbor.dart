@@ -14,6 +14,7 @@ export 'src/buoy.dart'
         HarborBuoy,
         HarborFloat,
         HarborPopover,
+        HarborPortalBuoy,
         HarborFlarePolicy,
         HarborToastSlot,
         HarborToastTarget,
@@ -26,6 +27,7 @@ export 'src/controller.dart'
         HarborClaim,
         HarborController,
         HarborBarRecord,
+        HarborDockRecord,
         HarborFrameRegistry,
         HarborFrameObserver,
         HarborLayoutRecord,
@@ -61,7 +63,8 @@ export 'src/tide.dart'
         HarborKeyboardPhase,
         HarborKeyboardSource,
         HarborKeyboardStance,
-        HarborKeyboardState;
+        HarborKeyboardState,
+        HarborTideState;
 export 'src/wake.dart'
     show
         HarborRest,
@@ -69,6 +72,8 @@ export 'src/wake.dart'
         HarborWake,
         HarborEdgeEffectKind,
         HarborFadeMask,
+        HarborWakeMask,
         HarborEdgeEffectPainter,
         harborAlphaWake;
-export 'src/waters.dart' show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData;
+export 'src/waters.dart'
+    show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData, HarborWakeBand;

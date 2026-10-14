@@ -268,7 +268,10 @@ class HarborBar with Diagnosticable {
     final Widget? child,
     final HarborKeyboardStance? keyboard,
     @Deprecated('Renamed keyboard. `dart fix` applies it.') final HarborKeyboardStance? tide,
-  }) => _copyWith(state: state, child: child, keyboard: keyboard ?? tide);
+  }) {
+    assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.');
+    return _copyWith(state: state, child: child, keyboard: keyboard ?? tide);
+  }
 
   HarborBar _copyWith({final HarborBarState? state, final Widget? child, final HarborKeyboardStance? keyboard}) =>
       reserved != null
@@ -386,7 +389,10 @@ class HarborDock extends HarborBar {
     super.restingExtent,
     super.minimum,
     super.debugLabel,
-  }) : super.overlay(
+  }) : assert(wake == null || edgeEffect == null, 'Give edgeEffect or the deprecated wake, not both.'),
+       assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.'),
+       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
+       super.overlay(
          edgeEffect: edgeEffect ?? wake ?? HarborEdgeEffect.none,
          keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays,
          systemEdges: systemEdges ?? coast,
@@ -414,7 +420,10 @@ class HarborDock extends HarborBar {
     super.restingExtent,
     super.minimum,
     super.debugLabel,
-  }) : super.solid(
+  }) : assert(wake == null || edgeEffect == null, 'Give edgeEffect or the deprecated wake, not both.'),
+       assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.'),
+       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
+       super.solid(
          edgeEffect: edgeEffect ?? wake ?? HarborEdgeEffect.none,
          keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays,
          systemEdges: systemEdges ?? coast,
@@ -437,5 +446,17 @@ class HarborDock extends HarborBar {
     super.animationStyle,
     super.withdrawsAtHighTide,
     super.debugLabel,
-  }) : super.reserve(keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays, systemEdges: systemEdges ?? coast);
+  }) : assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.'),
+       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
+       super.reserve(keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays, systemEdges: systemEdges ?? coast);
+
+  /// `HarborDock.pier`, `.quay` or `.reserve`, as the deprecated constructors were named, though
+  /// [kind] says `overlay` or `solid`.
+  @override
+  String toStringShort() =>
+      '${objectRuntimeType(this, 'HarborDock')}.${reserved != null
+          ? 'reserve'
+          : kind == HarborBarKind.overlay
+          ? 'pier'
+          : 'quay'}';
 }

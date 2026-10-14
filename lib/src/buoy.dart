@@ -1023,8 +1023,7 @@ class HarborPopover extends StatefulWidget {
   const HarborPopover({
     super.key,
     required this.controller,
-    final WidgetBuilder? popoverBuilder,
-    @Deprecated('Renamed popoverBuilder. `dart fix` applies it.') final WidgetBuilder? buoyBuilder,
+    required this.popoverBuilder,
     required this.child,
     final HarborAnchored? placement,
     @Deprecated(
@@ -1071,9 +1070,7 @@ class HarborPopover extends StatefulWidget {
     this.consumeOutsideTaps = false,
     this.requestFocus = false,
     this.hinge,
-  }) : assert(popoverBuilder != null || buoyBuilder != null, 'popoverBuilder is required.'),
-       popoverBuilder = popoverBuilder ?? buoyBuilder ?? _noPopover,
-       assert(
+  }) : assert(
          !requestFocus || onDismiss != null,
          'A HarborPopover that takes focus needs an onDismiss, so Escape can close it and a keyboard user is not left in it.',
        ),
@@ -2665,6 +2662,76 @@ class HarborFlarePolicy extends InheritedWidget {
   bool updateShouldNotify(final HarborFlarePolicy oldWidget) => queue != oldWidget.queue;
 }
 
-/// What a [HarborPopover] built through its deprecated `buoyBuilder` falls back to: never shown,
-/// since one of the two builders is asserted.
+/// The old name of [HarborPopover], which takes the old name of its builder.
+///
+/// A subclass rather than a typedef, so the new constructor can keep [HarborPopover.popoverBuilder]
+/// required.
+@Deprecated('Renamed HarborPopover. `dart fix` applies it.')
+class HarborPortalBuoy extends HarborPopover {
+  /// The old name of [HarborPopover.new].
+  @Deprecated('Renamed HarborPopover. `dart fix` applies it.')
+  const HarborPortalBuoy({
+    super.key,
+    required super.controller,
+    @Deprecated('Renamed popoverBuilder. `dart fix` applies it.') final WidgetBuilder? buoyBuilder,
+    required super.child,
+    super.placement,
+    @Deprecated(
+      'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.anchor,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.side,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.gap,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.overlap,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.crossAlignment,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.crossOffset,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.margin,
+    @Deprecated(
+      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it. '
+      'Deprecated after 0.7.0.',
+    )
+    super.flips,
+    super.onDismiss,
+    super.consumeOutsideTaps,
+    super.requestFocus,
+    super.hinge,
+  }) : assert(buoyBuilder != null, 'buoyBuilder is required.'),
+       super(popoverBuilder: buoyBuilder ?? _noPopover);
+
+  /// The old name of [HarborPopover.sideOf].
+  @Deprecated('Renamed HarborPopover.sideOf. `dart fix` applies it.')
+  static HarborAnchorSide sideOf(final BuildContext context) => HarborPopover.sideOf(context);
+
+  /// The old name of [HarborPopover.maybeSideOf].
+  @Deprecated('Renamed HarborPopover.maybeSideOf. `dart fix` applies it.')
+  static HarborAnchorSide? maybeSideOf(final BuildContext context) => HarborPopover.maybeSideOf(context);
+}
+
+/// What a [HarborPortalBuoy] built without its deprecated `buoyBuilder` falls back to: never
+/// shown, since the builder is asserted.
 Widget _noPopover(final BuildContext context) => const SizedBox.shrink();

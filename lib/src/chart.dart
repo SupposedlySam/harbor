@@ -18,20 +18,12 @@ class HarborInspectorEntry {
     required this.depth,
     required this.frame,
     required this.body,
-    final Rect? room,
-    @Deprecated('Renamed room. `dart fix` applies it.') final Rect? clearWater,
-    final List<HarborBarRecord>? bars,
-    @Deprecated('Renamed bars. `dart fix` applies it.') final List<HarborBarRecord>? docks,
+    required this.room,
+    required this.bars,
     required this.obstruction,
-    final double? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final double? tide,
+    required this.keyboard,
     this.isolated = false,
-  }) : assert(room != null || clearWater != null, 'room is required.'),
-       assert(bars != null || docks != null, 'bars is required.'),
-       assert(keyboard != null || tide != null, 'keyboard is required.'),
-       room = room ?? clearWater ?? Rect.zero,
-       bars = bars ?? docks ?? const <HarborBarRecord>[],
-       keyboard = keyboard ?? tide ?? 0.0;
+  });
 
   final String label;
 
@@ -127,6 +119,30 @@ class HarborInspectorEntry {
 
 /// The inspector: who holds which edge, at which layer, in every frame in a
 /// view. A debug overlay and a snapshot API, unrelated to Flutter's
+
+/// The old name of [HarborInspectorEntry], which takes the old names of its parameters.
+///
+/// A subclass rather than a typedef, so the new constructor can keep its parameters required.
+@Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it.')
+class HarborChartEntry extends HarborInspectorEntry {
+  /// The old name of [HarborInspectorEntry.new].
+  @Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it.')
+  const HarborChartEntry({
+    required super.label,
+    required super.depth,
+    required super.frame,
+    required super.body,
+    @Deprecated('Renamed room. `dart fix` applies it.') final Rect? clearWater,
+    @Deprecated('Renamed bars. `dart fix` applies it.') final List<HarborBarRecord>? docks,
+    required super.obstruction,
+    @Deprecated('Renamed keyboard. `dart fix` applies it.') final double? tide,
+    super.isolated,
+  }) : assert(clearWater != null, 'clearWater is required.'),
+       assert(docks != null, 'docks is required.'),
+       assert(tide != null, 'tide is required.'),
+       super(room: clearWater ?? Rect.zero, bars: docks ?? const <HarborBarRecord>[], keyboard: tide ?? 0.0);
+}
+
 /// `WidgetInspector`.
 abstract final class HarborInspector {
   /// Every frame in [context]'s view, outermost first, from its last layout.

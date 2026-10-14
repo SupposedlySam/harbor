@@ -737,7 +737,7 @@ class RenderHarbor extends RenderBox
         curve: wake.curve == Curves.linear ? null : wake.curve,
       );
     }
-    final Map<HarborEdge, HarborFadeBand> edgeEffects = <HarborEdge, HarborFadeBand>{
+    final Map<HarborEdge, HarborFadeBand> fadeBands = <HarborEdge, HarborFadeBand>{
       for (final MapEntry<HarborEdge, HarborFadeBand> inherited in g.inheritedWakes.entries)
         if (!ownWakes.containsKey(inherited.key) && HarborEdges.of(bodyInset, inherited.key) < inherited.value.fadeEnd)
           inherited.key: inherited.value.measuredFrom(HarborEdges.of(bodyInset, inherited.key)),
@@ -774,7 +774,7 @@ class RenderHarbor extends RenderBox
         systemEdgesSteady: coastSteadyPast,
         bars: docksPast,
         barsResting: restingPast,
-        edgeEffects: edgeEffects,
+        fadeBands: fadeBands,
         margin: g.margin,
         frameSize: g.frameSize ?? frame,
         hasBars: <HarborEdge>{

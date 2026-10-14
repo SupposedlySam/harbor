@@ -17,6 +17,7 @@ import 'render_harbor.dart';
 import 'tide.dart';
 import 'wake.dart';
 import 'waters.dart';
+import 'renamed.dart';
 
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable
@@ -125,7 +126,31 @@ class HarborSheet extends StatelessWidget {
     this.clearsSides = false,
     final bool bodyClearsKeyboard = true,
     @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it.') final bool? bodyClearsTide,
-  }) : headerEdgeEffect = headerWake ?? headerEdgeEffect,
+  }) : assert(
+         headerWake == null ||
+             identical(headerEdgeEffect, const HarborEdgeEffect.fade(length: 12.0)) ||
+             identical(headerWake, headerEdgeEffect),
+         'headerEdgeEffect and the deprecated headerWake disagree. Give headerEdgeEffect alone.',
+       ),
+       assert(
+         footerWake == null ||
+             identical(footerEdgeEffect, const HarborEdgeEffect.hairline()) ||
+             identical(footerWake, footerEdgeEffect),
+         'footerEdgeEffect and the deprecated footerWake disagree. Give footerEdgeEffect alone.',
+       ),
+       assert(
+         footerTide == null || footerKeyboard == HarborKeyboardStance.rides || footerTide == footerKeyboard,
+         'footerKeyboard and the deprecated footerTide disagree. Give footerKeyboard alone.',
+       ),
+       assert(
+         clearsTopCoast == null || clearsTopSystemEdge || clearsTopCoast == clearsTopSystemEdge,
+         'clearsTopSystemEdge and the deprecated clearsTopCoast disagree. Give clearsTopSystemEdge alone.',
+       ),
+       assert(
+         bodyClearsTide == null || bodyClearsKeyboard || bodyClearsTide == bodyClearsKeyboard,
+         'bodyClearsKeyboard and the deprecated bodyClearsTide disagree. Give bodyClearsKeyboard alone.',
+       ),
+       headerEdgeEffect = headerWake ?? headerEdgeEffect,
        footerEdgeEffect = footerWake ?? footerEdgeEffect,
        footerKeyboard = footerTide ?? footerKeyboard,
        clearsTopSystemEdge = clearsTopCoast ?? clearsTopSystemEdge,
@@ -169,7 +194,31 @@ class HarborSheet extends StatelessWidget {
     this.clearsSides = false,
     final bool bodyClearsKeyboard = true,
     @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it.') final bool? bodyClearsTide,
-  }) : headerEdgeEffect = headerWake ?? headerEdgeEffect,
+  }) : assert(
+         headerWake == null ||
+             identical(headerEdgeEffect, const HarborEdgeEffect.fade(length: 12.0)) ||
+             identical(headerWake, headerEdgeEffect),
+         'headerEdgeEffect and the deprecated headerWake disagree. Give headerEdgeEffect alone.',
+       ),
+       assert(
+         footerWake == null ||
+             identical(footerEdgeEffect, const HarborEdgeEffect.hairline()) ||
+             identical(footerWake, footerEdgeEffect),
+         'footerEdgeEffect and the deprecated footerWake disagree. Give footerEdgeEffect alone.',
+       ),
+       assert(
+         footerTide == null || footerKeyboard == HarborKeyboardStance.rides || footerTide == footerKeyboard,
+         'footerKeyboard and the deprecated footerTide disagree. Give footerKeyboard alone.',
+       ),
+       assert(
+         clearsTopCoast == null || clearsTopSystemEdge || clearsTopCoast == clearsTopSystemEdge,
+         'clearsTopSystemEdge and the deprecated clearsTopCoast disagree. Give clearsTopSystemEdge alone.',
+       ),
+       assert(
+         bodyClearsTide == null || bodyClearsKeyboard || bodyClearsTide == bodyClearsKeyboard,
+         'bodyClearsKeyboard and the deprecated bodyClearsTide disagree. Give bodyClearsKeyboard alone.',
+       ),
+       headerEdgeEffect = headerWake ?? headerEdgeEffect,
        footerEdgeEffect = footerWake ?? footerEdgeEffect,
        footerKeyboard = footerTide ?? footerKeyboard,
        clearsTopSystemEdge = clearsTopCoast ?? clearsTopSystemEdge,
@@ -399,7 +448,7 @@ class HarborSheet extends StatelessWidget {
     if (clearsSides) {
       // Clear of the side system edges alone, inside the surface, so the surface still runs edge to
       // edge and the new page frame beneath is handed no side system edges. The margin stays.
-      port = HarborClear(edges: HarborEdge.horizontal, bars: false, keyboard: false, child: port);
+      port = HarborClear(edges: HarborEdge.horizontal, clearsBars: false, clearsKeyboard: false, child: port);
     }
     return port;
   }
@@ -827,9 +876,9 @@ Future<T?> showHarborSheet<T>(
     // `Theme.of(context)` in a sheet's builder read the navigator's theme, not the page's.
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
     maxWidth: maxWidth,
-    reachesTop: keepsTopCoast ?? reachesTop,
+    reachesTop: renamed(keepsTopCoast, reachesTop, false, 'reachesTop', 'keepsTopCoast'),
     anchorPoint: anchorPoint,
-    presenter: (breakwater ?? coversPage) ? presenter : null,
+    presenter: renamed(breakwater, coversPage, false, 'coversPage', 'breakwater') ? presenter : null,
     animationStyle: sheetAnimationStyle,
     controller: controller,
     scopesRoute: barrier != HarborSheetBarrier.none,

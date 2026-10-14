@@ -65,20 +65,23 @@ class HarborEdgeEffect with Diagnosticable {
   /// a `backdrop`; for a scrim drawn over the content, give the `HarborFrame` a
   /// `edgeEffectPainter`, which is handed the measured bands.
   const HarborEdgeEffect.fade({
-    final double length = 16.0,
-    final double blurSigma = 0.0,
-    final HarborRest restsAt = HarborRest.fadeEnd,
+    this.length = 16.0,
+    this.blurSigma = 0.0,
+    this.restsAt = HarborRest.fadeEnd,
     final double faceOpacity = 0.25,
     @Deprecated('Renamed faceOpacity. `dart fix` applies it.') final double? dockOpacity,
-    final Curve curve = Curves.linear,
-  }) : this._(
-         HarborEdgeEffectKind.fade,
-         length: length,
-         blurSigma: blurSigma,
-         restsAt: restsAt,
-         faceOpacity: dockOpacity ?? faceOpacity,
-         curve: curve,
-       );
+    this.curve = Curves.linear,
+  }) : assert(
+         dockOpacity == null || faceOpacity == 0.25 || dockOpacity == faceOpacity,
+         'faceOpacity and the deprecated dockOpacity disagree. Give faceOpacity alone.',
+       ),
+       assert(
+         (dockOpacity ?? faceOpacity) >= 0.0 && (dockOpacity ?? faceOpacity) <= 1.0,
+         'faceOpacity is an opacity, from 0 to 1.',
+       ),
+       kind = HarborEdgeEffectKind.fade,
+       color = null,
+       faceOpacity = dockOpacity ?? faceOpacity;
 
   /// A line of [thickness] on the bar's inner face.
   ///
@@ -170,7 +173,11 @@ class HarborWake extends HarborEdgeEffect {
     final double faceOpacity = 0.25,
     @Deprecated('Renamed faceOpacity. `dart fix` applies it.') final double? dockOpacity,
     super.curve,
-  }) : super._(HarborEdgeEffectKind.fade, faceOpacity: dockOpacity ?? faceOpacity);
+  }) : assert(
+         dockOpacity == null || faceOpacity == 0.25 || dockOpacity == faceOpacity,
+         'faceOpacity and the deprecated dockOpacity disagree. Give faceOpacity alone.',
+       ),
+       super._(HarborEdgeEffectKind.fade, faceOpacity: dockOpacity ?? faceOpacity);
 
   /// The old name of [HarborEdgeEffect.hairline].
   @Deprecated('Renamed HarborEdgeEffect.hairline. `dart fix` applies it.')
@@ -181,60 +188,42 @@ class HarborWake extends HarborEdgeEffect {
 /// Wraps a frame's body so content fades out as it passes under the bars.
 ///
 /// Give a [HarborFrame] your own to draw the edge effect differently (a progressive blur
-/// shader, say). [edgeEffects] holds every edge with a fade, measured from the
+/// shader, say). [bands] holds every edge with a fade, measured from the
 /// body's edge.
 typedef HarborEdgeEffectPainter =
-    Widget Function(BuildContext context, Map<HarborEdge, HarborFadeBand> edgeEffects, Widget body);
+    Widget Function(BuildContext context, Map<HarborEdge, HarborFadeBand> bands, Widget body);
 
 /// The default [HarborEdgeEffectPainter]: an alpha mask over the body, transparent
 /// at the body's edge, a quarter opaque at the bar's inner face, and fully
 /// opaque where the fade ends.
 @Deprecated('Use HarborFadeMask.alphaFade instead. Deprecated after 0.2.0.')
-Widget harborAlphaWake(
-  final BuildContext context,
-  final Map<HarborEdge, HarborFadeBand> edgeEffects,
-  final Widget body,
-) => HarborFadeMask.alphaFade(context, edgeEffects, body);
+Widget harborAlphaWake(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) =>
+    HarborFadeMask.alphaFade(context, bands, body);
 
-/// An alpha mask that fades [child] out along the [edgeEffects] bands. Paints
+/// An alpha mask that fades [child] out along its fade [bands]. Paints
 /// nothing extra when there are none, so it can always be in the tree.
 class HarborFadeMask extends SingleChildRenderObjectWidget {
-  const HarborFadeMask({
-    super.key,
-    final Map<HarborEdge, HarborFadeBand>? edgeEffects,
-    @Deprecated('Renamed edgeEffects. `dart fix` applies it.') final Map<HarborEdge, HarborFadeBand>? wakes,
-    final double faceOpacity = 0.25,
-    @Deprecated('Renamed faceOpacity. `dart fix` applies it.') final double? dockOpacity,
-    super.child,
-  }) : assert(edgeEffects != null || wakes != null, 'edgeEffects is required.'),
-       edgeEffects = edgeEffects ?? wakes ?? const <HarborEdge, HarborFadeBand>{},
-       faceOpacity = dockOpacity ?? faceOpacity;
+  const HarborFadeMask({super.key, required this.bands, this.faceOpacity = 0.25, super.child});
 
   /// The default [HarborEdgeEffectPainter]: an alpha mask over the body, transparent
   /// at the body's edge, a quarter opaque at the bar's inner face (or the
   /// band's own [HarborFadeBand.faceOpacity]), and fully opaque where the fade
   /// ends, along the band's [HarborFadeBand.curve]. Give it to
   /// `HarborFrame(edgeEffectPainter:)` to fade the whole body.
-  static Widget alphaFade(
-    final BuildContext context,
-    final Map<HarborEdge, HarborFadeBand> edgeEffects,
-    final Widget body,
-  ) => HarborFadeMask(edgeEffects: edgeEffects, child: body);
+  static Widget alphaFade(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) =>
+      HarborFadeMask(bands: bands, child: body);
 
   /// The old name of [alphaFade].
   @Deprecated('Renamed alphaFade. `dart fix` applies it.')
-  static Widget alphaWake(
-    final BuildContext context,
-    final Map<HarborEdge, HarborFadeBand> edgeEffects,
-    final Widget body,
-  ) => alphaFade(context, edgeEffects, body);
+  static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) =>
+      alphaFade(context, bands, body);
 
   /// The fade bands, by edge, measured from the body's edge.
-  final Map<HarborEdge, HarborFadeBand> edgeEffects;
+  final Map<HarborEdge, HarborFadeBand> bands;
 
-  /// The old name of [edgeEffects].
-  @Deprecated('Renamed edgeEffects. `dart fix` applies it.')
-  Map<HarborEdge, HarborFadeBand> get wakes => edgeEffects;
+  /// The old name of [bands].
+  @Deprecated('Renamed bands. `dart fix` applies it.')
+  Map<HarborEdge, HarborFadeBand> get wakes => bands;
 
   /// How visible content is at the bar's inner face, for a band that does
   /// not say ([HarborFadeBand.faceOpacity] is null, as it is for a
@@ -248,32 +237,50 @@ class HarborFadeMask extends SingleChildRenderObjectWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Map<HarborEdge, HarborFadeBand>>('edgeEffects', edgeEffects));
+    properties.add(DiagnosticsProperty<Map<HarborEdge, HarborFadeBand>>('bands', bands));
     properties.add(DoubleProperty('faceOpacity', faceOpacity, defaultValue: 0.25));
   }
 
   @override
-  RenderObject createRenderObject(final BuildContext context) => RenderHarborWakeMask(
-    edgeEffects: edgeEffects,
-    faceOpacity: faceOpacity,
-    textDirection: Directionality.of(context),
-  );
+  RenderObject createRenderObject(final BuildContext context) =>
+      RenderHarborWakeMask(bands: bands, faceOpacity: faceOpacity, textDirection: Directionality.of(context));
 
   @override
   void updateRenderObject(final BuildContext context, final RenderHarborWakeMask renderObject) {
     renderObject
-      ..edgeEffects = edgeEffects
+      ..bands = bands
       ..faceOpacity = faceOpacity
       ..textDirection = Directionality.of(context);
   }
 }
 
-class RenderHarborWakeMask extends RenderProxyBox {
-  RenderHarborWakeMask({required this._edgeEffects, required this._faceOpacity, required this._textDirection});
+/// The old name of [HarborFadeMask], which takes the old names of its parameters.
+///
+/// A subclass rather than a typedef, so the new constructor can keep its parameters required.
+@Deprecated('Renamed HarborFadeMask. `dart fix` applies it.')
+class HarborWakeMask extends HarborFadeMask {
+  /// The old name of [HarborFadeMask.new].
+  @Deprecated('Renamed HarborFadeMask. `dart fix` applies it.')
+  const HarborWakeMask({
+    super.key,
+    @Deprecated('Renamed bands. `dart fix` applies it.') final Map<HarborEdge, HarborFadeBand>? wakes,
+    @Deprecated('Renamed faceOpacity. `dart fix` applies it.') final double? dockOpacity,
+    super.child,
+  }) : assert(wakes != null, 'wakes is required.'),
+       super(bands: wakes ?? const <HarborEdge, HarborFadeBand>{}, faceOpacity: dockOpacity ?? 0.25);
 
-  Map<HarborEdge, HarborFadeBand> _edgeEffects;
-  set edgeEffects(final Map<HarborEdge, HarborFadeBand> value) {
-    _edgeEffects = value;
+  /// The old name of [HarborFadeMask.alphaFade].
+  @Deprecated('Renamed HarborFadeMask.alphaFade. `dart fix` applies it.')
+  static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborFadeBand> wakes, final Widget body) =>
+      HarborFadeMask.alphaFade(context, wakes, body);
+}
+
+class RenderHarborWakeMask extends RenderProxyBox {
+  RenderHarborWakeMask({required this._bands, required this._faceOpacity, required this._textDirection});
+
+  Map<HarborEdge, HarborFadeBand> _bands;
+  set bands(final Map<HarborEdge, HarborFadeBand> value) {
+    _bands = value;
     markNeedsCompositingBitsUpdate();
     markNeedsPaint();
   }
@@ -301,8 +308,7 @@ class RenderHarborWakeMask extends RenderProxyBox {
   final LayerHandle<ShaderMaskLayer> _horizontal = LayerHandle<ShaderMaskLayer>();
 
   @override
-  bool get alwaysNeedsCompositing =>
-      child != null && _edgeEffects.values.any((final HarborFadeBand b) => b.fadeEnd > 0);
+  bool get alwaysNeedsCompositing => child != null && _bands.values.any((final HarborFadeBand b) => b.fadeEnd > 0);
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
@@ -310,11 +316,11 @@ class RenderHarborWakeMask extends RenderProxyBox {
     if (child == null) {
       return;
     }
-    final HarborFadeBand top = _edgeEffects[HarborEdge.top] ?? HarborFadeBand.none;
-    final HarborFadeBand bottom = _edgeEffects[HarborEdge.bottom] ?? HarborFadeBand.none;
+    final HarborFadeBand top = _bands[HarborEdge.top] ?? HarborFadeBand.none;
+    final HarborFadeBand bottom = _bands[HarborEdge.bottom] ?? HarborFadeBand.none;
     final bool ltr = _textDirection == TextDirection.ltr;
-    final HarborFadeBand left = _edgeEffects[ltr ? HarborEdge.start : HarborEdge.end] ?? HarborFadeBand.none;
-    final HarborFadeBand right = _edgeEffects[ltr ? HarborEdge.end : HarborEdge.start] ?? HarborFadeBand.none;
+    final HarborFadeBand left = _bands[ltr ? HarborEdge.start : HarborEdge.end] ?? HarborFadeBand.none;
+    final HarborFadeBand right = _bands[ltr ? HarborEdge.end : HarborEdge.start] ?? HarborFadeBand.none;
     final bool vertical = top.fadeEnd > 0 || bottom.fadeEnd > 0;
     final bool horizontal = left.fadeEnd > 0 || right.fadeEnd > 0;
 

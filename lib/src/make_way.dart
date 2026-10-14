@@ -109,15 +109,7 @@ class _HarborMakeWayState extends State<HarborHideBar> {
 ///  * `ScaffoldState.showBottomSheet`, which also puts a widget into an ancestor's frame from deep in
 ///    the tree.
 class HarborAttachedBar extends StatefulWidget {
-  const HarborAttachedBar({
-    super.key,
-    required this.edge,
-    final HarborBar? bar,
-    @Deprecated('Renamed bar. `dart fix` applies it.') final HarborBar? dock,
-    this.active = true,
-    required this.child,
-  }) : assert(bar != null || dock != null, 'bar is required.'),
-       bar = bar ?? dock ?? const HarborBar.reserve(extent: 0.0);
+  const HarborAttachedBar({super.key, required this.edge, required this.bar, this.active = true, required this.child});
 
   final HarborEdge edge;
 
@@ -198,4 +190,22 @@ class _HarborPontoonState extends State<HarborAttachedBar> {
 
   @override
   Widget build(final BuildContext context) => widget.child;
+}
+
+/// The old name of [HarborAttachedBar], which takes the old name of its bar.
+///
+/// A subclass rather than a typedef, so the new constructor can keep [HarborAttachedBar.bar]
+/// required.
+@Deprecated('Renamed HarborAttachedBar. `dart fix` applies it.')
+class HarborPontoon extends HarborAttachedBar {
+  /// The old name of [HarborAttachedBar.new].
+  @Deprecated('Renamed HarborAttachedBar. `dart fix` applies it.')
+  const HarborPontoon({
+    super.key,
+    required super.edge,
+    @Deprecated('Renamed bar. `dart fix` applies it.') final HarborBar? dock,
+    super.active,
+    required super.child,
+  }) : assert(dock != null, 'dock is required.'),
+       super(bar: dock ?? const HarborBar.reserve(extent: 0.0));
 }
