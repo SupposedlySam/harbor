@@ -134,6 +134,8 @@ void main() {
       HarborTrialDevice.androidThreeButton,
       HarborTrialDevice.androidGesture,
       HarborTrialDevice.iPhone17Landscape,
+      HarborTrialDevice.androidThreeButtonLandscape,
+      HarborTrialDevice.androidGestureLandscape,
       HarborTrialDevice.foldableOpen,
       HarborTrialDevice.dualScreenOpen,
       HarborTrialDevice.dualScreenCover,
@@ -166,6 +168,45 @@ void main() {
     expect(tester.view.devicePixelRatio, 1.0);
     expect(tester.view.physicalSize, HarborTrialDevice.iPhone17.size);
     expect(MediaQueryData.fromView(tester.view).viewPadding, HarborTrialDevice.iPhone17.coast);
+  });
+
+  group('an Android phone on its side', () {
+    test('is its portrait self turned: the width and height swapped, at the same ratio', () {
+      expect(HarborTrialDevice.androidThreeButtonLandscape.size, HarborTrialDevice.androidThreeButton.size.flipped);
+      expect(HarborTrialDevice.androidGestureLandscape.size, HarborTrialDevice.androidGesture.size.flipped);
+      expect(HarborTrialDevice.androidThreeButtonLandscape.devicePixelRatio, HarborTrialDevice.androidThreeButton.devicePixelRatio);
+      expect(HarborTrialDevice.androidGestureLandscape.devicePixelRatio, HarborTrialDevice.androidGesture.devicePixelRatio);
+    });
+
+    testWidgets('with three buttons, keeps the status bar on top and the navigation bar on the right', (final tester) async {
+      const HarborTrialDevice device = HarborTrialDevice.androidThreeButtonLandscape;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+      MediaQueryData media() => MediaQueryData.fromView(tester.view);
+
+      expect(media().size, const Size(915.0, 412.0));
+      expect(media().padding, const EdgeInsets.only(top: 24.0, right: 48.0));
+      expect(media().viewPadding, device.coast);
+
+      await trial.raiseTide();
+
+      expect(media().viewInsets.bottom, 200.0);
+      expect(media().padding, const EdgeInsets.only(top: 24.0, right: 48.0), reason: 'the side bar stays under the keyboard');
+    });
+
+    testWidgets('with gestures, keeps the status bar on top, the camera on the left and the gesture bar at the bottom', (final tester) async {
+      const HarborTrialDevice device = HarborTrialDevice.androidGestureLandscape;
+      final HarborSeaTrial trial = await tester.pumpSeaTrial(_page(), device: device);
+      MediaQueryData media() => MediaQueryData.fromView(tester.view);
+
+      expect(media().size, const Size(915.0, 412.0));
+      expect(media().padding, const EdgeInsets.only(top: 24.0, left: 24.0, bottom: 24.0));
+      expect(media().viewPadding, device.coast);
+
+      await trial.raiseTide();
+
+      expect(media().viewInsets.bottom, 200.0);
+      expect(media().padding, const EdgeInsets.only(top: 24.0, left: 24.0), reason: 'the keyboard covers the gesture bar');
+    });
   });
 
   testWidgets('clears a dock at the size its text grew to', (final tester) async {

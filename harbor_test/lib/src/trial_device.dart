@@ -87,6 +87,39 @@ class HarborTrialDevice {
     devicePixelRatio: 3.0,
   );
 
+  /// [androidThreeButton] on its side, turned the usual way (`Surface.ROTATION_90`, its top to the
+  /// left): the navigation bar moves to the right side and the status bar stays on top.
+  ///
+  /// From AOSP's `frameworks/base`: `DisplayLayout.navigationBarPosition` puts a bar that can move
+  /// on the right at `ROTATION_90` (on the left at `ROTATION_270`, the seascape turn), and
+  /// `config_navBarCanMove` is true by default for a phone; the bar is `navigation_bar_width`
+  /// (48dp) wide there; and the status bar is `status_bar_height_landscape`, the same 24dp as in
+  /// portrait. Like the portrait preset, it has no cutout. The 200-point keyboard is an estimate.
+  static const HarborTrialDevice androidThreeButtonLandscape = HarborTrialDevice(
+    name: 'Android 3-button landscape',
+    size: Size(915.0, 412.0),
+    coast: EdgeInsets.only(top: 24.0, right: 48.0),
+    tideHeight: 200.0,
+    devicePixelRatio: 2.625,
+  );
+
+  /// [androidGesture] on its side, turned the usual way (`Surface.ROTATION_90`, its top to the
+  /// left): the punch-hole camera moves to the left side, the status bar stays on top, and the
+  /// gesture bar stays at the bottom.
+  ///
+  /// From AOSP's `frameworks/base`: the gesture navigation overlay sets `config_navBarCanMove` to
+  /// false, so the bar stays at the bottom in landscape, `navigation_bar_height_landscape` 24dp;
+  /// and the status bar is `status_bar_height_landscape`, the same 24dp as in portrait. The 24-point
+  /// cutout on the left is an estimate (the portrait camera's depth, turned), as is the 200-point
+  /// keyboard.
+  static const HarborTrialDevice androidGestureLandscape = HarborTrialDevice(
+    name: 'Android gesture landscape',
+    size: Size(915.0, 412.0),
+    coast: EdgeInsets.only(top: 24.0, left: 24.0, bottom: 24.0),
+    tideHeight: 200.0,
+    devicePixelRatio: 2.625,
+  );
+
   /// A book-style foldable, open flat: a fold down the middle with no width, which content may span.
   static const HarborTrialDevice foldableOpen = HarborTrialDevice(
     name: 'foldable open',
@@ -139,6 +172,8 @@ class HarborTrialDevice {
     androidThreeButton,
     androidGesture,
     iPhone17Landscape,
+    androidThreeButtonLandscape,
+    androidGestureLandscape,
     foldableOpen,
     dualScreenOpen,
     dualScreenCover,

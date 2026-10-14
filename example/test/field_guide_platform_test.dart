@@ -613,6 +613,8 @@ void main() {
       'Android 3-button': 'androidThreeButton',
       'Android gesture': 'androidGesture',
       'iPhone 17 landscape': 'iPhone17Landscape',
+      'Android 3-button landscape': 'androidThreeButtonLandscape',
+      'Android gesture landscape': 'androidGestureLandscape',
       'foldable open': 'foldableOpen',
       'dual screen cover': 'dualScreenCover',
     };
