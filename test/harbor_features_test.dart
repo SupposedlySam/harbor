@@ -1632,7 +1632,7 @@ void main() {
             startsInOpenWater: true,
             slivers: <Widget>[
               SliverToBoxAdapter(
-                child: HarborMoored(clear: HarborClear.coast, edges: <HarborEdge>{HarborEdge.top}, child: SizedBox(key: ValueKey<String>('title'), height: 30)),
+                child: HarborMoored(bars: false, edges: <HarborEdge>{HarborEdge.top}, child: SizedBox(key: ValueKey<String>('title'), height: 30)),
               ),
             ],
           ),

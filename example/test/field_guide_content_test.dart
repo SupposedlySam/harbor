@@ -253,23 +253,23 @@ void main() {
       expect(box(tester).bottom, _near(_keyboardTop(tester)));
     });
 
-    testWidgets('clear coast: sits under the pier, just below the status bar, and ignores the keyboard', (
+    testWidgets('bars off: sits under the pier, just below the status bar, and ignores the keyboard', (
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'clear: coast');
-      expect(_code(tester), contains('clear: HarborClear.coast,'));
+      await _tap(tester, 'toggle bars');
+      expect(_code(tester), contains('bars: false,'));
       expect(box(tester).top, _near(_frameTop(tester) + 62 * _scale(tester)));
       expect(box(tester).bottom, _near(_rect(tester, 'quay bar').top));
       await _setTide(tester, high: true);
       expect(box(tester).bottom, _near(_rect(tester, 'quay bar').top));
     });
 
-    testWidgets('clear everything, picked again, clears the pier again', (final WidgetTester tester) async {
+    testWidgets('bars, switched on again, clears the pier again', (final WidgetTester tester) async {
       await pump(tester);
-      await _tap(tester, 'clear: coast');
-      await _tap(tester, 'clear: everything');
-      expect(_code(tester), contains('clear: HarborClear.everything,'));
+      await _tap(tester, 'toggle bars');
+      await _tap(tester, 'toggle bars');
+      expect(_code(tester), contains('bars: true,'));
       expect(box(tester).top, _near(_rect(tester, 'pier header').bottom));
     });
 
@@ -303,7 +303,7 @@ void main() {
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'clear: coast');
+      await _tap(tester, 'toggle bars');
       await _slide(tester, 'minimum', 48);
       // The status bar's 62 is more than 48, so the top stays.
       expect(box(tester).top, _near(_frameTop(tester) + 62 * _scale(tester)));

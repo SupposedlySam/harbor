@@ -150,7 +150,7 @@ class HarborFlareEntry {
 
   /// Where an aligned flare sits in the clear water; [HarborFlareSlot.high]'s point for an
   /// anchored one.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   Alignment get alignment => switch (placement) {
     HarborAligned(:final AlignmentGeometry alignment) => alignment as Alignment,
     HarborAnchored() => HarborFlareSlot.high.alignment,
@@ -171,21 +171,21 @@ class HarborFlareEntry {
   };
 
   /// How far the flare sits from its [anchor].
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   double get gap => switch (placement) {
     HarborAnchored(:final double gap) => gap,
     HarborAligned() => HarborAnchored.defaultGap,
   };
 
   /// How the flare lines up with its [anchor] across its [side].
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   HarborCrossAlignment get crossAlignment => switch (placement) {
     HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
     HarborAligned() => HarborCrossAlignment.center,
   };
 
   /// How far the flare keeps in from the clear water's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
   EdgeInsets? get margin => placement.margin as EdgeInsets;
 
   /// Where the flare takes its turn: flares at one place are shown one at a time.

@@ -228,7 +228,7 @@ class MooredEntry extends StatefulWidget {
 
 class _MooredEntryState extends State<MooredEntry> {
   _EdgeSet _edges = _EdgeSet.all;
-  HarborClear _clear = HarborClear.everything;
+  bool _bars = true;
   bool _tide = true;
   bool _mooringLine = false;
   double _minimum = 0;
@@ -250,8 +250,8 @@ class _MooredEntryState extends State<MooredEntry> {
         'The box\'s top runs up under the header to the top of the screen: only the left and right edges are kept clear.',
       ),
       TryStep(
-        'Pick edges: all, then clear: coast',
-        'The top sits just under the status bar, behind the header: coast clears the device\'s insets but not the docks.',
+        'Pick edges: all, then switch bars off',
+        'The top sits just under the status bar, behind the header: it clears the device\'s insets but not the docks.',
       ),
       TryStep(
         'Switch mooringLine on',
@@ -277,13 +277,7 @@ class _MooredEntryState extends State<MooredEntry> {
         labelOf: (final _EdgeSet e) => e.label,
         onChanged: (final _EdgeSet e) => setState(() => _edges = e),
       ),
-      ChoiceControl<HarborClear>(
-        label: 'clear',
-        values: HarborClear.values,
-        value: _clear,
-        labelOf: (final HarborClear c) => c.name,
-        onChanged: (final HarborClear c) => setState(() => _clear = c),
-      ),
+      ToggleControl(label: 'bars', value: _bars, onChanged: (final bool v) => setState(() => _bars = v)),
       ToggleControl(label: 'tide', value: _tide, onChanged: (final bool v) => setState(() => _tide = v)),
       ToggleControl(label: 'mooringLine', value: _mooringLine, onChanged: (final bool v) => setState(() => _mooringLine = v)),
       SliderControl(label: 'minimum', value: _minimum, min: 0, max: 48, onChanged: (final double v) => setState(() => _minimum = v)),
@@ -295,7 +289,7 @@ class _MooredEntryState extends State<MooredEntry> {
         '  bottom: [HarborDock.quay(child: Bar())],\n'
         '  body: HarborMoored(\n'
         '    edges: ${_edges.code},\n'
-        '    clear: HarborClear.${_clear.name},\n'
+        '    bars: $_bars,\n'
         '    tide: $_tide,\n'
         '    mooringLine: $_mooringLine,\n'
         '    minimum: EdgeInsetsDirectional.all(${_n(_minimum)}),\n'
@@ -310,7 +304,7 @@ class _MooredEntryState extends State<MooredEntry> {
         label: 'Harbor body (around HarborMoored)',
         child: HarborMoored(
           edges: _edges.edges,
-          clear: _clear,
+          bars: _bars,
           tide: _tide,
           mooringLine: _mooringLine,
           minimum: EdgeInsetsDirectional.all(_minimum),

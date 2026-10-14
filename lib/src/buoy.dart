@@ -202,12 +202,12 @@ class HarborBuoy with Diagnosticable {
     final HarborPlacement? placement,
     @Deprecated(
       'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final AlignmentGeometry? alignment,
     @Deprecated(
       'Use placement: HarborAligned(margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
     this.modal = false,
@@ -238,7 +238,7 @@ class HarborBuoy with Diagnosticable {
   /// across that side, and never past its far edge.
   @Deprecated(
     'Use HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
-    'by default. `dart fix` applies it to a call; a tear-off is yours to change. Deprecated after 0.6.3.',
+    'by default. `dart fix` applies it to a call; a tear-off is yours to change. Deprecated after 0.7.0.',
   )
   const HarborBuoy.anchored({
     this.key,
@@ -248,7 +248,7 @@ class HarborBuoy with Diagnosticable {
     // ignore: tighten_type_of_initializing_formals
     @Deprecated(
       'Use HarborBuoy(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     this._anchor,
     required this.child,
@@ -314,14 +314,14 @@ class HarborBuoy with Diagnosticable {
   final HarborHinge? hinge;
 
   /// Where an aligned buoy sits in the clear water; [Alignment.center] for an anchored one.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   AlignmentGeometry get alignment => switch (placement) {
     HarborAligned(:final AlignmentGeometry alignment) => alignment,
     HarborAnchored() => Alignment.center,
   };
 
   /// How far in from the clear water's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
   EdgeInsetsGeometry get margin => placement.margin;
 
   /// Whether this buoy is modal while it is up (quick actions, a menu): a barrier blocks taps to
@@ -354,42 +354,42 @@ class HarborBuoy with Diagnosticable {
   final String barrierLabel;
 
   /// What an anchored buoy sits by; null for an aligned one.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   HarborAnchor? get anchor => switch (placement) {
     HarborAnchored(:final HarborAnchor? anchor) => anchor,
     HarborAligned() => null,
   };
 
   /// Which side of its anchor an anchored buoy sits on.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   HarborAnchorSide get side => switch (placement) {
     HarborAnchored(:final HarborAnchorSide side) => side,
     HarborAligned() => HarborAnchorSide.above,
   };
 
   /// How far an anchored buoy sits from its anchor.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   double get gap => switch (placement) {
     HarborAnchored(:final double gap) => gap,
     HarborAligned() => 0.0,
   };
 
   /// How far an anchored buoy reaches back over its anchor.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   double get overlap => switch (placement) {
     HarborAnchored(:final double overlap) => overlap,
     HarborAligned() => 0.0,
   };
 
   /// How an anchored buoy lines up with its anchor across its side; centred by default.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   HarborCrossAlignment get crossAlignment => switch (placement) {
     HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
     HarborAligned() => HarborCrossAlignment.center,
   };
 
   /// How far an anchored buoy is moved across its side from where its cross alignment puts it.
-  @Deprecated('Read placement. Deprecated after 0.6.3.')
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
   double get crossOffset => switch (placement) {
     HarborAnchored(:final double crossOffset) => crossOffset,
     HarborAligned() => 0.0,
@@ -949,42 +949,42 @@ class HarborPortalBuoy extends StatefulWidget {
     final HarborAnchored? placement,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final double? gap,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final double? overlap,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final double? crossOffset,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final bool? flips,
     this.onDismiss,
@@ -1058,36 +1058,36 @@ class HarborPortalBuoy extends StatefulWidget {
       );
 
   /// What the buoy sits by. Null anchors it to [child].
-  @Deprecated('Read placement.anchor. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.anchor. Deprecated after 0.7.0.')
   HarborAnchor? get anchor => placement.anchor;
 
   /// Which side of its anchor the buoy sits on before any flip.
-  @Deprecated('Read placement.side. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.side. Deprecated after 0.7.0.')
   HarborAnchorSide get side => placement.side;
 
   /// How far the buoy sits from its anchor.
-  @Deprecated('Read placement.gap. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.gap. Deprecated after 0.7.0.')
   double get gap => placement.gap;
 
   /// How far the buoy reaches back over its anchor.
-  @Deprecated('Read placement.overlap. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.overlap. Deprecated after 0.7.0.')
   double get overlap => placement.overlap;
 
   /// How the buoy lines up with its anchor across its side; centred by default.
-  @Deprecated('Read placement.crossAlignment. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.crossAlignment. Deprecated after 0.7.0.')
   HarborCrossAlignment get crossAlignment => placement.crossAlignment;
 
   /// How far the buoy is moved across its side from where its cross alignment puts it.
-  @Deprecated('Read placement.crossOffset. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.crossOffset. Deprecated after 0.7.0.')
   double get crossOffset => placement.crossOffset;
 
   /// How far in from the clear water's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
   EdgeInsetsGeometry get margin => placement.margin;
 
   /// Whether the buoy goes to the opposite side of its anchor when its side has no room and that
   /// side has.
-  @Deprecated('Read placement.flips. Deprecated after 0.6.3.')
+  @Deprecated('Read placement.flips. Deprecated after 0.7.0.')
   bool get flips => placement.flips ?? true;
 
   /// Called while the buoy is shown when a tap lands outside both the buoy and [child] (a
@@ -1804,7 +1804,7 @@ abstract final class HarborFlares {
     final HarborPlacement? placement,
     @Deprecated(
       'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final AlignmentGeometry? alignment,
     final Duration? duration = const Duration(seconds: 4),
@@ -1815,27 +1815,27 @@ abstract final class HarborFlares {
     final bool liveRegion = true,
     @Deprecated(
       'Use placement: HarborAnchored(anchor). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final double? gap,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
       'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.6.3.',
+      'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
     final bool countsEntrance = false,

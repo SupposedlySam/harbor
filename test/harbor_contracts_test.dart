@@ -1068,7 +1068,7 @@ void main() {
                   height: 40,
                   child: HarborFairway(
                     scrollDirection: Axis.horizontal,
-                    clear: HarborClear.coast,
+                    bars: false,
                     slivers: <Widget>[
                       SliverToBoxAdapter(child: SizedBox(width: 50, child: _AspectReader(HarborWatersAspect.docks))),
                     ],
@@ -1105,7 +1105,7 @@ void main() {
                   height: 100,
                   child: HarborFairway(
                     tide: false,
-                    clear: HarborClear.coast,
+                    bars: false,
                     slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 10))],
                   ),
                 ),
@@ -1138,7 +1138,7 @@ void main() {
               children: <Widget>[
                 const HarborMoored(
                   edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
-                  clear: HarborClear.coast,
+                  bars: false,
                   tide: false,
                   child: SizedBox(height: 10),
                 ),

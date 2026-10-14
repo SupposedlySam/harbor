@@ -379,7 +379,7 @@ class _BoatHero extends StatelessWidget {
         // The title block clears the status bar only, so it sits under the
         // translucent header.
         HarborMoored(
-          clear: HarborClear.coast,
+          bars: false,
           edges: const <HarborEdge>{HarborEdge.top},
           child: Column(
             key: const ValueKey<String>('hero title block'),

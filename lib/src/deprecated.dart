@@ -44,13 +44,13 @@ typedef HarborSignalClosedReason = HarborFlareClosedReason;
 /// The old name of [HarborAnchorSide].
 @Deprecated(
   'Use HarborAnchorSide. Flares and HarborAnchorClip take it too, so it is not a buoy\'s alone. '
-  '`dart fix` applies it. Deprecated after 0.6.3.',
+  '`dart fix` applies it. Deprecated after 0.7.0.',
 )
 typedef HarborBuoySide = HarborAnchorSide;
 
 /// The old name of [HarborCrossAlignment].
 @Deprecated(
   'Use HarborCrossAlignment. Flares take it too, so it is not a buoy\'s alone. '
-  '`dart fix` applies it. Deprecated after 0.6.3.',
+  '`dart fix` applies it. Deprecated after 0.7.0.',
 )
 typedef HarborBuoyCrossAlignment = HarborCrossAlignment;

@@ -1,0 +1,24 @@
+// The `bars:` transforms (lib/fix_data/bars.yaml): this file is written against the deprecated
+// `clear:`, and bars.dart.expect is what `dart fix --apply` makes of it.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void moored(BuildContext context) {
+  // The coast alone becomes bars: false; everything, the default, goes.
+  const HarborMoored(bars: false, child: SizedBox());
+  const HarborMoored(child: SizedBox());
+  const HarborMoored(edges: {HarborEdge.top}, bars: false, tide: false, child: SizedBox());
+  HarborMoored.clearanceOf(context, bars: false);
+  HarborMoored.clearanceOf(context, edges: HarborEdge.vertical);
+}
+
+void fairways(BuildContext context) {
+  const HarborFairway(slivers: <Widget>[], bars: false);
+  const HarborFairway(scrollDirection: Axis.horizontal, slivers: <Widget>[]);
+  HarborFairway.box(tide: false, bars: false, child: const SizedBox());
+  HarborFairway.paddingOf(context, bars: false);
+  HarborFairway.paddingOf(context, axis: Axis.horizontal);
+  const HarborFairwaySliver(sliver: SliverToBoxAdapter(), bars: false);
+  const HarborFairwaySliver(clearLeading: false, sliver: SliverToBoxAdapter());
+}

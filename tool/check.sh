@@ -30,8 +30,10 @@ for dir in "$root" "$root/harbor_test" "$root/example"; do
     "${flutter[@]}" test
   )
   if [[ "$dir" == "$root" ]]; then
-    # The dart fix transforms (lib/fix_data/): generated from tool/fix_data/, and each one checked
-    # against its golden in test_fixes/.
+    # The dart fix transforms (lib/fix_data/), each one checked against its golden in test_fixes/:
+    # `--compare-to-golden` runs every test_fixes/*.dart against its .expect. placement.yaml is
+    # generated from tool/fix_data/, so it is also checked against its generator; signals.yaml and
+    # bars.yaml are hand-written, and their goldens are their only check.
     echo "== dart fix"
     (
       cd "$root"

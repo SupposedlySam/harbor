@@ -155,7 +155,7 @@ void main() {
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
             mooringLine: false,
-            clear: HarborClear.coast,
+            bars: false,
             tide: false,
             revealMargin: 24.0,
             startsInOpenWater: true,
@@ -166,7 +166,7 @@ void main() {
           'scrollDirection: horizontal',
           'shrinkWrap: shrink-wrapping',
           'no mooring line',
-          'clear: coast',
+          'bars not cleared',
           'tide ignored',
           'revealMargin: 24.0',
           'starts in open water',
@@ -180,7 +180,7 @@ void main() {
         _shown(
           const HarborMoored(
             edges: HarborEdge.vertical,
-            clear: HarborClear.coast,
+            bars: false,
             follow: HarborFollow.resting,
             mooringLine: true,
             minimum: EdgeInsetsDirectional.only(bottom: 16.0),
@@ -189,7 +189,7 @@ void main() {
         ),
         <String>[
           'edges: HarborEdge.top, HarborEdge.bottom',
-          'clear: coast',
+          'bars not cleared',
           'follow: resting',
           'mooring line',
           'minimum: EdgeInsets(0.0, 0.0, 0.0, 16.0)',
