@@ -180,8 +180,8 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
       buoys: <HarborBuoy>[
         if (_fogHorn != null)
           const HarborBuoy(
+            placement: HarborAligned(alignment: Alignment.bottomCenter),
             key: ValueKey<String>('fog horn buoy'),
-            alignment: Alignment.bottomCenter,
             child: _FogHorn(key: ValueKey<String>('fog horn')),
           ),
       ],

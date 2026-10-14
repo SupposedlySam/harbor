@@ -52,7 +52,7 @@ void main() {
   testWidgets('sits below its anchor by default, 8 away and centred on it', (final tester) async {
     late BuildContext page;
     await tester.pumpSeaTrial(_app(Harbor(body: _page(anchor: anchor, onContext: (final BuildContext c) => page = c))));
-    HarborFlares.raise(page, anchor: anchor, duration: null, builder: (final BuildContext _) => _toast('toast'));
+    HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('toast'));
     await tester.pumpAndSettle();
     final Rect button = tester.getRect(_button);
     expect(_rect(tester, 'toast').top, button.bottom + 8);
@@ -64,10 +64,7 @@ void main() {
     await tester.pumpSeaTrial(_app(Harbor(body: _page(anchor: anchor, onContext: (final BuildContext c) => page = c))));
     HarborFlares.raise(
       page,
-      anchor: anchor,
-      side: HarborBuoySide.above,
-      gap: 12,
-      crossAlignment: HarborBuoyCrossAlignment.start,
+      placement: HarborAnchored(anchor, side: HarborAnchorSide.above, gap: 12, crossAlignment: HarborCrossAlignment.start),
       duration: null,
       builder: (final BuildContext _) => _toast('toast'),
     );
@@ -83,7 +80,7 @@ void main() {
     await tester.pumpSeaTrial(_app(Harbor(body: _page(anchor: anchor, onContext: (final BuildContext c) => page = c))));
     final HarborFlareEntry entry = HarborFlares.raise(
       page,
-      anchor: anchor,
+      placement: HarborAnchored(anchor),
       duration: null,
       builder: (final BuildContext _) => const Text('Copied'),
     );
@@ -129,10 +126,10 @@ void main() {
           ),
         ),
       );
-      final HarborFlareEntry first = HarborFlares.raise(page, anchor: anchor, duration: null, builder: (final BuildContext _) => _toast('first'));
-      HarborFlares.raise(page, anchor: anchor, duration: null, builder: (final BuildContext _) => _toast('second'));
-      HarborFlares.raise(page, anchor: anchor, side: HarborBuoySide.above, duration: null, builder: (final BuildContext _) => _toast('above'));
-      HarborFlares.raise(page, anchor: other, duration: null, builder: (final BuildContext _) => _toast('other'));
+      final HarborFlareEntry first = HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('first'));
+      HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('second'));
+      HarborFlares.raise(page, placement: HarborAnchored(anchor, side: HarborAnchorSide.above), duration: null, builder: (final BuildContext _) => _toast('above'));
+      HarborFlares.raise(page, placement: HarborAnchored(other), duration: null, builder: (final BuildContext _) => _toast('other'));
       HarborFlares.raise(page, duration: null, builder: (final BuildContext _) => _toast('slot'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('first')), findsOneWidget);
@@ -157,7 +154,7 @@ void main() {
     );
     final HarborFlareEntry entry = HarborFlares.raise(
       page,
-      anchor: anchor,
+      placement: HarborAnchored(anchor),
       duration: const Duration(seconds: 1),
       builder: (final BuildContext _) => _toast('toast'),
     );
@@ -188,7 +185,7 @@ void main() {
       builder: (final BuildContext _) => Material(child: Harbor(body: _page(anchor: anchor, onContext: (final BuildContext c) => page = c))),
     )));
     await tester.pumpAndSettle();
-    final HarborFlareEntry anchored = HarborFlares.raise(page, anchor: anchor, duration: null, builder: (final BuildContext _) => _toast('anchored'));
+    final HarborFlareEntry anchored = HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('anchored'));
     final HarborFlareEntry slotted = HarborFlares.raise(page, duration: null, builder: (final BuildContext _) => _toast('slotted'));
     HarborFlareClosedReason? reason;
     unawaited(anchored.closed.then((final HarborFlareClosedReason r) => reason = r));
@@ -208,7 +205,7 @@ void main() {
     await tester.pumpSeaTrial(_app(Harbor(body: _page(anchor: anchor, onContext: (final BuildContext c) => page = c))));
     unawaited(showHarborDialog<void>(page, builder: (final BuildContext _) => const Harbor(body: SizedBox.expand())));
     await tester.pumpAndSettle();
-    final HarborFlareEntry anchored = HarborFlares.raise(page, anchor: anchor, duration: null, builder: (final BuildContext _) => _toast('anchored'));
+    final HarborFlareEntry anchored = HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('anchored'));
     final HarborFlareEntry slotted = HarborFlares.raise(page, duration: null, builder: (final BuildContext _) => _toast('slotted'));
     await tester.pump();
     expect(anchored.owner, same(Harbor.of(page)));
@@ -221,7 +218,7 @@ void main() {
   testWidgets('without a harbor, sits by its anchor in the nearest overlay', (final tester) async {
     late BuildContext page;
     await tester.pumpSeaTrial(MaterialApp(home: Material(child: _page(anchor: anchor, onContext: (final BuildContext c) => page = c))));
-    final HarborFlareEntry entry = HarborFlares.raise(page, anchor: anchor, duration: null, builder: (final BuildContext _) => _toast('toast'));
+    final HarborFlareEntry entry = HarborFlares.raise(page, placement: HarborAnchored(anchor), duration: null, builder: (final BuildContext _) => _toast('toast'));
     await tester.pumpAndSettle();
     final Rect button = tester.getRect(_button);
     expect(_rect(tester, 'toast').top, button.bottom + 8);

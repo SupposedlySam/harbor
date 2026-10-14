@@ -65,11 +65,9 @@ class _HarborTownState extends State<HarborTown> {
         ],
         buoys: <HarborBuoy>[
           if (_bubble)
-            HarborBuoy.anchored(
+            HarborBuoy(
+              placement: HarborAnchored(_launch, side: HarborAnchorSide.above, gap: 2, overlap: 6),
               key: const ValueKey<String>('tide bonus'),
-              anchor: _launch,
-              gap: 2,
-              overlap: 6,
               child: GestureDetector(
                 onTap: () => setState(() => _bubble = false),
                 child: const _TideBonusBubble(),
@@ -77,10 +75,10 @@ class _HarborTownState extends State<HarborTown> {
             ),
           if (_quickActions)
             HarborBuoy(
+              placement: const HarborAligned(alignment: Alignment.bottomCenter),
               key: const ValueKey<String>('quick actions'),
               modal: true,
               onDismiss: () => setState(() => _quickActions = false),
-              alignment: Alignment.bottomCenter,
               child: _QuickActions(
                 onClose: () => setState(() => _quickActions = false),
                 onShipyard: _openShipyard,

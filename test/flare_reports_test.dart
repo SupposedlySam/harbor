@@ -122,7 +122,7 @@ void main() {
     ));
     HarborFlares.raise(
       inner,
-      anchor: anchor,
+      placement: HarborAnchored(anchor),
       builder: (final c) => const SizedBox(key: ValueKey<String>('flare'), height: 40, width: 120),
       duration: null,
     );
@@ -158,7 +158,7 @@ void main() {
 
     testWidgets('zero reaches the clear water\'s edges, still above the docks', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      HarborFlares.raise(page, slot: HarborFlareSlot.low, margin: EdgeInsets.zero, builder: (final c) => _bar('toast', 40), duration: null);
+      HarborFlares.raise(page, placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero), builder: (final c) => _bar('toast', 40), duration: null);
       await _step(tester);
       expect(_rect(tester, 'toast'), Rect.fromLTRB(0, 874 - 34 - 56 - 40, 402, _rect(tester, 'nav').top));
     });
@@ -176,8 +176,7 @@ void main() {
       ));
       HarborFlares.raise(
         page,
-        slot: HarborFlareSlot.low,
-        margin: const EdgeInsetsDirectional.only(start: 40, bottom: 4),
+        placement: HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: const EdgeInsetsDirectional.only(start: 40, bottom: 4)),
         builder: (final c) => _bar('toast', 40),
         duration: null,
       );

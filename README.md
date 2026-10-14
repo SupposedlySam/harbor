@@ -475,8 +475,8 @@ docks on the next frame; one added by hand with `addPontoon` returns a
 ```dart
 Harbor(
   buoys: [
-    HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: fab),
-    HarborBuoy.anchored(anchor: launchAnchor, side: HarborBuoySide.above, overlap: 6, child: bubble),
+    HarborBuoy(placement: const HarborAligned(alignment: AlignmentDirectional.bottomEnd), child: fab),
+    HarborBuoy(placement: HarborAnchored(launchAnchor, side: HarborAnchorSide.above, overlap: 6), child: bubble),
     HarborBuoy(modal: true, onDismiss: closeQuickActions, child: quickActions), // a barrier over the page
   ],
   bottom: [HarborDock.quay(child: InboxTabs(launch: HarborAnchorPoint(anchor: launchAnchor, child: launchButton)))],
@@ -484,8 +484,8 @@ Harbor(
 )
 
 HarborFlares.raise(context, slot: HarborFlareSlot.low, builder: (_) => Toast('Saved'));
-HarborFlares.raise(context, alignment: const Alignment(0, -0.8), builder: (_) => Toast('Saved'));
-HarborFlares.raise(context, anchor: copyAnchor, side: HarborBuoySide.above, builder: (_) => Toast('Copied'));
+HarborFlares.raise(context, placement: const HarborAligned(alignment: Alignment(0, -0.8)), builder: (_) => Toast('Saved'));
+HarborFlares.raise(context, placement: HarborAnchored(copyAnchor, side: HarborAnchorSide.above), builder: (_) => Toast('Copied'));
 final undo = HarborFlares.raise(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
 final HarborFlareClosedReason why = await undo.closed;    // lower, dismiss, timeout or remove
 HarborFlares.raise(
@@ -499,21 +499,34 @@ HarborFlares.raise(
 ```
 
 Buoys float in the **clear water**: the rectangle no coast, dock or tide covers.
+Where in it is the buoy's `placement`, a `HarborPlacement`, which flares and portal
+buoys take too, so a placement means the same everywhere:
+
+- `HarborAligned(alignment:, margin:)` puts it at a point of the clear water,
+  `margin` in from its edges: bottom centre and 16 by default.
+- `HarborAnchored(anchor, side:, gap:, overlap:, crossAlignment:, crossOffset:, flips:, margin:)`
+  puts it by an anchor: `below` it, 8 away, centred on it and 8 in from the water's
+  edges by default. `overlap` reaches back over the anchor, as a speech bubble's
+  tail sits over its button.
+
 An anchored buoy sits on its `side` of its anchor; `start` and `end` are in
 reading order, as in `AlignmentDirectional`, so `start` is on the right under
-right-to-left. (`before` and `after`, their names through 0.2.0, still work and are
-deprecated.) Across that side it is centred on its anchor unless its
+right-to-left. Across that side it is centred on its anchor unless its
 `crossAlignment` says `start` or `end`, the anchor's edges in reading order (or
 its top and bottom beside it), as a dropdown lines up under its button's leading
-edge; `crossOffset` moves it on from there, toward the reading end. While its
+edge; `crossOffset` moves it on from there, toward the reading end. A buoy and a
+flare keep their side; a portal buoy flips to the other when its side has no room,
+unless its placement says `flips: false`. While its
 anchor is not in the tree, an anchored buoy is not shown, takes no taps and is
 not read out by screen readers. It is placed again in every frame that is drawn,
 so it moves with its anchor in the same frame, a row scrolling under an open
 menu included. A `HarborAnchor` refers to one `HarborAnchorPoint`, so give each
 row of a list its own; in debug builds two points left on one anchor are
 reported after the frame, as two leaders on one `LayerLink` are.
-`alignment` and `margin` take directional values, so `AlignmentDirectional.bottomEnd`
-puts a button where a right-to-left reader expects it.
+A placement's `alignment` and `margin` take directional values, so
+`AlignmentDirectional.bottomEnd` puts a button where a right-to-left reader expects it.
+On a dual-screen device a buoy keeps to one screen and keeps its margin off the
+hinge, as it does off the water's edges.
 A `modal` buoy is modal: a barrier (clear unless you give it a `barrierColor`)
 keeps taps off the page and its docks and tells screen readers to leave them
 alone, a tap beside the buoy, back or Escape calls its `onDismiss`, and the buoys
@@ -526,8 +539,8 @@ goes back to where it was when it closes. `requestFocus: false` leaves focus on
 the page, as it does for a route; Escape from there still closes the buoy, unless
 focus is on a page of a `Navigator` nested in the harbor's body, whose route
 answers Escape before the harbor does.
-A flare is raised at a slot (`top`, `high`, `middle`, `low`) or at an exact
-`alignment`, placed as a buoy at that alignment would be. An
+A flare is raised at a slot (`top`, `high`, `middle`, `low`) or by a `placement`:
+at an exact point (`HarborAligned`), placed as a buoy there would be. An
 `AlignmentDirectional` follows the reading direction of the page that raised it.
 It fades and scales in over `animationStyle` (220 ms each way by default).
 A `transitionBuilder` brings your own entrance and exit, run on harbor's
@@ -539,11 +552,10 @@ flare clears that sheet's footer, and it also stays clear of the docks of the
 harbor it was raised from (a tab's own header). If its harbor leaves, the
 flare moves to the one now on top.
 
-A flare raised with an `anchor` sits by a `HarborAnchorPoint` instead, as an
-anchored buoy does: on its `side` (`below` by default), `gap` away (8), lined up
-by its `crossAlignment` (centred), and kept in the clear water: "Copied" by the
-button that copied. Give it the anchor alone, without a slot or an alignment,
-and raise it from the page that holds the anchor: it is shown by that page's
+A flare raised with a `HarborAnchored` placement sits by a `HarborAnchorPoint`
+instead, as an anchored buoy does: on its `side` (`below` by default), `gap` away
+(8), lined up by its `crossAlignment` (centred), and kept in the clear water:
+"Copied" by the button that copied. Raise it from the page that holds the anchor: it is shown by that page's
 port, not the one on top. Flares at one anchor and side take turns. While the
 anchor is out of the tree the flare is not shown, takes no taps and is not read
 out, and its time stops. If its page is popped, it does not move to the port now
@@ -584,9 +596,10 @@ the user comes back; a hold still stops it. A flare with neither a slot nor an a
 `HarborFlareSlot.high`, and `target: HarborFlareTarget.sea` sends it to the
 outermost harbor, clear of the coast alone.
 
-A flare keeps 16 in from the clear water's edges (8 by an anchor). `margin:`
-sets that, and `EdgeInsets.zero` gives a bar the width of the screen, a fixed
-`SnackBar`'s look, still above the docks and off the coast. `reachesCoast: true`
+A flare keeps 16 in from the clear water's edges (8 by an anchor). Its placement's
+`margin` sets that, and `HarborAligned(alignment: HarborFlareSlot.low.alignment, margin: EdgeInsets.zero)`
+gives a bar the width of the screen, a fixed `SnackBar`'s look, still above the docks
+and off the coast. `reachesCoast: true`, for a flare at a slot or an alignment,
 lets it run over the coast on the edges it is against (under the home
 indicator at the bottom, the status bar at the top, the side insets always),
 still off the docks and the keyboard, and hands its content the coast it covers
@@ -611,13 +624,23 @@ Flares were called signals through 0.3.0 (renamed in 0.3.1). The old names (`Har
 `HarborSignalSlot`, `HarborSignalEntry` and the rest) still work and are
 deprecated; they go at 1.0.
 
+Through 0.6, buoys, portal buoys and flares took their placement as loose parameters
+(`HarborBuoy(alignment:, margin:)`, `HarborBuoy.anchored(anchor:, side:, gap:, ...)`,
+`HarborPortalBuoy(side:, ...)`, `HarborFlares.raise(alignment:, anchor:, ...)`), and the
+sides and cross alignments were `HarborBuoySide` and `HarborBuoyCrossAlignment`. Those
+still work, deprecated, with the defaults they had, and go at 1.0; `dart fix --apply`
+rewrites them to placements.
+
 ```dart
 final menu = OverlayPortalController();
 
 HarborPortalBuoy(                       // in a list row, anywhere below a harbor
   controller: menu,
-  side: HarborBuoySide.below,
-  crossAlignment: HarborBuoyCrossAlignment.start, // under the row's leading edge
+  placement: const HarborAnchored(        // by its child: no anchor of its own
+    null,
+    side: HarborAnchorSide.below,
+    crossAlignment: HarborCrossAlignment.start, // under the row's leading edge
+  ),
   onDismiss: menu.hide,                   // a tap outside, Escape or back
   consumeOutsideTaps: true,               // and that tap presses nothing else
   buoyBuilder: (context) => const RowMenu(),
@@ -629,9 +652,11 @@ A **portal buoy** is an anchored buoy opened from where it is used rather than
 listed in `Harbor.buoys`: a menu from a list row, a popover from a button in
 another package. It is an `OverlayPortal`, so its buoy builds with the row's
 themes and floats in the nearest `Overlay`, placed in the clear water of the
-harbor around the row by its `child` (or by an `anchor`). Until that anchor is
-in the tree, it is not shown, takes no taps and is not read out. When its `side` has
-no room, it `flips` to the other side of the anchor, so a menu from a row just
+harbor around the row by its `placement`, anchored to its `child` when the placement
+has no anchor. Until that anchor is in the tree, it is not shown, takes no taps and is
+not read out. Given no placement it sits above its child, as it did before
+placements; `HarborAnchored`'s own side is below. When its `side` has
+no room, it flips to the other side of the anchor (unless `flips: false`), so a menu from a row just
 above the tab bar or the keyboard opens above the row; when neither side has
 room, it is held inside the clear water. `HarborPortalBuoy.sideOf(context)` in
 the buoy is the side it landed on, so a popover can point its arrow at the

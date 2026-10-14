@@ -36,12 +36,12 @@ class _PageState extends State<_Page> {
     buoys: <HarborBuoy>[
       if (menu)
         HarborBuoy(
+          placement: const HarborAligned(alignment: Alignment.center),
           modal: true,
           onDismiss: () => setState(() {
             menu = false;
             dismissed++;
           }),
-          alignment: Alignment.center,
           child: const SizedBox(key: ValueKey<String>('menu'), width: 160, height: 120, child: Text('menu')),
         ),
     ],
@@ -95,13 +95,13 @@ class _FocusPageState extends State<_FocusPage> {
     buoys: <HarborBuoy>[
       if (menu)
         HarborBuoy(
+          placement: const HarborAligned(alignment: Alignment.center),
           modal: true,
           onDismiss: () => setState(() {
             menu = false;
             dismissed++;
           }),
           requestFocus: widget.requestFocus,
-          alignment: Alignment.center,
           child: Column(
             key: const ValueKey<String>('menu'),
             mainAxisSize: MainAxisSize.min,
@@ -193,9 +193,9 @@ class _SpeedDialPageState extends State<_SpeedDialPage> {
     buoys: <HarborBuoy>[
       if (menu)
         HarborBuoy(
+          placement: const HarborAligned(alignment: Alignment.topCenter),
           modal: true,
           onDismiss: () => setState(() => menu = false),
-          alignment: Alignment.topCenter,
           child: const Text('menu'),
         ),
       HarborBuoy(
