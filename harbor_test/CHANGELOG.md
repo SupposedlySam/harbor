@@ -1,3 +1,14 @@
+## 0.4.0
+
+Needs harbor 0.9.0, which renamed its API (#120); harbor_test's names follow it. Sea trials are trials.
+
+* `HarborSeaTrials` is `HarborTrials`, and `tester.pumpSeaTrial(tideIn:)` is `tester.pumpHarborTrial(keyboardShown:)`.
+* `HarborSeaTrial` is `HarborTrial`: `raiseTide` and `lowerTide` are `showKeyboard` and `hideKeyboard`, `setTide(tideIn:)` is `setKeyboard(shown:)`, `tideIn` is `keyboardShown`, `waterline` is `keyboardTop`, `clearWaterAround` is `roomAround`, and `docksAround` is `barsAround`.
+* `isInClearWater` is `isInRoom`.
+* `HarborTrialDevice(coast:, tideHeight:, reportsCoastUnderTide:)` is `HarborTrialDevice(systemEdges:, keyboardHeight:, reportsSystemEdgesUnderKeyboard:)`, in `copyWith` too, and `coastWhen(tideIn:)` is `systemEdgesWhen(keyboardShown:)`.
+* Every 0.3 name still works, deprecated, until 1.0. `HarborSeaTrials` stays an extension of its own, holding only `pumpSeaTrial`, since an extension cannot be aliased.
+* **Migrating:** `dart fix --apply` (harbor_test ships its own fix data), then `dart format`. It rewrites `tester.pumpSeaTrial(...)` and `HarborSeaTrials(tester).pumpSeaTrial(...)` alike.
+
 ## 0.3.1
 
 Needs harbor 0.8.0. Nothing in harbor_test changes.
