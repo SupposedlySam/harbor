@@ -105,7 +105,6 @@ void flares(BuildContext context, HarborAnchor anchor) {
     gap: 2,
     crossAlignment: HarborBuoyCrossAlignment.end,
     margin: EdgeInsets.zero,
-    duration: null,
     builder: (_) => const SizedBox(),
   );
 }
