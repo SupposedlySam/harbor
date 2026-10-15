@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'dock.dart';
+import 'bar.dart';
 import 'edge.dart';
-import 'wake.dart';
+import 'edge_effect.dart';
 
 /// Builds one bar in its frame: its system edge padding, backdrop, frosting,
 /// hairline, and its dark and withdraw animations.

@@ -3,7 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
-import 'waters.dart';
+import 'room.dart';
 
 /// Where content comes to rest under a bar with a fade.
 enum HarborRest {

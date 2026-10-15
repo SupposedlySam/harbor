@@ -6,20 +6,20 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'bar.dart';
 import 'barrier.dart';
 import 'barrier_label.dart';
+import 'clear.dart';
 import 'controller.dart';
 import 'defaults.dart';
-import 'dock.dart';
 import 'edge.dart';
-import 'harbor.dart';
+import 'edge_effect.dart';
+import 'frame.dart';
 import 'hinge.dart';
-import 'moored.dart';
-import 'render_harbor.dart';
-import 'tide.dart';
-import 'wake.dart';
-import 'waters.dart';
+import 'keyboard.dart';
 import 'renamed.dart';
+import 'render_frame.dart';
+import 'room.dart';
 
 /// A sheet's heights, for a draggable sheet: fractions of the space above the keyboard.
 @immutable

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import 'tide.dart';
-import 'wake.dart';
+import 'edge_effect.dart';
+import 'keyboard.dart';
 
 /// How a bar meets the body of its frame.
 enum HarborBarKind {

@@ -6,8 +6,8 @@ import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
 import 'edge.dart';
-import 'tide.dart';
-import 'waters.dart';
+import 'keyboard.dart';
+import 'room.dart';
 
 /// Reports how much of its child the bars and system edges on [edge] of the frame it is in cover:
 /// 0 in the room, 1 entirely under them, called with each change. The hero title that hands off to

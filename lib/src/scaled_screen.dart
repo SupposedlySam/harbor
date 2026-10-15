@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import 'coast.dart';
+import 'system_edges.dart';
 
 /// A scaled screen: lays [child] out on a fixed reference screen (a TV's
 /// 1200×675, say) and scales it to fit the real one, letterboxed.

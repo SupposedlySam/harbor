@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFloat, HarborToasts, HarborPopover;
+import 'float.dart' show HarborAnchor, HarborAnchorClip, HarborFloat, HarborToasts, HarborPopover;
 import 'hinge.dart';
 
 /// Which side of its anchor an anchored float or toast sits on. [start] and [end] are in reading

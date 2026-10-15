@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFlareScope, HarborToastSlot;
-import 'placement.dart';
-import 'dock.dart';
+import 'bar.dart';
 import 'edge.dart';
+import 'float.dart' show HarborAnchor, HarborAnchorClip, HarborFlareScope, HarborToastSlot;
 import 'hinge.dart';
-import 'tide.dart';
+import 'keyboard.dart';
+import 'placement.dart';
 
 /// How a bar hides when content asks it to: the old spelling of the two hidden [HarborBarState]s.
 @Deprecated(

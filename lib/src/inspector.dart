@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'bar.dart';
 import 'controller.dart';
-import 'dock.dart';
 import 'edge.dart';
-import 'tide.dart';
+import 'keyboard.dart';
 
 /// One frame in the inspector, in global coordinates.
 @immutable

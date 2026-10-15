@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
 import 'edge.dart';
-import 'waters.dart';
+import 'room.dart';
 
 /// Keeps [child] in sight at the top of the room while the item it is
 /// in scrolls under the bars: a pill that rides with its card and then sticks

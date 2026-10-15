@@ -6,20 +6,20 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart';
-import 'chart.dart';
-import 'coast.dart';
+import 'bar.dart';
 import 'controller.dart';
 import 'defaults.dart';
-import 'dock.dart';
-import 'hinge.dart';
 import 'dock_slot.dart';
 import 'edge.dart';
-import 'render_harbor.dart';
+import 'edge_effect.dart';
+import 'float.dart';
+import 'hinge.dart';
+import 'inspector.dart';
+import 'keyboard.dart';
+import 'render_frame.dart';
+import 'room.dart';
 import 'sheet.dart';
-import 'tide.dart';
-import 'wake.dart';
-import 'waters.dart';
+import 'system_edges.dart';
 
 /// A frame: a layer whose edges bars are built against, with the body in the
 /// middle and floats over whatever room nothing covers.

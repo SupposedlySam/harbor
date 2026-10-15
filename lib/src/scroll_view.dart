@@ -5,11 +5,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'clear.dart';
 import 'edge.dart';
-import 'moored.dart';
-import 'wake.dart';
-import 'waters.dart';
+import 'edge_effect.dart';
 import 'renamed.dart';
+import 'room.dart';
 
 /// What a scroll view's end on [edge] keeps clear of: everything in the way there, or without
 /// [clearsBars] the system edges alone; and at the bottom, while [clearsKeyboard], the keyboard.

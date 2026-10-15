@@ -4,10 +4,10 @@ import 'package:flutter/widgets.dart';
 
 import 'barrier.dart';
 import 'barrier_label.dart';
+import 'clear.dart';
 import 'controller.dart';
 import 'defaults.dart';
 import 'hinge.dart';
-import 'moored.dart';
 import 'renamed.dart';
 
 /// Opens [builder]'s dialog over [context].

@@ -5,13 +5,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'bar.dart';
 import 'controller.dart';
-import 'dock.dart';
 import 'dock_slot.dart';
 import 'edge.dart';
-import 'tide.dart';
-import 'wake.dart';
-import 'waters.dart';
+import 'edge_effect.dart';
+import 'keyboard.dart';
+import 'room.dart';
 
 /// How a frame sizes itself: it [fill]s the space it is given, as a page does, or it [HarborSizing.hug]s
 /// its body, as a content-sized sheet does.
