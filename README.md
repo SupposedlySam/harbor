@@ -739,6 +739,7 @@ showHarborSheet(context, builder: (_) => HarborSheet.draggable(
 ));
 showHarborSheet(context, coversPage: true, barrier: HarborBarrier.none, builder: ...);
 showHarborDialog(context, inheritRoom: true, builder: ...);
+showHarborDialog(context, clearsSystemEdges: false, builder: ...);
 ```
 
 A sheet starts a page of its own. It takes the themes and text style of the page that
@@ -746,6 +747,13 @@ opened it, and stops short of the status bar. Its header is an overlay bar with 
 (on a draggable sheet, dragging the header drags the sheet), and its footer is a solid bar that
 rides the keyboard and keeps 16 off the edge. It keeps the home
 indicator in its system edges, so its footer clears it exactly once.
+
+A dialog keeps clear of the system edges, as `showDialog`'s does with `useSafeArea`: a
+tall Material `Dialog` stops short of the status bar and the home indicator as it does
+the keyboard. They are marked handled, so a `HarborClear` inside does not clear them
+again. With `inheritRoom: true` the opener's bars are among them, and the dialog keeps
+between its header and its composer. `clearsSystemEdges: false` runs the dialog under
+them and hands them to it in `MediaQuery.padding`, as every dialog did through 0.9.
 
 `header:` and `footer:` take a widget and put it in those bars,
 `HarborSheet.defaultHeaderBar` and `HarborSheet.defaultFooterBar`. To choose anything

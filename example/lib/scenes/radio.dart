@@ -282,6 +282,9 @@ class _ChannelPageState extends State<ChannelPage> {
     final _CallAction? action = await showHarborDialog<_CallAction>(
       callContext,
       inheritRoom: true,
+      // The card is placed by the call's global position, against the whole screen and the room
+      // handed to it in MediaQuery.padding, so the dialog leaves that room to it.
+      clearsSystemEdges: false,
       builder: (final BuildContext context) => _CallActionsDialog(logged: logged, near: near),
     );
     if (!mounted || action == null) {
