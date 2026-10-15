@@ -69,7 +69,10 @@ class HarborFrame extends StatefulWidget {
     this.margin,
     this.minimum = EdgeInsetsDirectional.zero,
     this.sizing = HarborSizing.fill,
-    @Deprecated('Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborSizing added after `dart fix`, or the import widened.',
+    )
     this._maxExtentFraction,
     final HarborEdgeEffectPainter? edgeEffectPainter,
     @Deprecated('Renamed edgeEffectPainter. `dart fix` applies it.') final HarborEdgeEffectPainter? wakePainter,
@@ -77,15 +80,20 @@ class HarborFrame extends StatefulWidget {
     this.defaults,
     @Deprecated(
       'Use defaults: HarborDefaults(hinge: ...). `dart fix` applies it where defaults: is not given. '
-      'Deprecated after 0.9.1.',
+      'Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborDefaults added after `dart fix`, or the import widened.',
     )
     this._hinge,
     @Deprecated(
       'Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given. '
-      'Deprecated after 0.9.1.',
+      'Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborDefaults added after `dart fix`, or the import widened.',
     )
     final HarborHinge? barHinge,
-    @Deprecated('Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given.')
+    @Deprecated(
+      'Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given.'
+      ' A file that imports harbor with `show` needs HarborDefaults added after `dart fix`, or the import widened.',
+    )
     final HarborHinge? dockHinge,
   }) : assert(
          buoys == null || identical(floats, const <HarborFloat>[]) || identical(buoys, floats),
@@ -130,19 +138,24 @@ class HarborFrame extends StatefulWidget {
     this.margin,
     this.minimum = EdgeInsetsDirectional.zero,
     this.sizing = HarborSizing.fill,
-    @Deprecated('Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborSizing added after `dart fix`, or the import widened.',
+    )
     this._maxExtentFraction,
     this.edgeEffectPainter,
     this.debugLabel,
     this.defaults,
     @Deprecated(
       'Use defaults: HarborDefaults(hinge: ...). `dart fix` applies it where defaults: is not given. '
-      'Deprecated after 0.9.1.',
+      'Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborDefaults added after `dart fix`, or the import widened.',
     )
     this._hinge,
     @Deprecated(
       'Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given. '
-      'Deprecated after 0.9.1.',
+      'Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborDefaults added after `dart fix`, or the import widened.',
     )
     this._barHinge,
   }) : isPage = true,
@@ -280,7 +293,10 @@ class HarborFrame extends StatefulWidget {
   /// For a frame that hugs: the most of the space above the keyboard it may take. [sizing]'s
   /// `maxFraction`, or the deprecated `maxExtentFraction:` when [sizing] gives none. A frame that
   /// fills never reads it.
-  @Deprecated('Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborSizing added after `dart fix`, or the import widened.',
+  )
   double? get maxExtentFraction => sizing.maxFraction ?? _maxExtentFraction;
   final double? _maxExtentFraction;
 
@@ -841,7 +857,8 @@ class HarborRoot extends StatelessWidget {
     this.defaults,
     @Deprecated(
       'Use defaults: HarborDefaults(hinge: ...). `dart fix` applies it where defaults: is not given. '
-      'Deprecated after 0.9.1.',
+      'Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborDefaults added after `dart fix`, or the import widened.',
     )
     this._hinge = HarborHinge.avoidSeparating,
     required this.child,

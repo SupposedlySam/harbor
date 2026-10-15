@@ -32,7 +32,10 @@ class HarborHideBar extends StatefulWidget {
     super.key,
     required this.edge,
     final HarborBarState state = HarborBarState.withdrawn,
-    @Deprecated('Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBarState added after `dart fix`, or the import widened.',
+    )
     final HarborYield? mode,
     this.active = true,
     required this.child,

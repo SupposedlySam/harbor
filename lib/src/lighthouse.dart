@@ -169,21 +169,34 @@ class HarborLift extends StatelessWidget {
 @Deprecated(
   'Split into three widgets, one per job: HarborCoverageListener(onCoverage:) for onObscured, '
   'HarborKeepVisible for keepInSight, and HarborLift for lift. `dart fix` applies it to a call that does one job. '
-  'Deprecated after 0.9.1.',
+  'Deprecated after 0.9.1.'
+  ' A file that imports harbor with `show` needs HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import widened.',
 )
 class HarborKeepInSight extends StatelessWidget {
   @Deprecated(
     'Split into HarborCoverageListener, HarborKeepVisible and HarborLift. `dart fix` applies it to a call that does '
-    'one job. Deprecated after 0.9.1.',
+    'one job. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import widened.',
   )
   const HarborKeepInSight({
     super.key,
     this.edge = HarborEdge.top,
-    @Deprecated('Use HarborCoverageListener(onCoverage:). `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use HarborCoverageListener(onCoverage:). `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborCoverageListener added after `dart fix`, or the import widened.',
+    )
     this.onObscured,
-    @Deprecated('Use HarborKeepVisible. `dart fix` applies it. Deprecated after 0.9.1.') this.keepInSight = false,
+    @Deprecated(
+      'Use HarborKeepVisible. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the import widened.',
+    )
+    this.keepInSight = false,
     this.onlyWhileFocused = false,
-    @Deprecated('Use HarborLift. `dart fix` applies it. Deprecated after 0.9.1.') this.lift = false,
+    @Deprecated(
+      'Use HarborLift. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborLift added after `dart fix`, or the import widened.',
+    )
+    this.lift = false,
     this.clearance = 0.0,
     this.holdPosition = false,
     required this.child,
@@ -212,7 +225,10 @@ class HarborKeepInSight extends StatelessWidget {
   final Widget child;
 
   /// The old place of [HarborKeepVisible.reveal].
-  @Deprecated('Moved to HarborKeepVisible.reveal. `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Moved to HarborKeepVisible.reveal. `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the import widened.',
+  )
   static void reveal(
     final BuildContext context, {
     final double clearance = 0.0,
@@ -221,7 +237,10 @@ class HarborKeepInSight extends StatelessWidget {
   }) => HarborKeepVisible.reveal(context, clearance: clearance, duration: duration, curve: curve);
 
   /// The old place of [HarborKeepVisible.coverageOf].
-  @Deprecated('Moved to HarborKeepVisible.coverageOf. `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Moved to HarborKeepVisible.coverageOf. `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the import widened.',
+  )
   static double coverageOf(final RenderBox box, final HarborController frame, final HarborEdge edge) =>
       HarborKeepVisible.coverageOf(box, frame, edge);
 

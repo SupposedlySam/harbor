@@ -128,7 +128,8 @@ class HarborSheet extends StatelessWidget {
     this.surface,
     @Deprecated(
       'Give headerBar: HarborSheet.defaultHeaderBar(header) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it, but not where the header can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the header can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final HarborEdgeEffect? headerEdgeEffect,
     @Deprecated(
@@ -137,7 +138,8 @@ class HarborSheet extends StatelessWidget {
     final HarborEdgeEffect? headerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final HarborEdgeEffect? footerEdgeEffect,
     @Deprecated(
@@ -146,12 +148,14 @@ class HarborSheet extends StatelessWidget {
     final HarborEdgeEffect? footerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its minimum. '
-      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final double? footerMinimum,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its keyboard. '
-      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final HarborKeyboardStance? footerKeyboard,
     @Deprecated(
@@ -238,7 +242,8 @@ class HarborSheet extends StatelessWidget {
     this.surface,
     @Deprecated(
       'Give headerBar: HarborSheet.defaultHeaderBar(header) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it, but not where the header can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the header can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final HarborEdgeEffect? headerEdgeEffect,
     @Deprecated(
@@ -247,7 +252,8 @@ class HarborSheet extends StatelessWidget {
     final HarborEdgeEffect? headerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final HarborEdgeEffect? footerEdgeEffect,
     @Deprecated(
@@ -256,12 +262,14 @@ class HarborSheet extends StatelessWidget {
     final HarborEdgeEffect? footerWake,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its minimum. '
-      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final double? footerMinimum,
     @Deprecated(
       'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its keyboard. '
-      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.',
+      '`dart fix` applies it, but not where the footer can be null. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the import widened.',
     )
     final HarborKeyboardStance? footerKeyboard,
     @Deprecated(
@@ -1021,9 +1029,15 @@ Future<T?> showHarborSheet<T>(
   final bool coversPage = false,
   @Deprecated('Renamed coversPage. `dart fix` applies it.') final bool? breakwater,
   final HarborBarrier barrier = const HarborBarrier.dimmed(),
-  @Deprecated('Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+  )
   final bool? isDismissible,
-  @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+  )
   final Color? barrierColor,
   final double? maxWidth,
   final bool useRootNavigator = false,
@@ -1032,12 +1046,18 @@ Future<T?> showHarborSheet<T>(
   final bool reachesTop = false,
   @Deprecated('Renamed reachesTop. `dart fix` applies it.') final bool? keepsTopCoast,
   final RouteSettings? routeSettings,
-  @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+  )
   final String? barrierLabel,
   final AnimationStyle? sheetAnimationStyle,
   final HarborSheetController? controller,
   final AnimationController? transitionAnimationController,
-  @Deprecated('Use barrier: HarborBarrier.dimmed(onTapHint: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Use barrier: HarborBarrier.dimmed(onTapHint: ...). `dart fix` applies it. Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+  )
   final String? barrierOnTapHint,
   final String? semanticLabel,
   final HarborHinge? hinge,
