@@ -461,14 +461,28 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
 
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
     final EdgeInsetsDirectional steadyPadding = HarborEdges.directional(ambient.viewPadding, direction);
-    // The edges where the padding is more than the outer room's system edges and bars could make
-    // it: an overlay above the outer frame put its own back, as Flutter does for an OverlayPortal's
-    // child. The outer bars do not reach there, so the padding is all system edge.
+    // The edges an overlay put the root's padding back on. Flutter gives an OverlayPortal's child
+    // the MediaQuery padding of the overlay it paints in, while the outer room still comes from
+    // where the portal is declared: under a frame whose bar took the home indicator, a root-overlay
+    // child reads a bottom padding of 34 beside an outer room with no bottom system edge. The
+    // signal takes both: the padding is exactly the root's (what the root hands its body, and so
+    // the root overlay's), and neither the outer room's system edge nor its bars reach that far.
+    // There the padding is all system edge. Padding the app raises with its own MediaQuery is not
+    // the root's, and is split by the outer room as always. Padding that is the root's because
+    // something covers the root too (a sheet that covers the page) is in the outer room's bars, so
+    // it stays a bar.
+    final EdgeInsetsDirectional? rootPadding = switch (widget._isSea ? null : _HarborRootPadding.maybeOf(context)) {
+      final EdgeInsets root => HarborEdges.directional(root, direction),
+      null => null,
+    };
     final Set<HarborEdge> rebased = <HarborEdge>{
-      if (outer != null && widget.systemEdges == null)
+      if ((outer, rootPadding) case (
+        final HarborRoomData outer,
+        final EdgeInsetsDirectional root,
+      ) when widget.systemEdges == null)
         for (final HarborEdge e in HarborEdge.values)
-          if (HarborEdges.of(padding, e) >
-              math.max(HarborEdges.of(outer.systemEdges, e), HarborEdges.of(outer.bars, e)))
+          if (HarborEdges.of(padding, e) == HarborEdges.of(root, e) &&
+              math.max(HarborEdges.of(outer.systemEdges, e), HarborEdges.of(outer.bars, e)) < HarborEdges.of(root, e))
             e,
     };
     EdgeInsetsDirectional unlessRebased(final EdgeInsetsDirectional value, final EdgeInsetsDirectional ambient) =>
@@ -543,16 +557,19 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
                 viewPadding: payload.viewPadding,
                 viewInsets: bodyBase.viewInsets.copyWith(bottom: payload.viewInsetsBottom),
               ),
-              child: HarborRoom(
-                data: payload.waters.copyWith(
-                  fadeBandsPainted: <HarborEdge>{
-                    if (widget.edgeEffectPainter != null) ...payload.ownWakes.keys,
-                    if (outer != null)
-                      for (final HarborEdge e in outer.fadeBandsPainted)
-                        if (payload.waters.fadeBands.containsKey(e) && !payload.ownWakes.containsKey(e)) e,
-                  },
+              child: _HarborRootPadding.wrap(
+                widget._isSea ? payload.padding : null,
+                HarborRoom(
+                  data: payload.waters.copyWith(
+                    fadeBandsPainted: <HarborEdge>{
+                      if (widget.edgeEffectPainter != null) ...payload.ownWakes.keys,
+                      if (outer != null)
+                        for (final HarborEdge e in outer.fadeBandsPainted)
+                          if (payload.waters.fadeBands.containsKey(e) && !payload.ownWakes.containsKey(e)) e,
+                    },
+                  ),
+                  child: widget.edgeEffectPainter?.call(context, payload.ownWakes, widget.body) ?? widget.body,
                 ),
-                child: widget.edgeEffectPainter?.call(context, payload.ownWakes, widget.body) ?? widget.body,
               ),
             );
           },
@@ -813,4 +830,21 @@ class HarborRoot extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The padding the root hands its body, which is the root overlay's: a frame in an
+/// `OverlayPortal`'s child compares its padding with it to see an overlay put the root's back.
+class _HarborRootPadding extends InheritedWidget {
+  const _HarborRootPadding({required this.padding, required super.child});
+
+  final EdgeInsets padding;
+
+  static Widget wrap(final EdgeInsets? padding, final Widget child) =>
+      padding == null ? child : _HarborRootPadding(padding: padding, child: child);
+
+  static EdgeInsets? maybeOf(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_HarborRootPadding>()?.padding;
+
+  @override
+  bool updateShouldNotify(final _HarborRootPadding oldWidget) => padding != oldWidget.padding;
 }

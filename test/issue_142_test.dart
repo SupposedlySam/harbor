@@ -156,4 +156,75 @@ void main() {
     expect(room.bars.top, 0.0);
     expect(room.systemEdges.bottom, 0.0, reason: "the host's bar holds the home indicator");
   });
+
+  // The owner's review of the first fix, which read any padding above the outer room as an
+  // overlay's: padding the app raises with its own MediaQuery is not an overlay's, and must be
+  // split as it always was. Each expectation is what main gave before #142.
+  group("padding the app raises above a nested frame is not the root's", () {
+    /// A page with a 50 overlay header and a 56 solid bottom bar, the app's MediaQuery raising the
+    /// padding to [top] or [bottom], and below it [depth] frames (the innermost a page when [page]).
+    Future<BuildContext> raised(
+      final WidgetTester tester, {
+      final double? top,
+      final double? bottom,
+      final bool page = false,
+      final int depth = 1,
+    }) async {
+      late BuildContext body;
+      Widget nested = Builder(
+        builder: (final BuildContext context) {
+          body = context;
+          return const HarborClear(child: _box);
+        },
+      );
+      for (int i = 0; i < depth; i++) {
+        nested = page && i == 0 ? HarborFrame.page(body: nested) : HarborFrame(body: nested);
+      }
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: HarborFrame(
+            top: const <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50))],
+            bottom: const <HarborBar>[HarborBar.solid(child: SizedBox(height: 56))],
+            body: Builder(
+              builder: (final BuildContext context) {
+                final MediaQueryData data = MediaQuery.of(context);
+                return MediaQuery(
+                  data: data.copyWith(
+                    padding: data.padding.copyWith(top: top, bottom: bottom),
+                    viewPadding: data.viewPadding.copyWith(top: top, bottom: bottom),
+                  ),
+                  child: nested,
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return body;
+    }
+
+    testWidgets('top 140 over a frame: the status bar is the system edge, the rest is bar', (final tester) async {
+      final HarborRoomData room = HarborRoom.of(await raised(tester, top: 140));
+      expect(room.systemEdges.top, 62.0);
+      expect(room.bars.top, 112.0);
+    });
+
+    testWidgets('top 140 over a page: its content starts below the status bar', (final tester) async {
+      await raised(tester, top: 140, page: true);
+      expect(tester.getRect(find.byKey(_content)).top, 62.0);
+    });
+
+    testWidgets('bottom 120 over a frame: no bottom system edge (the bar holds it)', (final tester) async {
+      final HarborRoomData room = HarborRoom.of(await raised(tester, bottom: 120));
+      expect(room.systemEdges.bottom, 0.0);
+    });
+
+    testWidgets('top 140 over two frames: the inner one splits it as the outer did', (final tester) async {
+      final HarborRoomData room = HarborRoom.of(await raised(tester, top: 140, depth: 2));
+      expect(room.systemEdges.top, 62.0);
+      expect(room.bars.top, 112.0);
+    });
+  });
 }
