@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'hinge.dart';
@@ -24,17 +25,25 @@ import 'renamed.dart';
 /// page routes does not see it as a page. Its content is a route of its own
 /// for screen readers, and [semanticLabel] is the name they announce for it.
 ///
-/// [routeSettings] reach navigator observers and route-name analytics, and
-/// the barrier is announced with [barrierLabel] ('Dismiss' when none is
-/// given, the English Material and Cupertino fall back to; a Material app
-/// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the
-/// localized one). [barrierColor] is `showGeneralDialog`'s, as a sheet's is. [anchorPoint], [traversalEdgeBehavior] and [requestFocus]
+/// [barrier] is what the dialog puts over the page: [HarborBarrier.dimmed] by default, with
+/// `showGeneralDialog`'s half-black, as a sheet's is, or [HarborBarrier.clear]. A dialog is always
+/// a route with a barrier, so [HarborBarrier.none] is an assert. A tap on the barrier closes the
+/// dialog unless it is not `dismissible`; back still closes it. It is announced with its `label`
+/// ('Dismiss' when none is given, the English Material and Cupertino fall back to; a Material app
+/// passes `MaterialLocalizations.of(context).modalBarrierDismissLabel` for the localized one), and
+/// its `onTapHint` says what tapping it does.
+///
+/// [routeSettings] reach navigator observers and route-name analytics. [anchorPoint], [traversalEdgeBehavior] and [requestFocus]
 /// are as on `showDialog`: the screen of a foldable the dialog opens on, what
 /// Tab does past its last control (the navigator's choice when null), and
 /// whether it takes focus. [animationStyle] sets the fade, 180 ms by default;
 /// with reduced motion the dialog is simply there. [transitionBuilder] brings
 /// an entrance and exit of your own in place of the fade, as
 /// `showGeneralDialog`'s does; see [HarborDialogRoute.transitionBuilder].
+///
+/// `barrierColor`, `barrierDismissible` and `barrierLabel` are the spellings of the barrier through
+/// 0.9, deprecated: given, each overrides the matching field of [barrier] (`barrierColor` only
+/// tints a dimmed barrier).
 ///
 /// See also:
 ///
@@ -45,8 +54,12 @@ Future<T?> showHarborDialog<T>(
   required final WidgetBuilder builder,
   final bool inheritRoom = false,
   @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
-  final Color barrierColor = const Color(0x80000000),
-  final bool barrierDismissible = true,
+  final HarborBarrier barrier = const HarborBarrier.dimmed(),
+  @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  final Color? barrierColor,
+  @Deprecated('Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  final bool? barrierDismissible,
+  @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final String? barrierLabel,
   final String? semanticLabel,
   final bool useRootNavigator = true,
@@ -65,9 +78,7 @@ Future<T?> showHarborDialog<T>(
       builder: builder,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
       inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
-      barrierColor: barrierColor,
-      barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel,
+      barrier: harborBarrierWith(barrier, color: barrierColor, dismissible: barrierDismissible, label: barrierLabel),
       semanticLabel: semanticLabel,
       settings: routeSettings,
       anchorPoint: anchorPoint,
@@ -112,8 +123,15 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final CapturedThemes? themes,
     final bool inheritRoom = false,
     @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
-    final Color? barrierColor = const Color(0x80000000),
-    final bool barrierDismissible = true,
+    final HarborBarrier barrier = const HarborBarrier.dimmed(),
+    @Deprecated(
+      'Use barrier: HarborBarrier.dimmed(color: ...), or HarborBarrier.clear() where it was null. '
+      '`dart fix` applies it to null. Deprecated after 0.9.1.',
+    )
+    final Color? barrierColor = HarborBarrier.defaultColor,
+    @Deprecated('Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    final bool? barrierDismissible,
+    @Deprecated('Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     final String? barrierLabel,
     final String? semanticLabel,
     final RouteSettings? settings,
@@ -126,9 +144,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   }) : this._(
          builder: builder,
          inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
-         barrierColor: barrierColor,
-         barrierDismissible: barrierDismissible,
-         barrierLabel: barrierLabel,
+         barrier: _withLegacy(barrier, barrierColor, barrierDismissible, barrierLabel),
          semanticLabel: semanticLabel,
          settings: settings,
          anchorPoint: anchorPoint,
@@ -143,9 +159,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   HarborDialogRoute._({
     required final WidgetBuilder builder,
     required this.inheritRoom,
-    required super.barrierColor,
-    required super.barrierDismissible,
-    required final String? barrierLabel,
+    required final HarborBarrier barrier,
     required final String? semanticLabel,
     required super.settings,
     required super.anchorPoint,
@@ -155,16 +169,46 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required this.transitionBuilder,
     required this.hinge,
     required final _HarborDialogPage page,
-  }) : _animationStyle = animationStyle,
+  }) : assert(barrier.blocks, 'A dialog is a route with a barrier: give it HarborBarrier.dimmed or .clear, not none.'),
+       _barrier = barrier,
+       _animationStyle = animationStyle,
        _page = page,
        super(
-         barrierLabel: barrierLabel ?? harborBarrierDismissLabel,
+         barrierColor: barrier.color,
+         barrierDismissible: barrier.isDismissible,
+         barrierLabel: barrier.label ?? harborBarrierDismissLabel,
          transitionDuration: animationStyle?.duration ?? _duration,
          pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) =>
              page.build(context, builder, semanticLabel),
        );
 
   static const Duration _duration = Duration(milliseconds: 180);
+
+  // The deprecated barrierColor keeps the default it had, so a call that leaves it out changes
+  // nothing, and null, which was a barrier with no colour, is still one: a clear barrier.
+  static HarborBarrier _withLegacy(
+    final HarborBarrier barrier,
+    final Color? color,
+    final bool? dismissible,
+    final String? label,
+  ) {
+    if (color == null) {
+      final HarborBarrier given = harborBarrierWith(barrier, dismissible: dismissible, label: label);
+      return HarborBarrier.clear(dismissible: given.isDismissible, label: given.label, onTapHint: given.onTapHint);
+    }
+    return harborBarrierWith(
+      barrier,
+      color: identical(color, HarborBarrier.defaultColor) ? null : color,
+      dismissible: dismissible,
+      label: label,
+    );
+  }
+
+  /// What the dialog puts over the page: a dimmed barrier unless it is given another. As given to
+  /// the constructor, with the deprecated `barrierColor`, `barrierDismissible` and `barrierLabel`
+  /// applied.
+  HarborBarrier get barrier => _barrier;
+  final HarborBarrier _barrier;
 
   /// Which hinges and folds the dialog keeps off: the one given, or the opening page's
   /// [HarborHinge.of], read as the route is made. [anchorPoint] picks the side.
@@ -267,6 +311,34 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final CurvedAnimation curved = _curved!;
     return transitionBuilder?.call(context, curved, secondaryAnimation, child) ??
         FadeTransition(opacity: curved, child: child);
+  }
+
+  // ModalRoute's barrier, with the barrier's tap hint, which ModalRoute has no field for. Without
+  // one the route's own barrier is built, as it always was.
+  @override
+  Widget buildModalBarrier() {
+    final String? onTapHint = _barrier.onTapHint;
+    if (onTapHint == null) {
+      return super.buildModalBarrier();
+    }
+    final Color? color = barrierColor;
+    if (color != null && color.a != 0 && !offstage) {
+      return AnimatedModalBarrier(
+        color: animation!.drive(
+          ColorTween(begin: color.withValues(alpha: 0.0), end: color).chain(CurveTween(curve: barrierCurve)),
+        ),
+        dismissible: barrierDismissible,
+        semanticsLabel: barrierLabel,
+        barrierSemanticsDismissible: semanticsDismissible,
+        semanticsOnTapHint: onTapHint,
+      );
+    }
+    return ModalBarrier(
+      dismissible: barrierDismissible,
+      semanticsLabel: barrierLabel,
+      barrierSemanticsDismissible: semanticsDismissible,
+      semanticsOnTapHint: onTapHint,
+    );
   }
 
   @override

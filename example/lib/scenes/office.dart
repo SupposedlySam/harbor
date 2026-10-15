@@ -602,7 +602,6 @@ class HarborRulesPage extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => HarborPage(
     child: HarborFrame(
-      isPage: true,
       debugLabel: 'harbor rules',
       top: const <HarborBar>[
         HarborBar.solid(
@@ -710,9 +709,9 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
       HarborToasts.show(
         context,
         slot: HarborToastSlot.low,
-        duration: const Duration(seconds: 4),
         builder: (final BuildContext context) =>
             const SignalFlag(key: ValueKey<String>('tower signal'), message: 'Raised in the tower, still flying'),
+        timing: const HarborToastTiming(duration: Duration(seconds: 4)),
       );
       Navigator.of(context).pop();
     });
@@ -721,7 +720,6 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
   @override
   Widget build(final BuildContext context) => const HarborPage(
     child: HarborFrame(
-      isPage: true,
       debugLabel: 'signal tower',
       top: <HarborBar>[
         HarborBar.overlay(
@@ -749,8 +747,10 @@ void showChandlery(final BuildContext context) => unawaited(
         debugLabel: 'chandlery',
         surface: Sailcloth(),
         // A hairline rather than a fade, so the shop's own header sits flush below.
-        headerEdgeEffect: HarborEdgeEffect.hairline(),
-        header: SheetHeader(key: ValueKey<String>('chandlery sheet header'), title: 'Chandlery'),
+        headerBar: HarborBar.overlay(
+          edgeEffect: HarborEdgeEffect.hairline(),
+          child: SheetHeader(key: ValueKey<String>('chandlery sheet header'), title: 'Chandlery'),
+        ),
         body: SizedBox(height: 420, child: _Chandlery()),
       ),
     ),

@@ -1,0 +1,759 @@
+# `dart fix` transforms for the audit's smaller steps (#120, DECISIONS.md "The audit's smaller
+# steps"), deprecated after 0.9.1. Hand-written; checked by test_fixes/audit.dart.
+#
+# A condition reads a missing argument as '', and compares an argument's text, so each rewrite that
+# depends on a value fires only on the value written out. A variable is left as it is: the
+# deprecated spelling still compiles and works.
+version: 1
+transforms:
+  # HarborYield merges into HarborBarState: HarborHideBar(mode:) is state:.
+  - title: "Migrate to 'state'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborHideBar'
+    oneOf:
+      - if: "mode == 'HarborYield.dark'"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'state'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborBarState %}.dark'
+              requiredIf: "mode == 'HarborYield.dark'"
+              variables:
+                HarborBarState:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarState'
+          - kind: 'removeParameter'
+            name: 'mode'
+      - if: "mode == 'HarborYield.withdraw'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'mode'
+    variables:
+      mode:
+        kind: 'fragment'
+        value: 'arguments[mode]'
+  # HarborController.hideBar(edge, mode:) is state:.
+  - title: "Migrate to 'state'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      method: 'hideBar'
+      inClass: 'HarborController'
+    oneOf:
+      - if: "mode == 'HarborYield.dark'"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'state'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborBarState %}.dark'
+              requiredIf: "mode == 'HarborYield.dark'"
+              variables:
+                HarborBarState:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarState'
+          - kind: 'removeParameter'
+            name: 'mode'
+      - if: "mode == 'HarborYield.withdraw'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'mode'
+    variables:
+      mode:
+        kind: 'fragment'
+        value: 'arguments[mode]'
+  # withdrawsAtHighTide becomes HarborKeyboardStance.withdraws, on HarborBar.overlay. Only a bar that
+  # stays (the default) can say it in one stance; with rides, reserves or a variable the flag is left.
+  - title: "Migrate to 'HarborKeyboardStance.withdraws'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'overlay'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "withdraws == 'true' && keyboard == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == ''"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keyboard'
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'false'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+    variables:
+      withdraws:
+        kind: 'fragment'
+        value: 'arguments[withdrawsAtHighTide]'
+      keyboard:
+        kind: 'fragment'
+        value: 'arguments[keyboard]'
+  # withdrawsAtHighTide becomes HarborKeyboardStance.withdraws, on HarborBar.solid. Only a bar that
+  # stays (the default) can say it in one stance; with rides, reserves or a variable the flag is left.
+  - title: "Migrate to 'HarborKeyboardStance.withdraws'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'solid'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "withdraws == 'true' && keyboard == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == ''"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keyboard'
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'false'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+    variables:
+      withdraws:
+        kind: 'fragment'
+        value: 'arguments[withdrawsAtHighTide]'
+      keyboard:
+        kind: 'fragment'
+        value: 'arguments[keyboard]'
+  # withdrawsAtHighTide becomes HarborKeyboardStance.withdraws, on HarborBar.reserve. Only a bar that
+  # stays (the default) can say it in one stance; with rides, reserves or a variable the flag is left.
+  - title: "Migrate to 'HarborKeyboardStance.withdraws'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'reserve'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "withdraws == 'true' && keyboard == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == ''"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keyboard'
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'false'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+    variables:
+      withdraws:
+        kind: 'fragment'
+        value: 'arguments[withdrawsAtHighTide]'
+      keyboard:
+        kind: 'fragment'
+        value: 'arguments[keyboard]'
+  # duration: and curve: on HarborBar.overlay go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'overlay'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # duration: and curve: on HarborBar.solid go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'solid'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # duration: and curve: on HarborBar.reserve go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'reserve'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # duration: and curve: on HarborKeepVisibleRegion (HarborKeepInSightRegion before the split) go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborKeepVisibleRegion'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # HarborSizing.hugBody is HarborSizing.hug().
+  - title: "Replace with 'HarborSizing.hug()'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      field: 'hugBody'
+      inClass: 'HarborSizing'
+    changes:
+      - kind: 'rename'
+        newName: 'hug()'
+  # HarborFrame(sizing:, maxExtentFraction:) is sizing: HarborSizing.hug(maxFraction:). A frame that
+  # fills never read the fraction, so beside fill it goes; beside a variable it is left.
+  - title: "Migrate to 'HarborSizing.hug(maxFraction:)'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborFrame'
+    oneOf:
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.fill'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+    variables:
+      sizing:
+        kind: 'fragment'
+        value: 'arguments[sizing]'
+      maxExtentFraction:
+        kind: 'fragment'
+        value: 'arguments[maxExtentFraction]'
+  # HarborFrame.page(sizing:, maxExtentFraction:) is sizing: HarborSizing.hug(maxFraction:). A frame that
+  # fills never read the fraction, so beside fill it goes; beside a variable it is left.
+  - title: "Migrate to 'HarborSizing.hug(maxFraction:)'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'page'
+      inClass: 'HarborFrame'
+    oneOf:
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.fill'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+    variables:
+      sizing:
+        kind: 'fragment'
+        value: 'arguments[sizing]'
+      maxExtentFraction:
+        kind: 'fragment'
+        value: 'arguments[maxExtentFraction]'
+  # HarborKeepInSight splits into three widgets, one per job. A call that does one job becomes that
+  # widget; one that does two or more is left, deprecated and still working, to be nested by hand.
+  # keepInSight: and lift: become the new widget's active: (below), so a variable carries over.
+  # Arguments the one job never read go with it: clearance beside onObscured, edge beside the other two.
+  - title: "Split into 'HarborCoverageListener', 'HarborKeepVisible' or 'HarborLift'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborKeepInSight'
+    oneOf:
+      - if: "onObscured != '' && keepInSight == '' && lift == '' && onlyWhileFocused == '' && holdPosition == ''"
+        changes:
+          - kind: 'replacedBy'
+            newElement:
+              uris: [ 'harbor.dart' ]
+              constructor: ''
+              inClass: 'HarborCoverageListener'
+          - kind: 'removeParameter'
+            name: 'clearance'
+      - if: "keepInSight != '' && onObscured == '' && lift == '' && holdPosition == ''"
+        changes:
+          - kind: 'replacedBy'
+            newElement:
+              uris: [ 'harbor.dart' ]
+              constructor: ''
+              inClass: 'HarborKeepVisible'
+          - kind: 'removeParameter'
+            name: 'edge'
+      - if: "lift != '' && onObscured == '' && keepInSight == '' && onlyWhileFocused == ''"
+        changes:
+          - kind: 'replacedBy'
+            newElement:
+              uris: [ 'harbor.dart' ]
+              constructor: ''
+              inClass: 'HarborLift'
+          - kind: 'removeParameter'
+            name: 'edge'
+    variables:
+      onObscured:
+        kind: 'fragment'
+        value: 'arguments[onObscured]'
+      keepInSight:
+        kind: 'fragment'
+        value: 'arguments[keepInSight]'
+      lift:
+        kind: 'fragment'
+        value: 'arguments[lift]'
+      onlyWhileFocused:
+        kind: 'fragment'
+        value: 'arguments[onlyWhileFocused]'
+      holdPosition:
+        kind: 'fragment'
+        value: 'arguments[holdPosition]'
+  # HarborKeepInSight.reveal moved to HarborKeepVisible.
+  - title: "Replace with 'HarborKeepVisible.reveal'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      method: 'reveal'
+      inClass: 'HarborKeepInSight'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          method: 'reveal'
+          inClass: 'HarborKeepVisible'
+  # HarborKeepInSight.coverageOf moved to HarborKeepVisible.
+  - title: "Replace with 'HarborKeepVisible.coverageOf'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      method: 'coverageOf'
+      inClass: 'HarborKeepInSight'
+    changes:
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          method: 'coverageOf'
+          inClass: 'HarborKeepVisible'
+  # HarborKeepInSightRegion is HarborKeepVisibleRegion, named after the widget it lifts for.
+  - title: "Rename to 'HarborKeepVisibleRegion'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      typedef: 'HarborKeepInSightRegion'
+    changes:
+      - kind: 'rename'
+        newName: 'HarborKeepVisibleRegion'
+  # The call HarborKeepInSight(onObscured:) became, still with the old parameter's name: a rename
+  # does not carry across replacedBy, so it lands here, on a parameter HarborCoverageListener lacks.
+  - title: "Rename to 'onCoverage'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborCoverageListener'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'onObscured'
+        newName: 'onCoverage'
+  # HarborKeepInSight(keepInSight:) became HarborKeepVisible(keepInSight:): it is active:.
+  - title: "Rename to 'active'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborKeepVisible'
+    oneOf:
+      - if: "keepInSight == 'true'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keepInSight'
+      - if: "keepInSight != 'true'"
+        changes:
+          - kind: 'renameParameter'
+            oldName: 'keepInSight'
+            newName: 'active'
+    variables:
+      keepInSight:
+        kind: 'fragment'
+        value: 'arguments[keepInSight]'
+  # HarborKeepInSight(lift:) became HarborLift(lift:): it is active:.
+  - title: "Rename to 'active'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborLift'
+    oneOf:
+      - if: "lift == 'true'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'lift'
+      - if: "lift != 'true'"
+        changes:
+          - kind: 'renameParameter'
+            oldName: 'lift'
+            newName: 'active'
+    variables:
+      lift:
+        kind: 'fragment'
+        value: 'arguments[lift]'

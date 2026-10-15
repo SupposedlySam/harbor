@@ -67,8 +67,8 @@ void main() {
     final HarborToastEntry first = HarborToasts.show(
       page,
       placement: HarborAnchored(anchor),
-      duration: null,
       builder: (final BuildContext _) => _toast('plain', (final EdgeInsets p) => plain = p),
+      timing: HarborToastTiming.untilHidden,
     );
     await settle(tester);
     final Rect without = _rect(tester, 'plain');
@@ -85,8 +85,8 @@ void main() {
       anchor: anchor,
       // ignore: deprecated_member_use_from_same_package
       reachesCoast: true,
-      duration: null,
       builder: (final BuildContext _) => _toast('reaching', (final EdgeInsets p) => reaching = p),
+      timing: HarborToastTiming.untilHidden,
     );
     await settle(tester);
 
@@ -106,8 +106,8 @@ void main() {
       page,
       placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
       reachesSystemEdges: true,
-      duration: null,
       builder: (final BuildContext _) => _toast('low', (final EdgeInsets p) => padding = p),
+      timing: HarborToastTiming.untilHidden,
     );
     await settle(tester);
     expect(padding!.left, coast.left);

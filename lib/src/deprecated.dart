@@ -203,17 +203,22 @@ typedef HarborFlareTransitionBuilder = HarborToastTransitionBuilder;
 @Deprecated('Renamed HarborPageCover. `dart fix` applies it.')
 typedef HarborBreakwater = HarborPageCover;
 
-/// The old name of [HarborKeepInSight].
-@Deprecated('Renamed HarborKeepInSight. `dart fix` applies it.')
+/// The 0.8 name of [HarborKeepInSight], which is split into [HarborCoverageListener],
+/// [HarborKeepVisible] and [HarborLift].
+@Deprecated(
+  'Split into HarborCoverageListener, HarborKeepVisible and HarborLift. `dart fix` applies it to a call that '
+  'does one job.',
+)
 typedef HarborBeacon = HarborKeepInSight;
 
-/// The old name of [HarborKeepInSight].
-@Deprecated('Renamed HarborKeepInSight. `dart fix` applies it.')
+/// The 0.8 name of [HarborKeepInSight], whose statics are [HarborKeepVisible.reveal] and
+/// [HarborKeepVisible.coverageOf] now.
+@Deprecated('Its statics moved to HarborKeepVisible. `dart fix` applies it.')
 typedef HarborLighthouse = HarborKeepInSight;
 
-/// The old name of [HarborKeepInSightRegion].
-@Deprecated('Renamed HarborKeepInSightRegion. `dart fix` applies it.')
-typedef HarborLighthouseRegion = HarborKeepInSightRegion;
+/// The 0.8 name of [HarborKeepVisibleRegion].
+@Deprecated('Renamed HarborKeepVisibleRegion. `dart fix` applies it.')
+typedef HarborLighthouseRegion = HarborKeepVisibleRegion;
 
 /// The old name of [HarborInspector].
 @Deprecated('Renamed HarborInspector. `dart fix` applies it.')

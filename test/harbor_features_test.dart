@@ -281,7 +281,7 @@ void main() {
       pageContext,
       slot: HarborToastSlot.low,
       builder: (final BuildContext c) => _bar('toast', 30),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'toast').bottom, lessThanOrEqualTo(_rect(tester, 'nav').top));
@@ -1195,7 +1195,7 @@ void main() {
       showHarborSheet<void>(
         pageContext,
         coversPage: true,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
       ),
     );
@@ -1521,7 +1521,7 @@ void main() {
       showHarborSheet<void>(
         pageContext,
         coversPage: true,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 420)),
       ),
     );
@@ -1588,7 +1588,7 @@ void main() {
     unawaited(
       showHarborSheet<void>(
         pageContext,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) {
           sheetContext = context;
           return const HarborSheet(body: SizedBox(key: ValueKey<String>('sheet body'), height: 100));
@@ -1813,7 +1813,7 @@ void main() {
       pageContext,
       slot: HarborToastSlot.middle,
       builder: (final BuildContext c) => _bar('flag', 20),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').center.dy, closeTo(874 / 2, 60));
@@ -1843,12 +1843,9 @@ void main() {
     expect(_rect(tester, 'title').top, 62);
   });
 
-  for (final HarborSheetBarrier barrier in <HarborSheetBarrier>[
-    HarborSheetBarrier.none,
-    HarborSheetBarrier.dismissible,
-  ]) {
+  for (final HarborBarrier barrier in const <HarborBarrier>[HarborBarrier.none, HarborBarrier.dimmed()]) {
     testWidgets(
-      'the page lays out against a breakwater sheet where it is drawn, in every frame of its slide (${barrier.name})',
+      'the page lays out against a breakwater sheet where it is drawn, in every frame of its slide ($barrier)',
       (final tester) async {
         late BuildContext pageContext;
         await tester.pumpHarborTrial(
@@ -1927,7 +1924,7 @@ void main() {
         showHarborSheet<void>(
           pageContext,
           coversPage: true,
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           builder: (final BuildContext context) => HarborSheet.draggable(
             header: _bar('handle', 40),
             builder: (final BuildContext context, final ScrollController controller) => HarborScrollView(
@@ -2045,7 +2042,7 @@ void main() {
     unawaited(
       showHarborSheet<void>(
         pageContext,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) =>
             const HarborSheet(body: Text('lyrics', key: ValueKey<String>('lyrics'))),
       ),
@@ -2143,7 +2140,7 @@ void main() {
       tabContext,
       slot: HarborToastSlot.top,
       builder: (final BuildContext c) => _bar('flag', 20),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').top, greaterThanOrEqualTo(_rect(tester, 'tab header').bottom));
@@ -2204,7 +2201,7 @@ void main() {
       inside,
       slot: HarborToastSlot.top,
       builder: (final BuildContext c) => _bar('inner flag', 20),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     final Rect stage = tester.getRect(find.byType(HarborRoot).last);
@@ -2334,7 +2331,7 @@ void main() {
       showHarborSheet<void>(
         pageContext,
         coversPage: true,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) => const HarborSheet(body: SizedBox(height: 300)),
       ),
     );

@@ -167,7 +167,7 @@ void main() {
       'HarborFrame',
       'HarborRoot',
       'HarborFrame(isPage: true)',
-      'HarborSizing.hugBody',
+      'HarborSizing.hug',
     ]);
     expect(dockEntries.map((final e) => e.className), <String>[
       'HarborBar.overlay',
@@ -433,8 +433,8 @@ void main() {
     });
   });
 
-  group('HarborSizing.hugBody', () {
-    testWidgets('hugBody: the frame is as tall as its body and bar', (final WidgetTester tester) async {
+  group('HarborSizing.hug', () {
+    testWidgets('hug(): the frame is as tall as its body and bar', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HugBodyEntry());
       final (:Rect screen, :double scale) = _screen(tester);
       final Rect frame = _rect(tester, 'sized frame');
@@ -442,10 +442,10 @@ void main() {
       _near(_rect(tester, 'sized body').height, 180 * scale, 'the body keeps its own height');
       _near(frame.bottom, screen.bottom, 'sits at the bottom');
       _near(frame.height, (180 + 56 + _homeIndicator) * scale, 'body + bar + home indicator');
-      expect(_code(tester), contains('sizing: HarborSizing.hugBody'));
+      expect(_code(tester), contains('sizing: HarborSizing.hug()'));
     });
 
-    testWidgets('hugBody follows the body height slider', (final WidgetTester tester) async {
+    testWidgets('hug() follows the body height slider', (final WidgetTester tester) async {
       await _pumpEntry(tester, const HugBodyEntry());
       await _slide(tester, 'body height', 300);
       await _showStage(tester);

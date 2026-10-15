@@ -35,7 +35,7 @@ void main() {
         unawaited(
           showHarborSheet<void>(
             page,
-            barrier: HarborSheetBarrier.none,
+            barrier: HarborBarrier.none,
             controller: controller,
             builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
           ),
@@ -69,7 +69,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           page,
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           controller: controller,
           builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
         ).then((final _) => results++),
@@ -91,12 +91,12 @@ void main() {
         final HarborToastEntry up = HarborToasts.show(
           page,
           builder: (final BuildContext _) => const Text('up'),
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
         );
         final HarborToastEntry waiting = HarborToasts.show(
           page,
           builder: (final BuildContext _) => const Text('next'),
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
         );
         for (int i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 100));
@@ -114,7 +114,7 @@ void main() {
         final HarborToastEntry entry = HarborToasts.show(
           page,
           builder: (final BuildContext _) => const Text('cancelled'),
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
         );
         entry.hide();
         await tester.pump();
@@ -128,7 +128,7 @@ void main() {
       final HarborToastEntry entry = HarborToasts.show(
         page,
         builder: (final BuildContext _) => const Text('saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pump();
       expect(entry.phase, HarborToastPhase.shown);

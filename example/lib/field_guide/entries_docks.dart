@@ -603,7 +603,7 @@ class _BarStateEntryState extends State<BarStateEntry> {
         'HarborBar.solid(\n'
         '  state: HarborBarState.${_state.name},\n'
         '  extentPolicy: HarborExtentPolicy.${_policy.name},\n'
-        '  duration: const Duration(milliseconds: ${_duration.toStringAsFixed(0)}),\n'
+        '  animationStyle: AnimationStyle(duration: Duration(milliseconds: ${_duration.toStringAsFixed(0)})),\n'
         '  child: Header(),\n'
         ')',
     stage: (final BuildContext context) => Stack(
@@ -613,8 +613,8 @@ class _BarStateEntryState extends State<BarStateEntry> {
             top: <HarborBar>[
               HarborBar.solid(
                 state: _state,
+                animationStyle: AnimationStyle(duration: Duration(milliseconds: _duration.round())),
                 extentPolicy: _policy,
-                duration: Duration(milliseconds: _duration.round()),
                 backdrop: const QuayStones(),
                 debugLabel: 'header',
                 child: _LampHeader(

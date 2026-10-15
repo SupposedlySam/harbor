@@ -1,0 +1,47 @@
+// The toast timing transforms (lib/fix_data/toasts.yaml): `duration:`, `persist:`, `countsEntrance:`
+// and `countsWhileCovered:` on HarborToasts.show become one `timing:`. toasts.dart.expect is what
+// `dart fix --apply` makes of it.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+Widget _toast(BuildContext context) => const SizedBox();
+
+void alone(BuildContext context, Duration d, bool b) {
+  // Each old argument on its own.
+  HarborToasts.show(context, builder: _toast, timing: const HarborToastTiming(duration: Duration(seconds: 2)));
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming(duration: d));
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming.untilHidden);
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming.untilHidden);
+  HarborToasts.show(context, builder: _toast);
+  HarborToasts.show(context, builder: _toast, timing: const HarborToastTiming(countsEntrance: true));
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming(countsWhileCovered: b));
+}
+
+void together(BuildContext context, Duration d, bool b) {
+  // persist: true ran out never, whatever the duration said.
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming.untilHidden);
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming(duration: d));
+  HarborToasts.show(context, builder: _toast, timing: const HarborToastTiming(duration: null, countsWhileCovered: true));
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming(duration: null, countsEntrance: b));
+  HarborToasts.show(
+    context,
+    slot: HarborToastSlot.low,
+    timing: HarborToastTiming(duration: d, countsEntrance: true, countsWhileCovered: b),
+    builder: _toast,
+  );
+  HarborToasts.show(context, builder: _toast, timing: const HarborToastTiming(countsEntrance: true));
+}
+
+void untouched(BuildContext context, bool p) {
+  // persist: given a variable is left for you, with the rest of the call.
+  HarborToasts.show(context, persist: p, builder: _toast);
+  HarborToasts.show(context, persist: p, duration: null, builder: _toast);
+}
+
+void older(BuildContext context, HarborAnchor anchor) {
+  // The 0.8 and 0.3 names, and the 0.6 placement arguments, migrate on the way.
+  HarborToasts.show(context, builder: _toast, timing: HarborToastTiming.untilHidden);
+  HarborToasts.show(context, placement: const HarborAligned(alignment: Alignment.topCenter), builder: _toast, timing: HarborToastTiming.untilHidden);
+  HarborToasts.show(context, placement: HarborAnchored(anchor), builder: _toast, timing: const HarborToastTiming(countsWhileCovered: true));
+}

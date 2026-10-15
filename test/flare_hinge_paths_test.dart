@@ -96,8 +96,8 @@ void main() {
       final HarborToastEntry kept = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor),
-        duration: null,
         builder: (final BuildContext _) => _toast('kept'),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       expect(_rect(tester, 'kept').right, 532);
@@ -107,8 +107,8 @@ void main() {
         page,
         placement: HarborAnchored(anchor),
         hinge: HarborHinge.never,
-        duration: null,
         builder: (final BuildContext _) => _toast('spans'),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       expect(_rect(tester, 'spans').center.dx, 500);
@@ -143,8 +143,8 @@ void main() {
           page,
           slot: HarborToastSlot.low,
           reachesSystemEdges: reachesCoast,
-          duration: null,
           builder: (final BuildContext _) => _toast('kept'),
+          timing: HarborToastTiming.untilHidden,
         );
         await _settle(tester);
         final Rect rect = _rect(tester, 'kept');
@@ -158,7 +158,7 @@ void main() {
           slot: HarborToastSlot.low,
           reachesSystemEdges: reachesCoast,
           hinge: HarborHinge.never,
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
           builder: (final BuildContext _) => _toast('spans'),
         );
         await _settle(tester);
@@ -173,8 +173,8 @@ void main() {
       HarborToasts.show(
         page,
         placement: HarborAnchored(anchor),
-        duration: null,
         builder: (final BuildContext _) => _toast('kept'),
+        timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
       expect(_rect(tester, 'kept').right, 532);

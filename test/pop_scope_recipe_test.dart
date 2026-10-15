@@ -37,7 +37,7 @@ class _PageState extends State<_Page> {
   void openSheet() => unawaited(
     showHarborSheet<void>(
       inside,
-      barrier: HarborSheetBarrier.none,
+      barrier: HarborBarrier.none,
       builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 200, child: Text('sheet'))),
     ).then((final void _) => widget.events.add('sheet closed')),
   );
@@ -59,8 +59,8 @@ class _PageState extends State<_Page> {
       floats: <HarborFloat>[
         if (actions)
           HarborFloat(
-            modal: true,
             requestFocus: false,
+            barrier: const HarborBarrier.clear(),
             onDismiss: () => setState(() {
               actions = false;
               widget.events.add('actions closed');

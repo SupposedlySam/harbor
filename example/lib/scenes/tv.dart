@@ -54,7 +54,6 @@ class _TvHarborTownState extends State<TvHarborTown> {
       child: ColoredBox(
         color: Palette.deepSea,
         child: HarborFrame(
-          isPage: true,
           debugLabel: 'lighthouse tv',
           start: <HarborBar>[
             HarborBar.overlay(
@@ -435,7 +434,7 @@ class _LongVoyage extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => HarborHideBar(
     edge: HarborEdge.start,
-    mode: HarborYield.dark,
+    state: HarborBarState.dark,
     active: underway,
     child: Stack(
       children: <Widget>[

@@ -13,13 +13,79 @@ import 'tide.dart';
 import 'wake.dart';
 import 'waters.dart';
 
-/// How a frame sizes itself.
-enum HarborSizing {
-  /// It fills the space it is given, as a page does.
-  fill,
+/// How a frame sizes itself: it [fill]s the space it is given, as a page does, or it [HarborSizing.hug]s
+/// its body, as a content-sized sheet does.
+///
+/// A class rather than an enum since 0.9.1, so the share a hugging frame may take travels with it.
+/// The enum's `values`, `name` and `index` are kept, deprecated, for code that read them.
+@immutable
+class HarborSizing with Diagnosticable {
+  const HarborSizing._fill() : hugs = false, maxFraction = null, _isHugBody = false;
 
-  /// It is as tall as its body and solid bars, as a content-sized sheet is.
-  hugBody,
+  // A constant of its own, apart from hug() by _isHugBody alone, so use_named_constants never offers
+  // the deprecated hugBody for hug(). Equal to hug() all the same.
+  const HarborSizing._hugBody() : hugs = true, maxFraction = null, _isHugBody = true;
+
+  /// As tall as its body and solid bars, as a content-sized sheet is, up to [maxFraction] of the
+  /// space above the keyboard (of the whole height when the frame's body runs under the keyboard).
+  /// Null, the default, caps it at all of that space. It hugs the height only: a frame always fills
+  /// its width.
+  const HarborSizing.hug({this.maxFraction}) : hugs = true, _isHugBody = false;
+
+  /// It fills the space it is given, as a page does. The default.
+  static const HarborSizing fill = HarborSizing._fill();
+
+  /// The old spelling of [HarborSizing.hug] with no cap.
+  @Deprecated('Use HarborSizing.hug(). `dart fix` applies it. Deprecated after 0.9.1.')
+  static const HarborSizing hugBody = HarborSizing._hugBody();
+
+  /// The enum's values, [fill] and [hugBody].
+  @Deprecated('HarborSizing is a class: list the sizings you offer. Deprecated after 0.9.1.')
+  static const List<HarborSizing> values = <HarborSizing>[fill, HarborSizing._hugBody()];
+
+  /// Whether the frame is as tall as its body rather than the space it is given.
+  final bool hugs;
+
+  /// For a frame that [hugs]: the most of the space above the keyboard it may take, or null for all
+  /// of it.
+  final double? maxFraction;
+
+  final bool _isHugBody;
+
+  /// The enum's name: `fill` or `hugBody`.
+  @Deprecated('HarborSizing is a class: read hugs. Deprecated after 0.9.1.')
+  String get name => hugs ? 'hugBody' : 'fill';
+
+  /// The enum's index: 0 for [fill], 1 for a frame that hugs.
+  @Deprecated('HarborSizing is a class: read hugs. Deprecated after 0.9.1.')
+  int get index => hugs ? 1 : 0;
+
+  @override
+  bool operator ==(final Object other) =>
+      other is HarborSizing && other.hugs == hugs && other.maxFraction == maxFraction;
+
+  @override
+  int get hashCode => Object.hash(hugs, maxFraction);
+
+  @override
+  String toStringShort() =>
+      '${objectRuntimeType(this, 'HarborSizing')}.${_isHugBody
+          ? 'hugBody'
+          : hugs
+          ? 'hug'
+          : 'fill'}';
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      PercentProperty(
+        'maxFraction',
+        maxFraction,
+        level: maxFraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info,
+      ),
+    );
+  }
 }
 
 /// What a frame hands its body during layout: the `MediaQuery` values and
@@ -256,7 +322,7 @@ class HarborGeometry {
   /// The height of the screen, to place page covers measured from its bottom.
   final double viewHeight;
 
-  /// For [HarborSizing.hugBody]: the most of the space above the keyboard the
+  /// For a frame that hugs: the most of the space above the keyboard the
   /// frame may take, or null for all of it.
   final double? maxExtentFraction;
 
@@ -499,9 +565,9 @@ class RenderHarbor extends RenderBox
         ErrorHint(
           constraints.hasBoundedWidth
               ? 'Give the HarborFrame a height (a SizedBox, or Expanded in a Column), or use '
-                    'HarborFrame(sizing: HarborSizing.hugBody) to make it as tall as its body.'
+                    'HarborFrame(sizing: HarborSizing.hug()) to make it as tall as its body.'
               : 'Give the HarborFrame a width, for example with a SizedBox, or Expanded in a Row. '
-                    'HarborSizing.hugBody hugs the height only; a HarborFrame always fills its width.',
+                    'HarborSizing.hug() hugs the height only; a HarborFrame always fills its width.',
         ),
       ]);
     }());
@@ -534,7 +600,7 @@ class RenderHarbor extends RenderBox
   @override
   void performLayout() {
     final HarborGeometry g = _geometry;
-    final bool hug = g.sizing == HarborSizing.hugBody;
+    final bool hug = g.sizing.hugs;
     assert(_debugCheckHasBoundedConstraints(hug: hug));
     final double width = constraints.maxWidth;
     final double maxHeight = constraints.hasBoundedHeight ? constraints.maxHeight : double.infinity;

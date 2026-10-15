@@ -1,0 +1,83 @@
+// The audit's transforms (lib/fix_data/audit.yaml): this file is written against the spellings
+// deprecated after 0.9.1. audit.dart.expect is what `dart fix --apply` makes of it.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void hideBar(BuildContext context, HarborController frame, HarborYield variable) {
+  // HarborYield merges into HarborBarState: a written-out mode becomes state, withdraw (the
+  // default) goes, and a variable is left on the deprecated mode, which still works.
+  const HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.dark, child: SizedBox());
+  const HarborHideBar(edge: HarborEdge.bottom, child: SizedBox());
+  HarborHideBar(edge: HarborEdge.top, mode: variable, child: const SizedBox());
+  const HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.dark, child: SizedBox());
+  frame.hideBar(HarborEdge.top, state: HarborBarState.dark);
+  frame.hideBar(HarborEdge.top);
+  frame.hideBar(HarborEdge.top, mode: variable);
+  frame.hideBar(HarborEdge.bottom, state: HarborBarState.dark);
+  HarborFrame.of(context).hideBar(HarborEdge.bottom, state: HarborBarState.dark);
+}
+
+void withdraws(bool b) {
+  // withdrawsAtHighTide becomes a keyboard stance, where the bar stays (the default). With rides or
+  // reserves, or a variable, it cannot be one stance, so it is left on the deprecated flag.
+  const HarborBar.overlay(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+  const HarborBar.solid(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+  const HarborBar.reserve(extent: 40, keyboard: HarborKeyboardStance.withdraws);
+  const HarborBar.solid(child: SizedBox());
+  const HarborBar.solid(keyboard: HarborKeyboardStance.rides, withdrawsAtHighTide: true, child: SizedBox());
+  HarborBar.overlay(withdrawsAtHighTide: b, child: const SizedBox());
+  // The 0.8 names chain through the rename.
+  const HarborBar.solid(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+  const HarborBar.overlay(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+}
+
+void animationStyle(Duration d) {
+  // duration: and curve: go into animationStyle:, alone or together; given beside an
+  // animationStyle they are left, deprecated and still working.
+  const HarborBar.overlay(animationStyle: AnimationStyle(duration: Duration(milliseconds: 120)), child: SizedBox());
+  const HarborBar.solid(animationStyle: AnimationStyle(curve: Curves.linear), child: SizedBox());
+  HarborBar.reserve(extent: 40, animationStyle: AnimationStyle(duration: d, curve: Curves.easeOut));
+  const HarborBar.solid(
+    duration: Duration(milliseconds: 120),
+    animationStyle: AnimationStyle(reverseDuration: Duration(milliseconds: 60)),
+    child: SizedBox(),
+  );
+  const HarborBar.overlay(animationStyle: AnimationStyle(duration: Duration(milliseconds: 90)), child: SizedBox());
+  const HarborKeepVisibleRegion(animationStyle: AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn), child: SizedBox());
+  const HarborKeepVisibleRegion(animationStyle: AnimationStyle(curve: Curves.easeIn), child: SizedBox());
+}
+
+void sizing(HarborSizing variable, double f) {
+  // HarborSizing is a class: hugBody is hug(), and a frame's maxExtentFraction moves into it. A
+  // frame that fills never read the fraction, so it goes; beside a variable sizing it is left.
+  const HarborFrame(sizing: HarborSizing.hug(), body: SizedBox());
+  const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.5), body: SizedBox());
+  HarborFrame.page(sizing: HarborSizing.hug(maxFraction: f), body: const SizedBox());
+  const HarborFrame(body: SizedBox());
+  const HarborFrame(sizing: HarborSizing.fill, body: SizedBox());
+  HarborFrame(sizing: variable, maxExtentFraction: 0.5, body: const SizedBox());
+  const HarborSizing hugs = HarborSizing.hug();
+  const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.8), body: SizedBox());
+  <Object>[hugs];
+}
+
+void keepInSight(BuildContext context, RenderBox box, HarborController frame, bool b) {
+  // HarborKeepInSight splits into three widgets. A call that does one job becomes that widget, its
+  // keepInSight: or lift: the new widget's active: when it is not true; one that does two is left.
+  HarborCoverageListener(onCoverage: (double c) {}, child: const SizedBox());
+  HarborCoverageListener(edge: HarborEdge.bottom, onCoverage: (double c) {}, child: const SizedBox());
+  const HarborKeepVisible(child: SizedBox());
+  const HarborKeepVisible(onlyWhileFocused: true, clearance: 16, child: SizedBox());
+  const HarborLift(clearance: 80, holdPosition: true, child: SizedBox());
+  HarborKeepInSight(keepInSight: true, onObscured: (double c) {}, child: const SizedBox());
+  HarborKeepVisible(active: b, child: const SizedBox());
+  HarborLift(active: b, holdPosition: b, child: const SizedBox());
+  const HarborKeepVisibleRegion(child: SizedBox());
+  // The 0.8 names chain through the rename.
+  const HarborKeepVisible(clearance: 24, child: SizedBox());
+  const HarborKeepVisibleRegion(child: HarborLift(child: SizedBox()));
+  HarborKeepVisible.reveal(context, clearance: 24);
+  HarborKeepVisible.reveal(context);
+  HarborKeepVisible.coverageOf(box, frame, HarborEdge.top);
+}

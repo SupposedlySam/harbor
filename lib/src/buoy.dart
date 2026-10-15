@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'hinge.dart';
@@ -214,14 +215,36 @@ class HarborFloat with Diagnosticable {
       'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
-    this.modal = false,
+    final HarborBarrier barrier = HarborBarrier.none,
+    @Deprecated(
+      'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
+      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.1.',
+    )
+    final bool modal = false,
     this.onDismiss,
-    this.barrierColor = const Color(0x00000000),
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    final Color? barrierColor,
     this.requestFocus = true,
-    this.barrierLabel = harborBarrierDismissLabel,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    final String? barrierLabel,
     this.within,
     this.hinge,
-  }) : assert(!modal || onDismiss != null, 'A modal float needs onDismiss: a tap outside it and back both call it.'),
+  }) : assert(
+         !modal || identical(barrier, HarborBarrier.none),
+         'Give a float a barrier, or the deprecated modal, not both.',
+       ),
+       assert(
+         (!modal && identical(barrier, HarborBarrier.none)) || onDismiss != null,
+         'A modal float needs onDismiss: a tap on its barrier, back and Escape call it.',
+       ),
+       assert(
+         (barrierColor == null && barrierLabel == null) || identical(barrier, HarborBarrier.none),
+         'barrierColor and barrierLabel are for the deprecated modal. Give them to the barrier.',
+       ),
+       _barrier = barrier,
+       _modal = modal,
+       _barrierColor = barrierColor,
+       _barrierLabel = barrierLabel,
        assert(
          placement == null || (alignment == null && margin == null),
          'Give a float a placement, or the deprecated alignment and margin, not both.',
@@ -262,13 +285,35 @@ class HarborFloat with Diagnosticable {
     this._crossAlignment = HarborCrossAlignment.center,
     this._crossOffset = 0.0,
     EdgeInsetsGeometry this._margin = HarborAnchored.defaultMargin,
-    this.modal = false,
+    final HarborBarrier barrier = HarborBarrier.none,
+    @Deprecated(
+      'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
+      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.1.',
+    )
+    final bool modal = false,
     this.onDismiss,
-    this.barrierColor = const Color(0x00000000),
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    final Color? barrierColor,
     this.requestFocus = true,
-    this.barrierLabel = harborBarrierDismissLabel,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    final String? barrierLabel,
     this.hinge,
-  }) : assert(!modal || onDismiss != null, 'A modal float needs onDismiss: a tap outside it and back both call it.'),
+  }) : assert(
+         !modal || identical(barrier, HarborBarrier.none),
+         'Give a float a barrier, or the deprecated modal, not both.',
+       ),
+       assert(
+         (!modal && identical(barrier, HarborBarrier.none)) || onDismiss != null,
+         'A modal float needs onDismiss: a tap on its barrier, back and Escape call it.',
+       ),
+       assert(
+         (barrierColor == null && barrierLabel == null) || identical(barrier, HarborBarrier.none),
+         'barrierColor and barrierLabel are for the deprecated modal. Give them to the barrier.',
+       ),
+       _barrier = barrier,
+       _modal = modal,
+       _barrierColor = barrierColor,
+       _barrierLabel = barrierLabel,
        assert(_anchor != null, 'HarborFloat.anchored needs an anchor.'),
        _placement = null,
        _alignment = null,
@@ -328,19 +373,42 @@ class HarborFloat with Diagnosticable {
   @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
   EdgeInsetsGeometry get margin => placement.margin;
 
-  /// Whether this float is modal while it is up (quick actions, a menu): a barrier blocks taps to
-  /// the page and its bars and tells screen readers to leave the page alone, a tap outside the
-  /// float, back and Escape all call [onDismiss], and the floats listed before it are hidden.
+  /// What the float puts between itself and the page: [HarborBarrier.none] by default, so the
+  /// float is not modal. With a barrier ([HarborBarrier.clear] for quick actions or a menu, so the
+  /// page shows as it is; [HarborBarrier.dimmed] to tint it) the float is modal while it is up: the
+  /// barrier blocks taps to the page and its bars and tells screen readers to leave the page alone,
+  /// a tap on it calls [onDismiss] unless it is not `dismissible`, back and Escape always call it,
+  /// and the floats listed before it are hidden.
   ///
   /// It is modal for the keyboard as a dialog route is: the float is a [FocusScope] that takes
   /// focus when it opens (see [requestFocus]), keeps Tab in a closed loop and stops arrow keys at
   /// its edges, and gives focus back to what had it when it closes.
   ///
-  /// Until 0.2.0 a modal float only hid the floats before it, with taps and back reaching the page.
-  final bool modal;
+  /// The barrier's `label` is what a screen reader announces for it ('Dismiss' when none is
+  /// given); a Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+  ///
+  /// Through 0.9 this was `modal: true`, with `barrierColor` and `barrierLabel`: a clear barrier, or
+  /// one tinted by `barrierColor`. Those still work, deprecated, and this reads what they made.
+  HarborBarrier get barrier => _modal
+      ? (_barrierColor ?? const Color(0x00000000)).a == 0
+            ? HarborBarrier.clear(label: _barrierLabel)
+            : HarborBarrier.dimmed(color: _barrierColor!, label: _barrierLabel)
+      : _barrier;
 
-  /// Called when a modal float is dismissed by a tap outside it, by back or by Escape. Required
-  /// when [modal]: the float is yours, so you take it away.
+  // The barrier given, or the deprecated modal, barrierColor and barrierLabel, which are kept so the
+  // float can be made in a const constructor.
+  final HarborBarrier _barrier;
+  final bool _modal;
+  final Color? _barrierColor;
+  final String? _barrierLabel;
+
+  /// Whether this float is modal while it is up: whether it has a [barrier].
+  ///
+  /// Until 0.2.0 a modal float only hid the floats before it, with taps and back reaching the page.
+  bool get modal => barrier.blocks;
+
+  /// Called when a modal float is dismissed by a tap on its barrier, by back or by Escape. Required
+  /// when it has a [barrier]: the float is yours, so you take it away.
   final VoidCallback? onDismiss;
 
   /// Whether a modal float takes focus when it opens, as [Route.requestFocus]: its scope is
@@ -350,12 +418,13 @@ class HarborFloat with Diagnosticable {
   /// float that is not [modal].
   final bool requestFocus;
 
-  /// The colour of a modal float's barrier; clear by default, so the page shows as it is.
-  final Color barrierColor;
+  /// The colour of a modal float's barrier.
+  @Deprecated('Read barrier.color. Deprecated after 0.9.1.')
+  Color get barrierColor => barrier.color;
 
-  /// What a screen reader announces for a modal float's barrier, as [ModalBarrier.semanticsLabel].
-  /// A Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
-  final String barrierLabel;
+  /// What a screen reader announces for a modal float's barrier.
+  @Deprecated('Read barrier.label. Deprecated after 0.9.1.')
+  String get barrierLabel => barrier.label ?? harborBarrierDismissLabel;
 
   /// What an anchored float sits by; null for an aligned one.
   @Deprecated('Read placement. Deprecated after 0.7.0.')
@@ -432,12 +501,11 @@ class HarborFloat with Diagnosticable {
       );
     }
     properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
+    properties.add(DiagnosticsProperty<HarborBarrier>('barrier', barrier, defaultValue: HarborBarrier.none));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onDismiss', onDismiss));
     properties.add(
       FlagProperty('requestFocus', value: requestFocus, ifFalse: 'does not take focus', defaultValue: true),
     );
-    properties.add(ColorProperty('barrierColor', barrierColor, defaultValue: const Color(0x00000000)));
-    properties.add(StringProperty('barrierLabel', barrierLabel, defaultValue: harborBarrierDismissLabel));
   }
 }
 
@@ -457,10 +525,14 @@ class HarborBuoy extends HarborFloat {
     super.alignment,
     @Deprecated('Use placement: HarborAligned(margin: ...). `dart fix` applies it. Deprecated after 0.7.0.')
     super.margin,
+    super.barrier,
+    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.1.')
     super.modal,
     super.onDismiss,
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierColor,
     super.requestFocus,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierLabel,
     super.within,
     super.hinge,
@@ -485,10 +557,14 @@ class HarborBuoy extends HarborFloat {
     super.crossAlignment,
     super.crossOffset,
     super.margin,
+    super.barrier,
+    @Deprecated('Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.1.')
     super.modal,
     super.onDismiss,
+    @Deprecated('Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierColor,
     super.requestFocus,
+    @Deprecated('Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     super.barrierLabel,
     super.hinge,
   }) : super.anchored();
@@ -499,7 +575,7 @@ class HarborBuoyLayer extends StatefulWidget {
   const HarborBuoyLayer({super.key, required this.floats, required this.toasts});
 
   final List<HarborFloat> floats;
-  final List<HarborToastEntry> toasts;
+  final List<ShownToast> toasts;
 
   @override
   State<HarborBuoyLayer> createState() => _HarborBuoyLayerState();
@@ -572,7 +648,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
   }
 
   List<HarborFloat> get floats => widget.floats;
-  List<HarborToastEntry> get toasts => widget.toasts;
+  List<ShownToast> get toasts => widget.toasts;
 
   @override
   Widget build(final BuildContext context) {
@@ -580,7 +656,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     // whenever that frame's room moves (a turn, a foldable opening): read only at build,
     // it stayed boxed into the shape the screen had when the toast was shown.
     final List<Listenable> raisers = <Listenable>[
-      for (final HarborToastEntry flare in toasts)
+      for (final ShownToast flare in toasts)
         if (flare.shownFrom case final HarborController harbor) harbor.room,
     ];
     final HarborFloat? modal = _modal;
@@ -596,9 +672,11 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
         if (modal != null)
           Positioned.fill(
             child: ModalBarrier(
-              color: modal.barrierColor,
-              onDismiss: modal.onDismiss,
-              semanticsLabel: modal.barrierLabel,
+              color: modal.barrier.color,
+              dismissible: modal.barrier.isDismissible,
+              onDismiss: modal.barrier.isDismissible ? modal.onDismiss : null,
+              semanticsLabel: modal.barrier.label ?? harborBarrierDismissLabel,
+              semanticsOnTapHint: modal.barrier.onTapHint,
             ),
           ),
         ListenableBuilder(
@@ -619,7 +697,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     );
     final List<HarborFloat> all = <HarborFloat>[
       ...floats,
-      for (final HarborToastEntry flare in flaresInSight(toasts))
+      for (final ShownToast flare in flaresInSight(toasts))
         HarborFloat(
           key: ObjectKey(flare),
           placement: flare.placement,
@@ -636,7 +714,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
       reaching: <int>{
         for (int i = 0; i < all.length; i++)
           if (all[i].child case _Flare(
-            entry: final HarborToastEntry entry,
+            entry: final ShownToast entry,
           ) when entry.reachesSystemEdges && entry.placement is HarborAligned)
             i,
       },
@@ -1826,8 +1904,12 @@ enum HarborToastTarget {
 ///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages one at a time;
 ///    toasts queue per slot, so toasts at different slots show together.
 abstract final class HarborToasts {
+  /// What the deprecated `duration:` reads when it is left out, so that `duration: null`, which
+  /// never ran out, can be told apart from it.
+  static const Duration _unsetDuration = Duration(microseconds: -1);
+
   /// Shows [builder]'s toast in [target]'s room at [slot], hidden
-  /// after [duration] (or when the returned entry is hidden). If its frame
+  /// once its [timing] runs out (or when the returned entry is hidden). If its frame
   /// leaves (the page is popped), the toast moves to the page frame now on top.
   ///
   /// Toasts at the same slot or alignment take turns, as a
@@ -1835,13 +1917,13 @@ abstract final class HarborToasts {
   /// the one before it has left. To replace the toast that is up, hide it.
   /// [HarborToastEntry.closed] completes once a toast has left, with why.
   ///
-  /// [duration] (4 s, a `SnackBar`'s) counts only while the toast is in
-  /// sight, unless [countsWhileCovered] keeps it running under a covering
-  /// route: from the end of its entrance (from its start with
-  /// [countsEntrance], so the toast is on screen that long, entrance
+  /// [timing] is how long the toast stays: 4 s, a `SnackBar`'s, when null. Its duration counts
+  /// only while the toast is in sight, unless [HarborToastTiming.countsWhileCovered] keeps it
+  /// running under a covering route: from the end of its entrance (from its start with
+  /// [HarborToastTiming.countsEntrance], so the toast is on screen that long, entrance
   /// included), and not while another route covers its page. Set
-  /// [HarborToastEntry.duration] to change it once the toast is up. With [persist] the toast
-  /// stays until it is hidden, as a
+  /// [HarborToastEntry.duration] to change it once the toast is up.
+  /// [HarborToastTiming.untilHidden] keeps the toast until it is hidden, as a
   /// `SnackBar` with `persist` does; give it to a toast with a button, so a
   /// screen-reader user has time to reach it.
   ///
@@ -1913,8 +1995,17 @@ abstract final class HarborToasts {
       'Deprecated after 0.7.0.',
     )
     final AlignmentGeometry? alignment,
-    final Duration? duration = const Duration(seconds: 4),
-    final bool persist = false,
+    final HarborToastTiming? timing,
+    @Deprecated(
+      'Use timing: HarborToastTiming(duration: ...), or HarborToastTiming.untilHidden for null. '
+      '`dart fix` applies it. Deprecated after 0.9.0.',
+    )
+    final Duration? duration = _unsetDuration,
+    @Deprecated(
+      'Use timing: HarborToastTiming.untilHidden for true, and leave out false. `dart fix` applies it to '
+      'true and false. Deprecated after 0.9.0.',
+    )
+    final bool? persist,
     final HarborToastTarget target = HarborToastTarget.topmost,
     final AnimationStyle? animationStyle,
     final HarborToastTransitionBuilder? transitionBuilder,
@@ -1944,10 +2035,14 @@ abstract final class HarborToasts {
       'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
-    final bool countsEntrance = false,
+    @Deprecated('Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    final bool? countsEntrance,
     final bool reachesSystemEdges = false,
     final HarborHinge? hinge,
-    final bool countsWhileCovered = false,
+    @Deprecated(
+      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it. Deprecated after 0.9.0.',
+    )
+    final bool? countsWhileCovered,
     final HarborToastQueue? queue,
   }) {
     assert(slot == null || alignment == null, 'Give a toast a slot or an alignment, not both.');
@@ -1966,6 +2061,14 @@ abstract final class HarborToasts {
               margin == null),
       'Give a toast a slot or a placement, not both, and not with the deprecated alignment, anchor, side, gap, '
       'crossAlignment or margin.',
+    );
+    assert(
+      timing == null ||
+          (identical(duration, _unsetDuration) &&
+              persist == null &&
+              countsEntrance == null &&
+              countsWhileCovered == null),
+      'Give a toast its timing, not with the deprecated duration, persist, countsEntrance or countsWhileCovered.',
     );
     assert(placement is! HarborAnchored || placement.anchor != null, 'An anchored toast needs an anchor.');
     assert(
@@ -2014,23 +2117,31 @@ abstract final class HarborToasts {
     // themes and text style of the place that showed it, as a sheet does. Without this a page
     // that wraps itself in its own Theme showed a toast in the app's theme.
     final CapturedThemes themes = InheritedTheme.capture(from: context, to: null);
-    final HarborToastEntry entry = HarborToastEntry(
+    final ShownToast entry = ShownToast(
       // A Builder, so the builder's own context sees the captured themes, not only what it returns.
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
       placement: placed,
-      duration: duration,
-      persist: persist,
+      // The deprecated spellings, merged: persist was a duration that never ran out.
+      timing:
+          timing ??
+          HarborToastTiming(
+            duration: persist ?? false
+                ? null
+                : identical(duration, _unsetDuration)
+                ? HarborToastTiming.defaultDuration
+                : duration,
+            countsEntrance: countsEntrance ?? false,
+            countsWhileCovered: countsWhileCovered ?? false,
+          ),
       // Sent to the root, a toast clears only the system edges.
       avoidInGlobal: target == HarborToastTarget.topmost ? HarborController.maybeOf(context)?.roomInGlobal() : null,
       shownFrom: target == HarborToastTarget.topmost ? HarborController.maybeOf(context) : null,
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
       liveRegion: liveRegion,
-      countsEntrance: countsEntrance,
       reachesSystemEdges: reachesSystemEdges,
       // Read where it is shown from: the page that showed it decides, wherever it is shown.
       hinge: hinge ?? HarborHinge.of(context),
-      countsWhileCovered: countsWhileCovered,
       queue: queue ?? HarborFlarePolicy.queueOf(context),
     );
     final HarborController? controller = placed is HarborAnchored
@@ -2045,7 +2156,7 @@ abstract final class HarborToasts {
     } else if (Overlay.maybeOf(context) case final OverlayState overlay) {
       (_overlayQueues[overlay] ??= _OverlayQueue(overlay)).raise(entry);
     } else {
-      entry.hide(reason: HarborToastClosedReason.remove);
+      entry.hideAs(HarborToastClosedReason.remove);
       flareLeft(entry);
       FlutterError.reportError(
         FlutterErrorDetails(
@@ -2077,8 +2188,17 @@ abstract final class HarborToasts {
       'Deprecated after 0.7.0.',
     )
     final AlignmentGeometry? alignment,
-    final Duration? duration = const Duration(seconds: 4),
-    final bool persist = false,
+    final HarborToastTiming? timing,
+    @Deprecated(
+      'Use timing: HarborToastTiming(duration: ...), or HarborToastTiming.untilHidden for null. '
+      '`dart fix` applies it. Deprecated after 0.9.0.',
+    )
+    final Duration? duration = _unsetDuration,
+    @Deprecated(
+      'Use timing: HarborToastTiming.untilHidden for true, and leave out false. `dart fix` applies it to '
+      'true and false. Deprecated after 0.9.0.',
+    )
+    final bool? persist,
     final HarborToastTarget target = HarborToastTarget.topmost,
     final AnimationStyle? animationStyle,
     final HarborToastTransitionBuilder? transitionBuilder,
@@ -2108,10 +2228,14 @@ abstract final class HarborToasts {
       'Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
-    final bool countsEntrance = false,
+    @Deprecated('Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    final bool? countsEntrance,
     @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it.') final bool reachesCoast = false,
     final HarborHinge? hinge,
-    final bool countsWhileCovered = false,
+    @Deprecated(
+      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it. Deprecated after 0.9.0.',
+    )
+    final bool? countsWhileCovered,
     final HarborToastQueue? queue,
   }) => show(
     context,
@@ -2119,6 +2243,7 @@ abstract final class HarborToasts {
     slot: slot,
     placement: placement,
     alignment: alignment,
+    timing: timing,
     duration: duration,
     persist: persist,
     target: target,
@@ -2155,13 +2280,13 @@ class _OverlayQueue {
   _OverlayQueue(this.overlay);
 
   final OverlayState overlay;
-  final List<HarborToastEntry> _flares = <HarborToastEntry>[];
-  final Map<HarborToastEntry, OverlayEntry> _hosts = <HarborToastEntry, OverlayEntry>{};
+  final List<ShownToast> _flares = <ShownToast>[];
+  final Map<ShownToast, OverlayEntry> _hosts = <ShownToast, OverlayEntry>{};
 
   /// The toasts whose host has been built: those run their exit before they leave.
-  final Set<HarborToastEntry> _built = <HarborToastEntry>{};
+  final Set<ShownToast> _built = <ShownToast>{};
 
-  void raise(final HarborToastEntry entry) {
+  void raise(final ShownToast entry) {
     queueFlare(_flares, entry);
     void lowered() {
       if (entry.showing.value) {
@@ -2193,7 +2318,7 @@ class _OverlayQueue {
   }
 
   void _insertInSight() {
-    for (final HarborToastEntry entry in flaresInSight(_flares)) {
+    for (final ShownToast entry in flaresInSight(_flares)) {
       if (!_hosts.containsKey(entry)) {
         late final OverlayEntry host;
         host = OverlayEntry(
@@ -2206,23 +2331,23 @@ class _OverlayQueue {
   }
 
   /// [entry] has run its exit and left the overlay: the next at its place comes in.
-  void left(final HarborToastEntry entry) {
+  void left(final ShownToast entry) {
     _forget(entry);
     _insertInSight();
   }
 
   /// The overlay went away under [entry], so the toasts waiting behind it have
   /// nothing left to show them either.
-  void gone(final HarborToastEntry entry) {
+  void gone(final ShownToast entry) {
     _forget(entry);
-    for (final HarborToastEntry waiting in List<HarborToastEntry>.of(_flares)) {
+    for (final ShownToast waiting in List<ShownToast>.of(_flares)) {
       if (!_hosts.containsKey(waiting)) {
-        waiting.hide(reason: HarborToastClosedReason.remove);
+        waiting.hideAs(HarborToastClosedReason.remove);
       }
     }
   }
 
-  void _forget(final HarborToastEntry entry) {
+  void _forget(final ShownToast entry) {
     _flares.remove(entry);
     _hosts.remove(entry);
     _built.remove(entry);
@@ -2235,7 +2360,7 @@ class _OverlayQueue {
 class _OverlayFlare extends StatefulWidget {
   const _OverlayFlare({required this.entry, required this.host, required this.queue});
 
-  final HarborToastEntry entry;
+  final ShownToast entry;
   final OverlayEntry host;
   final _OverlayQueue queue;
 
@@ -2275,7 +2400,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
     _removal?.cancel();
     if (!_removed) {
       // The overlay went away with the toast still up: nothing is left to show it.
-      widget.entry.hide(reason: HarborToastClosedReason.remove);
+      widget.entry.hideAs(HarborToastClosedReason.remove);
       widget.queue.gone(widget.entry);
     }
     super.dispose();
@@ -2283,7 +2408,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
 
   @override
   Widget build(final BuildContext context) {
-    final HarborToastEntry entry = widget.entry;
+    final ShownToast entry = widget.entry;
     final HarborPlacement placement = entry.placement;
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final EdgeInsets keyboard = MediaQuery.viewInsetsOf(context);
@@ -2313,7 +2438,7 @@ class _OverlayFlareState extends State<_OverlayFlare> {
 class _Flare extends StatefulWidget {
   const _Flare({required this.entry});
 
-  final HarborToastEntry entry;
+  final ShownToast entry;
 
   @override
   State<_Flare> createState() => _FlareState();
@@ -2364,7 +2489,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     flareShown(widget.entry);
     widget.entry.showing.addListener(_changed);
     widget.entry.held.addListener(_syncTimeout);
-    widget.entry.timing.addListener(_restartTimeout);
+    widget.entry.restarts.addListener(_restartTimeout);
     _controller.addStatusListener(_statusChanged);
     if (widget.entry.anchor case final HarborAnchor anchor) {
       anchor.addListener(_anchorMoved);
@@ -2390,18 +2515,17 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 
   /// Runs the toast's time while it is fully in and in sight, and starts it over when it comes back.
   void _syncTimeout() {
-    final HarborToastEntry entry = widget.entry;
+    final ShownToast entry = widget.entry;
     final Duration? duration = entry.duration;
     final bool running =
         duration != null &&
-        !entry.persist &&
         !entry.held.value &&
         entry.showing.value &&
         (entry.countsEntrance ? !_controller.isDismissed : _controller.isCompleted) &&
         (_inSight || entry.countsWhileCovered) &&
         _anchored;
     if (running && _timeout == null) {
-      _timeout = Timer(duration, () => entry.hide(reason: HarborToastClosedReason.timeout));
+      _timeout = Timer(duration, () => entry.hideAs(HarborToastClosedReason.timeout));
     } else if (!running) {
       _timeout?.cancel();
       _timeout = null;
@@ -2413,7 +2537,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     _timeout?.cancel();
     widget.entry.showing.removeListener(_changed);
     widget.entry.held.removeListener(_syncTimeout);
-    widget.entry.timing.removeListener(_restartTimeout);
+    widget.entry.restarts.removeListener(_restartTimeout);
     widget.entry.anchor?.removeListener(_anchorMoved);
     _controller.removeStatusListener(_statusChanged);
     _animation.dispose();
@@ -2441,7 +2565,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   /// screen and the hinge itself are not its content's to clear. An anchored toast's screen is known
   /// only as it paints, so it reads [media] as it is.
   MediaQueryData _screenOf(final BuildContext context, final MediaQueryData media) {
-    final HarborToastEntry entry = widget.entry;
+    final ShownToast entry = widget.entry;
     if (entry.placement is! HarborAligned) {
       return media;
     }
@@ -2463,7 +2587,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   }
 
   Widget _content(final BuildContext context) {
-    final HarborToastEntry entry = widget.entry;
+    final ShownToast entry = widget.entry;
     if (!entry.reachesSystemEdges) {
       return _build(context);
     }
@@ -2490,7 +2614,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   );
 
   Widget _buildInScope(final BuildContext context) {
-    final HarborToastEntry entry = widget.entry;
+    final ShownToast entry = widget.entry;
     final Widget child = entry.builder(context);
     final Widget shown = switch (entry.transitionBuilder) {
       final HarborToastTransitionBuilder transition => transition(context, _animation, child),
@@ -2509,7 +2633,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     return Semantics(
       container: true,
       liveRegion: true,
-      onDismiss: () => entry.hide(reason: HarborToastClosedReason.dismiss),
+      onDismiss: () => entry.hideAs(HarborToastClosedReason.dismiss),
       child: shown,
     );
   }
@@ -2536,7 +2660,7 @@ class _CoastConstraints extends BoxConstraints {
 class HarborFlareScope extends InheritedWidget {
   const HarborFlareScope({super.key, required this.entry, required super.child});
 
-  final HarborToastEntry entry;
+  final ShownToast entry;
 
   @override
   bool updateShouldNotify(final HarborFlareScope oldWidget) => !identical(entry, oldWidget.entry);

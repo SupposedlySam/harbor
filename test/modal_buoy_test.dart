@@ -37,7 +37,7 @@ class _PageState extends State<_Page> {
       if (menu)
         HarborFloat(
           placement: const HarborAligned(alignment: Alignment.center),
-          modal: true,
+          barrier: const HarborBarrier.clear(),
           onDismiss: () => setState(() {
             menu = false;
             dismissed++;
@@ -98,7 +98,7 @@ class _FocusPageState extends State<_FocusPage> {
       if (menu)
         HarborFloat(
           placement: const HarborAligned(alignment: Alignment.center),
-          modal: true,
+          barrier: const HarborBarrier.clear(),
           onDismiss: () => setState(() {
             menu = false;
             dismissed++;
@@ -200,13 +200,13 @@ class _SpeedDialPageState extends State<_SpeedDialPage> {
       if (menu)
         HarborFloat(
           placement: const HarborAligned(alignment: Alignment.topCenter),
-          modal: true,
+          barrier: const HarborBarrier.clear(),
           onDismiss: () => setState(() => menu = false),
           child: const Text('menu'),
         ),
       HarborFloat(
         key: const ValueKey<String>('dial'),
-        modal: dialOpen,
+        barrier: dialOpen ? const HarborBarrier.clear() : HarborBarrier.none,
         onDismiss: () => setState(() => dialOpen = false),
         child: const _Counter(),
       ),
@@ -281,9 +281,8 @@ void main() {
         home: HarborFrame(
           floats: <HarborFloat>[
             HarborFloat(
-              modal: true,
+              barrier: const HarborBarrier.clear(label: 'Fermer'),
               onDismiss: () {},
-              barrierLabel: 'Fermer',
               child: const SizedBox(width: 100, height: 100),
             ),
           ],
@@ -297,7 +296,7 @@ void main() {
   });
 
   test('a modal buoy without onDismiss is refused', () {
-    expect(() => HarborFloat(modal: true, child: const SizedBox()), throwsAssertionError);
+    expect(() => HarborFloat(barrier: const HarborBarrier.clear(), child: const SizedBox()), throwsAssertionError);
   });
 
   group('a modal buoy is modal for the keyboard', () {
@@ -420,7 +419,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           tester.element(find.text('Open menu')),
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 120, child: Text('sheet'))),
         ),
       );
@@ -451,7 +450,7 @@ void main() {
       unawaited(
         showHarborSheet<void>(
           tester.element(find.text('Open menu')),
-          barrier: HarborSheetBarrier.none,
+          barrier: HarborBarrier.none,
           requestFocus: true,
           builder: (final BuildContext _) => HarborSheet(
             body: SizedBox(
@@ -518,8 +517,8 @@ void main() {
       await _pumpSpeedDial(tester);
       HarborToasts.show(
         tester.element(find.text('n=1')),
-        persist: true,
         builder: (final BuildContext _) => const Text('Copied'),
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       expect(find.text('Copied'), findsOneWidget, reason: 'positive control: the flare is up');

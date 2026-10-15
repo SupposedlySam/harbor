@@ -287,7 +287,11 @@ class _MooredEntryState extends State<MooredEntry> {
         onChanged: (final _EdgeSet e) => setState(() => _edges = e),
       ),
       ToggleControl(label: 'clearsBars', value: _bars, onChanged: (final bool v) => setState(() => _bars = v)),
-      ToggleControl(label: 'clearsKeyboard', value: _keyboard, onChanged: (final bool v) => setState(() => _keyboard = v)),
+      ToggleControl(
+        label: 'clearsKeyboard',
+        value: _keyboard,
+        onChanged: (final bool v) => setState(() => _keyboard = v),
+      ),
       ToggleControl(label: 'rowInsets', value: _rowInsets, onChanged: (final bool v) => setState(() => _rowInsets = v)),
       SliderControl(
         label: 'minimum',
@@ -1405,12 +1409,12 @@ class MakeWayEntry extends StatefulWidget {
 }
 
 class _MakeWayEntryState extends State<MakeWayEntry> {
-  HarborYield _mode = HarborYield.withdraw;
+  HarborBarState _state = HarborBarState.withdrawn;
   bool _top = false;
   bool _bottom = false;
 
   String _claim(final HarborEdge edge) =>
-      'HarborHideBar(edge: HarborEdge.${edge.name}, mode: HarborYield.${_mode.name}, child: ...)';
+      'HarborHideBar(edge: HarborEdge.${edge.name}, state: HarborBarState.${_state.name}, child: ...)';
 
   @override
   Widget build(final BuildContext context) => GuidePage(
@@ -1421,12 +1425,12 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         'The tab bar slides away and the list runs to the bottom of the screen: withdraw gives its ground back.',
       ),
       TryStep(
-        'Pick mode: dark, with hide bar: bottom still on',
+        'Pick state: dark, with hide bar: bottom still on',
         'The tab bar vanishes but keeps its ground: the list still ends where the tab bar was, and nothing moves.',
       ),
       TryStep(
         'Switch on hide bar: top',
-        'The header goes the same way, and in withdraw mode the rows rise toward the status bar.',
+        'The header goes the same way, and withdrawn, the rows rise toward the status bar.',
       ),
       TryStep('Switch both off', 'Both bars come back; the claims were released.'),
     ],
@@ -1439,12 +1443,12 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         'the widget leaves.',
     art: const MakeWayArt(),
     controls: <Widget>[
-      ChoiceControl<HarborYield>(
-        label: 'mode',
-        values: HarborYield.values,
-        value: _mode,
-        labelOf: (final HarborYield m) => m.name,
-        onChanged: (final HarborYield m) => setState(() => _mode = m),
+      ChoiceControl<HarborBarState>(
+        label: 'state',
+        values: const <HarborBarState>[HarborBarState.withdrawn, HarborBarState.dark],
+        value: _state,
+        labelOf: (final HarborBarState s) => s.name,
+        onChanged: (final HarborBarState s) => setState(() => _state = s),
       ),
       // In an app the claim comes from content (a panel, a search field); here the switches stand in
       // for it, so the whole phone stays in view while you flip them.
@@ -1461,19 +1465,19 @@ class _MakeWayEntryState extends State<MakeWayEntry> {
         '${_bottom ? _claim(HarborEdge.bottom) : '// (bottom: no claim)'}\n'
         '\n'
         '// Imperative: hold the claim, release it later.\n'
-        'final claim = HarborController.of(context)\n'
-        '    .hideBar(HarborEdge.bottom, mode: HarborYield.${_mode.name});\n'
+        'final claim = HarborFrame.of(context)\n'
+        '    .hideBar(HarborEdge.bottom, state: HarborBarState.${_state.name});\n'
         'claim.release();',
     stage: (final BuildContext context) => HarborFrame(
       top: <HarborBar>[_overlayHeader()],
       bottom: <HarborBar>[_solidBar(label: 'Tab bar (HarborBar.solid)')],
       body: HarborHideBar(
         edge: HarborEdge.top,
-        mode: _mode,
+        state: _state,
         active: _top,
         child: HarborHideBar(
           edge: HarborEdge.bottom,
-          mode: _mode,
+          state: _state,
           active: _bottom,
           child: StageProbe(
             label: 'HarborFrame body',

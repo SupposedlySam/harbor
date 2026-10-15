@@ -28,7 +28,7 @@ void rows() {
 
 void floats(HarborAnchor anchor) {
   const HarborFloat(child: SizedBox());
-  const HarborFloat(modal: true, onDismiss: _close, child: SizedBox());
+  const HarborFloat(onDismiss: _close, child: SizedBox(), barrier: HarborBarrier.clear());
   const List<HarborFloat> floats = <HarborFloat>[HarborFloat(child: SizedBox())];
   <Object?>[floats];
 }

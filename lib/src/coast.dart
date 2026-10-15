@@ -14,8 +14,9 @@ enum HarborSystemEdgeFeature {
   titleSafe,
   fixed,
 
-  /// A fold or hinge. Reserved and not yet read: [HarborSystemEdges.features] never
-  /// reports it, and no layout splits around a fold yet.
+  /// A fold or hinge. Reserved: [HarborSystemEdges.features] never reports it, since a hinge is
+  /// not a system edge. harbor keeps bars, sheets, dialogs, toasts, floats and popovers off a hinge
+  /// through `MediaQuery.displayFeatures`, by the `HarborHinge` policy in force.
   hinge,
 }
 

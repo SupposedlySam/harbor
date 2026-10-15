@@ -671,19 +671,19 @@ class _MakeWayDemo extends StatelessWidget {
     final double t = ShowcaseClock.of(context);
     final double dark = _cue('makeway', 'dark') - 0.2;
     final double withdraw = _cue('makeway', 'withdraw') - 0.2;
-    final HarborYield? mode = t >= withdraw && t < _end('makeway') - 0.9
-        ? HarborYield.withdraw
+    final HarborBarState? state = t >= withdraw && t < _end('makeway') - 0.9
+        ? HarborBarState.withdrawn
         : t >= dark && t < withdraw
-        ? HarborYield.dark
+        ? HarborBarState.dark
         : null;
     return HarborFrame(
       top: <HarborBar>[_header('Harbor Master')],
       bottom: <HarborBar>[_tabBar()],
       body: HarborHideBar(
-        key: ValueKey<HarborYield?>(mode),
+        key: ValueKey<HarborBarState?>(state),
         edge: HarborEdge.bottom,
-        mode: mode ?? HarborYield.dark,
-        active: mode != null,
+        state: state ?? HarborBarState.dark,
+        active: state != null,
         child: HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
       ),
     );
@@ -811,9 +811,8 @@ class _BuoyDemoState extends State<_BuoyDemo> {
             if (t >= modal && t < closes)
               HarborFloat(
                 placement: const HarborAligned(alignment: Alignment.center),
-                modal: true,
+                barrier: const HarborBarrier.dimmed(color: Color(0x66000000)),
                 onDismiss: () {},
-                barrierColor: const Color(0x66000000),
                 child: Container(
                   width: 260,
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -941,7 +940,6 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   void open() => _flare = HarborToasts.show(
     _page!,
     slot: HarborToastSlot.low,
-    duration: null,
     builder: (final BuildContext _) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(color: Palette.night, borderRadius: BorderRadius.circular(24)),
@@ -954,6 +952,7 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
         ],
       ),
     ),
+    timing: HarborToastTiming.untilHidden,
   );
 
   @override
@@ -1119,7 +1118,7 @@ class _BreakwaterDemoState extends _OverPageState<_BreakwaterDemo> {
   Future<void> show(final BuildContext context) => showHarborSheet<void>(
     context,
     coversPage: true,
-    barrier: HarborSheetBarrier.none,
+    barrier: HarborBarrier.none,
     builder: (final BuildContext _) => const HarborSheet(
       surface: ColoredBox(color: Palette.deepSea),
       body: SizedBox(
@@ -1225,8 +1224,7 @@ class _LighthouseDemo extends StatelessWidget {
               const HarborClear.rowInsets(child: _Field('Speed', '6 knots')),
               const HarborClear.rowInsets(child: _Field('Flag', 'Red ensign')),
               const HarborClear.rowInsets(child: _Field('Crew', '3')),
-              HarborKeepInSight(
-                keepInSight: true,
+              HarborKeepVisible(
                 clearance: 16,
                 child: HarborClear.rowInsets(
                   child: _Field('Remarks', focused ? 'Under full sail|' : '', focused: focused),

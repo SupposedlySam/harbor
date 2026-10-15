@@ -35,7 +35,7 @@ final List<GuideEntry> floatingEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'buoy-modal',
-    className: 'HarborFloat(modal: true)',
+    className: 'HarborFloat(barrier:)',
     group: GuideGroup.floating,
     realWorld: 'Like the harbor master’s launch: the others clear its way',
     art: (final BuildContext context) => const HarborLaunchArt(),
@@ -91,7 +91,7 @@ final List<GuideEntry> floatingEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'lighthouse-reveal',
-    className: 'HarborKeepInSight(keepInSight:)',
+    className: 'HarborKeepVisible',
     group: GuideGroup.lighthouse,
     realWorld: 'Like a lighthouse beam: it keeps a boat in sight',
     art: (final BuildContext context) => const LighthouseBeamArt(),
@@ -99,7 +99,7 @@ final List<GuideEntry> floatingEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'beacon-obscured',
-    className: 'HarborKeepInSight(onObscured:)',
+    className: 'HarborCoverageListener',
     group: GuideGroup.lighthouse,
     realWorld: 'Like a light behind a headland: how much is hidden',
     art: (final BuildContext context) => const HeadlandBeaconArt(),
@@ -107,7 +107,7 @@ final List<GuideEntry> floatingEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'lighthouse-region',
-    className: 'HarborKeepInSightRegion',
+    className: 'HarborKeepVisibleRegion',
     group: GuideGroup.lighthouse,
     realWorld: 'Like a boat lift: raised just clear of what covers it',
     art: (final BuildContext context) => const BoatLiftArt(),
@@ -774,9 +774,9 @@ class _PopoverEntryState extends State<PopoverEntry> {
 }
 
 // ---------------------------------------------------------------------------
-// 3. HarborFloat(modal: true)
+// 3. HarborFloat(barrier:)
 
-/// `HarborFloat(modal: true)`: a float that hides the floats listed before it.
+/// `HarborFloat(barrier:)`: a modal float, which hides the floats listed before it.
 class ModalFloatEntry extends StatefulWidget {
   const ModalFloatEntry({super.key});
 
@@ -790,11 +790,11 @@ class _ModalFloatEntryState extends State<ModalFloatEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborFloat(modal: true)',
+    className: 'HarborFloat(barrier:)',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the page beside the launch',
-        'The launch goes and HarborFloat (listed first) comes back: the modal float\'s barrier took the tap and called onDismiss.',
+        'The launch goes and HarborFloat (listed first) comes back: the float\'s barrier took the tap and called onDismiss.',
       ),
       TryStep(
         'Tap Call the launch',
@@ -810,9 +810,10 @@ class _ModalFloatEntryState extends State<ModalFloatEntry> {
         'When the harbor master’s launch comes through with its blue light on, every other boat moves out of its way. '
         'While it is there, it is the only one in the channel.',
     inYourApp:
-        'A menu or a panel that should be the only float while it is up. A modal float puts a barrier over the '
-        'page, so a tap beside it or back closes it (through onDismiss) instead of reaching the page, and it hides every '
-        'float listed before it (a tooltip, a floating button) until it goes. Floats listed after it stay up.',
+        'A menu or a panel that should be the only float while it is up. A float with a barrier is modal: '
+        'HarborBarrier.clear() keeps the page in view, HarborBarrier.dimmed() tints it. A tap beside it or back closes it '
+        '(through onDismiss) instead of reaching the page, and it hides every float listed before it (a tooltip, a '
+        'floating button) until it goes. Floats listed after it stay up.',
     art: const HarborLaunchArt(),
     controls: <Widget>[
       ToggleControl(label: 'launch up', value: _launchUp, onChanged: (final bool v) => setState(() => _launchUp = v)),
@@ -822,12 +823,12 @@ class _ModalFloatEntryState extends State<ModalFloatEntry> {
         'HarborFrame(\n'
         '  floats: [\n'
         '    HarborFloat(placement: HarborAligned(alignment: Alignment.bottomCenter), child: Tooltip()),\n'
-        '${_launchUp ? (_modal ? '    HarborFloat(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip\n' : '    HarborFloat(child: QuickActions()), // floats beside it\n') : ''}'
+        '${_launchUp ? (_modal ? '    HarborFloat(barrier: HarborBarrier.clear(), onDismiss: close, child: QuickActions()), // hides the tooltip\n' : '    HarborFloat(child: QuickActions()), // floats beside it\n') : ''}'
         '  ],\n'
         '  ...\n'
         ')',
     stage: (final BuildContext context) => HarborFrame(
-      top: <HarborBar>[_headerBar('HarborFloat(modal:)', key: const ValueKey<String>('modal header'))],
+      top: <HarborBar>[_headerBar('HarborFloat(barrier:)', key: const ValueKey<String>('modal header'))],
       bottom: <HarborBar>[_bottomBar('HarborBar.solid', key: const ValueKey<String>('modal tab bar'))],
       floats: <HarborFloat>[
         const HarborFloat(
@@ -841,7 +842,7 @@ class _ModalFloatEntryState extends State<ModalFloatEntry> {
         if (_launchUp)
           HarborFloat(
             placement: const HarborAligned(alignment: Alignment.center),
-            modal: _modal,
+            barrier: _modal ? const HarborBarrier.clear() : HarborBarrier.none,
             onDismiss: _modal ? () => setState(() => _launchUp = false) : null,
             child: _LaunchPanel(
               key: const ValueKey<String>('modal float'),
@@ -905,7 +906,7 @@ class _LaunchPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'HarborFloat(modal: $modal)',
+                    'HarborFloat(barrier: ${modal ? 'clear' : 'none'})',
                     style: const TextStyle(
                       fontFamily: 'Menlo',
                       color: Colors.white,
@@ -1211,14 +1212,19 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
     HarborKeyboardStance.reserves =>
       'reserves: the flag tray holds the keyboard\'s ground. Drag the keyboard up: it takes the tray\'s place '
           'and the button above it doesn\'t move.',
+    HarborKeyboardStance.withdraws =>
+      'withdraws: the button slides away while the keyboard is up and comes back once it is down.',
   };
 
   Widget _sheet(final BuildContext context) => HarborSheet(
     debugLabel: 'HarborSheet',
     surface: const Sailcloth(),
     header: _hasHeader ? const SheetHeader(key: ValueKey<String>('sheet header'), title: 'HarborSheet') : null,
-    footer: _hasFooter ? _footer(context) : null,
-    footerKeyboard: _footerKeyboard,
+    // The plain footer rides the keyboard; another stance takes the sheet's own footer bar, changed.
+    footer: _hasFooter && _footerKeyboard == HarborKeyboardStance.rides ? _footer(context) : null,
+    footerBar: _hasFooter && _footerKeyboard != HarborKeyboardStance.rides
+        ? HarborSheet.defaultFooterBar(_footer(context)).copyWith(keyboard: _footerKeyboard)
+        : null,
     maxExtentFraction: _maxExtent / 100,
     body: HarborScrollView.box(
       shrinkWrap: true,
@@ -1243,14 +1249,14 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
       ),
       TryStep(
         'Show the keyboard',
-        'footerKeyboard rides: Make sail rides up on the keyboard, and the sheet stays within the space above it.',
+        'footer keyboard rides: Make sail rides up on the keyboard, and the sheet stays within the space above it.',
       ),
       TryStep(
-        'Pick footerKeyboard: stays',
+        'Pick footer keyboard: stays',
         'Make sail stays put and the keyboard covers it, while the rows still end above the keyboard.',
       ),
       TryStep(
-        'Pick footerKeyboard: reserves, then hide the keyboard',
+        'Pick footer keyboard: reserves, then hide the keyboard',
         'A flag tray takes the keyboard\'s place, and Make sail doesn\'t move as they trade: HarborKeyboardSpace holds its ground.',
       ),
     ],
@@ -1269,8 +1275,12 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
       ToggleControl(label: 'header', value: _hasHeader, onChanged: (final bool v) => _set(() => _hasHeader = v)),
       ToggleControl(label: 'footer', value: _hasFooter, onChanged: (final bool v) => _set(() => _hasFooter = v)),
       ChoiceControl<HarborKeyboardStance>(
-        label: 'footerKeyboard',
-        values: HarborKeyboardStance.values,
+        label: 'footer keyboard',
+        values: const <HarborKeyboardStance>[
+          HarborKeyboardStance.rides,
+          HarborKeyboardStance.stays,
+          HarborKeyboardStance.reserves,
+        ],
         value: _footerKeyboard,
         labelOf: (final HarborKeyboardStance s) => s.name,
         onChanged: (final HarborKeyboardStance s) => _set(() => _footerKeyboard = s),
@@ -1296,8 +1306,8 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
         '  context,\n'
         '  builder: (context) => HarborSheet(\n'
         '${_hasHeader ? '    header: SheetHeader(title: \'HarborSheet\'),\n' : ''}'
-        '${_hasFooter ? (_footerKeyboard == HarborKeyboardStance.reserves ? '    footer: Column(children: [MakeSailButton(), HarborKeyboardSpace(child: FlagTray())]),\n' : '    footer: MakeSailButton(),\n') : ''}'
-        '    footerKeyboard: HarborKeyboardStance.${_footerKeyboard.name},\n'
+        '${_hasFooter ? (_footerKeyboard == HarborKeyboardStance.rides ? '    footer: MakeSailButton(),\n' : '    footerBar: HarborSheet.defaultFooterBar(${_footerKeyboard == HarborKeyboardStance.reserves ? 'Column(children: [MakeSailButton(), HarborKeyboardSpace(child: FlagTray())])' : 'MakeSailButton()'})\n'
+                        '        .copyWith(keyboard: HarborKeyboardStance.${_footerKeyboard.name}),\n') : ''}'
         '    maxExtentFraction: ${_fraction(_maxExtent)},\n'
         '    body: HarborScrollView.box(shrinkWrap: true, child: ${_rows.round()}Rows()),\n'
         '  ),\n'
@@ -1470,7 +1480,14 @@ class CoversPageEntry extends StatefulWidget {
 
 class _CoversPageEntryState extends State<CoversPageEntry> {
   bool _coversPage = true;
-  HarborSheetBarrier _barrier = HarborSheetBarrier.none;
+  String _barrier = 'none';
+
+  // The three kinds of barrier, by the name the picker and the code show.
+  static const Map<String, HarborBarrier> _barriers = <String, HarborBarrier>{
+    'dimmed': HarborBarrier.dimmed(),
+    'clear': HarborBarrier.clear(),
+    'none': HarborBarrier.none,
+  };
 
   static const int _count = 14;
 
@@ -1478,7 +1495,7 @@ class _CoversPageEntryState extends State<CoversPageEntry> {
     showHarborSheet<void>(
       context,
       coversPage: _coversPage,
-      barrier: _barrier,
+      barrier: _barriers[_barrier]!,
       builder: (final BuildContext context) => HarborSheet(
         debugLabel: 'coversPage sheet',
         surface: const Sailcloth(),
@@ -1518,7 +1535,7 @@ class _CoversPageEntryState extends State<CoversPageEntry> {
         'Scroll to the end: the last rows now stay under the sheet. Without coversPage the page is never told it is there.',
       ),
       TryStep(
-        'Close it, pick barrier: dismissible, open it again',
+        'Close it, pick barrier: dimmed, open it again',
         'The page dims, and a tap on it closes the sheet instead of scrolling the list.',
       ),
     ],
@@ -1538,19 +1555,19 @@ class _CoversPageEntryState extends State<CoversPageEntry> {
         value: _coversPage,
         onChanged: (final bool v) => setState(() => _coversPage = v),
       ),
-      ChoiceControl<HarborSheetBarrier>(
+      ChoiceControl<String>(
         label: 'barrier',
-        values: HarborSheetBarrier.values,
+        values: _barriers.keys.toList(),
         value: _barrier,
-        labelOf: (final HarborSheetBarrier b) => b.name,
-        onChanged: (final HarborSheetBarrier b) => setState(() => _barrier = b),
+        labelOf: (final String b) => b,
+        onChanged: (final String b) => setState(() => _barrier = b),
       ),
     ],
     code:
         'showHarborSheet(\n'
         '  context,\n'
         '  coversPage: $_coversPage,\n'
-        '  barrier: HarborSheetBarrier.${_barrier.name},\n'
+        '  barrier: ${_barrier == 'none' ? 'HarborBarrier.none' : 'const HarborBarrier.$_barrier()'},\n'
         '  builder: (context) => HarborSheet(header: title, body: note),\n'
         ');\n\n'
         '// The page that opened it:\n'
@@ -1721,9 +1738,9 @@ class _CallBox extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 9. HarborKeepInSight.reveal + HarborKeepInSight(keepInSight:)
+// 9. HarborKeepVisible.reveal + HarborKeepVisible
 
-/// `HarborKeepInSight.reveal` + `HarborKeepInSight(keepInSight:)`: a field kept in sight as the keyboard rises.
+/// `HarborKeepVisible.reveal` + `HarborKeepVisible`: a field kept in sight as the keyboard rises.
 class KeepInSightEntry extends StatefulWidget {
   const KeepInSightEntry({super.key});
 
@@ -1747,28 +1764,28 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
   void _reveal() {
     final BuildContext? field = _field.currentContext;
     if (field != null) {
-      HarborKeepInSight.reveal(field, clearance: _clearance);
+      HarborKeepVisible.reveal(field, clearance: _clearance);
     }
   }
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborKeepInSight(keepInSight:)',
+    className: 'HarborKeepVisible',
     tryThis: const <TryStep>[
       TryStep(
         'Show the keyboard before touching the field',
-        'Nothing scrolls and the field goes under the keyboard: with onlyWhileFocused, HarborKeepInSight waits for focus.',
+        'Nothing scrolls and the field goes under the keyboard: with onlyWhileFocused, HarborKeepVisible waits for focus.',
       ),
       TryStep(
         'Hide the keyboard, tap the field, show it again',
-        'The list scrolls so the field sits clearance above the keyboard: HarborKeepInSight keeps it in sight.',
+        'The list scrolls so the field sits clearance above the keyboard: HarborKeepVisible keeps it in sight.',
       ),
       TryStep(
         'Drag clearance to 40, hide and show the keyboard',
         'The field now stops 40 points above the keyboard: clearance is used the next time the keyboard rises.',
       ),
       TryStep(
-        'Switch off keepInSight, scroll up, hide and show the keyboard',
+        'Switch off active, scroll up, hide and show the keyboard',
         'The field is left under the keyboard. Tap reveal in the header to bring it up by hand.',
       ),
     ],
@@ -1777,13 +1794,13 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
         'A lighthouse sweeps its beam out over the water, and when it falls on a boat the boat stands out in the dark. '
         'Its keeper’s job is to keep ships in sight of the light.',
     inYourApp:
-        'HarborKeepInSight.reveal scrolls a widget into sight, clearance clear of the bars and the keyboard. A '
-        'HarborKeepInSight with keepInSight does it for you whenever the keyboard rises or the bottom grows; with '
+        'HarborKeepVisible.reveal scrolls a widget into sight, clearance clear of the bars and the keyboard. A '
+        'HarborKeepVisible does it for you whenever the keyboard rises or the bottom grows; with '
         'onlyWhileFocused, only while focus is inside it. Tap the field, then show the keyboard.',
     art: const LighthouseBeamArt(),
     controls: <Widget>[
       ToggleControl(
-        label: 'keepInSight',
+        label: 'active',
         value: _keepInSight,
         onChanged: (final bool v) => setState(() => _keepInSight = v),
       ),
@@ -1804,8 +1821,8 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
         'HarborScrollView(slivers: [\n'
         '  boats,\n'
         '  SliverToBoxAdapter(\n'
-        '    child: HarborKeepInSight(\n'
-        '      keepInSight: $_keepInSight,\n'
+        '    child: HarborKeepVisible(\n'
+        '      active: $_keepInSight,\n'
         '      onlyWhileFocused: $_onlyWhileFocused,\n'
         '      clearance: ${_f(_clearance)},\n'
         '      child: Field(),\n'
@@ -1813,7 +1830,7 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
         '  ),\n'
         '])\n\n'
         '// Or by hand:\n'
-        'HarborKeepInSight.reveal(fieldContext, clearance: ${_f(_clearance)});',
+        'HarborKeepVisible.reveal(fieldContext, clearance: ${_f(_clearance)});',
     stage: (final BuildContext context) => HarborFrame(
       top: <HarborBar>[
         _headerBar(
@@ -1838,8 +1855,8 @@ class _KeepInSightEntryState extends State<KeepInSightEntry> {
               child: HarborClear.rowInsets(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: HarborKeepInSight(
-                    keepInSight: _keepInSight,
+                  child: HarborKeepVisible(
+                    active: _keepInSight,
                     onlyWhileFocused: _onlyWhileFocused,
                     clearance: _clearance,
                     child: KeyedSubtree(
@@ -1896,7 +1913,7 @@ class _FocusField extends StatelessWidget {
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
-                    focused ? 'HarborKeepInSight field' : 'Tap me, then show the keyboard',
+                    focused ? 'HarborKeepVisible field' : 'Tap me, then show the keyboard',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: Palette.foam.withValues(alpha: focused ? 1 : 0.6)),
@@ -1914,9 +1931,9 @@ class _FocusField extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 10. HarborKeepInSight(onObscured:)
+// 10. HarborCoverageListener
 
-/// `HarborKeepInSight(onObscured:)`: how much of a widget the bars cover.
+/// `HarborCoverageListener`: how much of a widget the bars cover.
 class ObscuredEntry extends StatefulWidget {
   const ObscuredEntry({super.key});
 
@@ -1949,7 +1966,7 @@ class _ObscuredEntryState extends State<ObscuredEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborKeepInSight(onObscured:)',
+    className: 'HarborCoverageListener',
     tryThis: const <TryStep>[
       TryStep('Scroll the list up slowly', 'covered climbs from 0% as the hero title slides under the header.'),
       TryStep(
@@ -1984,8 +2001,8 @@ class _ObscuredEntryState extends State<ObscuredEntry> {
     ],
     code:
         'final covered = ValueNotifier<double>(0);\n\n'
-        'HarborKeepInSight(\n'
-        '  onObscured: (v) => covered.value = v, // 0 clear, 1 under the header\n'
+        'HarborCoverageListener(\n'
+        '  onCoverage: (v) => covered.value = v, // 0 clear, 1 under the header\n'
         '  child: HeroTitle(),\n'
         ')\n\n'
         '// In the header:\n'
@@ -2042,8 +2059,8 @@ class _ObscuredEntryState extends State<ObscuredEntry> {
                     right: 0,
                     bottom: 16,
                     child: HarborClear.rowInsets(
-                      child: HarborKeepInSight(
-                        onObscured: (final double v) => _covered.value = v,
+                      child: HarborCoverageListener(
+                        onCoverage: (final double v) => _covered.value = v,
                         child: const Text(
                           'The Lighthouse',
                           key: ValueKey<String>('hero title'),
@@ -2069,9 +2086,9 @@ class _ObscuredEntryState extends State<ObscuredEntry> {
 }
 
 // ---------------------------------------------------------------------------
-// 11. HarborKeepInSightRegion + HarborKeepInSight(lift: true)
+// 11. HarborKeepVisibleRegion + HarborLift
 
-/// `HarborKeepInSightRegion` + `HarborKeepInSight(lift: true)`: content lifted clear of a sheet.
+/// `HarborKeepVisibleRegion` + `HarborLift`: content lifted clear of a sheet.
 class LiftEntry extends StatefulWidget {
   const LiftEntry({super.key});
 
@@ -2088,7 +2105,7 @@ class _LiftEntryState extends State<LiftEntry> {
     showHarborSheet<void>(
       context,
       coversPage: true,
-      barrier: HarborSheetBarrier.none,
+      barrier: HarborBarrier.none,
       builder: (final BuildContext context) => HarborSheet(
         debugLabel: 'lift sheet',
         surface: const Sailcloth(),
@@ -2103,16 +2120,16 @@ class _LiftEntryState extends State<LiftEntry> {
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborKeepInSightRegion',
+    className: 'HarborKeepVisibleRegion',
     tryThis: const <TryStep>[
       TryStep(
         'Tap Open sheet in the header',
         'The boat rises to stay clearance above the sheet: the region lifts it just as far as it needs to.',
       ),
       TryStep('Drag clearance to 120', 'The boat rises further, to stay 120 points above the sheet.'),
-      TryStep('Switch off lift', 'The boat drops back to where it was placed, under the sheet.'),
+      TryStep('Switch off active', 'The boat drops back to where it was placed, under the sheet.'),
       TryStep(
-        'Switch on holdPosition, then switch lift back on',
+        'Switch on holdPosition, then switch active back on',
         'The boat stays put under the sheet: holdPosition is for an element being dragged.',
       ),
       TryStep('Switch off holdPosition', 'Let go, the boat rises clear of the sheet.'),
@@ -2123,12 +2140,12 @@ class _LiftEntryState extends State<LiftEntry> {
         'A boat lift is a tall gantry on wheels that straddles a slip. Slings go under the hull, and the boat is raised '
         'clear of the water, just as high as it needs to be.',
     inYourApp:
-        'A region that lifts its content when a HarborKeepInSight(lift: true) inside it would be covered by what covers the '
+        'A region that lifts its content when a HarborLift inside it would be covered by what covers the '
         'bottom (a coversPage sheet, the keyboard): up just far enough to keep it clearance clear, and back down when '
         'the cover goes. holdPosition keeps it where it is, for an element being dragged.',
     art: const BoatLiftArt(),
     controls: <Widget>[
-      ToggleControl(label: 'lift', value: _lift, onChanged: (final bool v) => setState(() => _lift = v)),
+      ToggleControl(label: 'active', value: _lift, onChanged: (final bool v) => setState(() => _lift = v)),
       SliderControl(
         label: 'clearance',
         value: _clearance,
@@ -2139,12 +2156,12 @@ class _LiftEntryState extends State<LiftEntry> {
       ToggleControl(label: 'holdPosition', value: _hold, onChanged: (final bool v) => setState(() => _hold = v)),
     ],
     code:
-        'HarborKeepInSightRegion(\n'
+        'HarborKeepVisibleRegion(\n'
         '  child: Stack(children: [\n'
         '    Positioned(\n'
         '      bottom: 60,\n'
-        '      child: HarborKeepInSight(\n'
-        '        lift: $_lift,\n'
+        '      child: HarborLift(\n'
+        '        active: $_lift,\n'
         '        clearance: ${_f(_clearance)},\n'
         '        holdPosition: $_hold,\n'
         '        child: Boat(),\n'
@@ -2152,7 +2169,7 @@ class _LiftEntryState extends State<LiftEntry> {
         '    ),\n'
         '  ]),\n'
         ')\n\n'
-        'showHarborSheet(context, coversPage: true, barrier: HarborSheetBarrier.none, builder: ...);',
+        'showHarborSheet(context, coversPage: true, barrier: HarborBarrier.none, builder: ...);',
     stage: (final BuildContext context) => HarborFrame(
       top: <HarborBar>[
         _headerBar(
@@ -2169,7 +2186,7 @@ class _LiftEntryState extends State<LiftEntry> {
       ],
       body: _SeaBackdrop(
         hint: 'Open the sheet: the boat rises clearance clear of it.',
-        child: HarborKeepInSightRegion(
+        child: HarborKeepVisibleRegion(
           child: Stack(
             children: <Widget>[
               Positioned(
@@ -2177,8 +2194,8 @@ class _LiftEntryState extends State<LiftEntry> {
                 right: 0,
                 bottom: 60,
                 child: Center(
-                  child: HarborKeepInSight(
-                    lift: _lift,
+                  child: HarborLift(
+                    active: _lift,
                     clearance: _clearance,
                     holdPosition: _hold,
                     child: Container(
@@ -2199,7 +2216,7 @@ class _LiftEntryState extends State<LiftEntry> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'HarborKeepInSight(lift:)',
+                            'HarborLift',
                             style: TextStyle(
                               fontFamily: 'Menlo',
                               fontSize: 11,

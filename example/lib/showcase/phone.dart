@@ -196,9 +196,9 @@ class _Page extends StatelessWidget {
     bottom: <HarborBar>[
       HarborBar.overlay(
         debugLabel: 'pier',
+        animationStyle: const AnimationStyle(duration: Duration(milliseconds: 400)),
         keyboard: HarborKeyboardStance.rides,
         state: composerOut ? HarborBarState.open : HarborBarState.withdrawn,
-        duration: const Duration(milliseconds: 400),
         backdrop: const ColoredBox(color: Colors.white),
         child: KeyedSubtree(key: parts[PhonePart.composer], child: const _Composer()),
       ),

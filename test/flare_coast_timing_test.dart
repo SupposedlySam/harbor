@@ -51,7 +51,7 @@ void main() {
         page,
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
         builder: bar,
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 34 - 40, 402, 874 - 34));
@@ -64,7 +64,7 @@ void main() {
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
         reachesSystemEdges: true,
         builder: bar,
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 40, 402, 874));
@@ -83,7 +83,7 @@ void main() {
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
         reachesSystemEdges: true,
         builder: bar,
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'bar').bottom, _rect(tester, 'tabs').top - 0);
@@ -97,7 +97,7 @@ void main() {
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
         reachesSystemEdges: true,
         builder: bar,
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 402 - 40, 874, 402));
@@ -111,7 +111,7 @@ void main() {
         placement: HarborAligned(alignment: HarborToastSlot.top.alignment, margin: EdgeInsets.zero),
         reachesSystemEdges: true,
         builder: bar,
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'bar').top, 0);
@@ -125,7 +125,7 @@ void main() {
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
         reachesSystemEdges: true,
         builder: bar,
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'bar'), const Rect.fromLTRB(0, 874 - 40, 402, 874));
@@ -138,9 +138,8 @@ void main() {
       final BuildContext page = await _page(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,
-        countsEntrance: countsEntrance,
         builder: (final c) => const Text('toast'),
-        duration: const Duration(seconds: 1),
+        timing: HarborToastTiming(duration: const Duration(seconds: 1), countsEntrance: countsEntrance),
       );
       await tester.pump();
       return entry;
@@ -197,7 +196,7 @@ void main() {
           fromBuilder = HarborToastEntry.maybeOf(c);
           return const Text('toast');
         },
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(fromBuilder, same(entry));
@@ -214,7 +213,7 @@ void main() {
           inside = c;
           return const Text('toast');
         },
-        duration: const Duration(seconds: 1),
+        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -261,7 +260,7 @@ void main() {
             );
           },
           builder: (final c) => const SizedBox(width: 120, height: 30),
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
         );
         await _step(tester);
         final Rect field = _rect(tester, 'field');

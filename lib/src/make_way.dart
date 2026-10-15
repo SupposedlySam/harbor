@@ -31,13 +31,36 @@ class HarborHideBar extends StatefulWidget {
   const HarborHideBar({
     super.key,
     required this.edge,
-    this.mode = HarborYield.withdraw,
+    final HarborBarState state = HarborBarState.withdrawn,
+    @Deprecated('Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.')
+    final HarborYield? mode,
     this.active = true,
     required this.child,
-  });
+  }) : assert(
+         state != HarborBarState.open,
+         'HarborHideBar hides a bar dark or withdrawn; set active: false to open it.',
+       ),
+       assert(
+         mode == null ||
+             identical(state, HarborBarState.withdrawn) ||
+             identical(state, HarborBarState.dark) == identical(mode, HarborYield.dark),
+         'state and the deprecated mode disagree. Give state alone.',
+       ),
+       state = mode == null
+           ? state
+           : identical(mode, HarborYield.dark)
+           ? HarborBarState.dark
+           : HarborBarState.withdrawn;
 
   final HarborEdge edge;
-  final HarborYield mode;
+
+  /// How the bars hide: [HarborBarState.dark] keeps their space, [HarborBarState.withdrawn] (the
+  /// default) gives it back. Never [HarborBarState.open].
+  final HarborBarState state;
+
+  /// The old spelling of [state].
+  @Deprecated('Read state. Deprecated after 0.9.1.')
+  HarborYield get mode => state == HarborBarState.dark ? HarborYield.dark : HarborYield.withdraw;
   final bool active;
   final Widget child;
 
@@ -48,7 +71,7 @@ class HarborHideBar extends StatefulWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(EnumProperty<HarborEdge>('edge', edge));
-    properties.add(EnumProperty<HarborYield>('mode', mode, defaultValue: HarborYield.withdraw));
+    properties.add(EnumProperty<HarborBarState>('state', state, defaultValue: HarborBarState.withdrawn));
     properties.add(FlagProperty('active', value: active, ifFalse: 'inactive'));
   }
 }
@@ -65,7 +88,7 @@ class _HarborMakeWayState extends State<HarborHideBar> {
   @override
   void didUpdateWidget(final HarborHideBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.edge != widget.edge || oldWidget.mode != widget.mode || oldWidget.active != widget.active) {
+    if (oldWidget.edge != widget.edge || oldWidget.state != widget.state || oldWidget.active != widget.active) {
       _claim?.release();
       _claim = null;
       _sync();
@@ -81,7 +104,7 @@ class _HarborMakeWayState extends State<HarborHideBar> {
     if (_claim != null) {
       return;
     }
-    _claim = HarborController.maybeOf(context)?.hideBar(widget.edge, mode: widget.mode);
+    _claim = HarborController.maybeOf(context)?.hideBar(widget.edge, state: widget.state);
   }
 
   @override

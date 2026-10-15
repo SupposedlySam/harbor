@@ -6,6 +6,7 @@
 /// does not ride it.
 library;
 
+export 'src/barrier.dart' show HarborBarrier, HarborSheetBarrier;
 export 'src/buoy.dart'
     show
         HarborAnchor,
@@ -37,6 +38,7 @@ export 'src/controller.dart'
         HarborToastHold,
         HarborToastPhase,
         HarborToastQueue,
+        HarborToastTiming,
         HarborToastTransitionBuilder,
         HarborYield;
 export 'src/deprecated.dart';

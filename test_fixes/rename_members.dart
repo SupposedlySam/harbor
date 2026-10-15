@@ -39,6 +39,8 @@ void reads(
   <Object?>[room.coast, room.coastSteady, room.docks, room.docksResting, room.wakes, room.hasDocks, room.wakesPainted];
   <Object?>[room.castOff(HarborEdge.vertical), room.wakeOf(HarborEdge.top), handled.tide, handled.docks];
   <Object?>[layout.clearWater, layout.docks, layout.tide];
+  // dockedEdges, the breakwater readings, flares, withDockOn and pontoonsOn are left on their 0.8 names:
+  // what they were renamed to went @internal after 0.9.1 (tool/fix_data/rename.dart).
   <Object?>[controller.clearWater, controller.clearWaterInGlobal(), controller.fleet, controller.isPort, controller.dockedEdges];
   <Object?>[controller.breakwaterTopsInGlobal, controller.breakwaterCoverage, controller.breakwaterChanges, controller.flares];
   <Object?>[clear.tide, clear.mooringLine, clear.extra, scroll.mooringLine, scroll.tide, scroll.wake, scroll.startsInOpenWater];
