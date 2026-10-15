@@ -78,6 +78,6 @@ void flares(BuildContext context, HarborAnchor anchor) {
   HarborToasts.show(context, placement: HarborAnchored(anchor, gap: 4), builder: (_) => const SizedBox());
   HarborToasts.show(
     context, placement: HarborAnchored(anchor, side: HarborAnchorSide.start, gap: 2, crossAlignment: HarborCrossAlignment.end, margin: EdgeInsets.zero),
-    builder: (_) => const SizedBox(), timing: HarborToastTiming.untilHidden,
+    builder: (_) => const SizedBox(),
   );
 }
