@@ -30,7 +30,7 @@ void main() {
     }
   });
 
-  testWidgets('a rail docked at the start is on the left, and on the right once the page reads right to left', (
+  testWidgets('a rail at the start is on the left, and on the right once the page reads right to left', (
     final tester,
   ) async {
     await showAt(tester, WideTimeline.of('rail').start + 1);
@@ -56,7 +56,7 @@ void main() {
     expect(
       title.left,
       tester.getRect(find.byType(BoatRow).first).left,
-      reason: 'on the same mooring line as the first row',
+      reason: 'on the same row insets as the first row',
     );
   });
 }

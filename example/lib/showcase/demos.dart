@@ -23,23 +23,23 @@ class ShowcaseClock extends InheritedWidget {
 /// The page each chapter shows on the phone, or null for the Harbor Master page the panorama
 /// chapters share.
 Widget? showcaseDemo(final String chapter) => switch (chapter) {
-  'moored' => const _Port(page: _MooredDemo()),
-  'mooring' => const _Port(page: _MooringDemo()),
-  'fairway' => const _Port(page: _FairwayDemo()),
-  'sliverdock' => const _Port(page: _SliverDockDemo()),
-  'sticky' => const _Port(page: _StickyDemo()),
-  'openwater' => const _Port(page: _OpenWaterDemo()),
-  'drydock' => const _Port(page: _DryDockDemo()),
-  'makeway' => const _Port(page: _MakeWayDemo()),
-  'pontoon' => const _Port(page: _PontoonDemo()),
-  'buoy' => const _Port(page: _BuoyDemo()),
-  'portal' => const _Port(page: _PortalDemo()),
-  'signal' => const _Port(page: _FlareDemo()),
-  'sheet' => const _Port(page: _SheetDemo()),
-  'breakwater' => const _Port(page: _BreakwaterDemo()),
-  'dialog' => const _Port(page: _DialogDemo()),
-  'lighthouse' => const _Port(page: _LighthouseDemo()),
-  'trials' => const _Port(page: _TrialsDemo()),
+  'clear' => const _OwnNavigator(page: _ClearDemo()),
+  'rowinsets' => const _OwnNavigator(page: _RowInsetsDemo()),
+  'scrollview' => const _OwnNavigator(page: _ScrollViewDemo()),
+  'sliverbar' => const _OwnNavigator(page: _SliverBarDemo()),
+  'sticky' => const _OwnNavigator(page: _StickyDemo()),
+  'room' => const _OwnNavigator(page: _RoomDemo()),
+  'reserves' => const _OwnNavigator(page: _ReservesDemo()),
+  'hidebar' => const _OwnNavigator(page: _HideBarDemo()),
+  'attachedbar' => const _OwnNavigator(page: _AttachedBarDemo()),
+  'float' => const _OwnNavigator(page: _FloatDemo()),
+  'popover' => const _OwnNavigator(page: _PopoverDemo()),
+  'toast' => const _OwnNavigator(page: _ToastDemo()),
+  'sheet' => const _OwnNavigator(page: _SheetDemo()),
+  'coverspage' => const _OwnNavigator(page: _CoversPageDemo()),
+  'dialog' => const _OwnNavigator(page: _DialogDemo()),
+  'keepvisible' => const _OwnNavigator(page: _KeepVisibleDemo()),
+  'trials' => const _OwnNavigator(page: _TrialsDemo()),
   _ => null,
 };
 
@@ -51,8 +51,8 @@ double _end(final String chapter) => ShowcaseTimeline.of(chapter).end;
 
 /// A navigator of the phone's own, so sheets, dialogs and menus open on the phone's screen and
 /// not over the whole showcase. The page reads the time from [ShowcaseClock].
-class _Port extends StatelessWidget {
-  const _Port({required this.page});
+class _OwnNavigator extends StatelessWidget {
+  const _OwnNavigator({required this.page});
 
   final Widget page;
 
@@ -66,7 +66,7 @@ class _Port extends StatelessWidget {
   );
 }
 
-/// Opens and closes something imperative (a sheet, a dialog, a flare, a menu) as the clock
+/// Opens and closes something imperative (a sheet, a dialog, a toast, a menu) as the clock
 /// passes [opens] and [closes], from a frame callback, as a tap would. Seeking backwards
 /// closes it again, so any frame can be drawn on its own.
 mixin _Cued<T extends StatefulWidget> on State<T> {
@@ -94,17 +94,17 @@ mixin _Cued<T extends StatefulWidget> on State<T> {
 }
 
 /// A list that scrolls to [fraction] of its extent at each frame, after harbor has laid it out.
-class _TimedFairway extends StatefulWidget {
-  const _TimedFairway({required this.fraction, required this.slivers});
+class _TimedScrollView extends StatefulWidget {
+  const _TimedScrollView({required this.fraction, required this.slivers});
 
   final double Function(double t) fraction;
   final List<Widget> slivers;
 
   @override
-  State<_TimedFairway> createState() => _TimedFairwayState();
+  State<_TimedScrollView> createState() => _TimedScrollViewState();
 }
 
-class _TimedFairwayState extends State<_TimedFairway> {
+class _TimedScrollViewState extends State<_TimedScrollView> {
   final ScrollController _scroll = ScrollController();
 
   @override
@@ -261,10 +261,10 @@ class _Tap extends StatelessWidget {
 
 // --- Content -----------------------------------------------------------------------------------
 
-/// A form and its Save button moored: clear of the header, the tab bar, the coast, and the
+/// A form and its Save button kept clear of the header, the tab bar, the system edges, and the
 /// keyboard when it comes.
-class _MooredDemo extends StatelessWidget {
-  const _MooredDemo();
+class _ClearDemo extends StatelessWidget {
+  const _ClearDemo();
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
@@ -288,14 +288,14 @@ class _MooredDemo extends StatelessWidget {
 }
 
 /// Rows keep the page margin; a carousel among them runs to the screen's edges.
-class _MooringDemo extends StatelessWidget {
-  const _MooringDemo();
+class _RowInsetsDemo extends StatelessWidget {
+  const _RowInsetsDemo();
 
   @override
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
-    final double guides = ShowcaseTimeline.ease(t, _cue('mooring', 'margin'), _cue('mooring', 'margin') + 0.5);
-    final double carousel = ShowcaseTimeline.ease(t, _cue('mooring', 'carousel'), _end('mooring') - 0.8);
+    final double guides = ShowcaseTimeline.ease(t, _cue('rowinsets', 'margin'), _cue('rowinsets', 'margin') + 0.5);
+    final double carousel = ShowcaseTimeline.ease(t, _cue('rowinsets', 'carousel'), _end('rowinsets') - 0.8);
     return Stack(
       children: <Widget>[
         HarborFrame(
@@ -401,32 +401,32 @@ class _MarginGuides extends CustomPainter {
 }
 
 /// A list that runs under the header and the tab bar, and comes to rest clear of both.
-class _FairwayDemo extends StatelessWidget {
-  const _FairwayDemo();
+class _ScrollViewDemo extends StatelessWidget {
+  const _ScrollViewDemo();
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
     top: <HarborBar>[_header('Harbor Master')],
     bottom: <HarborBar>[_tabBar()],
-    body: _TimedFairway(
+    body: _TimedScrollView(
       fraction: (final double t) =>
-          ShowcaseTimeline.ease(t, _cue('fairway', 'channel') - 0.5, _cue('fairway', 'rest') + 0.4),
+          ShowcaseTimeline.ease(t, _cue('scrollview', 'list') - 0.5, _cue('scrollview', 'rest') + 0.4),
       slivers: <Widget>[_boatList(14)],
     ),
   );
 }
 
 /// Section headers pinned at the face of the header, the second stacking below the first.
-class _SliverDockDemo extends StatelessWidget {
-  const _SliverDockDemo();
+class _SliverBarDemo extends StatelessWidget {
+  const _SliverBarDemo();
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
     top: <HarborBar>[_header('Harbor Master')],
     bottom: <HarborBar>[_tabBar()],
-    body: _TimedFairway(
+    body: _TimedScrollView(
       fraction: (final double t) =>
-          ShowcaseTimeline.ease(t, _cue('sliverdock', 'header') - 0.4, _end('sliverdock') - 0.8),
+          ShowcaseTimeline.ease(t, _cue('sliverbar', 'header') - 0.4, _end('sliverbar') - 0.8),
       slivers: <Widget>[
         _boatList(2),
         const HarborSliverBar(child: _Strip('North pontoon')),
@@ -446,7 +446,7 @@ class _StickyDemo extends StatelessWidget {
   Widget build(final BuildContext context) => HarborFrame(
     top: <HarborBar>[_header('Harbor log')],
     bottom: <HarborBar>[_tabBar()],
-    body: _TimedFairway(
+    body: _TimedScrollView(
       fraction: (final double t) => ShowcaseTimeline.ease(t, _cue('sticky', 'rides'), _end('sticky') - 0.6),
       slivers: <Widget>[
         _boatList(2),
@@ -491,8 +491,8 @@ class _StickyDemo extends StatelessWidget {
 }
 
 /// A chart of the bay, full bleed under a see-through header; only the pin keeps clear.
-class _OpenWaterDemo extends StatelessWidget {
-  const _OpenWaterDemo();
+class _RoomDemo extends StatelessWidget {
+  const _RoomDemo();
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
@@ -500,14 +500,14 @@ class _OpenWaterDemo extends StatelessWidget {
     bottom: <HarborBar>[_tabBar()],
     body: Builder(
       builder: (final BuildContext context) {
-        final HarborRoomData waters = HarborRoom.of(context);
+        final HarborRoomData room = HarborRoom.of(context);
         return Stack(
           fit: StackFit.expand,
           children: <Widget>[
             const CustomPaint(painter: _BayMap()),
             Positioned(
-              top: waters.bars.top + 18,
-              left: waters.margin.start,
+              top: room.bars.top + 18,
+              left: room.margin.start,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: Palette.deepSea, borderRadius: BorderRadius.circular(16)),
@@ -585,12 +585,12 @@ class _BayMap extends CustomPainter {
   bool shouldRepaint(final _BayMap oldDelegate) => false;
 }
 
-// --- The tide ----------------------------------------------------------------------------------
+// --- The keyboard ------------------------------------------------------------------------------
 
-/// A styling panel in a dry dock: it holds the keyboard's ground, so the tabs above it stay put
-/// as the keyboard goes out and comes back.
-class _DryDockDemo extends StatelessWidget {
-  const _DryDockDemo();
+/// A styling panel in a bar that reserves the keyboard's space, so the tabs above it stay put as
+/// the keyboard goes out and comes back.
+class _ReservesDemo extends StatelessWidget {
+  const _ReservesDemo();
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
@@ -662,16 +662,16 @@ class _Swatches extends StatelessWidget {
   );
 }
 
-/// A panel that asks the tab bar to go dark, then to withdraw and give its ground back.
-class _MakeWayDemo extends StatelessWidget {
-  const _MakeWayDemo();
+/// A panel that asks the tab bar to go dark, then to withdraw and give its space back.
+class _HideBarDemo extends StatelessWidget {
+  const _HideBarDemo();
 
   @override
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
-    final double dark = _cue('makeway', 'dark') - 0.2;
-    final double withdraw = _cue('makeway', 'withdraw') - 0.2;
-    final HarborBarState? state = t >= withdraw && t < _end('makeway') - 0.9
+    final double dark = _cue('hidebar', 'dark') - 0.2;
+    final double withdraw = _cue('hidebar', 'withdraw') - 0.2;
+    final HarborBarState? state = t >= withdraw && t < _end('hidebar') - 0.9
         ? HarborBarState.withdrawn
         : t >= dark && t < withdraw
         ? HarborBarState.dark
@@ -690,13 +690,13 @@ class _MakeWayDemo extends StatelessWidget {
   }
 }
 
-/// An unsaved-changes bar docked from deep inside a form, once the form has changes.
-class _PontoonDemo extends StatelessWidget {
-  const _PontoonDemo();
+/// An unsaved-changes bar attached from deep inside a form, once the form has changes.
+class _AttachedBarDemo extends StatelessWidget {
+  const _AttachedBarDemo();
 
   @override
   Widget build(final BuildContext context) {
-    final bool edited = ShowcaseClock.of(context) >= _cue('pontoon', 'unsaved') - 0.3;
+    final bool edited = ShowcaseClock.of(context) >= _cue('attachedbar', 'unsaved') - 0.3;
     return HarborFrame(
       top: <HarborBar>[_header('Edit berth')],
       bottom: <HarborBar>[_tabBar()],
@@ -747,18 +747,18 @@ class _PontoonDemo extends StatelessWidget {
   }
 }
 
-// --- Afloat ------------------------------------------------------------------------------------
+// --- Floats ----------------------------------------------------------------------------------
 
 /// A floating button, a speech bubble anchored to the tab bar's middle button, then a modal
-/// buoy that a tap beside it closes.
-class _BuoyDemo extends StatefulWidget {
-  const _BuoyDemo();
+/// float that a tap beside it closes.
+class _FloatDemo extends StatefulWidget {
+  const _FloatDemo();
 
   @override
-  State<_BuoyDemo> createState() => _BuoyDemoState();
+  State<_FloatDemo> createState() => _FloatDemoState();
 }
 
-class _BuoyDemoState extends State<_BuoyDemo> {
+class _FloatDemoState extends State<_FloatDemo> {
   final HarborAnchor _launch = HarborAnchor();
 
   @override
@@ -770,9 +770,9 @@ class _BuoyDemoState extends State<_BuoyDemo> {
   @override
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
-    final double modal = _cue('buoy', 'modal') - 0.2;
-    final double closes = _cue('buoy', 'closes') - 0.3;
-    final double tap = _cue('buoy', 'tap');
+    final double modal = _cue('float', 'modal') - 0.2;
+    final double closes = _cue('float', 'closes') - 0.3;
+    final double tap = _cue('float', 'tap');
     return Stack(
       children: <Widget>[
         HarborFrame(
@@ -790,7 +790,7 @@ class _BuoyDemoState extends State<_BuoyDemo> {
             ),
           ],
           floats: <HarborFloat>[
-            if (t >= _cue('buoy', 'floating') - 0.2)
+            if (t >= _cue('float', 'floating') - 0.2)
               const HarborFloat(
                 placement: HarborAligned(alignment: AlignmentDirectional.bottomEnd),
                 child: FloatingActionButton(
@@ -799,7 +799,7 @@ class _BuoyDemoState extends State<_BuoyDemo> {
                   child: Icon(Icons.sailing, color: Colors.white),
                 ),
               ),
-            if (t >= _cue('buoy', 'speech') - 0.2 && t < modal)
+            if (t >= _cue('float', 'speech') - 0.2 && t < modal)
               HarborFloat(
                 placement: HarborAnchored(_launch, side: HarborAnchorSide.above),
                 child: Container(
@@ -837,14 +837,14 @@ class _BuoyDemoState extends State<_BuoyDemo> {
 }
 
 /// Menus opened from list rows: one below its row, and one near the bottom that flips above.
-class _PortalDemo extends StatefulWidget {
-  const _PortalDemo();
+class _PopoverDemo extends StatefulWidget {
+  const _PopoverDemo();
 
   @override
-  State<_PortalDemo> createState() => _PortalDemoState();
+  State<_PopoverDemo> createState() => _PopoverDemoState();
 }
 
-class _PortalDemoState extends State<_PortalDemo> {
+class _PopoverDemoState extends State<_PopoverDemo> {
   final OverlayPortalController _first = OverlayPortalController(debugLabel: 'first menu');
   final OverlayPortalController _flipped = OverlayPortalController(debugLabel: 'flipped menu');
 
@@ -857,9 +857,9 @@ class _PortalDemoState extends State<_PortalDemo> {
   @override
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
-    final double flips = _cue('portal', 'flips') - 0.5;
-    _toggle(_first, t >= _cue('portal', 'menu') - 0.2 && t < flips);
-    _toggle(_flipped, t >= flips && t < _end('portal') - 0.6);
+    final double flips = _cue('popover', 'flips') - 0.5;
+    _toggle(_first, t >= _cue('popover', 'menu') - 0.2 && t < flips);
+    _toggle(_flipped, t >= flips && t < _end('popover') - 0.6);
     return HarborFrame(
       top: <HarborBar>[_header('Harbor Master')],
       bottom: <HarborBar>[_tabBar()],
@@ -918,26 +918,26 @@ class _RowMenu extends StatelessWidget {
   );
 }
 
-/// A toast raised clear of the tab bar, and what a screen reader hears.
-class _FlareDemo extends StatefulWidget {
-  const _FlareDemo();
+/// A toast shown clear of the tab bar, and what a screen reader hears.
+class _ToastDemo extends StatefulWidget {
+  const _ToastDemo();
 
   @override
-  State<_FlareDemo> createState() => _FlareDemoState();
+  State<_ToastDemo> createState() => _ToastDemoState();
 }
 
-class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
+class _ToastDemoState extends State<_ToastDemo> with _Cued<_ToastDemo> {
   BuildContext? _page;
-  HarborToastEntry? _flare;
+  HarborToastEntry? _toast;
 
   @override
-  double get opens => _cue('signal', 'toast') - 0.2;
+  double get opens => _cue('toast', 'toast') - 0.2;
 
   @override
-  double get closes => _end('signal') - 0.8;
+  double get closes => _end('toast') - 0.8;
 
   @override
-  void open() => _flare = HarborToasts.show(
+  void open() => _toast = HarborToasts.show(
     _page!,
     slot: HarborToastSlot.low,
     builder: (final BuildContext _) => Container(
@@ -956,13 +956,13 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   );
 
   @override
-  void close() => _flare?.hide();
+  void close() => _toast?.hide();
 
   @override
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
     follow(t);
-    final bool heard = t >= _cue('signal', 'announce') - 0.2 && t < closes;
+    final bool heard = t >= _cue('toast', 'announce') - 0.2 && t < closes;
     return Stack(
       children: <Widget>[
         HarborFrame(
@@ -1044,7 +1044,7 @@ abstract class _OverPageState<T extends StatefulWidget> extends State<T> with _C
   }
 }
 
-/// A sheet: its own pier, a form, and a footer on a floating quay.
+/// A sheet: its own header, a form, and a footer that rides the keyboard.
 class _SheetDemo extends StatefulWidget {
   const _SheetDemo();
 
@@ -1096,23 +1096,24 @@ class _SheetDemoState extends _OverPageState<_SheetDemo> {
   );
 }
 
-/// A breakwater sheet with no barrier: the page learns what it covers and scrolls clear of it.
-class _BreakwaterDemo extends StatefulWidget {
-  const _BreakwaterDemo();
+/// A sheet that covers the page, with no barrier: the page learns what it covers and scrolls clear
+/// of it.
+class _CoversPageDemo extends StatefulWidget {
+  const _CoversPageDemo();
 
   @override
-  State<_BreakwaterDemo> createState() => _BreakwaterDemoState();
+  State<_CoversPageDemo> createState() => _CoversPageDemoState();
 }
 
-class _BreakwaterDemoState extends _OverPageState<_BreakwaterDemo> {
+class _CoversPageDemoState extends _OverPageState<_CoversPageDemo> {
   @override
-  String get chapter => 'breakwater';
+  String get chapter => 'coverspage';
 
   @override
-  double get opens => _cue('breakwater', 'breakwater') - 0.3;
+  double get opens => _cue('coverspage', 'sheet') - 0.3;
 
   @override
-  double get closes => _end('breakwater') - 0.6;
+  double get closes => _end('coverspage') - 0.6;
 
   @override
   Future<void> show(final BuildContext context) => showHarborSheet<void>(
@@ -1145,13 +1146,13 @@ class _BreakwaterDemoState extends _OverPageState<_BreakwaterDemo> {
   );
 
   @override
-  Widget body() => _TimedFairway(
-    fraction: (final double t) => ShowcaseTimeline.ease(t, _cue('breakwater', 'page') - 0.2, _end('breakwater') - 1.2),
+  Widget body() => _TimedScrollView(
+    fraction: (final double t) => ShowcaseTimeline.ease(t, _cue('coverspage', 'page') - 0.2, _end('coverspage') - 1.2),
     slivers: <Widget>[_boatList(10)],
   );
 }
 
-/// A dialog kept to the page's clear water: between the header and the tab bar.
+/// A dialog kept to the page's room: between the header and the tab bar.
 class _DialogDemo extends StatefulWidget {
   const _DialogDemo();
 
@@ -1201,16 +1202,16 @@ class _DialogDemoState extends _OverPageState<_DialogDemo> {
   );
 }
 
-// --- The lighthouse ----------------------------------------------------------------------------
+// --- Keeping in sight ------------------------------------------------------------------------
 
-/// A long form whose focused field is low on the page: when the keyboard rises, the beacon
+/// A long form whose focused field is low on the page: when the keyboard rises, the reveal
 /// scrolls it back into sight above it.
-class _LighthouseDemo extends StatelessWidget {
-  const _LighthouseDemo();
+class _KeepVisibleDemo extends StatelessWidget {
+  const _KeepVisibleDemo();
 
   @override
   Widget build(final BuildContext context) {
-    final bool focused = ShowcaseClock.of(context) >= _cue('lighthouse', 'focused') - 0.3;
+    final bool focused = ShowcaseClock.of(context) >= _cue('keepvisible', 'focused') - 0.3;
     return HarborFrame(
       top: <HarborBar>[_header('Log a sighting')],
       bottom: <HarborBar>[_tabBar()],
@@ -1239,7 +1240,7 @@ class _LighthouseDemo extends StatelessWidget {
   }
 }
 
-// --- Sea trials --------------------------------------------------------------------------------
+// --- Trials -----------------------------------------------------------------------------------
 
 /// The trials passing, device by device, as the narrator names them.
 class _TrialsDemo extends StatelessWidget {
@@ -1256,7 +1257,7 @@ class _TrialsDemo extends StatelessWidget {
   Widget build(final BuildContext context) {
     final double t = ShowcaseClock.of(context);
     return HarborFrame(
-      top: <HarborBar>[_header('sea_trial_test.dart')],
+      top: <HarborBar>[_header('harbor_trial_test.dart')],
       body: HarborClear(
         rowInsets: true,
         child: Column(

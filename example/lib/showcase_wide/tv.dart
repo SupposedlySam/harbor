@@ -5,7 +5,7 @@ import '../art/palette.dart';
 import '../showcase/phone.dart';
 
 /// A television running a harbor in a scale model: laid out on a 1200 × 675 reference screen,
-/// scaled to the set, with the title-safe band as its coast.
+/// scaled to the set, with the title-safe band as its system edges.
 class WideTvSet extends StatelessWidget {
   const WideTvSet({super.key, required this.time});
 
@@ -91,7 +91,7 @@ class _TvPage extends StatelessWidget {
       top: const <HarborBar>[
         HarborBar.solid(
           backdrop: ColoredBox(color: Color(0xFF0E2233)),
-          // On the mooring line, which on a television keeps to the title-safe band.
+          // On the row insets, which on a television keeps to the title-safe band.
           child: HarborClear.rowInsets(
             child: SizedBox(
               height: 90,

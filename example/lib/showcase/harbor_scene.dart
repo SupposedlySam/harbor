@@ -63,9 +63,9 @@ class _Camera {
     const double glide = 1.6;
     final List<(double, _Camera)> stops = <(double, _Camera)>[
       (ShowcaseTimeline.intro.start + 2.2, wide),
-      (ShowcaseTimeline.pier.start, pier),
-      (ShowcaseTimeline.quay.start, quay),
-      (ShowcaseTimeline.tide.start, tide),
+      (ShowcaseTimeline.overlay.start, pier),
+      (ShowcaseTimeline.solid.start, quay),
+      (ShowcaseTimeline.stances.start, tide),
       (ShowcaseTimeline.outro.start, wide),
     ];
     _Camera camera = wide;
@@ -369,7 +369,7 @@ class _ScenePainter extends CustomPainter {
 
   void _boats(final Canvas canvas, final double waterline) {
     // Two rowboats pass under the pier, the way rows scroll under a header.
-    final ShowcaseChapter pier = ShowcaseTimeline.pier;
+    final ShowcaseChapter pier = ShowcaseTimeline.overlay;
     for (int i = 0; i < 2; i++) {
       final double p = ShowcaseTimeline.boat(t, pier.start + 0.6 + i * 1.6, pier.end - 0.4 + i * 0.6);
       final double x = lerpDouble(_World.pierEnd + 160, _World.pierStart - 40, Curves.easeInOut.transform(p))!;
@@ -470,7 +470,7 @@ class _ScenePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTRB(x - 11, waterline - 2, x + 11, waterline + 2), Paint()..color = Palette.buoyRed);
   }
 
-  // --- Labels: the harbor word, lit while its chapter plays -----------------------------------
+  // --- Labels: what each drawing illustrates, lit while its chapter plays ----------------------
 
   void _labels(final Canvas canvas, final double waterline, final double zoom) {
     // Scaled up as the camera pulls back, so a wide shot can still be read.
@@ -502,26 +502,26 @@ class _ScenePainter extends CustomPainter {
       painter.paint(canvas, box.center - Offset(painter.width / 2, painter.height / 2));
     }
 
-    tag('PIER', const Offset((_World.pierStart + _World.pierEnd) / 2, _World.pierDeck - 70), ShowcaseTimeline.pier);
-    tag('QUAY', const Offset(_World.quayStart + 70, _World.quayTop - 80), ShowcaseTimeline.quay);
-    _pronunciation(canvas, const Offset(_World.quayStart + 70, _World.quayTop - 80), grow);
     tag(
-      'ON PILINGS',
-      const Offset((_World.pilingsStart + _World.pilingsEnd) / 2, 250),
-      ShowcaseTimeline.tide,
-      size: 24,
+      'OVERLAY BAR',
+      const Offset((_World.pierStart + _World.pierEnd) / 2, _World.pierDeck - 70),
+      ShowcaseTimeline.overlay,
     );
-    tag('AFLOAT', Offset(_World.floatStart + 330, waterline - 120), ShowcaseTimeline.tide, size: 24);
-    tag('TIDE', Offset(_World.floatEnd + 70, waterline + 50), ShowcaseTimeline.tide, size: 24);
+    tag('SOLID BAR', const Offset(_World.quayStart + 70, _World.quayTop - 80), ShowcaseTimeline.solid);
+    _pronunciation(canvas, const Offset(_World.quayStart + 70, _World.quayTop - 80), grow);
+    tag('STAYS', const Offset((_World.pilingsStart + _World.pilingsEnd) / 2, 250), ShowcaseTimeline.stances, size: 24);
+    tag('RIDES', Offset(_World.floatStart + 330, waterline - 120), ShowcaseTimeline.stances, size: 24);
+    // Left of the gauge, so the longer word stays inside the picture.
+    tag('KEYBOARD', Offset(_World.floatEnd + 10, waterline + 50), ShowcaseTimeline.stances, size: 24);
   }
 
-  /// How "quay" is pronounced, on a small sign above its label, put up the moment the narrator
-  /// says "quay" and left up for the rest of the chapter. The narrator does not spell it out:
-  /// hearing the word is the lesson, and the sign is the written half. It appears at once, as the
+  /// What the drawing above the solid bar's label is, and how "quay" is pronounced, on a small
+  /// sign put up the moment the narrator says "quay" and left up for the rest of the chapter. The
+  /// narrator does not spell it out: hearing the word is the lesson, and the sign is the written half. It appears at once, as the
   /// captions do: no animation to pull the eye from what the harbor is doing.
   void _pronunciation(final Canvas canvas, final Offset quayLabel, final double grow) {
-    final ShowcaseChapter quay = ShowcaseTimeline.quay;
-    final double said = ShowcaseTimeline.cue('quay', 'quay', quay.start + 0.6);
+    final ShowcaseChapter quay = ShowcaseTimeline.solid;
+    final double said = ShowcaseTimeline.cue('solid', 'quay', quay.start + 0.6);
     if (t < said || !quay.contains(t)) {
       return;
     }
@@ -543,7 +543,7 @@ class _ScenePainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final TextPainter small = line('pronounced', 15, style: FontStyle.italic);
+    final TextPainter small = line('a quay, said', 15, style: FontStyle.italic);
     final TextPainter big = line('“key”', 30, weight: FontWeight.w700);
     final double width = math.max(small.width, big.width) + 28 * grow;
     final double height = small.height + big.height + 12 * grow;

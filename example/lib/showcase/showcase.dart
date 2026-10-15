@@ -9,7 +9,7 @@ import 'phone.dart';
 import 'plates.dart';
 import 'timeline.dart';
 
-/// The README's showcase: an illustrated harbor beside a phone running the real thing, one clock
+/// The README's showcase: an illustrated harbour beside a phone running the real thing, one clock
 /// driving both. Laid out at a fixed 1280 × 720 and scaled to fit, so a recording and the app
 /// show the same picture.
 class HarborShowcase extends StatefulWidget {
@@ -74,12 +74,7 @@ class _HarborShowcaseState extends State<HarborShowcase> {
                 child: Builder(
                   builder: (final BuildContext context) {
                     final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(t);
-                    return ShowcaseCaption(
-                      term: chapter.term,
-                      pronounced: chapter.pronounced,
-                      line: ShowcaseTimeline.lineAt(t),
-                      install: chapter == ShowcaseTimeline.outro,
-                    );
+                    return ShowcaseCaption(term: chapter.term, line: ShowcaseTimeline.lineAt(t), code: chapter.code);
                   },
                 ),
               ),
@@ -153,35 +148,30 @@ class _OutlinePainter extends CustomPainter {
 
   List<_Outline> get _lit {
     switch (ShowcaseTimeline.chapterAt(t).key) {
-      case 'sea':
-        return const <_Outline>[(part: PhonePart.screen, label: 'HarborSea', left: true, covered: false)];
-      case 'coast':
+      case 'root':
+        return const <_Outline>[(part: PhonePart.screen, label: 'HarborRoot', left: true, covered: false)];
+      case 'systemedges':
         return const <_Outline>[
           (part: PhonePart.statusBar, label: 'status bar', left: true, covered: false),
           (part: PhonePart.homeIndicator, label: 'home\nindicator', left: true, covered: false),
         ];
-      case 'wake':
-        return const <_Outline>[(part: PhonePart.header, label: 'wake\nunder it', left: true, covered: false)];
+      case 'edgeeffect':
+        return const <_Outline>[(part: PhonePart.header, label: 'fade\nunder it', left: true, covered: false)];
     }
-    if (ShowcaseTimeline.pier.contains(t)) {
+    if (ShowcaseTimeline.overlay.contains(t)) {
       return const <_Outline>[(part: PhonePart.header, label: 'header', left: true, covered: false)];
     }
-    if (ShowcaseTimeline.quay.contains(t)) {
+    if (ShowcaseTimeline.solid.contains(t)) {
       return const <_Outline>[(part: PhonePart.tabBar, label: 'tab bar', left: true, covered: false)];
     }
-    if (!ShowcaseTimeline.tide.contains(t)) {
+    if (!ShowcaseTimeline.stances.contains(t)) {
       return const <_Outline>[];
     }
     final bool up = ShowcaseTimeline.keyboard(t) > 40;
     return <_Outline>[
-      (part: PhonePart.composer, label: 'composer\nafloat', left: false, covered: false),
-      // The tab bar is still laid out where it was: the keyboard covers it, as the tide covers a jetty on pilings.
-      (
-        part: PhonePart.tabBar,
-        label: up ? 'tab bar\non pilings,\nunder it' : 'tab bar\non pilings',
-        left: true,
-        covered: up,
-      ),
+      (part: PhonePart.composer, label: 'composer\nrides', left: false, covered: false),
+      // The tab bar is still laid out where it was: it stays, and the keyboard covers it.
+      (part: PhonePart.tabBar, label: up ? 'tab bar\nstays,\ncovered' : 'tab bar\nstays', left: true, covered: up),
       if (up) (part: PhonePart.keyboard, label: 'keyboard', left: false, covered: false),
     ];
   }

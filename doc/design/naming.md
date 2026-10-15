@@ -485,6 +485,12 @@ What shipped differs from the tables above in these places, each measured by `te
   (`HarborKeyboardScope`, `HarborFloatLayer`, ...), and so are the test files and their descriptions.
   None is public API, so none needs a forwarder or a fix. `dock_slot.dart` keeps its name, after the
   deprecated `HarborDockSlot` it holds, and every deprecated name keeps its spelling.
+- **Re-voiced after 0.10.1** (Q5): both showcase videos. The chapters are keyed and captioned by the
+  API they show (`overlay` captioned `HarborBar.overlay`, `coverspage` captioned
+  `showHarborSheet(coversPage: true)`, ...), the narration says what each does with the harbour as
+  illustration ("Like a quay, a stone wall on the shore"), the plates take the field guide's
+  `className` and `realWorld` instead of a pinned copy of the 0.8 labels, and the phone's bars lost
+  the `pier` and `quay` debug labels, so the inspector chapter shows their kinds.
 - `HarborSeaTrials` is a deprecated extension of its own, and `pumpSeaTrial`'s fix is keyed on
   both the extension and `WidgetTester` (§4).
 - Harbour words the tables left out are renamed the same way, with forwarders and fixes:
