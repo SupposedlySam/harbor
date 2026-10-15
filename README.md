@@ -1337,12 +1337,13 @@ real page on the phone.
 The video is narrated. `example/tool/narrate.py` voices each line of
 `example/lib/showcase/narration.tsv`, times every word, and checks that each
 clip says what the script says. The showcase's timeline is built from those
-timings, so the keyboard rises as "comes in" is spoken. Chapters the
-panorama was not drawn for show the Field Guide's drawing of the harbour thing it illustrates,
+timings, so the keyboard rises as "comes in" is spoken. Each chapter is captioned with the
+API it shows (`HarborBar.solid`, `HarborToasts.show`, ...), and the narration says what it
+does, with the harbour as illustration ("like a quay, a stone wall on the shore"). Chapters
+the panorama was not drawn for show the Field Guide's drawing and label for the class,
 and each runs a real harbor page on the phone: sheets, dialogs and toasts open
 on the phone's own navigator as the narrator names them. Narration: the Kokoro-82M
-voice `am_liam`, generated on device by Kass. In this release the videos still narrate the
-0.8 harbour words (pier, quay, tide and the rest); they are re-voiced in the new names later.
+voice `am_liam`, generated on device by Kass.
 
 The **Harbor Field Guide** ([in your browser](https://supposedlysam.github.io/harbor/), the book button on the game's first page, or
 `fvm flutter run -t lib/field_guide_main.dart`) has a page for every class,

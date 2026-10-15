@@ -37,8 +37,8 @@ void main() {
     while (now < t) {
       final double from = now;
       now = (now + 1 / 30).clamp(0, t);
-      // Two pumps, never at one time: harbor's tide gauge takes a keyboard that holds still for a
-      // frame as settled (see render_showcase_test.dart).
+      // Two pumps, never at one time: harbor's keyboard reading takes a keyboard that holds still
+      // for a frame as settled (see render_showcase_test.dart).
       time.value = (from + now) / 2;
       await tester.pump(const Duration(microseconds: 16667));
       time.value = now;
@@ -58,13 +58,13 @@ void main() {
         return MatrixUtils.transformRect(box.getTransformTo(null), Offset.zero & box.size);
       });
 
-  testWidgets('Pier: rows scroll under the header, which stays put', (final tester) async {
+  testWidgets('An overlay bar: rows scroll under the header, which stays put', (final tester) async {
     await start(tester);
-    await seek(tester, ShowcaseTimeline.pier.start);
+    await seek(tester, ShowcaseTimeline.overlay.start);
     final Rect before = header(tester);
-    await seek(tester, ShowcaseTimeline.pier.end - 1);
+    await seek(tester, ShowcaseTimeline.overlay.end - 1);
     expect(header(tester), before);
-    // The list's viewport runs up under a pier; under a quay it would start below it. Rows
+    // The list's viewport runs up under an overlay bar; under a solid bar it would start below it. Rows
     // overlapping the header prove nothing alone: the list lays out a cache above the screen.
     final Rect viewport = tester.getRect(find.byType(Scrollable).first);
     expect(viewport.top, lessThan(before.top), reason: 'the list runs under the header');
@@ -75,18 +75,18 @@ void main() {
     );
   });
 
-  testWidgets('Quay: the list stops at the tab bar', (final tester) async {
+  testWidgets('A solid bar: the list stops at the tab bar', (final tester) async {
     await start(tester);
-    await seek(tester, ShowcaseTimeline.quay.end - 0.5);
+    await seek(tester, ShowcaseTimeline.solid.end - 0.5);
     final Rect bar = tabBar(tester);
     // Rows starting past the tab bar's top are the list's cache: laid out, never painted.
     final double lowest = rows(tester)
         .where((final Rect r) => r.top < bar.top)
         .map((final Rect r) => r.bottom)
         .reduce((final double a, final double b) => a > b ? a : b);
-    // The difference between a quay and a pier: the list's viewport ends at a quay, and runs on
-    // under a pier. Where the last row comes to rest is the same for both, since a fairway rests
-    // clear of a pier too, so that alone cannot tell them apart.
+    // The difference between a solid bar and an overlay bar: the list's viewport ends at a solid
+    // bar, and runs on under an overlay bar. Where the last row comes to rest is the same for both,
+    // since a scroll view rests clear of an overlay bar too, so that alone cannot tell them apart.
     expect(
       tester.getRect(find.byType(Scrollable).first).bottom,
       lessThanOrEqualTo(bar.top + 0.5),
@@ -96,22 +96,23 @@ void main() {
     expect(lowest, greaterThan(bar.top - 20), reason: 'positive control: the last row has come to rest at it');
   });
 
-  testWidgets('Tide: the tab bar on pilings stays put and is covered; the composer rides up', (final tester) async {
+  testWidgets('Stances: the tab bar stays put and is covered; the composer rides up', (final tester) async {
     await start(tester);
-    await seek(tester, ShowcaseTimeline.tide.start + 1.2);
-    final Rect dry = tabBar(tester);
+    await seek(tester, ShowcaseTimeline.stances.start + 1.2);
+    final Rect resting = tabBar(tester);
     expect(ShowcaseTimeline.keyboard(now), 0, reason: 'positive control: the keyboard is still down');
-    expect(composer(tester).bottom, lessThanOrEqualTo(dry.top + 0.5), reason: 'the composer rests on the tab bar');
+    expect(composer(tester).bottom, lessThanOrEqualTo(resting.top + 0.5), reason: 'the composer rests on the tab bar');
 
-    await seek(tester, ShowcaseTimeline.tide.start + 5);
+    // The keyboard rises over a second and a half from "comes in"; measured once it is up.
+    await seek(tester, ShowcaseTimeline.cue('stances', 'comes', ShowcaseTimeline.stances.start + 1.5) + 2);
     final Rect keyboard = tester.getRect(find.byType(KeyboardArt));
     expect(keyboard.height, greaterThan(100), reason: 'positive control: the keyboard is up');
-    expect(tabBar(tester), dry, reason: 'on pilings: it does not move');
+    expect(tabBar(tester), resting, reason: 'it stays: it does not move');
     expect(keyboard.overlaps(tabBar(tester)), isTrue, reason: 'and the keyboard covers it');
     expect(
       composer(tester).bottom,
       moreOrLessEquals(keyboard.top, epsilon: 0.5),
-      reason: 'afloat: it sits on the keyboard',
+      reason: 'it rides: it sits on the keyboard',
     );
   });
 

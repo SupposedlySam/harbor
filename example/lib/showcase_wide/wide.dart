@@ -79,11 +79,7 @@ class WideShowcase extends StatelessWidget {
               ),
               SizedBox(
                 height: _captionHeight,
-                child: ShowcaseCaption(
-                  term: chapter.term,
-                  line: WideTimeline.lineAt(time),
-                  install: chapter.key == 'outro',
-                ),
+                child: ShowcaseCaption(term: chapter.term, line: WideTimeline.lineAt(time), code: chapter.code),
               ),
             ],
           ),
@@ -209,8 +205,8 @@ class _Screen extends StatelessWidget {
   );
 }
 
-/// A header pier. Beside a rail it runs between the rail and the far edge, so its title lines up
-/// with the rows below without help.
+/// An overlay header. Beside a rail it runs between the rail and the far edge, so its title lines
+/// up with the rows below without help.
 HarborBar _header(final String title) => HarborBar.overlay(
   edgeEffect: const HarborEdgeEffect.fade(length: 18, blurSigma: 14),
   backdrop: ColoredBox(color: Colors.white.withValues(alpha: 0.78)),
@@ -237,8 +233,8 @@ Widget _rows(final int count) => HarborScrollView(
   ],
 );
 
-/// A tablet's page: a navigation rail docked at the start edge, a header, and a list moored beside
-/// the rail. Turned right-to-left, the start edge is the right, and the rail goes with it.
+/// A tablet's page: a navigation rail as a solid bar at the start edge, a header, and a list
+/// beside the rail. Turned right-to-left, the start edge is the right, and the rail goes with it.
 class _RailPage extends StatelessWidget {
   const _RailPage({required this.rightToLeft});
 
@@ -285,7 +281,7 @@ class _Rail extends StatelessWidget {
 }
 
 /// A phone on its side: the header's backdrop runs under the island to the screen's edge, and the
-/// rows keep their margin from the coast at each side.
+/// rows keep their margin from the system edges at each side.
 class _LandscapePage extends StatelessWidget {
   const _LandscapePage();
 
@@ -293,7 +289,7 @@ class _LandscapePage extends StatelessWidget {
   Widget build(final BuildContext context) => HarborFrame(top: <HarborBar>[_header('Harbor Master')], body: _rows(12));
 }
 
-/// A dual-screen phone, open: sheets, dialogs and flares keep to one screen, never across the hinge.
+/// A dual-screen phone, open: sheets, dialogs and toasts keep to one screen, never across the hinge.
 class _HingePage extends StatefulWidget {
   const _HingePage({required this.time});
 
@@ -308,11 +304,11 @@ class _HingePageState extends State<_HingePage> {
   BuildContext? _page;
   bool _sheet = false;
   bool _dialog = false;
-  HarborToastEntry? _flare;
+  HarborToastEntry? _toast;
 
   double get _sheetOpens => WideTimeline.cue('hinge', 'sheets') - 0.3;
   double get _dialogOpens => WideTimeline.cue('hinge', 'dialogs') - 0.2;
-  double get _flareRises => WideTimeline.cue('hinge', 'flares') - 0.2;
+  double get _toastShows => WideTimeline.cue('hinge', 'toasts') - 0.2;
   double get _ends => WideTimeline.of('hinge').end - 0.6;
 
   @override
@@ -322,12 +318,12 @@ class _HingePageState extends State<_HingePage> {
   }
 
   // As a tap would, after the frame: open the sheet on "sheets", swap it for the dialog on
-  // "dialogs", then for a flare on "flares", and close everything before the chapter ends.
+  // "dialogs", then for a toast on "toasts", and close everything before the chapter ends.
   void _follow() {
     final double t = widget.time;
     final bool wantSheet = t >= _sheetOpens && t < _dialogOpens;
-    final bool wantDialog = t >= _dialogOpens && t < _flareRises;
-    final bool wantFlare = t >= _flareRises && t < _ends;
+    final bool wantDialog = t >= _dialogOpens && t < _toastShows;
+    final bool wantToast = t >= _toastShows && t < _ends;
     WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
       final BuildContext? page = _page;
       if (!mounted || page == null) {
@@ -341,12 +337,12 @@ class _HingePageState extends State<_HingePage> {
         _dialog = false;
         Navigator.of(page).pop();
       }
-      if (_flare != null && !wantFlare) {
-        _flare!.hide();
-        _flare = null;
+      if (_toast != null && !wantToast) {
+        _toast!.hide();
+        _toast = null;
       }
-      if (wantFlare && _flare == null) {
-        _flare = HarborToasts.show(
+      if (wantToast && _toast == null) {
+        _toast = HarborToasts.show(
           page,
           slot: HarborToastSlot.low,
           builder: (final BuildContext _) => Container(

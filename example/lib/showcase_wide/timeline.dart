@@ -10,15 +10,19 @@ abstract final class WideTimeline {
   /// Silence before a chapter's first line.
   static const double _lead = 0.6;
 
+  /// Each chapter's name on screen: the API it shows where there is one, or a plain title.
   static const Map<String, String> _terms = <String, String>{
     'intro': 'Wide screens',
-    'rail': 'A start dock',
+    'rail': 'HarborFrame(start: [...])',
     'reading': 'Reading order',
     'landscape': 'Landscape',
     'hinge': 'The hinge',
-    'tv': 'The coast on a TV',
+    'tv': 'HarborSystemEdges.titleSafe',
     'outro': 'flutter pub add harbor',
   };
+
+  /// The chapters whose name on screen is code.
+  static const Set<String> _code = <String>{'rail', 'tv', 'outro'};
 
   static final List<ShowcaseChapter> chapters = () {
     final List<String> keys = script.chapters;
@@ -32,6 +36,7 @@ abstract final class WideTimeline {
         ShowcaseChapter(
           key: keys[i],
           term: _terms[keys[i]] ?? keys[i],
+          code: _code.contains(keys[i]),
           start: i == 0 ? 0.0 : startOf(keys[i]),
           end: i == keys.length - 1 ? script.end : startOf(keys[i + 1]),
         ),

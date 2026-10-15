@@ -15,7 +15,7 @@ enum PhonePart { header, tabBar, composer, keyboard, statusBar, homeIndicator, s
 ///
 /// Nothing on this screen is placed by the showcase. The keyboard reaches the page only as
 /// `MediaQuery.viewInsets`, the way the platform reports it, and the page is an ordinary
-/// [Harbor]: where the header, the list, the composer and the tab bar land is harbor's doing.
+/// [HarborFrame]: where the header, the list, the composer and the tab bar land is harbor's doing.
 class ShowcasePhone extends StatefulWidget {
   const ShowcasePhone({super.key, required this.time, required this.parts});
 
@@ -25,9 +25,9 @@ class ShowcasePhone extends StatefulWidget {
   final Map<PhonePart, GlobalKey> parts;
 
   static const Size screen = Size(402, 874);
-  static const EdgeInsets coast = EdgeInsets.only(top: 62, bottom: 34);
+  static const EdgeInsets systemEdges = EdgeInsets.only(top: 62, bottom: 34);
 
-  /// The page margin the phone's sea gives every harbor, and the mooring line keeps.
+  /// The page margin the phone's root gives every frame, and the row insets keep.
   static const double margin = 14;
 
   @override
@@ -72,7 +72,7 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
     final double keyboard = ShowcaseTimeline.keyboard(widget.time);
     final ShowcaseChapter chapter = ShowcaseTimeline.chapterAt(widget.time);
     final Widget? demo = showcaseDemo(chapter.key);
-    final EdgeInsets viewPadding = ShowcasePhone.coast;
+    final EdgeInsets viewPadding = ShowcasePhone.systemEdges;
     // As Flutter computes it: the padding is what the view padding leaves after the keyboard.
     final EdgeInsets padding = EdgeInsets.only(
       top: viewPadding.top,
@@ -103,7 +103,10 @@ class _ShowcasePhoneState extends State<ShowcasePhone> {
                     ShowcaseClock(
                       time: widget.time,
                       child: HarborInspectorOverlay(
-                        enabled: chapter.key == 'chart',
+                        enabled: chapter.key == 'inspector',
+                        // In a font the recorder loads, and large enough to read on the phone as
+                        // drawn: the labels name each bar by its kind.
+                        labelStyle: const TextStyle(fontFamily: 'Helvetica', fontSize: 14),
                         child: HarborRoot(
                           margin: const EdgeInsetsDirectional.symmetric(horizontal: ShowcasePhone.margin),
                           child: KeyedSubtree(
@@ -169,13 +172,8 @@ class _Page extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
-    // The inspector overlay labels a bar by its debugLabel, or else its kind. These pin the 0.8
-    // wording the videos were recorded with (`pier`, `quay`; the kinds are `overlay` and `solid`
-    // since 0.9), so the recorded frames stay as they are. Remove them when the videos are re-voiced
-    // in the new vocabulary (#120, naming.md Q5).
     top: <HarborBar>[
       HarborBar.overlay(
-        debugLabel: 'pier',
         edgeEffect: const HarborEdgeEffect.fade(length: 18, blurSigma: 14),
         backdrop: ColoredBox(color: Colors.white.withValues(alpha: 0.72)),
         child: KeyedSubtree(
@@ -195,7 +193,6 @@ class _Page extends StatelessWidget {
     ],
     bottom: <HarborBar>[
       HarborBar.overlay(
-        debugLabel: 'pier',
         animationStyle: const AnimationStyle(duration: Duration(milliseconds: 400)),
         keyboard: HarborKeyboardStance.rides,
         state: composerOut ? HarborBarState.open : HarborBarState.withdrawn,
@@ -203,7 +200,6 @@ class _Page extends StatelessWidget {
         child: KeyedSubtree(key: parts[PhonePart.composer], child: const _Composer()),
       ),
       HarborBar.solid(
-        debugLabel: 'quay',
         backdrop: const ColoredBox(color: Palette.deepSea),
         child: KeyedSubtree(key: parts[PhonePart.tabBar], child: const ShowcaseTabBar()),
       ),

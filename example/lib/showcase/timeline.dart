@@ -4,23 +4,24 @@ import 'package:flutter/animation.dart';
 
 import 'narration.dart';
 
-/// One chapter of the showcase: a harbor word, the plain word for it, and when it plays.
+/// One chapter of the showcase: what it is about, by its name in code, and when it plays.
 class ShowcaseChapter {
   const ShowcaseChapter({
     required this.key,
     required this.term,
     required this.start,
     required this.end,
-    this.pronounced,
+    this.code = true,
   });
 
   /// The chapter's name in narration.tsv.
   final String key;
 
+  /// What the caption names the chapter: the API it shows, or a plain title.
   final String term;
 
-  /// How the term is pronounced, when its spelling does not tell you ("key" for quay).
-  final String? pronounced;
+  /// Whether [term] is code, set in code type, rather than a plain title.
+  final bool code;
   final double start;
   final double end;
 
@@ -49,34 +50,34 @@ abstract final class ShowcaseTimeline {
     return lines.isEmpty ? 0.0 : math.max(0.0, lines.first.start - _lead);
   }
 
-  /// Each chapter's name on screen, in the order narration.tsv plays them. A harbor word,
-  /// and where one is not plain, the name of the class it stands for.
+  /// Each chapter's name on screen, in the order narration.tsv plays them: the API it shows, as
+  /// you would write it. The narration says what it does; the harbour is illustration at most.
   static const Map<String, String> _terms = <String, String>{
     'intro': 'harbor',
-    'sea': 'The sea',
-    'coast': 'The coast',
-    'pier': 'Pier',
-    'quay': 'Quay',
-    'wake': 'Wake',
-    'moored': 'Moored',
-    'mooring': 'Mooring line',
-    'fairway': 'Fairway',
-    'sliverdock': 'Sliver dock',
-    'sticky': 'Sticky',
-    'openwater': 'Open water',
-    'tide': 'Tide',
-    'drydock': 'Dry dock',
-    'makeway': 'Make way',
-    'pontoon': 'Pontoon',
-    'buoy': 'Buoy',
-    'portal': 'Portal buoy',
-    'signal': 'Flare',
-    'sheet': 'Sheet',
-    'breakwater': 'Breakwater',
-    'dialog': 'Dialog',
-    'lighthouse': 'Lighthouse',
-    'chart': 'Chart',
-    'trials': 'Sea trials',
+    'root': 'HarborRoot',
+    'systemedges': 'HarborSystemEdges',
+    'overlay': 'HarborBar.overlay',
+    'solid': 'HarborBar.solid',
+    'edgeeffect': 'HarborEdgeEffect.fade',
+    'clear': 'HarborClear',
+    'rowinsets': 'HarborClear.rowInsets',
+    'scrollview': 'HarborScrollView',
+    'sliverbar': 'HarborSliverBar',
+    'sticky': 'HarborSticky',
+    'room': 'HarborRoom.of(context)',
+    'stances': 'HarborKeyboardStance',
+    'reserves': 'HarborKeyboardStance.reserves',
+    'hidebar': 'HarborHideBar',
+    'attachedbar': 'HarborAttachedBar',
+    'float': 'HarborFloat',
+    'popover': 'HarborPopover',
+    'toast': 'HarborToasts.show',
+    'sheet': 'showHarborSheet',
+    'coverspage': 'showHarborSheet(coversPage: true)',
+    'dialog': 'showHarborDialog(inheritRoom: true)',
+    'keepvisible': 'HarborKeepVisible',
+    'inspector': 'HarborInspector',
+    'trials': 'pumpHarborTrial',
     'outro': 'flutter pub add harbor',
   };
 
@@ -94,7 +95,7 @@ abstract final class ShowcaseTimeline {
         ShowcaseChapter(
           key: keys[i],
           term: _terms[keys[i]] ?? keys[i],
-          pronounced: keys[i] == 'quay' ? 'pronounced “key”' : null,
+          code: keys[i] != 'intro',
           start: i == 0 ? 0.0 : _startOf(keys[i]),
           end: i == keys.length - 1 ? Narration.end : _startOf(keys[i + 1]),
         ),
@@ -108,9 +109,9 @@ abstract final class ShowcaseTimeline {
   );
 
   static final ShowcaseChapter intro = of('intro');
-  static final ShowcaseChapter pier = of('pier');
-  static final ShowcaseChapter quay = of('quay');
-  static final ShowcaseChapter tide = of('tide');
+  static final ShowcaseChapter overlay = of('overlay');
+  static final ShowcaseChapter solid = of('solid');
+  static final ShowcaseChapter stances = of('stances');
   static final ShowcaseChapter outro = of('outro');
 
   /// The line of the narration on screen at [t]: the latest line of the current chapter that has
@@ -146,20 +147,20 @@ abstract final class ShowcaseTimeline {
   /// The keyboard's height on the phone, in its logical pixels.
   static const double keyboardHeight = 336;
 
-  /// The keyboard comes in as the tide's "comes in" is said and stays for the dry dock, which
-  /// shows it going out and coming back; it rises again for the chapters that need it up.
+  /// The keyboard comes in as the stances' "comes in" is said and stays for the bar that reserves,
+  /// which shows it going out and coming back; it rises again for the chapters that need it up.
   static double keyboard(final double t) {
     double up(final double at, [final double over = 0.7]) => ease(t, at, at + over);
-    final ShowcaseChapter dry = of('drydock');
+    final ShowcaseChapter reserves = of('reserves');
     double level =
-        up(cue('tide', 'comes', tide.start + 1.5), 1.5) -
-        up(cue('drydock', 'out', dry.start + 3)) +
-        up(cue('drydock', 'comes', dry.start + 4.5)) -
-        up(dry.end - 0.9);
+        up(cue('stances', 'comes', stances.start + 1.5), 1.5) -
+        up(cue('reserves', 'out', reserves.start + 3)) +
+        up(cue('reserves', 'comes', reserves.start + 4.5)) -
+        up(reserves.end - 0.9);
     for (final (String chapter, String word) in const <(String, String)>[
-      ('moored', 'form'),
-      ('lighthouse', 'focused'),
-      ('chart', 'shows'),
+      ('clear', 'form'),
+      ('keepvisible', 'focused'),
+      ('inspector', 'shows'),
       ('trials', 'phones'),
     ]) {
       final ShowcaseChapter c = of(chapter);
@@ -172,30 +173,33 @@ abstract final class ShowcaseTimeline {
   /// How high the tide stands in the drawing, 0 (low water) to 1 (high water).
   static double water(final double t) => keyboard(t) / keyboardHeight;
 
-  /// Whether the composer is out: it docks for the tide chapter, to show a dock that floats, and
-  /// for the chart, so the chart has a floating dock to draw.
-  static bool composerOut(final double t) => t >= tide.start + 0.5 && t < tide.end || of('chart').contains(t);
+  /// Whether the composer is out: it comes in for the stances, to show a bar that rides, and for
+  /// the inspector, so the inspector has a bar that rides to draw.
+  static bool composerOut(final double t) => t >= stances.start + 0.5 && t < stances.end || of('inspector').contains(t);
 
   /// How far down the list is scrolled, as a fraction of how far it can go: rows slide under the
   /// header as "beneath" is said, and come to rest at the tab bar on "rest".
   static double scroll(final double t) {
-    final double under = cue('pier', 'beneath', pier.start + 1.5);
-    final double underPier = ease(t, under, under + 2.5) * 0.45;
-    final double sets = cue('quay', 'tug', quay.start + 1.0);
-    final double rests = cue('quay', 'rest', quay.end - 1.5);
-    final double toQuay = ease(t, sets, math.max(sets + 0.5, rests)) * 0.55;
-    // The wake: the rows come back up under the header as it is described, and slide on past it.
-    final ShowcaseChapter wake = of('wake');
-    final double wakeUp = ease(t, wake.start + 0.4, cue('wake', 'ripples', wake.start + 2.5)) * 0.35;
-    final double wakeDown = ease(t, cue('wake', 'rows', wake.start + 5), cue('wake', 'rest', wake.end - 1)) * 0.35;
+    final double under = cue('overlay', 'beneath', overlay.start + 1.5);
+    final double underHeader = ease(t, under, under + 2.5) * 0.45;
+    final double sets = cue('solid', 'tug', solid.start + 1.0);
+    final double rests = cue('solid', 'rest', solid.end - 1.5);
+    final double toTabBar = ease(t, sets, math.max(sets + 0.5, rests)) * 0.55;
+    // The edge effect: the rows come back up under the header as it is described, and slide on
+    // past it.
+    final ShowcaseChapter effect = of('edgeeffect');
+    final double backUp = ease(t, effect.start + 0.4, cue('edgeeffect', 'ripples', effect.start + 2.5)) * 0.35;
+    final double onDown =
+        ease(t, cue('edgeeffect', 'rows', effect.start + 5), cue('edgeeffect', 'rest', effect.end - 1)) * 0.35;
     final double back = ease(t, outro.start + 0.5, outro.end - 0.5);
-    return (underPier + toQuay - wakeUp + wakeDown) * (1 - back);
+    return (underHeader + toTabBar - backUp + onDown) * (1 - back);
   }
 
-  /// The tug's passage to the quay wall: it sets off on "tug" and is alongside by "wall".
+  /// The tug's passage to the quay wall in the drawing: it sets off on "tug" and is alongside by
+  /// "wall".
   static (double, double) get tugPassage {
-    final double sets = cue('quay', 'tug', quay.start + 0.4);
-    return (sets, math.max(sets + 0.8, cue('quay', 'wall', quay.end - 1.6)));
+    final double sets = cue('solid', 'tug', solid.start + 0.4);
+    return (sets, math.max(sets + 0.8, cue('solid', 'wall', solid.end - 1.6)));
   }
 
   /// Boats crossing the drawing, by time: 0 to 1 along their course.

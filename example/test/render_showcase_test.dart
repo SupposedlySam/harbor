@@ -5,7 +5,7 @@
 //   SHOWCASE_OUT=build/showcase SHOWCASE_AT=5,20  only the stills at those seconds
 //   SHOWCASE_CUT=showcase_wide                    the wide-format video instead of the phone tour
 //
-// The clock is the test's own, stepped one frame at a time, so dock animations inside the real
+// The clock is the test's own, stepped one frame at a time, so bar animations inside the real
 // harbor run in step with the timeline and every recording is identical.
 
 import 'dart:io';
@@ -97,8 +97,9 @@ void main() {
       final double t = i / fps;
       // Two pumps: the first lays out half a frame early, the second at the frame's time, which
       // lets the list follow the timeline after a layout, as it does one frame later in the
-      // running app. Never twice at one time: harbor's tide gauge takes a keyboard that holds
-      // still for a frame as settled, and would mark a keyboard caught mid-rise as high water.
+      // running app. Never twice at one time: harbor's keyboard reading takes a keyboard that
+      // holds still for a frame as settled, and would take a keyboard caught mid-rise as its
+      // settled height.
       time.value = math.max(0, t - 0.5 / fps);
       await tester.pump(step ~/ 2);
       time.value = t;

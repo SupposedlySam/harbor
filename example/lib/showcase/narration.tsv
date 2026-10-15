@@ -1,41 +1,42 @@
 intro	Every screen has things pushing in from its edges.
 intro	The status bar, the home indicator, the keyboard, and your own headers and tab bars.
 intro	Harbor gives each one a place, so your content stops doing inset arithmetic.
-sea	It starts with the sea. Mount it once, above your navigator, and every harbor floats on it.
-coast	The coast is what the platform takes: the status bar, the home indicator, a notch.
-pier	The pier, built out over the water.
-pier	A header your content scrolls under.
-pier	Boats pass beneath the pier, the way your rows slide under the header.
-quay	The quay, a stone wall on the shore.
-quay	A tab bar your content stops at.
-quay	The tug pulls up to the quay wall, and the list comes to rest right above the tab bar.
-wake	Where a boat passes under the pier, the water ripples: that is the wake.
-wake	Rows fade as they slide under the header, then rest past the fade.
-moored	A moored boat is tied clear of everything in its way.
-moored	A form or a fixed button keeps clear of the docks, the coast and the keyboard.
-mooring	The mooring line is the page margin, kept by the rows that ask for it.
-mooring	The list runs to the edge of the screen, so a carousel inside it can too.
-fairway	The fairway is the channel boats sail through.
-fairway	It is a scroll view that runs under the docks and comes to rest clear of them.
-sliverdock	A header inside the list pins at the face of the docks, and the next one stacks below it.
-sticky	A sticky pill rides with its row, then holds below the docks until the row scrolls away.
-openwater	Open water ignores the docks: a background, a map, a hero image.
-openwater	It runs under the header, edge to edge, as the sea runs under a pier.
-tide	The tide is the keyboard.
-tide	When it comes in, a dock on pilings stays where it is, and the water covers it. That's your tab bar.
-tide	A floating dock rides up with the tide. That's your composer, sitting right on top of the keyboard.
-drydock	A dry dock keeps the keyboard's ground, tide in or out, so nothing moves when it comes and goes.
-makeway	Content can ask a dock to make way: to go dark, or to withdraw and give back its ground.
-pontoon	A pontoon is a dock moored from deep inside the page, like an unsaved changes bar.
-buoy	A buoy floats in the clear water: a floating button, a speech bubble by its anchor.
-buoy	A modal buoy puts a barrier over the page. Tap beside it, or go back, and it closes.
-portal	A portal buoy opens from anywhere: a menu from a list row flips above it when there is no room.
-signal	A flare is a toast. It goes to the page on top, clear of the docks, and screen readers announce it.
-sheet	A sheet is a new port of its own, with its own pier and its own floating quay.
+root	It starts with the root. Mount it once, above your navigator, and every frame sits on it.
+systemedges	The system edges are what the platform takes: the status bar, the home indicator, a notch.
+overlay	An overlay bar is a header your content scrolls under.
+overlay	Like a pier, built out over the water.
+overlay	Boats pass beneath a pier, the way your rows slide under the header.
+solid	A solid bar is a tab bar your content stops at.
+solid	Like a quay, a stone wall on the shore.
+solid	The tug pulls up to the quay wall, and the list comes to rest right above the tab bar.
+edgeeffect	An edge effect is what content does under a bar, like the ripples a boat leaves behind.
+edgeeffect	Rows fade as they slide under the header, then rest past the fade.
+clear	Clear is a safe area that also knows about the bars and the keyboard.
+clear	A form or a fixed button keeps clear of the bars, the system edges and the keyboard.
+rowinsets	Row insets are the page margin, kept by the rows that ask for it.
+rowinsets	The list runs to the edge of the screen, so a carousel inside it can too.
+scrollview	The scroll view is your list, and like a channel, it runs under the bars.
+scrollview	It comes to rest clear of them at both ends.
+sliverbar	A sliver bar is a header inside the list. It pins at the face of the bars, and the next one stacks below it.
+sticky	A sticky pill rides with its row, then holds below the bars until the row scrolls away.
+room	Some content ignores the bars: a background, a map, a hero image.
+room	It runs under the header, edge to edge, and asks the room how far the bars reach.
+stances	Then there is the keyboard, and each bar takes a stance.
+stances	When it comes in, a bar that stays is covered, like a jetty on pilings. That's your tab bar.
+stances	A bar that rides comes up with it, like a floating dock. That's your composer, sitting right on top of the keyboard.
+reserves	A bar that reserves holds the keyboard's space, like a dry dock.
+reserves	The keyboard goes out and a panel takes its place. When it comes back, nothing moves.
+hidebar	Content can ask a bar to hide: to go dark, or to withdraw and give back its space.
+attachedbar	An attached bar is added from deep inside the page, like an unsaved changes bar.
+float	A float sits in the room: a floating button, a speech bubble by its anchor.
+float	A float with a barrier is modal. Tap beside it, or go back, and it closes.
+popover	A popover opens from anywhere: a menu from a list row flips above it when there is no room.
+toast	Show a toast, and it goes to the page on top, clear of the bars, and screen readers announce it.
+sheet	A sheet is a page of its own, with its own header and a footer that rides the keyboard.
 sheet	It stops short of the status bar, and its footer clears the home indicator once.
-breakwater	A breakwater sheet tells the page how much of it is covered, so the page keeps clear of it.
-dialog	A dialog can keep to the clear water of the page that opened it.
-lighthouse	The lighthouse keeps things in sight: a focused field is brought back above the keyboard.
-chart	The chart shows every dock's ground, each harbor's clear water, and the tide, as you work.
-trials	Sea trials test it all on real devices, phones and foldables, with the keyboard up.
-outro	Docks claim the edges. Everything else moors clear of them.
+coverspage	A sheet that covers the page tells the page how much is covered, so the page keeps clear of it.
+dialog	A dialog can keep to the room of the page that opened it.
+keepvisible	Keep visible does what it says: a focused field is brought back above the keyboard.
+inspector	The inspector shows every bar's space, each frame's room, and the keyboard, as you work.
+trials	Trials test it all in widget tests, on phones and foldables, with the keyboard up.
+outro	Every edge is claimed once, and your content gets the room.
