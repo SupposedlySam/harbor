@@ -65,7 +65,8 @@ class HarborDefaults with Diagnosticable {
 
   /// Which hinges and folds a frame's bars keep off, when that should differ from [hinge]:
   /// `barHinge: HarborHinge.never` lays a tab bar across the hinge while sheets, dialogs, toasts
-  /// and menus still keep off it. Null follows [hinge].
+  /// and menus still keep off it. Null follows [hinge]. A nearer scope's [hinge] replaces an
+  /// inherited [barHinge] (see [merge]), so a nested frame's own policy always decides its bars.
   final HarborHinge? barHinge;
 
   /// What a screen reader announces for the barrier of a sheet, a dialog or a modal float whose
@@ -114,13 +115,18 @@ class HarborDefaults with Diagnosticable {
   );
 
   /// These defaults, with every field [nearer] sets taking its place.
+  ///
+  /// The bars' hinge follows the nearest scope that says anything about the hinge: [nearer]'s
+  /// [barHinge], else [nearer]'s [hinge], and only then this [barHinge]. So a frame that sets its
+  /// own [hinge] keeps its bars, and the frames beneath it, by that policy, whatever [barHinge] a
+  /// frame around it set: `own.barHinge ?? own.hinge ?? inherited.barHinge ?? inherited.hinge`.
   HarborDefaults merge(final HarborDefaults? nearer) {
     if (nearer == null) {
       return this;
     }
     return HarborDefaults(
       hinge: nearer.hinge ?? hinge,
-      barHinge: nearer.barHinge ?? barHinge,
+      barHinge: nearer.barHinge ?? nearer.hinge ?? barHinge,
       barrierLabel: nearer.barrierLabel ?? barrierLabel,
       sheetBarrierOnTapHint: nearer.sheetBarrierOnTapHint ?? sheetBarrierOnTapHint,
       sheetMaxWidth: nearer.sheetMaxWidth ?? sheetMaxWidth,

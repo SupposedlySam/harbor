@@ -192,10 +192,27 @@ class HarborFrame extends StatefulWidget {
   @Deprecated('Read defaults?.barHinge. Deprecated after 0.9.1.')
   HarborHinge? get dockHinge => _barHinge;
 
-  /// [defaults], with the deprecated `hinge:` and `barHinge:` folded in under it.
-  HarborDefaults? get _ownDefaults => _hinge == null && _barHinge == null
-      ? defaults
-      : HarborDefaults(hinge: _hinge, barHinge: _barHinge).merge(defaults);
+  /// [defaults], with the deprecated `hinge:` and `barHinge:` folded in under it, field by field:
+  /// both are this frame's own, so `defaults: HarborDefaults(hinge: a)` beside `barHinge: b` keeps
+  /// its bars on `b`, as `hinge: a, barHinge: b` did. (A plain [HarborDefaults.merge] would let `a`
+  /// replace `b`, which is the rule between frames, not within one.)
+  HarborDefaults? get _ownDefaults {
+    final HarborDefaults? given = defaults;
+    if (_hinge == null && _barHinge == null) {
+      return given;
+    }
+    return HarborDefaults(
+      hinge: given?.hinge ?? _hinge,
+      barHinge: given?.barHinge ?? _barHinge,
+      barrierLabel: given?.barrierLabel,
+      sheetBarrierOnTapHint: given?.sheetBarrierOnTapHint,
+      sheetMaxWidth: given?.sheetMaxWidth,
+      toastQueue: given?.toastQueue,
+      toastTiming: given?.toastTiming,
+      toastAnimationStyle: given?.toastAnimationStyle,
+      toastMargin: given?.toastMargin,
+    );
+  }
 
   /// Whether this is the outermost frame of a [HarborRoot].
   final bool _isSea;
@@ -680,6 +697,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         clearWaterFloor: HarborClearWaterFloor.of(context),
         hinges: <Rect>[
           for (final DisplayFeature feature
+              // own.barHinge ?? own.hinge ?? inherited.barHinge ?? inherited.hinge: merge puts it so.
               in (resolved.barHinge ?? resolved.hinge ?? HarborHinge.avoidSeparating).keptOff(
                 MediaQuery.displayFeaturesOf(context),
               ))
