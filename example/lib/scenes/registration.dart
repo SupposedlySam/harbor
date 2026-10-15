@@ -78,7 +78,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(final BuildContext context) => HarborFrame(
-    isPage: true,
     debugLabel: 'harbor registration',
     top: <HarborBar>[
       HarborBar.overlay(

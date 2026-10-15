@@ -44,7 +44,6 @@ class _ShipyardPageState extends State<ShipyardPage> {
   @override
   Widget build(final BuildContext context) => HarborPage(
     child: HarborFrame(
-      isPage: true,
       bodyClearsKeyboard: false,
       debugLabel: 'shipyard',
       top: <HarborBar>[

@@ -602,7 +602,6 @@ class HarborRulesPage extends StatelessWidget {
   @override
   Widget build(final BuildContext context) => HarborPage(
     child: HarborFrame(
-      isPage: true,
       debugLabel: 'harbor rules',
       top: const <HarborBar>[
         HarborBar.solid(
@@ -721,7 +720,6 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
   @override
   Widget build(final BuildContext context) => const HarborPage(
     child: HarborFrame(
-      isPage: true,
       debugLabel: 'signal tower',
       top: <HarborBar>[
         HarborBar.overlay(

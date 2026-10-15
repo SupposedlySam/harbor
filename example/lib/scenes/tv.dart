@@ -54,7 +54,6 @@ class _TvHarborTownState extends State<TvHarborTown> {
       child: ColoredBox(
         color: Palette.deepSea,
         child: HarborFrame(
-          isPage: true,
           debugLabel: 'lighthouse tv',
           start: <HarborBar>[
             HarborBar.overlay(

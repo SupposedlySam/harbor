@@ -400,4 +400,60 @@ void main() {
       expect(const HarborKeepInSightRegion(child: SizedBox()), isA<HarborKeepVisibleRegion>());
     });
   });
+
+  group('a page under the root: isPage changes nothing there', () {
+    // Measured for the audit's step on newPort (DECISIONS.md): a frame on a route right under
+    // HarborRoot lays out the same whether it starts a page or not, since the root has no bars to
+    // reach in. So HarborFrame.page is for a frame inside another frame, not for a route.
+    Future<(Rect, HarborRoomData, Rect, HarborRoomData)> measure(
+      final WidgetTester tester, {
+      required final bool isPage,
+    }) async {
+      late HarborRoomData room;
+      final HarborTrial trial = await tester.pumpHarborTrial(
+        _app(
+          HarborFrame(
+            isPage: isPage,
+            top: const <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50))],
+            bottom: const <HarborBar>[HarborBar.solid(child: SizedBox(height: 56))],
+            body: Builder(
+              builder: (final BuildContext context) {
+                room = HarborRoom.of(context);
+                return const HarborClear(child: SizedBox.expand(key: ValueKey<String>('probe')));
+              },
+            ),
+          ),
+        ),
+        device: HarborTrialDevice.iPhone17,
+      );
+      final Rect down = _rect(tester, 'probe');
+      final HarborRoomData roomDown = room;
+      await trial.showKeyboard(settle: true);
+      final Rect up = _rect(tester, 'probe');
+      final HarborRoomData roomUp = room;
+      await trial.hideKeyboard(settle: true);
+      return (down, roomDown, up, roomUp);
+    }
+
+    testWidgets('the same rectangles and room data, keyboard down and up', (final tester) async {
+      final (Rect down, HarborRoomData roomDown, Rect up, HarborRoomData roomUp) = await measure(tester, isPage: false);
+      final (Rect pageDown, HarborRoomData pageRoomDown, Rect pageUp, HarborRoomData pageRoomUp) = await measure(
+        tester,
+        isPage: true,
+      );
+      expect(down, const Rect.fromLTRB(0, 112, 402, 784));
+      expect(pageDown, down);
+      expect(pageUp, up);
+      for (final (HarborRoomData a, HarborRoomData b) in <(HarborRoomData, HarborRoomData)>[
+        (roomDown, pageRoomDown),
+        (roomUp, pageRoomUp),
+      ]) {
+        expect(b.systemEdges, a.systemEdges);
+        expect(b.systemEdgesSteady, a.systemEdgesSteady);
+        expect(b.bars, a.bars);
+        expect(b.fadeBands, a.fadeBands);
+        expect(b.frameSize, a.frameSize);
+      }
+    });
+  });
 }

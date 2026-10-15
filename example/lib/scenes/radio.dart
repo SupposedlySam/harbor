@@ -377,7 +377,6 @@ class _ChannelPageState extends State<ChannelPage> {
   Widget build(final BuildContext context) {
     final List<Sailor> crew = _mentionQuery == null ? const <Sailor>[] : _mentionable;
     return HarborFrame(
-      isPage: true,
       debugLabel: 'radio channel',
       top: <HarborBar>[
         HarborBar.overlay(

@@ -259,7 +259,6 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
     final List<_Voyage> voyages = _Voyage.of(boat, _sort);
     return HarborPage(
       child: HarborFrame(
-        isPage: true,
         debugLabel: 'boat detail',
         top: <HarborBar>[
           HarborBar.overlay(

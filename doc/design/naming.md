@@ -90,7 +90,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborSea.coast` | `systemEdges` | RP | And on `Harbor`, `HarborScaleModel` |
 | `HarborSea.observers` | unchanged | | Now `List<HarborFrameObserver>` |
 | `Harbor` | `HarborFrame` | T | `Harbor.of` / `maybeOf` keep their names |
-| `Harbor.newPort` | `isPage` | RP | Plus the decided `HarborFrame.page(...)` constructor, which sets it. `fix_data` cannot choose a constructor by a `bool`'s value, so the fix writes `isPage: true`, and `.page` is the documented spelling. Inferred at route boundaries in a later step |
+| `Harbor.newPort` | `isPage` | RP | Plus the decided `HarborFrame.page(...)` constructor, which sets it. `fix_data` cannot choose a constructor by a `bool`'s value, so the fix writes `isPage: true`, and `.page` is the documented spelling. Not inferred at route boundaries (DECISIONS.md, measured): a route under the root needs none, and a nested `Navigator` would move under the outer bars |
 | `Harbor.dockHinge` | `barHinge` | RP | |
 | `Harbor.buoys` | `floats` | RP | `List<HarborFloat>` |
 | `Harbor.bodyClearsTide` | `bodyClearsKeyboard` | RP | And on `HarborSheet` |

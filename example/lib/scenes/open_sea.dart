@@ -31,7 +31,6 @@ class OpenSeaTab extends StatelessWidget {
     title: 'Open Sea',
     boats: Fleet.boats,
     hideState: HarborBarState.withdrawn,
-    isPage: false,
   );
 }
 
@@ -51,7 +50,6 @@ class VoyagePage extends StatelessWidget {
       title: boat.name,
       boats: <Boat>[boat],
       hideState: HarborBarState.dark,
-      isPage: true,
       showBack: true,
     ),
   );
@@ -93,7 +91,6 @@ class _VoyageHarbor extends StatefulWidget {
     required this.title,
     required this.boats,
     required this.hideState,
-    required this.isPage,
     this.showBack = false,
   });
 
@@ -103,7 +100,6 @@ class _VoyageHarbor extends StatefulWidget {
 
   /// How the header hides while the shanty drawer is open.
   final HarborBarState hideState;
-  final bool isPage;
   final bool showBack;
 
   @override
@@ -169,7 +165,6 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
   Widget build(final BuildContext context) {
     final bool following = widget.boats.length == 1;
     return HarborFrame(
-      isPage: widget.isPage,
       debugLabel: widget.debugLabel,
       top: <HarborBar>[
         HarborBar.overlay(
