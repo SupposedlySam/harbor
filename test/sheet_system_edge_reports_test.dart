@@ -1,5 +1,5 @@
-// #97: a sheet that casts the status bar off for its content still keeps it out of its clear
-// water. #98: casting the sides off with no HarborSea keeps the bottom inset.
+// #97: a sheet that marks the status bar handled for its content still keeps it out of its
+// room. #98: marking the sides handled with no HarborRoot keeps the bottom inset.
 
 import 'dart:async';
 
@@ -8,11 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-Future<BuildContext> _app(final WidgetTester tester, {required final bool sea}) async {
+Future<BuildContext> _app(final WidgetTester tester, {required final bool root}) async {
   late BuildContext page;
   await tester.pumpHarborTrial(
     MaterialApp(
-      builder: sea ? (final c, final child) => HarborRoot(child: child!) : null,
+      builder: root ? (final c, final child) => HarborRoot(child: child!) : null,
       home: Builder(
         builder: (final c) {
           page = c;
@@ -25,13 +25,13 @@ Future<BuildContext> _app(final WidgetTester tester, {required final bool sea}) 
 }
 
 void main() {
-  group('#98 clearsSides with no HarborSea', () {
-    for (final bool sea in <bool>[false, true]) {
+  group('#98 clearsSides with no HarborRoot', () {
+    for (final bool root in <bool>[false, true]) {
       for (final bool sides in <bool>[false, true]) {
-        testWidgets('the body reads the home indicator at the bottom (sea: $sea, clearsSides: $sides)', (
+        testWidgets('the body reads the home indicator at the bottom (root: $root, clearsSides: $sides)', (
           final tester,
         ) async {
-          final BuildContext page = await _app(tester, sea: sea);
+          final BuildContext page = await _app(tester, root: root);
           late EdgeInsets padding;
           unawaited(
             showHarborSheet<void>(
@@ -53,7 +53,7 @@ void main() {
       }
     }
 
-    testWidgets('a HarborMoored over a new port, with no sea, casts off only its own edges', (final tester) async {
+    testWidgets('a HarborClear over a page, with no root, marks only its own edges handled', (final tester) async {
       late EdgeInsets padding;
       await tester.pumpHarborTrial(
         MaterialApp(
@@ -61,7 +61,7 @@ void main() {
             edges: HarborEdge.horizontal,
             bars: false,
             clearsKeyboard: false,
-            // A new port reads its coast from the waters above it, as a sheet's does.
+            // A page reads its system edges from the room above it, as a sheet's does.
             child: HarborFrame(
               isPage: true,
               body: Builder(
@@ -79,9 +79,9 @@ void main() {
     });
   });
 
-  group('#97 clearsTopCoast: false and the clear water', () {
+  group('#97 clearsTopSystemEdge: false and the room', () {
     Future<(BuildContext, EdgeInsets)> open(final WidgetTester tester, {required final bool clears}) async {
-      final BuildContext page = await _app(tester, sea: true);
+      final BuildContext page = await _app(tester, root: true);
       late BuildContext inSheet;
       unawaited(
         showHarborSheet<void>(
@@ -101,7 +101,7 @@ void main() {
       return (inSheet, MediaQuery.paddingOf(inSheet));
     }
 
-    Future<double> flareTop(final WidgetTester tester, final BuildContext inSheet) async {
+    Future<double> toastTop(final WidgetTester tester, final BuildContext inSheet) async {
       HarborToasts.show(
         inSheet,
         slot: HarborToastSlot.top,
@@ -114,17 +114,17 @@ void main() {
       return tester.getRect(find.byKey(const ValueKey<String>('flare'))).top;
     }
 
-    testWidgets('the content reads no status bar, but a flare keeps clear of it', (final tester) async {
+    testWidgets('the content reads no status bar, but a toast keeps clear of it', (final tester) async {
       final (BuildContext inSheet, EdgeInsets padding) = await open(tester, clears: false);
       expect(padding.top, 0, reason: 'what clearsTopCoast: false is for');
       expect(HarborFrame.of(inSheet).roomInGlobal()!.top, 62);
-      expect(await flareTop(tester, inSheet), 62 + 16);
+      expect(await toastTop(tester, inSheet), 62 + 16);
     });
 
     testWidgets('positive control: with the option off, the same', (final tester) async {
       final (BuildContext inSheet, EdgeInsets padding) = await open(tester, clears: true);
       expect(padding.top, 62);
-      expect(await flareTop(tester, inSheet), 62 + 16);
+      expect(await toastTop(tester, inSheet), 62 + 16);
     });
   });
 }

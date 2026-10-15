@@ -1,4 +1,4 @@
-// HarborDock.reserve (#92), and which reader gives a footer on the keyboard its bottom room (#93).
+// HarborBar.reserve (#92), and which reader gives a footer on the keyboard its bottom room (#93).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,37 +7,36 @@ import 'package:harbor_test/harbor_test.dart';
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
-Widget _page({required final List<HarborBar> bottom, final bool bodyClearsTide = true, final VoidCallback? onTap}) =>
-    MaterialApp(
-      builder: (final c, final child) => HarborRoot(child: child!),
-      home: HarborFrame(
-        bodyClearsKeyboard: bodyClearsTide,
-        bottom: bottom,
-        body: Stack(
-          children: <Widget>[
-            Positioned.fill(
-              child: GestureDetector(
-                key: const ValueKey<String>('page'),
-                behavior: HitTestBehavior.opaque,
-                onTap: onTap,
-              ),
-            ),
-            const HarborClear(child: SizedBox.expand(key: ValueKey<String>('moored'))),
-          ],
+Widget _page({
+  required final List<HarborBar> bottom,
+  final bool bodyClearsKeyboard = true,
+  final VoidCallback? onTap,
+}) => MaterialApp(
+  builder: (final c, final child) => HarborRoot(child: child!),
+  home: HarborFrame(
+    bodyClearsKeyboard: bodyClearsKeyboard,
+    bottom: bottom,
+    body: Stack(
+      children: <Widget>[
+        Positioned.fill(
+          child: GestureDetector(key: const ValueKey<String>('page'), behavior: HitTestBehavior.opaque, onTap: onTap),
         ),
-      ),
-    );
+        const HarborClear(child: SizedBox.expand(key: ValueKey<String>('moored'))),
+      ],
+    ),
+  ),
+);
 
 void main() {
   group('#92 HarborBar.reserve', () {
-    testWidgets('outermost, it reaches the larger of the coast and its extent', (final tester) async {
+    testWidgets('outermost, it reaches the larger of the system edge and its extent', (final tester) async {
       await tester.pumpHarborTrial(_page(bottom: const <HarborBar>[HarborBar.reserve(extent: 80)]));
       expect(_rect(tester, 'moored').bottom, 874 - 80, reason: 'past the 34 home indicator');
       await tester.pumpHarborTrial(_page(bottom: const <HarborBar>[HarborBar.reserve(extent: 20)]));
       expect(_rect(tester, 'moored').bottom, 874 - 34, reason: 'the coast is larger');
     });
 
-    testWidgets('inside another dock, it reaches its extent past that dock', (final tester) async {
+    testWidgets('inside another bar, it reaches its extent past that bar', (final tester) async {
       await tester.pumpHarborTrial(
         _page(
           bottom: const <HarborBar>[
@@ -50,7 +49,7 @@ void main() {
       expect(_rect(tester, 'moored').bottom, 874 - 34 - 56 - 40);
     });
 
-    testWidgets('positive control: the minimum trick reserved nothing inside another dock', (final tester) async {
+    testWidgets('positive control: the minimum trick reserved nothing inside another bar', (final tester) async {
       await tester.pumpHarborTrial(
         _page(
           bottom: const <HarborBar>[
@@ -71,7 +70,7 @@ void main() {
       expect(taps, 1);
     });
 
-    testWidgets('a pier lets the body run under it; a quay stops it', (final tester) async {
+    testWidgets('an overlay bar lets the body run under it; a solid bar stops it', (final tester) async {
       await tester.pumpHarborTrial(_page(bottom: const <HarborBar>[HarborBar.reserve(extent: 80)]));
       expect(_rect(tester, 'page').bottom, 874);
       await tester.pumpHarborTrial(
@@ -80,10 +79,10 @@ void main() {
       expect(_rect(tester, 'page').bottom, 874 - 80);
     });
 
-    testWidgets('floating, it rides up on the keyboard', (final tester) async {
+    testWidgets('riding the keyboard, it rises with it', (final tester) async {
       final HarborTrial trial = await tester.pumpHarborTrial(
         _page(
-          bodyClearsTide: false,
+          bodyClearsKeyboard: false,
           bottom: const <HarborBar>[HarborBar.reserve(extent: 50, keyboard: HarborKeyboardStance.rides)],
         ),
       );
@@ -92,14 +91,14 @@ void main() {
     });
 
     test('says what it is', () {
-      const HarborBar dock = HarborBar.reserve(extent: 50);
-      expect(dock.toStringShort(), 'HarborBar.reserve');
-      expect(dock.copyWith(state: HarborBarState.dark).reserved, 50, reason: 'copyWith keeps it a reserve');
+      const HarborBar bar = HarborBar.reserve(extent: 50);
+      expect(bar.toStringShort(), 'HarborBar.reserve');
+      expect(bar.copyWith(state: HarborBarState.dark).reserved, 50, reason: 'copyWith keeps it a reserve');
     });
   });
 
   group('#93 a footer that sits on the keyboard', () {
-    testWidgets('reads MediaQuery.viewPadding in a body that clears the tide: the home indicator down, 0 up', (
+    testWidgets('reads MediaQuery.viewPadding in a body that clears the keyboard: the home indicator down, 0 up', (
       final tester,
     ) async {
       late BuildContext body;

@@ -1,4 +1,4 @@
-// HarborWaters.dockFaceOf: where the docks on an edge end, with or without a wake (#61).
+// HarborRoom.barFaceOf: where the bars on an edge end, with or without an edge effect (#61).
 //
 // On an iPhone 17: status bar 62, home indicator 34, a keyboard of 336.
 
@@ -17,7 +17,7 @@ Widget _app(final Widget home) => MaterialApp(
   home: Material(child: home),
 );
 
-/// Records the top dock face each time it is built.
+/// Records the top bar face each time it is built.
 class _FaceReader extends StatelessWidget {
   const _FaceReader(this.seen, {this.edge = HarborEdge.top});
 
@@ -32,12 +32,12 @@ class _FaceReader extends StatelessWidget {
 }
 
 void main() {
-  Future<double> faceUnder(final WidgetTester tester, final HarborEdgeEffect wake) async {
+  Future<double> faceUnder(final WidgetTester tester, final HarborEdgeEffect edgeEffect) async {
     final List<double> seen = <double>[];
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
-          top: <HarborBar>[HarborBar.overlay(edgeEffect: wake, child: _bar('header', 50))],
+          top: <HarborBar>[HarborBar.overlay(edgeEffect: edgeEffect, child: _bar('header', 50))],
           body: _FaceReader(seen),
         ),
       ),
@@ -50,13 +50,13 @@ void main() {
     return seen.last;
   }
 
-  // Breaks if: the face is read from the docks where a fade wake rests past them.
-  testWidgets("is the header's inner face under a fade wake that the content rests past", (final tester) async {
+  // Breaks if: the face is read from the bars where a fade rests past them.
+  testWidgets("is the header's inner face under a fade that the content rests past", (final tester) async {
     expect(await faceUnder(tester, const HarborEdgeEffect.fade(length: 12)), _statusBar + 50);
   });
 
-  // Breaks if: the face is read from the wake band alone, which only a fade wake has.
-  testWidgets("is the header's inner face with no wake, a hairline, or a fade that rests at the dock", (
+  // Breaks if: the face is read from the fade band alone, which only a fade has.
+  testWidgets("is the header's inner face with no edge effect, a hairline, or a fade that rests at the bar", (
     final tester,
   ) async {
     expect(await faceUnder(tester, HarborEdgeEffect.none), _statusBar + 50);
@@ -67,14 +67,14 @@ void main() {
     );
   });
 
-  testWidgets('is zero where nothing is docked, the coast left out', (final tester) async {
+  testWidgets('is zero where no bar is, the system edge left out', (final tester) async {
     final List<double> seen = <double>[];
     await tester.pumpHarborTrial(_app(HarborFrame(body: _FaceReader(seen, edge: HarborEdge.bottom))));
     expect(seen.last, 0);
   });
 
-  // Breaks if: dockFaceOf reads the waters beyond the docks aspect. On a phone with a home
-  // indicator the steady coast's clamp follows the keyboard for such a reader.
+  // Breaks if: barFaceOf reads the room beyond the bars aspect. On a phone with a home
+  // indicator the steady system edge's clamp follows the keyboard for such a reader.
   testWidgets('its reader holds still while the keyboard rises', (final tester) async {
     final List<double> seen = <double>[];
     final List<double> keyboard = <double>[];
@@ -103,15 +103,15 @@ void main() {
     keyboard.clear();
     await trial.showKeyboard();
     expect(keyboard.length, greaterThan(1), reason: 'positive control: the keyboard moved over several frames');
-    // At most once, for the home indicator leaving the padding, which the docks' clamp reads.
+    // At most once, for the home indicator leaving the padding, which the bars' clamp reads.
     expect(seen.length, lessThanOrEqualTo(1));
     expect(seen, everyElement(_statusBar + 50));
   });
 
-  // A reader of the waters as a whole would rebuild when any part of them changes; this one
-  // depends on the docks alone. The margin changes and the docks do not.
-  // Breaks if: dockFaceOf reads the waters beyond the docks aspect.
-  testWidgets('its reader holds still when another part of the waters changes', (final tester) async {
+  // A reader of the room as a whole would rebuild when any part of it changes; this one
+  // depends on the bars alone. The margin changes and the bars do not.
+  // Breaks if: barFaceOf reads the room beyond the bars aspect.
+  testWidgets('its reader holds still when another part of the room changes', (final tester) async {
     final List<double> faces = <double>[];
     final List<double> margins = <double>[];
     // Built once, so only what they depend on rebuilds them.

@@ -28,7 +28,7 @@ Future<List<FlutterErrorDetails>> _errorsWhile(final Future<void> Function() bod
 }
 
 void main() {
-  testWidgets('HarborController.of with no harbor above says to use maybeOf', (final tester) async {
+  testWidgets('HarborController.of with no frame above says to use maybeOf', (final tester) async {
     late BuildContext bare;
     await tester.pumpWidget(
       Builder(
@@ -48,7 +48,7 @@ void main() {
     );
   });
 
-  // Breaks if: Harbor.of points a reader at HarborController's methods, or stops throwing.
+  // Breaks if: HarborFrame.of points a reader at HarborController's methods, or stops throwing.
   testWidgets('HarborFrame.of with no frame above says to use HarborFrame.maybeOf', (final tester) async {
     late BuildContext bare;
     await tester.pumpWidget(
@@ -69,7 +69,7 @@ void main() {
     );
   });
 
-  testWidgets('a harbor given unbounded height names itself and says to hug its body', (final tester) async {
+  testWidgets('a frame given unbounded height names itself and says to hug its body', (final tester) async {
     final List<FlutterErrorDetails> errors = await _errorsWhile(
       () => tester.pumpHarborTrial(
         _app(
@@ -85,7 +85,7 @@ void main() {
     expect('$error', contains('HarborSizing.hug()'));
   });
 
-  testWidgets('a quay listed inside a pier says to list it nearer the edge', (final tester) async {
+  testWidgets('a solid bar listed inside an overlay bar says to list it nearer the edge', (final tester) async {
     final List<FlutterErrorDetails> errors = await _errorsWhile(
       () => tester.pumpHarborTrial(
         _app(
@@ -144,7 +144,7 @@ void main() {
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'row menu');
       addTearDown(anchor.dispose);
       await tester.pumpHarborTrial(rows(anchor, <int>[0]));
-      // A sea trial both times, so the tree is kept and the old point detaches in the same frame
+      // A trial both times, so the tree is kept and the old point detaches in the same frame
       // the new one attaches: the case the check must not mistake for two points on one anchor.
       await tester.pumpHarborTrial(rows(anchor, <int>[2]));
       await tester.pump();

@@ -1,4 +1,4 @@
-// Docks keep off a separating hinge (hinge API 2 of 4): a bar is moved to one side rather than
+// Bars keep off a separating hinge (hinge API 2 of 4): a bar is moved to one side rather than
 // laid across it, as Microsoft's dual-screen guidance and Android's foldable guidance both ask.
 
 import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
@@ -99,7 +99,7 @@ void main() {
     expect(_rect(tester, 'tabs').width, 720 - 72, reason: 'beside the rail, as the corners say');
   });
 
-  testWidgets('a harbor smaller than the screen does not read the hinge', (final tester) async {
+  testWidgets('a frame smaller than the screen does not read the hinge', (final tester) async {
     await tester.pumpHarborTrial(
       MaterialApp(
         builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),

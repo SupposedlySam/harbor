@@ -1,4 +1,4 @@
-// Owner review of the placement engine (0.7.0): a flare never flips, and a flare's content reads
+// Owner review of the placement engine (0.7.0): a toast never flips, and a toast's content reads
 // the MediaQuery of the one screen it is on when a hinge splits the screen, as it did before the
 // engine.
 
@@ -9,8 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-/// The dual-screen device with a coast on the right and the bottom only, so a flare on the left
-/// screen has no right coast of its own: the right one belongs to the other screen.
+/// The dual-screen device with system edges on the right and the bottom only, so a toast on the left
+/// screen has no right system edge of its own: the right one belongs to the other screen.
 final HarborTrialDevice _dual = HarborTrialDevice.dualScreenOpen.copyWith(
   systemEdges: const EdgeInsets.only(right: 40, bottom: 20),
 );
@@ -22,8 +22,8 @@ Future<void> _settle(final WidgetTester tester) async {
 }
 
 void main() {
-  group('a flare never flips', () {
-    testWidgets('raise asserts on an anchored placement that asks to flip', (final tester) async {
+  group('a toast never flips', () {
+    testWidgets('show asserts on an anchored placement that asks to flip', (final tester) async {
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
       late BuildContext page;
@@ -48,7 +48,7 @@ void main() {
         ),
         throwsAssertionError,
       );
-      // flips: false says what a flare does anyway, and is allowed.
+      // flips: false says what a toast does anyway, and is allowed.
       final HarborToastEntry entry = HarborToasts.show(
         page,
         placement: HarborAnchored(anchor, flips: false),
@@ -60,7 +60,7 @@ void main() {
     });
   });
 
-  group('a flare\'s content reads the MediaQuery of its own screen', () {
+  group('a toast\'s content reads the MediaQuery of its own screen', () {
     late EdgeInsets padding;
     late List<DisplayFeature> features;
     Widget toast(final BuildContext context) {
@@ -69,7 +69,7 @@ void main() {
       return const SizedBox(width: 100, height: 30);
     }
 
-    testWidgets('with no harbor, a low flare on the left screen keeps the bottom coast and drops the right', (
+    testWidgets('with no frame, a low toast on the left screen keeps the bottom system edge and drops the right', (
       final tester,
     ) async {
       late BuildContext page;
@@ -91,7 +91,7 @@ void main() {
       expect(features, isEmpty);
     });
 
-    testWidgets('in a harbor, the same', (final tester) async {
+    testWidgets('in a frame, the same', (final tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(
         MaterialApp(
@@ -113,7 +113,7 @@ void main() {
       expect(features, isEmpty);
     });
 
-    testWidgets('with hinge: never, a flare spans both screens and keeps the whole MediaQuery', (final tester) async {
+    testWidgets('with hinge: never, a toast spans both screens and keeps the whole MediaQuery', (final tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(
         MaterialApp(
@@ -142,7 +142,7 @@ void main() {
   group('the moves the owner accepted, measured', () {
     Future<void> settle(final WidgetTester tester) => _settle(tester);
 
-    testWidgets('right to left, a centred flare with no harbor goes to the screen where reading starts', (
+    testWidgets('right to left, a centred toast with no frame goes to the screen where reading starts', (
       final tester,
     ) async {
       late BuildContext page;
@@ -171,7 +171,7 @@ void main() {
       expect(toast.right, 944);
     });
 
-    testWidgets('a flare with no harbor by an anchor near the hinge keeps 8 off the hinge', (final tester) async {
+    testWidgets('a toast with no frame by an anchor near the hinge keeps 8 off the hinge', (final tester) async {
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
       late BuildContext page;

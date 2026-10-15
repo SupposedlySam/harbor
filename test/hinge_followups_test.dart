@@ -1,4 +1,4 @@
-// Two hinge follow-ups: a portal buoy keeps to the screen that holds its anchor, and a sheet a
+// Two hinge follow-ups: a popover keeps to the screen that holds its anchor, and a sheet a
 // hinge keeps to one screen may fill that screen (fillsScreenAtHinge).
 
 import 'dart:async';
@@ -65,7 +65,7 @@ Future<void> _menu(final WidgetTester tester, {required final double left, final
 }
 
 void main() {
-  group('a portal buoy keeps to the screen that holds its anchor', () {
+  group('a popover keeps to the screen that holds its anchor', () {
     testWidgets("a menu from a button by the hinge stays on the button's screen", (final tester) async {
       await _menu(tester, left: 470);
       expect(_rect(tester, 'row button').right, 530, reason: 'positive control: the button is on the left screen');
@@ -122,7 +122,7 @@ void main() {
       expect(tester.getRect(find.byType(HarborSheet)).height, lessThan(300));
     });
 
-    testWidgets('with fillsScreenAtHinge it takes its screen top to bottom, the status bar as coast', (
+    testWidgets('with fillsScreenAtHinge it takes its screen top to bottom, the status bar as a system edge', (
       final tester,
     ) async {
       unawaited(showHarborSheet<void>(await page(tester), fillsScreenAtHinge: true, builder: sheet));

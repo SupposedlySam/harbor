@@ -76,7 +76,7 @@ class _RiseOnInsetsState extends State<_RiseOnInsets> with SingleTickerProviderS
 }
 
 void main() {
-  testWidgets('puts the device on the view and moves its tide', (final tester) async {
+  testWidgets('puts the device on the view and moves its keyboard', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
     final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
 
@@ -94,7 +94,7 @@ void main() {
     expect(tester.getRect(find.byKey(const ValueKey<String>('composer'))).bottom, trial.keyboardTop);
   });
 
-  testWidgets('pumps only as long as asked after the tide moves', (final tester) async {
+  testWidgets('pumps only as long as asked after the keyboard moves', (final tester) async {
     late AnimationController rise;
     final HarborTrial trial = await tester.pumpHarborTrial(_RiseOnInsets(onController: (final c) => rise = c));
 
@@ -114,17 +114,17 @@ void main() {
     expect(rise.status, AnimationStatus.completed);
   });
 
-  testWidgets('reports the clear water and the docks around a widget', (final tester) async {
+  testWidgets('reports the room and the bars around a widget', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
     final HarborTrial trial = await tester.pumpHarborTrial(_page(), device: device);
     final Finder body = find.byKey(const ValueKey<String>('body'));
 
-    final Rect clearWater = trial.roomAround(body);
+    final Rect room = trial.roomAround(body);
 
-    expect(clearWater.top, device.systemEdges.top);
-    expect(clearWater.bottom, device.size.height - device.systemEdges.bottom - _composerHeight);
+    expect(room.top, device.systemEdges.top);
+    expect(room.bottom, device.size.height - device.systemEdges.bottom - _composerHeight);
     expect(trial.barsAround(body).single.edge, HarborEdge.bottom);
-    expect(find.byKey(const ValueKey<String>('composer')), isNot(isInRoom(clearWater)));
+    expect(find.byKey(const ValueKey<String>('composer')), isNot(isInRoom(room)));
   });
 
   test('lists every device preset in all', () {
@@ -228,7 +228,7 @@ void main() {
     );
   });
 
-  testWidgets('clears a dock at the size its text grew to', (final tester) async {
+  testWidgets('clears a bar at the size its text grew to', (final tester) async {
     const HarborTrialDevice device = HarborTrialDevice.iPhone17;
     const double textScaleFactor = 2.0;
     final HarborTrial trial = await tester.pumpHarborTrial(
@@ -247,7 +247,7 @@ void main() {
     expect(tester.platformDispatcher.textScaleFactor, 1.0);
   });
 
-  testWidgets('fails the test when no harbor is around a widget', (final tester) async {
+  testWidgets('fails the test when no frame is around a widget', (final tester) async {
     final HarborTrial trial = await tester.pumpHarborTrial(const SizedBox(key: ValueKey<String>('alone')));
 
     expect(

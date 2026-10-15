@@ -13,14 +13,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-const double _statusBar = 62; // iPhone17's top coast.
+const double _statusBar = 62; // iPhone17's top system edge.
 const double _screen = 874; // iPhone17's height.
 
 Widget _bar(final String label, final double height) =>
     SizedBox(key: ValueKey<String>(label), height: height, width: double.infinity, child: Text(label));
 
-Widget _app(final Widget home, {final HarborSystemEdges coast = HarborSystemEdges.ambient}) => MaterialApp(
-  builder: (final BuildContext context, final Widget? child) => HarborRoot(systemEdges: coast, child: child!),
+Widget _app(final Widget home, {final HarborSystemEdges systemEdges = HarborSystemEdges.ambient}) => MaterialApp(
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(systemEdges: systemEdges, child: child!),
   home: Material(child: home),
 );
 
@@ -40,28 +40,29 @@ class _Probe extends StatelessWidget {
   }
 }
 
-/// A layer that keeps its child clear of the coast at the top and bottom and casts off the coast
-/// alone ([docks] false), so what is beneath still keeps clear of the docks.
-class _CoastMargin extends StatelessWidget {
-  const _CoastMargin({required this.child, this.docks = false, this.tide = false});
+/// A layer that keeps its child clear of the system edges at the top and bottom and marks the
+/// system edges alone handled ([bars] false), so what is beneath still keeps clear of the bars.
+class _SystemEdgesMargin extends StatelessWidget {
+  const _SystemEdgesMargin({required this.child, this.bars = false, this.keyboard = false});
 
-  final bool docks;
-  final bool tide;
+  final bool bars;
+  final bool keyboard;
   final Widget child;
 
   @override
   Widget build(final BuildContext context) {
-    final EdgeInsetsDirectional coast = HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
+    final EdgeInsetsDirectional systemEdges = HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
     return Padding(
-      padding: HarborEdges.keep(coast, HarborEdge.vertical),
-      child: HarborHandled(edges: HarborEdge.vertical, clearsBars: docks, clearsKeyboard: tide, child: child),
+      padding: HarborEdges.keep(systemEdges, HarborEdge.vertical),
+      child: HarborHandled(edges: HarborEdge.vertical, clearsBars: bars, clearsKeyboard: keyboard, child: child),
     );
   }
 }
 
-/// Reads only the coast, through the raw waters, so nothing but the coast aspect can rebuild it.
-class _CoastReader extends StatelessWidget {
-  const _CoastReader(this.seen);
+/// Reads only the system edges, through the raw room, so nothing but the system edges aspect can
+/// rebuild it.
+class _SystemEdgesReader extends StatelessWidget {
+  const _SystemEdgesReader(this.seen);
 
   final List<double> seen;
 
@@ -72,7 +73,7 @@ class _CoastReader extends StatelessWidget {
   }
 }
 
-/// Reads one aspect of the waters through [HarborRoom.of].
+/// Reads one aspect of the room through [HarborRoom.of].
 class _AspectReader extends StatelessWidget {
   const _AspectReader(this.aspect);
 
@@ -85,9 +86,9 @@ class _AspectReader extends StatelessWidget {
   }
 }
 
-/// Records the tide each time it is rebuilt.
-class _TideReader extends StatelessWidget {
-  const _TideReader(this.seen);
+/// Records the keyboard each time it is rebuilt.
+class _KeyboardReader extends StatelessWidget {
+  const _KeyboardReader(this.seen);
 
   final List<HarborKeyboardState> seen;
 
@@ -101,7 +102,7 @@ class _TideReader extends StatelessWidget {
 void main() {
   group('Claims', () {
     // Breaks if: releasing one claim releases every claim on the edge.
-    testWidgets('are counted: the dock comes back only when every claim is released', (final tester) async {
+    testWidgets('are counted: the bar comes back only when every claim is released', (final tester) async {
       late BuildContext body;
       await tester.pumpHarborTrial(
         _app(
@@ -111,25 +112,25 @@ void main() {
           ),
         ),
       );
-      final HarborController harbor = HarborController.of(body);
-      final HarborClaim first = harbor.hideBar(HarborEdge.top);
-      final HarborClaim second = harbor.hideBar(HarborEdge.top);
-      expect(harbor.claimedStateOf(HarborEdge.top), HarborBarState.withdrawn);
+      final HarborController frame = HarborController.of(body);
+      final HarborClaim first = frame.hideBar(HarborEdge.top);
+      final HarborClaim second = frame.hideBar(HarborEdge.top);
+      expect(frame.claimedStateOf(HarborEdge.top), HarborBarState.withdrawn);
 
       first.release();
       await tester.pumpAndSettle();
-      expect(harbor.claimedStateOf(HarborEdge.top), HarborBarState.withdrawn, reason: 'one claim is still held');
+      expect(frame.claimedStateOf(HarborEdge.top), HarborBarState.withdrawn, reason: 'one claim is still held');
       expect(first.isActive, isFalse);
       expect(second.isActive, isTrue);
 
       second.release();
       await tester.pumpAndSettle();
-      expect(harbor.claimedStateOf(HarborEdge.top), isNull);
+      expect(frame.claimedStateOf(HarborEdge.top), isNull);
     });
 
-    // Breaks if: a claim stays on the harbor that asked, rather than the nearest one with a dock
+    // Breaks if: a claim stays on the frame that asked, rather than the nearest one with a bar
     // on that edge.
-    testWidgets('go to the nearest harbor outward that has a dock on the edge', (final tester) async {
+    testWidgets('go to the nearest frame outward that has a bar on the edge', (final tester) async {
       late BuildContext inner;
       await tester.pumpHarborTrial(
         _app(
@@ -191,8 +192,8 @@ void main() {
       return (page: page, component: component, outside: outside);
     }
 
-    // Breaks if: Harbor.of answers with any harbor but the nearest, as Scaffold.of does with its state.
-    testWidgets('Harbor.of and Harbor.maybeOf find the nearest harbor', (final tester) async {
+    // Breaks if: HarborFrame.of answers with any frame but the nearest, as Scaffold.of does with its state.
+    testWidgets('HarborFrame.of and HarborFrame.maybeOf find the nearest frame', (final tester) async {
       final (:BuildContext page, :BuildContext component, :BuildContext outside) = await nested(tester);
       expect(HarborFrame.of(component), same(HarborController.of(component)));
       expect(HarborFrame.of(page), same(HarborController.of(page)));
@@ -201,31 +202,31 @@ void main() {
       expect(HarborFrame.maybeOf(outside), isNull);
     });
 
-    // Breaks if: the chart of the nearest harbor is not in global coordinates, or is some other
-    // harbor's.
-    testWidgets('HarborChart.nearest reads the nearest harbor in global coordinates', (final tester) async {
+    // Breaks if: the inspector entry of the nearest frame is not in global coordinates, or is some
+    // other frame's.
+    testWidgets('HarborInspector.nearest reads the nearest frame in global coordinates', (final tester) async {
       final (:BuildContext page, :BuildContext component, :BuildContext outside) = await nested(tester);
-      final HarborInspectorEntry pageChart = HarborInspector.nearest(page)!;
-      expect(pageChart.label, 'page');
-      final HarborBarRecord header = pageChart.bars.single;
+      final HarborInspectorEntry pageEntry = HarborInspector.nearest(page)!;
+      expect(pageEntry.label, 'page');
+      final HarborBarRecord header = pageEntry.bars.single;
       expect(header.label, 'header');
-      // The dock's ground runs from the top of the screen, 10 below the probe above the app.
+      // The bar's ground runs from the top of the screen, 10 below the probe above the app.
       expect(header.rect.top, 10);
       expect(header.rect.bottom, 10 + _statusBar + 50);
-      expect(pageChart.room, HarborFrame.of(page).roomInGlobal());
+      expect(pageEntry.room, HarborFrame.of(page).roomInGlobal());
 
-      final HarborInspectorEntry componentChart = HarborInspector.nearest(component)!;
-      expect(componentChart.label, 'component');
-      expect(componentChart.room.top, header.rect.bottom);
+      final HarborInspectorEntry componentEntry = HarborInspector.nearest(component)!;
+      expect(componentEntry.label, 'component');
+      expect(componentEntry.room.top, header.rect.bottom);
       expect(HarborInspector.nearest(outside), isNull);
     });
 
-    // Breaks if: updatePontoon or removePontoon miss the pontoon its handle stands for.
-    testWidgets('a pontoon added by hand is held by a typed handle', (final tester) async {
+    // Breaks if: updateAttachedBar or detachBar miss the attached bar its handle stands for.
+    testWidgets('an attached bar added by hand is held by a typed handle', (final tester) async {
       late BuildContext body;
       await tester.pumpHarborTrial(_app(HarborFrame(body: _Probe((final BuildContext c) => body = c))));
-      final HarborController harbor = HarborFrame.of(body);
-      final HarborAttachedBarHandle handle = harbor.attachBar(
+      final HarborController frame = HarborFrame.of(body);
+      final HarborAttachedBarHandle handle = frame.attachBar(
         HarborEdge.top,
         HarborBar.overlay(debugLabel: 'pontoon', child: _bar('pontoon', 40)),
       );
@@ -233,7 +234,7 @@ void main() {
       expect(handle.edge, HarborEdge.top);
       expect(HarborInspector.nearest(body)!.bars.single.edge, HarborEdge.top);
 
-      harbor.updateAttachedBar(
+      frame.updateAttachedBar(
         handle,
         HarborEdge.bottom,
         HarborBar.solid(debugLabel: 'pontoon', child: _bar('pontoon', 40)),
@@ -242,14 +243,14 @@ void main() {
       expect(handle.edge, HarborEdge.bottom);
       expect(HarborInspector.nearest(body)!.bars.single.edge, HarborEdge.bottom);
 
-      harbor.detachBar(handle);
+      frame.detachBar(handle);
       await tester.pumpAndSettle();
       expect(HarborInspector.nearest(body)!.bars, isEmpty);
       expect(find.byKey(const ValueKey<String>('pontoon')), findsNothing);
     });
   });
 
-  group('Breakwaters', () {
+  group('Page covers', () {
     Future<HarborController> page(final WidgetTester tester) async {
       late BuildContext body;
       await tester.pumpHarborTrial(
@@ -267,43 +268,43 @@ void main() {
       return HarborController.of(body);
     }
 
-    // Breaks if: coverage takes the first breakwater rather than the largest.
+    // Breaks if: coverage takes the first page cover rather than the largest.
     testWidgets('keep content clear of the largest of them', (final tester) async {
-      final HarborController harbor = await page(tester);
+      final HarborController frame = await page(tester);
       final ValueNotifier<double> low = ValueNotifier<double>(100);
       final ValueNotifier<double> high = ValueNotifier<double>(300);
       addTearDown(low.dispose);
       addTearDown(high.dispose);
-      harbor
+      frame
         ..addPageCover(low)
         ..addPageCover(high);
       await tester.pumpAndSettle();
-      expect(harbor.pageCoverage, 300);
+      expect(frame.pageCoverage, 300);
       expect(_rect(tester, 'content').bottom, lessThanOrEqualTo(_screen - 300));
     });
 
-    // Breaks if: removing a breakwater does nothing. (Skipping only the list removal in
-    // `_removeBreakwater` is NOT caught, and cannot be: `remove()` nulls the controller first, so
+    // Breaks if: removing a page cover does nothing. (Skipping only the list removal in
+    // `_removePageCover` is NOT caught, and cannot be: `remove()` nulls the controller first, so
     // coverage already reads zero. That mutant leaks an entry and a listener, which no layout sees.)
     testWidgets('stop covering the page once removed', (final tester) async {
-      final HarborController harbor = await page(tester);
+      final HarborController frame = await page(tester);
       final double before = _rect(tester, 'content').bottom;
       final ValueNotifier<double> cover = ValueNotifier<double>(300);
       addTearDown(cover.dispose);
-      final HarborPageCover breakwater = harbor.addPageCover(cover);
+      final HarborPageCover pageCover = frame.addPageCover(cover);
       await tester.pumpAndSettle();
       expect(_rect(tester, 'content').bottom, lessThan(before), reason: 'positive control: it covered');
 
-      breakwater.remove();
+      pageCover.remove();
       await tester.pumpAndSettle();
-      expect(harbor.pageCoverage, 0);
+      expect(frame.pageCoverage, 0);
       expect(_rect(tester, 'content').bottom, before);
     });
   });
 
-  group('Flares', () {
-    // Breaks if: the port on top is any route that is still active, rather than the current one.
-    testWidgets('go to the current route even when a background page re-mounts its harbor', (final tester) async {
+  group('Toasts', () {
+    // Breaks if: the page on top is any route that is still active, rather than the current one.
+    testWidgets('go to the current route even when a background page re-mounts its frame', (final tester) async {
       final ValueNotifier<int> generation = ValueNotifier<int>(0);
       addTearDown(generation.dispose);
       final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
@@ -328,7 +329,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // The page underneath rebuilds a fresh harbor, which joins the fleet after the front one.
+      // The page underneath rebuilds a fresh frame, which joins the frame registry after the front one.
       generation.value++;
       await tester.pumpAndSettle();
 
@@ -337,8 +338,8 @@ void main() {
     });
 
     // Breaks if: an exact alignment is ignored in favour of the slot, or placed anywhere but its
-    // point in the clear water, 16 in from its edges, as a buoy at that alignment would be.
-    testWidgets('take an exact alignment within the clear water', (final tester) async {
+    // point in the room, 16 in from its edges, as a float at that alignment would be.
+    testWidgets('take an exact alignment within the room', (final tester) async {
       const Alignment notch = Alignment(0.0, -0.8);
       late BuildContext page;
       final HarborTrial trial = await tester.pumpHarborTrial(
@@ -351,13 +352,13 @@ void main() {
         timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
-      final Rect water = trial.roomAround(find.byType(_Probe)).deflate(16);
-      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
+      final Rect room = trial.roomAround(find.byType(_Probe)).deflate(16);
+      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), room));
     });
 
-    // Breaks if: a directional alignment is resolved where the flare is shown rather than in the
-    // reading direction of the page that raised it.
-    testWidgets('resolve a directional alignment in the direction of the page that raised it', (final tester) async {
+    // Breaks if: a directional alignment is resolved where the toast is shown rather than in the
+    // reading direction of the page that showed it.
+    testWidgets('resolve a directional alignment in the direction of the page that showed it', (final tester) async {
       late BuildContext page;
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
@@ -373,12 +374,12 @@ void main() {
         timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
-      final Rect water = trial.roomAround(find.byType(_Probe)).deflate(16);
-      expect(_rect(tester, 'toast'), Alignment.centerLeft.inscribe(const Size(200, 40), water));
+      final Rect room = trial.roomAround(find.byType(_Probe)).deflate(16);
+      expect(_rect(tester, 'toast'), Alignment.centerLeft.inscribe(const Size(200, 40), room));
     });
 
-    // Breaks if: the overlay a flare falls back to ignores its exact alignment.
-    testWidgets('without a harbor, take an exact alignment within the overlay’s padded water', (final tester) async {
+    // Breaks if: the overlay a toast falls back to ignores its exact alignment.
+    testWidgets('without a frame, take an exact alignment within the overlay’s padded area', (final tester) async {
       const Alignment notch = Alignment(0.0, -0.8);
       late BuildContext page;
       await tester.pumpHarborTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
@@ -389,18 +390,18 @@ void main() {
         timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
-      final Rect water = const EdgeInsets.fromLTRB(
+      final Rect padded = const EdgeInsets.fromLTRB(
         16,
         _statusBar + 16,
         16,
         34 + 16,
       ).deflateRect(Offset.zero & const Size(402, _screen));
-      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), water));
+      expect(_rect(tester, 'toast'), notch.inscribe(const Size(200, 40), padded));
     });
 
-    // Breaks if: a flare with no harbor above it is dropped (it used to assert, and show nothing
-    // in release), or the overlay it falls back to ignores the coast or the keyboard.
-    testWidgets('without a harbor, go to the nearest overlay, clear of the coast and the keyboard', (
+    // Breaks if: a toast with no frame above it is dropped (it used to assert, and show nothing
+    // in release), or the overlay it falls back to ignores the system edges or the keyboard.
+    testWidgets('without a frame, go to the nearest overlay, clear of the system edges and the keyboard', (
       final tester,
     ) async {
       late BuildContext page;
@@ -436,9 +437,9 @@ void main() {
       expect(find.byKey(const ValueKey<String>('top')), findsNothing);
     });
 
-    // Breaks if: a flare with nowhere to go is dropped without a word, or asserts (which a
+    // Breaks if: a toast with nowhere to go is dropped without a word, or asserts (which a
     // release build never sees).
-    testWidgets('without a harbor or an overlay, report that the flare was not shown', (final tester) async {
+    testWidgets('without a frame or an overlay, report that the toast was not shown', (final tester) async {
       late BuildContext bare;
       await tester.pumpWidget(
         Directionality(textDirection: TextDirection.ltr, child: _Probe((final BuildContext c) => bare = c)),
@@ -450,9 +451,9 @@ void main() {
       expect(entry.showing.value, isFalse);
     });
 
-    // Breaks if: a flare's timers outlive the tree. The test framework fails a test that ends
+    // Breaks if: a toast's timers outlive the tree. The test framework fails a test that ends
     // with a timer pending, so the check is the end of each test.
-    testWidgets('leave no timer pending when the harbor goes away', (final tester) async {
+    testWidgets('leave no timer pending when the frame goes away', (final tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(_app(HarborFrame(body: _Probe((final BuildContext c) => page = c))));
       HarborToasts.show(page, builder: (final BuildContext c) => _bar('afloat', 30));
@@ -474,7 +475,7 @@ void main() {
     });
   });
 
-  group("A flare's time", () {
+  group("A toast's time", () {
     Future<BuildContext> pumpPage(final WidgetTester tester, {final GlobalKey<NavigatorState>? navigator}) async {
       late BuildContext page;
       await tester.pumpHarborTrial(
@@ -498,7 +499,7 @@ void main() {
       expect(entry.showing.value, isFalse);
     });
 
-    // Breaks if: the time starts when the flare is raised rather than once its entrance has run.
+    // Breaks if: the time starts when the toast is shown rather than once its entrance has run.
     testWidgets('starts once its entrance has finished', (final tester) async {
       final BuildContext page = await pumpPage(tester);
       final HarborToastEntry entry = HarborToasts.show(
@@ -518,7 +519,7 @@ void main() {
       expect(entry.showing.value, isFalse);
     });
 
-    // Breaks if: the time runs while another route covers the page the flare is on.
+    // Breaks if: the time runs while another route covers the page the toast is on.
     testWidgets('waits while another route covers its page', (final tester) async {
       final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
       final BuildContext page = await pumpPage(tester, navigator: navigator);
@@ -544,7 +545,7 @@ void main() {
       expect(entry.showing.value, isFalse, reason: 'its time ran once the page was back on top');
     });
 
-    // Breaks if: persist is ignored, so a flare with a button times out before a screen reader
+    // Breaks if: persist is ignored, so a toast with a button times out before a screen reader
     // reaches it, as a SnackBar with an action does not.
     testWidgets('with persist, does not run out', (final tester) async {
       final BuildContext page = await pumpPage(tester);
@@ -586,11 +587,11 @@ void main() {
     });
   });
 
-  group('Flares at the same place', () {
+  group('Toasts at the same place', () {
     final Finder first = find.byKey(const ValueKey<String>('first'));
     final Finder second = find.byKey(const ValueKey<String>('second'));
 
-    // Breaks if: two flares at one slot are shown at once, drawn over each other, rather than one
+    // Breaks if: two toasts at one slot are shown at once, drawn over each other, rather than one
     // after the other as a ScaffoldMessenger shows its snack bars; or the one waiting starts its
     // time before it is shown.
     testWidgets('are shown one at a time, each after the last has left', (final tester) async {
@@ -627,9 +628,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    // Breaks if: a flare lowered while it waits is still shown when its turn comes, or its closed
+    // Breaks if: a toast hidden while it waits is still shown when its turn comes, or its closed
     // future waits for an exit it never had.
-    testWidgets('leave the queue at once when lowered while waiting', (final tester) async {
+    testWidgets('leave the queue at once when hidden while waiting', (final tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(_app(HarborFrame(body: _Probe((final BuildContext c) => page = c))));
       final HarborToastEntry one = HarborToasts.show(
@@ -660,7 +661,7 @@ void main() {
       expect(find.byKey(const ValueKey<String>('third')), findsOneWidget);
     });
 
-    testWidgets('without a harbor, are shown one at a time in the overlay', (final tester) async {
+    testWidgets('without a frame, are shown one at a time in the overlay', (final tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(MaterialApp(home: Material(child: _Probe((final BuildContext c) => page = c))));
       final HarborToastEntry one = HarborToasts.show(
@@ -683,7 +684,7 @@ void main() {
       expect(second, findsOneWidget);
     });
 
-    // Positive control: the queue is per place, so flares at two slots still show together.
+    // Positive control: the queue is per place, so toasts at two slots still show together.
     testWidgets('at two slots, are shown together', (final tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(_app(HarborFrame(body: _Probe((final BuildContext c) => page = c))));
@@ -705,9 +706,9 @@ void main() {
     });
   });
 
-  group('The tide', () {
+  group('The keyboard', () {
     Future<HarborTrial> page(final WidgetTester tester, final List<HarborKeyboardState> seen) =>
-        tester.pumpHarborTrial(_app(HarborFrame(bodyClearsKeyboard: false, body: _TideReader(seen))));
+        tester.pumpHarborTrial(_app(HarborFrame(bodyClearsKeyboard: false, body: _KeyboardReader(seen))));
 
     Future<void> frames(final WidgetTester tester) async {
       for (int i = 0; i < 6; i++) {
@@ -715,8 +716,8 @@ void main() {
       }
     }
 
-    // Breaks if: high water is no longer kept per orientation.
-    testWidgets('keeps a high-water mark per orientation', (final tester) async {
+    // Breaks if: the settled height is no longer kept per orientation.
+    testWidgets('keeps a settled height per orientation', (final tester) async {
       final List<HarborKeyboardState> seen = <HarborKeyboardState>[];
       final HarborTrial trial = await page(tester, seen);
       await trial.showKeyboard();
@@ -730,9 +731,9 @@ void main() {
       expect(seen.last.settledHeight, isNot(336));
     });
 
-    // Breaks if: high water only ever rises. The example's field guide holds this too; the
+    // Breaks if: the settled height only ever rises. The example's field guide holds this too; the
     // package owns the concept, so it holds it here.
-    testWidgets('lets high water fall when the keyboard settles lower', (final tester) async {
+    testWidgets('lets the settled height fall when the keyboard settles lower', (final tester) async {
       final List<HarborKeyboardState> seen = <HarborKeyboardState>[];
       final HarborTrial trial = await page(tester, seen);
       await trial.showKeyboard();
@@ -745,9 +746,9 @@ void main() {
     });
   });
 
-  group('The waters', () {
-    // Breaks if: the waters stop being clamped to MediaQuery.
-    testWidgets('honor a layer outside the harbor that removed padding', (final tester) async {
+  group('The room', () {
+    // Breaks if: the room stops being clamped to MediaQuery.
+    testWidgets('honor a layer outside the frame that removed padding', (final tester) async {
       late BuildContext inside;
       late BuildContext control;
       await tester.pumpHarborTrial(
@@ -774,10 +775,10 @@ void main() {
       expect(HarborRoom.of(inside).systemEdges.top, 0);
     });
 
-    // Breaks if: casting off an edge keeps that edge's wake.
-    testWidgets('cast off an edge\'s wake along with the edge', (final tester) async {
+    // Breaks if: marking an edge handled keeps that edge's fade.
+    testWidgets('mark an edge\'s fade handled along with the edge', (final tester) async {
       late BuildContext under;
-      late BuildContext castOff;
+      late BuildContext handled;
       await tester.pumpHarborTrial(
         _app(
           HarborFrame(
@@ -788,19 +789,19 @@ void main() {
               (final BuildContext c) => under = c,
               child: HarborHandled(
                 edges: const <HarborEdge>{HarborEdge.top},
-                child: _Probe((final BuildContext c) => castOff = c),
+                child: _Probe((final BuildContext c) => handled = c),
               ),
             ),
           ),
         ),
       );
       expect(HarborRoom.of(under).fadeBands, contains(HarborEdge.top), reason: 'positive control');
-      expect(HarborRoom.of(castOff).fadeBands, isNot(contains(HarborEdge.top)));
-      expect(HarborRoom.of(castOff).fadeBandOf(HarborEdge.top), HarborFadeBand.none);
+      expect(HarborRoom.of(handled).fadeBands, isNot(contains(HarborEdge.top)));
+      expect(HarborRoom.of(handled).fadeBandOf(HarborEdge.top), HarborFadeBand.none);
     });
 
-    // Breaks if: a reader of the coast aspect is not rebuilt when the coast changes.
-    testWidgets('rebuild a coast reader when the coast changes', (final tester) async {
+    // Breaks if: a reader of the system edges aspect is not rebuilt when the system edges change.
+    testWidgets('rebuild a system edges reader when the system edges change', (final tester) async {
       final ValueNotifier<double> top = ValueNotifier<double>(20);
       addTearDown(top.dispose);
       final List<double> seen = <double>[];
@@ -808,8 +809,8 @@ void main() {
         MaterialApp(
           home: ValueListenableBuilder<double>(
             valueListenable: top,
-            // The reader is const, so nothing but the waters can rebuild it.
-            child: HarborFrame(body: _CoastReader(seen)),
+            // The reader is const, so nothing but the room can rebuild it.
+            child: HarborFrame(body: _SystemEdgesReader(seen)),
             builder: (final BuildContext context, final double t, final Widget? page) => HarborRoot(
               systemEdges: HarborSystemEdges.fixed(EdgeInsetsDirectional.only(top: t)),
               child: page!,
@@ -823,8 +824,8 @@ void main() {
       expect(seen.last, 40);
     });
 
-    // Breaks if: the CSS insets ignore the docks.
-    testWidgets('give a web view the larger of the coast and the docks', (final tester) async {
+    // Breaks if: the CSS insets ignore the bars.
+    testWidgets('give a web view the larger of the system edges and the bars', (final tester) async {
       late BuildContext body;
       await tester.pumpHarborTrial(
         _app(
@@ -838,10 +839,10 @@ void main() {
       expect(css['--harbor-inset-top'], '${_statusBar + 50}px');
     });
 
-    // Breaks if: HarborCastOff(tide: true) keeps the keyboard.
-    testWidgets('cast off the tide when asked', (final tester) async {
+    // Breaks if: HarborHandled(clearsKeyboard: true) keeps the keyboard.
+    testWidgets('mark the keyboard handled when asked', (final tester) async {
       late BuildContext under;
-      late BuildContext castOff;
+      late BuildContext handled;
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
           HarborFrame(
@@ -851,7 +852,7 @@ void main() {
               child: HarborHandled(
                 edges: const <HarborEdge>{},
                 clearsKeyboard: true,
-                child: _Probe((final BuildContext c) => castOff = c),
+                child: _Probe((final BuildContext c) => handled = c),
               ),
             ),
           ),
@@ -859,16 +860,16 @@ void main() {
       );
       await trial.showKeyboard();
       expect(MediaQuery.viewInsetsOf(under).bottom, greaterThan(0), reason: 'positive control');
-      expect(MediaQuery.viewInsetsOf(castOff).bottom, 0);
+      expect(MediaQuery.viewInsetsOf(handled).bottom, 0);
     });
   });
 
-  group('Casting off the coast alone', () {
-    // A frosted header and a frosted tab bar, both piers, so the body runs under them and the
-    // fairway is the one that keeps clear.
-    Widget page({required final Widget body, final bool bodyClearsTide = true}) => _app(
+  group('Marking the system edges alone handled', () {
+    // A frosted header and a frosted tab bar, both overlay bars, so the body runs under them and
+    // the scroll view is the one that keeps clear.
+    Widget page({required final Widget body, final bool bodyClearsKeyboard = true}) => _app(
       HarborFrame(
-        bodyClearsKeyboard: bodyClearsTide,
+        bodyClearsKeyboard: bodyClearsKeyboard,
         top: <HarborBar>[
           HarborBar.overlay(edgeEffect: const HarborEdgeEffect.fade(length: 12), child: _bar('header', 50)),
         ],
@@ -885,10 +886,11 @@ void main() {
       ],
     );
 
-    // Breaks if: HarborCastOff(docks: false) casts the docks off too, or keeps them as they are
-    // measured from the body's edge rather than from the edge of the layer that cleared the coast.
-    testWidgets('leaves the docks to a fairway beneath a layer that cleared the coast', (final tester) async {
-      await tester.pumpHarborTrial(page(body: _CoastMargin(child: rows())));
+    // Breaks if: HarborHandled(clearsBars: false) marks the bars handled too, or keeps them as they
+    // are measured from the body's edge rather than from the edge of the layer that cleared the
+    // system edges.
+    testWidgets('leaves the bars to a scroll view beneath a layer that cleared the system edges', (final tester) async {
+      await tester.pumpHarborTrial(page(body: _SystemEdgesMargin(child: rows())));
       final double headerFace = _rect(tester, 'header').bottom;
       final double tabsFace = _rect(tester, 'tabs').top;
       expect(headerFace, _statusBar + 50, reason: 'positive control: the header absorbed the status bar');
@@ -899,21 +901,21 @@ void main() {
       expect(_rect(tester, 'row29').bottom, tabsFace, reason: 'the last row rests on the tab bar');
     });
 
-    // Breaks if: casting off the docks too is no longer the default.
-    testWidgets('by default casts the docks off with the coast', (final tester) async {
-      await tester.pumpHarborTrial(page(body: _CoastMargin(docks: true, child: rows())));
+    // Breaks if: marking the bars handled too is no longer the default.
+    testWidgets('by default marks the bars handled with the system edges', (final tester) async {
+      await tester.pumpHarborTrial(page(body: _SystemEdgesMargin(bars: true, child: rows())));
       expect(_rect(tester, 'row0').top, _statusBar, reason: 'nothing beneath clears the header any more');
     });
 
-    // Breaks if: MediaQuery beneath does not say what the waters beneath say.
-    testWidgets('tells MediaQuery and the waters beneath what is still in the way', (final tester) async {
+    // Breaks if: MediaQuery beneath does not say what the room beneath says.
+    testWidgets('tells MediaQuery and the room beneath what is still in the way', (final tester) async {
       late BuildContext under;
       late BuildContext beneath;
       await tester.pumpHarborTrial(
         page(
           body: _Probe(
             (final BuildContext c) => under = c,
-            child: _CoastMargin(child: _Probe((final BuildContext c) => beneath = c)),
+            child: _SystemEdgesMargin(child: _Probe((final BuildContext c) => beneath = c)),
           ),
         ),
       );
@@ -922,15 +924,15 @@ void main() {
       expect(MediaQuery.paddingOf(beneath).bottom, 60);
       expect(MediaQuery.viewPaddingOf(beneath).top, 50 + 12);
       expect(MediaQuery.viewPaddingOf(beneath).bottom, 60);
-      final HarborRoomData waters = HarborRoom.of(beneath);
-      expect(waters.systemEdges, EdgeInsetsDirectional.zero);
-      expect(waters.bars, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
-      expect(waters.barsResting, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
-      expect(waters.fadeBandOf(HarborEdge.top), const HarborFadeBand(barFace: 50, fadeEnd: 50 + 12));
-      expect(waters.hasBars, containsAll(HarborEdge.vertical));
+      final HarborRoomData room = HarborRoom.of(beneath);
+      expect(room.systemEdges, EdgeInsetsDirectional.zero);
+      expect(room.bars, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
+      expect(room.barsResting, const EdgeInsetsDirectional.only(top: 50 + 12, bottom: 60));
+      expect(room.fadeBandOf(HarborEdge.top), const HarborFadeBand(barFace: 50, fadeEnd: 50 + 12));
+      expect(room.hasBars, containsAll(HarborEdge.vertical));
       final HarborRoomData raw = HarborRoom.maybeRawOf(beneath)!;
-      expect(raw.bars, waters.bars, reason: 'measured from the layer, not left for MediaQuery to clamp');
-      expect(raw.barsResting, waters.barsResting);
+      expect(raw.bars, room.bars, reason: 'measured from the layer, not left for MediaQuery to clamp');
+      expect(raw.barsResting, room.barsResting);
       expect(
         HarborRoom.steadySystemEdgeOf(beneath, HarborEdge.bottom),
         0,
@@ -938,18 +940,18 @@ void main() {
       );
     });
 
-    // Breaks if: tide: stops casting off the keyboard when the docks are kept.
-    testWidgets('casts off the tide when asked, and keeps the docks', (final tester) async {
+    // Breaks if: clearsKeyboard: stops marking the keyboard handled when the bars are kept.
+    testWidgets('marks the keyboard handled when asked, and keeps the bars', (final tester) async {
       late BuildContext beneath;
       final HarborTrial trial = await tester.pumpHarborTrial(
         page(
-          bodyClearsTide: false,
-          body: _CoastMargin(tide: true, child: _Probe((final BuildContext c) => beneath = c)),
+          bodyClearsKeyboard: false,
+          body: _SystemEdgesMargin(keyboard: true, child: _Probe((final BuildContext c) => beneath = c)),
         ),
       );
       await trial.showKeyboard();
       expect(MediaQuery.viewInsetsOf(beneath).bottom, 0);
-      // The keyboard took the live coast, so the layer pads nothing and the tab bar reaches into it
+      // The keyboard took the live system edge, so the layer pads nothing and the tab bar reaches into it
       // from its own edge.
       final double layerBottom = tester.getRect(find.byType(HarborHandled)).bottom;
       expect(layerBottom, _screen, reason: 'positive control: the body runs under the keyboard');
@@ -957,8 +959,8 @@ void main() {
       expect(HarborRoom.of(beneath).bars.bottom, layerBottom - _rect(tester, 'tabs').top);
     });
 
-    // Breaks if: outside any harbor, the docks kept are read from padding that was all coast.
-    testWidgets('outside any harbor casts off all of MediaQuery.padding, as it is all coast', (final tester) async {
+    // Breaks if: outside any frame, the bars kept are read from padding that was all system edges.
+    testWidgets('outside any frame marks all of MediaQuery.padding handled, as system edges', (final tester) async {
       late BuildContext beneath;
       await tester.pumpHarborTrial(
         MaterialApp(
@@ -974,9 +976,9 @@ void main() {
       expect(HarborRoom.of(beneath).bars, EdgeInsetsDirectional.zero);
     });
 
-    // Breaks if: a horizontal fairway starts casting off the edges across it. Its items are
-    // handed the docks there (a header above a carousel) as they stand, coast included.
-    testWidgets('a horizontal fairway hands the docks across it to its items', (final tester) async {
+    // Breaks if: a horizontal scroll view starts marking the edges across it handled. Its items are
+    // handed the bars there (a header above a carousel) as they stand, system edges included.
+    testWidgets('a horizontal scroll view hands the bars across it to its items', (final tester) async {
       late BuildContext item;
       await tester.pumpHarborTrial(
         page(
@@ -993,32 +995,32 @@ void main() {
   });
 
   group('A reader rebuilds only for what it reads', () {
-    // No bottom coast, so the keyboard moving changes viewInsets and nothing else.
+    // No bottom system edge, so the keyboard moving changes viewInsets and nothing else.
     const HarborTrialDevice device = HarborTrialDevice.iPhoneSE;
 
     // Brings the keyboard in or out over ten frames, as the platform animates it. On a phone that
     // stops reporting its home indicator in padding under the keyboard, the padding goes with it.
-    Future<void> slideTide(
+    Future<void> slideKeyboard(
       final WidgetTester tester, {
-      required final bool tideIn,
+      required final bool shown,
       final HarborTrialDevice on = device,
     }) async {
       for (int i = 1; i <= 10; i++) {
-        final double share = tideIn ? i / 10 : 1 - i / 10;
-        final EdgeInsets coast = on.systemEdgesWhen(keyboardShown: share > 0);
+        final double share = shown ? i / 10 : 1 - i / 10;
+        final EdgeInsets systemEdges = on.systemEdgesWhen(keyboardShown: share > 0);
         // The view is in physical pixels, as the platform reports it.
         final double ratio = tester.view.devicePixelRatio;
         tester.view
           ..padding = FakeViewPadding(
-            left: coast.left * ratio,
-            top: coast.top * ratio,
-            right: coast.right * ratio,
-            bottom: coast.bottom * ratio,
+            left: systemEdges.left * ratio,
+            top: systemEdges.top * ratio,
+            right: systemEdges.right * ratio,
+            bottom: systemEdges.bottom * ratio,
           )
           ..viewInsets = FakeViewPadding(bottom: on.keyboardHeight * share * ratio);
         await tester.pump(const Duration(milliseconds: 16));
       }
-      // Long enough for the tide gauge to settle.
+      // Long enough for the keyboard gauge to settle.
       for (int i = 0; i < 4; i++) {
         await tester.pump(const Duration(milliseconds: 16));
       }
@@ -1037,22 +1039,23 @@ void main() {
       return counts;
     }
 
-    // Found merging #2 with #5: the steady coast's clamp reads the keyboard, and on a phone with a
-    // home indicator it reached that read for every reader of the waters, so a reader of the docks
-    // rebuilt through the keyboard's rise again (3 times here, against 1). The iPhone SE above has no
-    // bottom coast, so the tests there never reach the clamp. The one rebuild left is the home
-    // indicator's padding going to zero, which the docks clamp does read.
-    // Breaks if: the steady coast subscribes to the keyboard for readers outside the coast aspect.
-    testWidgets('a reader of the docks holds still on a phone with a home indicator too', (final tester) async {
-      final Map<Type, int> rebuilds = countRebuilds(<Type>{_AspectReader, _TideReader});
-      final List<HarborKeyboardState> tide = <HarborKeyboardState>[];
+    // Found merging #2 with #5: the steady system edge's clamp reads the keyboard, and on a phone
+    // with a home indicator it reached that read for every reader of the room, so a reader of the
+    // bars rebuilt through the keyboard's rise again (3 times here, against 1). The iPhone SE above
+    // has no bottom system edge, so the tests there never reach the clamp. The one rebuild left is
+    // the home indicator's padding going to zero, which the bars clamp does read.
+    // Breaks if: the steady system edge subscribes to the keyboard for readers outside the system
+    // edges aspect.
+    testWidgets('a reader of the bars holds still on a phone with a home indicator too', (final tester) async {
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{_AspectReader, _KeyboardReader});
+      final List<HarborKeyboardState> keyboard = <HarborKeyboardState>[];
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
           HarborFrame(
             body: Column(
               children: <Widget>[
                 const _AspectReader(HarborRoomAspect.bars),
-                SizedBox(height: 10, child: _TideReader(tide)),
+                SizedBox(height: 10, child: _KeyboardReader(keyboard)),
               ],
             ),
           ),
@@ -1060,13 +1063,17 @@ void main() {
       );
       rebuilds.updateAll((final Type _, final int _) => 0);
       await trial.showKeyboard();
-      expect(rebuilds[_TideReader], greaterThan(1), reason: 'positive control: the keyboard moved over several frames');
+      expect(
+        rebuilds[_KeyboardReader],
+        greaterThan(1),
+        reason: 'positive control: the keyboard moved over several frames',
+      );
       expect(rebuilds[_AspectReader], lessThanOrEqualTo(1));
     });
 
-    // Breaks if: HarborWaters.of depends on the whole MediaQuery again, or a content role reads
-    // the waters (or MediaQuery) beyond the parts it uses.
-    testWidgets('readers of the coast, the docks and the margin hold still while the keyboard moves', (
+    // Breaks if: HarborRoom.of depends on the whole MediaQuery again, or a content role reads
+    // the room (or MediaQuery) beyond the parts it uses.
+    testWidgets('readers of the system edges, the bars and the margin hold still while the keyboard moves', (
       final tester,
     ) async {
       final List<double> insetsSeen = <double>[];
@@ -1103,17 +1110,18 @@ void main() {
       );
       final Map<Type, int> rebuilds = countRebuilds(<Type>{_AspectReader, _RoomReader, HarborClear, HarborScrollView});
       insetsSeen.clear();
-      await slideTide(tester, tideIn: true);
+      await slideKeyboard(tester, shown: true);
       expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
       expect(insetsSeen.last, device.keyboardHeight);
       expect(rebuilds, <Type, int>{_AspectReader: 0, _RoomReader: 0, HarborClear: 0, HarborScrollView: 0});
     });
 
-    // A fairway that clears the coast alone casts off the coast and hands its rows the docks, the
-    // way `HarborCastOff(docks: false)` does. Neither it nor a row reading the docks has a reason to
-    // rebuild while the keyboard moves under a body that does not clear it.
-    // Breaks if: the fairway reads the coast, the waters or MediaQuery beyond the aspect it uses.
-    testWidgets('a fairway that clears the coast alone holds still while the keyboard moves, and so do its rows', (
+    // A scroll view that clears the system edges alone marks them handled and hands its rows the
+    // bars, the way `HarborHandled(clearsBars: false)` does. Neither it nor a row reading the bars has
+    // a reason to rebuild while the keyboard moves under a body that does not clear it.
+    // Breaks if: the scroll view reads the system edges, the room or MediaQuery beyond the aspect it
+    // uses.
+    testWidgets('a system-edges-only scroll view holds still while the keyboard moves, and so do its rows', (
       final tester,
     ) async {
       final List<double> insetsSeen = <double>[];
@@ -1146,15 +1154,16 @@ void main() {
       );
       final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborScrollView, _AspectReader});
       insetsSeen.clear();
-      await slideTide(tester, tideIn: true);
+      await slideKeyboard(tester, shown: true);
       expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
       expect(rebuilds, <Type, int>{HarborScrollView: 0, _AspectReader: 0});
     });
 
-    // A vertical fairway follows the keyboard only for its bottom end, so one that leaves the
+    // A vertical scroll view follows the keyboard only for its bottom end, so one that leaves the
     // keyboard to someone else has nothing to follow.
-    // Breaks if: tide: false still reads the keyboard, or the fairway reads MediaQuery as a whole.
-    testWidgets('a fairway that leaves the keyboard holds still while it moves', (final tester) async {
+    // Breaks if: clearsKeyboard: false still reads the keyboard, or the scroll view reads MediaQuery
+    // as a whole.
+    testWidgets('a scroll view that leaves the keyboard holds still while it moves', (final tester) async {
       final List<double> insetsSeen = <double>[];
       await tester.pumpHarborTrial(
         _app(
@@ -1190,21 +1199,21 @@ void main() {
       );
       final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborScrollView});
       insetsSeen.clear();
-      await slideTide(tester, tideIn: true);
+      await slideKeyboard(tester, shown: true);
       expect(insetsSeen, hasLength(10), reason: 'positive control: the body saw every frame of the keyboard');
       expect(rebuilds, <Type, int>{HarborScrollView: 0});
     });
 
-    // A body that clears the tide takes the keyboard out of its view padding, as
+    // A body that clears the keyboard takes it out of its view padding, as
     // `MediaQueryData.removeViewInsets` does, so on a phone with a home indicator the steady
-    // coast's clamp is reached on every frame the keyboard moves. The iPhone SE above has no
-    // bottom coast and never reaches it.
-    // Breaks if: HarborWaters.of subscribes coast readers to the steady coast's clamp.
-    testWidgets('a coast-only moored block holds still while the keyboard rises over a home indicator', (
+    // system edge's clamp is reached on every frame the keyboard moves. The iPhone SE above has no
+    // bottom system edge and never reaches it.
+    // Breaks if: HarborRoom.of subscribes system edges readers to the steady system edge's clamp.
+    testWidgets('a system-edges-only clear block holds still while the keyboard rises over a home indicator', (
       final tester,
     ) async {
       const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
-      final List<HarborKeyboardState> tide = <HarborKeyboardState>[];
+      final List<HarborKeyboardState> keyboard = <HarborKeyboardState>[];
       await tester.pumpHarborTrial(
         _app(
           HarborFrame(
@@ -1217,17 +1226,17 @@ void main() {
                   child: SizedBox(height: 10),
                 ),
                 const _AspectReader(HarborRoomAspect.systemEdges),
-                SizedBox(height: 10, child: _TideReader(tide)),
+                SizedBox(height: 10, child: _KeyboardReader(keyboard)),
               ],
             ),
           ),
         ),
         device: phone,
       );
-      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborClear, _AspectReader, _TideReader});
-      await slideTide(tester, tideIn: true, on: phone);
+      final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborClear, _AspectReader, _KeyboardReader});
+      await slideKeyboard(tester, shown: true, on: phone);
       expect(
-        rebuilds[_TideReader],
+        rebuilds[_KeyboardReader],
         greaterThanOrEqualTo(10),
         reason: 'positive control: the keyboard moved on every frame',
       );
@@ -1237,9 +1246,11 @@ void main() {
     });
 
     // The standard is `MediaQuery.viewPaddingOf`: it rebuilds when the view padding changes, and
-    // the steady coast should rebuild no more often than that while holding its value.
-    // Breaks if: steadyCoastOf depends on the tide gauge, which notifies on every frame.
-    testWidgets('the steady coast holds still while the keyboard rises over a home indicator', (final tester) async {
+    // the steady system edge should rebuild no more often than that while holding its value.
+    // Breaks if: steadySystemEdgeOf depends on the keyboard gauge, which notifies on every frame.
+    testWidgets('the steady system edge holds still while the keyboard rises over a home indicator', (
+      final tester,
+    ) async {
       const HarborTrialDevice phone = HarborTrialDevice.iPhone17;
       final List<double> steady = <double>[];
       final List<double> viewPadding = <double>[];
@@ -1264,14 +1275,16 @@ void main() {
       );
       steady.clear();
       viewPadding.clear();
-      await slideTide(tester, tideIn: true, on: phone);
+      await slideKeyboard(tester, shown: true, on: phone);
       expect(viewPadding.last, 0, reason: 'positive control: the body took the keyboard out of its view padding');
       expect(steady, everyElement(phone.systemEdges.bottom));
       expect(steady.length, lessThanOrEqualTo(viewPadding.length));
     });
 
-    // Breaks if: isInOf depends on the tide gauge as a whole, which notifies on every frame.
-    testWidgets('a reader of whether the tide is in rebuilds exactly when it comes and goes', (final tester) async {
+    // Breaks if: isShownOf depends on the keyboard gauge as a whole, which notifies on every frame.
+    testWidgets('a reader of whether the keyboard is shown rebuilds exactly when it opens and closes', (
+      final tester,
+    ) async {
       final List<bool> seen = <bool>[];
       await tester.pumpHarborTrial(
         _app(
@@ -1283,14 +1296,16 @@ void main() {
         device: device,
       );
       expect(seen, <bool>[false]);
-      await slideTide(tester, tideIn: true);
+      await slideKeyboard(tester, shown: true);
       expect(seen, <bool>[false, true]);
-      await slideTide(tester, tideIn: false);
+      await slideKeyboard(tester, shown: false);
       expect(seen, <bool>[false, true, false]);
     });
 
-    // Breaks if: a dry dock reads the whole tide, which moves on every frame.
-    testWidgets('a dry dock rebuilds when the tide comes, goes or sets a new high-water mark', (final tester) async {
+    // Breaks if: a keyboard space reads the whole keyboard, which moves on every frame.
+    testWidgets('a keyboard space rebuilds when the keyboard opens, closes or sets a new settled height', (
+      final tester,
+    ) async {
       final List<double> heights = <double>[];
       await tester.pumpHarborTrial(
         _app(
@@ -1309,22 +1324,22 @@ void main() {
       final Map<Type, int> rebuilds = countRebuilds(<Type>{HarborKeyboardSpace});
       void recordHeight() => heights.add(tester.getSize(find.byType(HarborKeyboardSpace)).height);
       recordHeight();
-      await slideTide(tester, tideIn: true);
+      await slideKeyboard(tester, shown: true);
       recordHeight();
-      // The tide came in (1) and settled at a new high-water mark (2).
+      // The keyboard opened (1) and settled at a new settled height (2).
       expect(rebuilds[HarborKeyboardSpace], 2);
-      await slideTide(tester, tideIn: false);
+      await slideKeyboard(tester, shown: false);
       recordHeight();
-      // It went out (3), and settling at low water left the mark where it was.
+      // It closed (3), and settling hidden left the settled height where it was.
       expect(rebuilds[HarborKeyboardSpace], 3);
       expect(heights, <double>[device.size.height * 0.4, device.keyboardHeight, device.keyboardHeight]);
     });
   });
 
-  // The README's Scaffold advice, held. A resizing Scaffold shrinks the harbor before it sees the
-  // keyboard, so a tab bar on pilings is lifted instead of covered; with resizing off, the harbor
-  // owns the tide. Both halves are asserted, so the advice is checked and so is its reason.
-  testWidgets('inside a Scaffold, the harbor owns the tide only once the Scaffold stops resizing', (
+  // The README's Scaffold advice, held. A resizing Scaffold shrinks the frame before it sees the
+  // keyboard, so a tab bar that stays is lifted instead of covered; with resizing off, the frame
+  // owns the keyboard. Both halves are asserted, so the advice is checked and so is its reason.
+  testWidgets('inside a Scaffold, the frame owns the keyboard only once the Scaffold stops resizing', (
     final tester,
   ) async {
     Future<double> tabBarTopUnderKeyboard({required final bool resize}) async {
@@ -1355,13 +1370,13 @@ void main() {
     );
   });
 
-  group('A dock lays its child out like a Row or Column does', () {
-    // Reported by rubric-owner: a NavigationRail in a start quay took the whole 1024-wide frame and
-    // left the page 0 wide, silently. A dock offered its child any extent up to the frame's, and a
+  group('A bar lays its child out like a Row or Column does', () {
+    // Reported by rubric-owner: a NavigationRail in a start solid bar took the whole 1024-wide frame
+    // and left the page 0 wide, silently. A bar offered its child any extent up to the frame's, and a
     // widget that fills what it is given (NavigationRail, AppBar, an empty Container) took all of
-    // it. Docks now leave the child unbounded along the edge's depth, as a Row or Column does, so
+    // it. Bars now leave the child unbounded along the edge's depth, as a Row or Column does, so
     // Row- and Column-native widgets size as they do there, and one that truly wants to fill fails
-    // loudly instead of eating the page. Breaks if: the dock bounds its child at the frame again.
+    // loudly instead of eating the page. Breaks if: the bar bounds its child at the frame again.
     const HarborTrialDevice tablet = HarborTrialDevice(
       name: 'tablet',
       size: Size(1024, 1366),
@@ -1388,7 +1403,7 @@ void main() {
       device: tablet,
     );
 
-    testWidgets('a NavigationRail in a side dock takes its own width', (final tester) async {
+    testWidgets('a NavigationRail in a side bar takes its own width', (final tester) async {
       await pump(
         tester,
         start: <HarborBar>[
@@ -1408,7 +1423,7 @@ void main() {
       expect(_rect(tester, 'body').width, 1024 - 80);
     });
 
-    testWidgets('an AppBar in a top dock takes its own height', (final tester) async {
+    testWidgets('an AppBar in a top bar takes its own height', (final tester) async {
       await pump(
         tester,
         top: <HarborBar>[
@@ -1440,10 +1455,10 @@ void main() {
     });
   });
 
-  // Asked for by rubric-owner, for layout goldens: the chart's dock labels carry each dock's
+  // Asked for by rubric-owner, for layout goldens: the inspector's bar labels carry each bar's
   // extent, and with no way to set their font, flutter_test drew them as boxes. Breaks if:
-  // labelStyle is not merged into what the chart paints.
-  testWidgets('a chart overlay paints its labels in the style it is given', (final tester) async {
+  // labelStyle is not merged into what the inspector paints.
+  testWidgets('an inspector overlay paints its labels in the style it is given', (final tester) async {
     Future<List<double>> labelHeights({final TextStyle? style}) async {
       await tester.pumpHarborTrial(
         MaterialApp(
@@ -1451,7 +1466,7 @@ void main() {
             labelStyle: style,
             child: HarborRoot(child: child!),
           ),
-          // No text on the page, so every paragraph painted is a chart label.
+          // No text on the page, so every paragraph painted is an inspector label.
           home: const HarborFrame(
             top: <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50, width: double.infinity))],
             body: SizedBox.expand(),
@@ -1460,11 +1475,11 @@ void main() {
       );
       await tester.pump();
       final List<double> heights = <double>[];
-      final RenderObject chart = tester.renderObject(
+      final RenderObject inspector = tester.renderObject(
         find.descendant(of: find.byType(HarborInspectorOverlay), matching: find.byType(CustomPaint)).first,
       );
       expect(
-        chart,
+        inspector,
         paints..everything((final Symbol method, final List<dynamic> arguments) {
           if (method == #drawParagraph) {
             heights.add((arguments[0] as ui.Paragraph).height);
@@ -1480,11 +1495,11 @@ void main() {
     expect(await labelHeights(style: const TextStyle(fontSize: 20)), everyElement(20));
   });
 
-  // Breaks if: a harbor's minimum is not applied to a bare edge.
-  testWidgets('a harbor keeps its minimum off a bare edge', (final tester) async {
+  // Breaks if: a frame's minimum is not applied to a bare edge.
+  testWidgets('a frame keeps its minimum off a bare edge', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
-        coast: HarborSystemEdges.none,
+        systemEdges: HarborSystemEdges.none,
         const HarborFrame(
           minimum: EdgeInsetsDirectional.only(top: 24),
           body: HarborClear(child: SizedBox.expand(key: ValueKey<String>('content'))),
@@ -1519,9 +1534,9 @@ void main() {
   });
 
   // Breaks if: a builder stops taking the named builder type a caller holds it in.
-  testWidgets('open water and a draggable sheet take named builder types', (final tester) async {
-    final HarborWatersWidgetBuilder background = (final BuildContext context, final HarborRoomData waters) =>
-        SizedBox(key: const ValueKey<String>('water'), height: waters.frameSize.height);
+  testWidgets('`HarborOpenWater` and a draggable sheet take named builder types', (final tester) async {
+    final HarborWatersWidgetBuilder background = (final BuildContext context, final HarborRoomData room) =>
+        SizedBox(key: const ValueKey<String>('water'), height: room.frameSize.height);
     final ScrollableWidgetBuilder list = (final BuildContext context, final ScrollController controller) =>
         HarborScrollView(controller: controller, slivers: const <Widget>[]);
     await tester.pumpHarborTrial(_app(HarborFrame(body: HarborOpenWater(builder: background))));

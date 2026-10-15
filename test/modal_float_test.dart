@@ -1,10 +1,10 @@
-// A modal buoy is modal: a barrier over the page, dismissed by a tap beside it, by back or by
+// A modal float is modal: a barrier over the page, dismissed by a tap beside it, by back or by
 // Escape, and a focus scope that holds the keyboard as a dialog's does. Until 0.2.0 `modal: true`
-// only hid the buoys listed before it, and taps and back reached the page; in 0.2.0 focus stayed
+// only hid the floats listed before it, and taps and back reached the page; in 0.2.0 focus stayed
 // on the page and Escape did nothing. Each test fails on that behaviour, except the one that
-// checks Escape is left to the widgets above with no modal buoy up, which fails if the harbor maps
-// Escape to a disabled action instead. A buoy's child also keeps its state when the layer around it
-// changes shape: it was built again when a buoy turned modal, or a flare came up.
+// checks Escape is left to the widgets above with no modal float up, which fails if the frame maps
+// Escape to a disabled action instead. A float's child also keeps its state when the layer around it
+// changes shape: it was built again when a float turned modal, or a toast came up.
 
 import 'dart:async';
 
@@ -164,7 +164,7 @@ bool _focusIsInMenu(final WidgetTester tester) {
   return inside;
 }
 
-/// A button that counts its taps, to see whether a buoy's child keeps its state.
+/// A button that counts its taps, to see whether a float's child keeps its state.
 class _Counter extends StatefulWidget {
   const _Counter();
 
@@ -229,7 +229,7 @@ Future<_SpeedDialPageState> _pumpSpeedDial(final WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('a tap beside a modal buoy dismisses it instead of reaching the page', (final tester) async {
+  testWidgets('a tap beside a modal float dismisses it instead of reaching the page', (final tester) async {
     final List<String> taps = <String>[];
     final _PageState page = await _pumpPage(tester, taps);
     expect(find.text('menu'), findsOneWidget, reason: 'positive control: the menu is up');
@@ -244,7 +244,7 @@ void main() {
     expect(taps, <String>['page'], reason: 'positive control: with the menu gone the page answers');
   });
 
-  testWidgets('back dismisses a modal buoy and leaves its page', (final tester) async {
+  testWidgets('back dismisses a modal float and leaves its page', (final tester) async {
     final _PageState page = await _pumpPage(tester, <String>[]);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -261,7 +261,7 @@ void main() {
     );
   });
 
-  testWidgets('screen readers leave the page alone while a modal buoy is up', (final tester) async {
+  testWidgets('screen readers leave the page alone while a modal float is up', (final tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     final _PageState page = await _pumpPage(tester, <String>[]);
     expect(find.bySemanticsLabel('Page action'), findsNothing);
@@ -273,7 +273,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('a modal buoy\'s barrier is announced with its barrierLabel', (final tester) async {
+  testWidgets('a modal float\'s barrier is announced with its barrierLabel', (final tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     await tester.pumpHarborTrial(
       MaterialApp(
@@ -295,11 +295,11 @@ void main() {
     semantics.dispose();
   });
 
-  test('a modal buoy without onDismiss is refused', () {
+  test('a modal float without onDismiss is refused', () {
     expect(() => HarborFloat(barrier: const HarborBarrier.clear(), child: const SizedBox()), throwsAssertionError);
   });
 
-  group('a modal buoy is modal for the keyboard', () {
+  group('a modal float is modal for the keyboard', () {
     testWidgets('it takes focus when it opens, keeps Tab and arrows inside, and gives focus back', (
       final tester,
     ) async {
@@ -384,18 +384,18 @@ void main() {
       expect(page.dismissed, 1, reason: 'Escape from the page still dismisses it');
     });
 
-    // An Actions inside the page route and above the harbor sees Escape only if the harbor maps
-    // nothing for it: a disabled action in the harbor would stop the search there, and the page
+    // An Actions inside the page route and above the frame sees Escape only if the frame maps
+    // nothing for it: a disabled action in the frame would stop the search there, and the page
     // route alone could not tell, since it ignores Escape too.
-    testWidgets('Escape with no modal buoy up reaches the Actions above the harbor', (final tester) async {
+    testWidgets('Escape with no modal float up reaches the Actions above the frame', (final tester) async {
       int aboveEscapes = 0;
       final _FocusPageState page = await _pumpFocusPage(
         tester,
-        around: (final Widget harbor) => Actions(
+        around: (final Widget frame) => Actions(
           actions: <Type, Action<Intent>>{
             DismissIntent: CallbackAction<DismissIntent>(onInvoke: (final _) => aboveEscapes++),
           },
-          child: harbor,
+          child: frame,
         ),
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -414,7 +414,7 @@ void main() {
       expect(aboveEscapes, 2, reason: 'once it closed, Escape is theirs again');
     });
 
-    testWidgets('Escape closes a modal buoy before a sheet with no barrier under it', (final tester) async {
+    testWidgets('Escape closes a modal float before a sheet with no barrier under it', (final tester) async {
       final _FocusPageState page = await _pumpFocusPage(tester);
       unawaited(
         showHarborSheet<void>(
@@ -439,11 +439,11 @@ void main() {
       expect(find.text('Open menu'), findsOneWidget, reason: 'and left the page');
     });
 
-    // A sheet opened over a modal buoy is drawn above it and takes focus. Closing it must hand focus
-    // back, so the next Escape reaches the buoy. Failed before: the sheet disposed its focus scope
+    // A sheet opened over a modal float is drawn above it and takes focus. Closing it must hand focus
+    // back, so the next Escape reaches the float. Failed before: the sheet disposed its focus scope
     // while that scope still held primary focus and was still mounted, so focus stayed on a disposed
     // node and Escape went nowhere.
-    testWidgets('a sheet with no barrier opened over a modal buoy gives focus back as it closes', (final tester) async {
+    testWidgets('a sheet with no barrier opened over a modal float gives focus back as it closes', (final tester) async {
       final _FocusPageState page = await _pumpFocusPage(tester);
       page.open();
       await tester.pumpAndSettle();
@@ -484,8 +484,8 @@ void main() {
     });
   });
 
-  group('a buoy\'s child keeps its state', () {
-    testWidgets('when its buoy turns modal and back', (final tester) async {
+  group('a float\'s child keeps its state', () {
+    testWidgets('when its float turns modal and back', (final tester) async {
       final _SpeedDialPageState page = await _pumpSpeedDial(tester);
       page.update(() => page.dialOpen = true);
       await tester.pumpAndSettle();
@@ -501,7 +501,7 @@ void main() {
       expect(find.text('n=1'), findsOneWidget, reason: 'closing it kept the count');
     });
 
-    testWidgets('when another buoy turns modal and leaves', (final tester) async {
+    testWidgets('when another float turns modal and leaves', (final tester) async {
       final _SpeedDialPageState page = await _pumpSpeedDial(tester);
       page.update(() => page.menu = true);
       await tester.pumpAndSettle();
@@ -513,7 +513,7 @@ void main() {
       expect(find.text('n=1'), findsOneWidget, reason: 'and its leaving kept it');
     });
 
-    testWidgets('when a flare comes up in its harbor', (final tester) async {
+    testWidgets('when a toast comes up in its frame', (final tester) async {
       await _pumpSpeedDial(tester);
       HarborToasts.show(
         tester.element(find.text('n=1')),

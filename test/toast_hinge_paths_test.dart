@@ -1,7 +1,7 @@
-// A flare's hinge policy on every path it can be placed by: in a harbor or an overlay, at an
-// alignment or by an anchor. Before 0.6.2 two of the four ignored it: an anchored flare in a
-// harbor (and every HarborBuoy.anchored, which it is shown as) sat across a hinge by an anchor
-// near one, and an aligned flare with no harbor around it took the whole width of both screens.
+// A toast's hinge policy on every path it can be placed by: in a frame or an overlay, at an
+// alignment or by an anchor. Before 0.6.2 two of the four ignored it: an anchored toast in a
+// frame (and every HarborBuoy.anchored, which it is shown as) sat across a hinge by an anchor
+// near one, and an aligned toast with no frame around it took the whole width of both screens.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,17 +37,17 @@ void main() {
   setUp(() => anchor = HarborAnchor(debugLabel: 'anchor'));
   tearDown(() => anchor.dispose());
 
-  group('in a harbor, by an anchor', () {
+  group('in a frame, by an anchor', () {
     Future<BuildContext> pump(
       final WidgetTester tester, {
-      final List<HarborFloat> buoys = const <HarborFloat>[],
+      final List<HarborFloat> floats = const <HarborFloat>[],
     }) async {
       late BuildContext page;
       await tester.pumpHarborTrial(
         MaterialApp(
           builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
           home: HarborFrame(
-            floats: buoys,
+            floats: floats,
             body: Builder(
               builder: (final BuildContext context) {
                 page = context;
@@ -62,25 +62,25 @@ void main() {
       return page;
     }
 
-    testWidgets('an anchored buoy keeps to the screen its anchor is on, 8 in from the hinge', (final tester) async {
+    testWidgets('an anchored float keeps to the screen its anchor is on, 8 in from the hinge', (final tester) async {
       await pump(
         tester,
-        buoys: <HarborFloat>[
+        floats: <HarborFloat>[
           HarborFloat(
             placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
             child: _toast('buoy'),
           ),
         ],
       );
-      final Rect buoy = _rect(tester, 'buoy');
-      expect(buoy.right, 532);
-      expect(buoy.top, 348, reason: 'still below its anchor, 8 away');
+      final Rect float = _rect(tester, 'buoy');
+      expect(float.right, 532);
+      expect(float.top, 348, reason: 'still below its anchor, 8 away');
     });
 
-    testWidgets('with never, an anchored buoy is centred on its anchor across the hinge', (final tester) async {
+    testWidgets('with never, an anchored float is centred on its anchor across the hinge', (final tester) async {
       await pump(
         tester,
-        buoys: <HarborFloat>[
+        floats: <HarborFloat>[
           HarborFloat(
             placement: HarborAnchored(anchor, side: HarborAnchorSide.below),
             hinge: HarborHinge.never,
@@ -91,7 +91,7 @@ void main() {
       expect(_rect(tester, 'buoy').center.dx, 500);
     });
 
-    testWidgets('an anchored flare keeps to its anchor\'s screen, and spans with never', (final tester) async {
+    testWidgets('an anchored toast keeps to its anchor\'s screen, and spans with never', (final tester) async {
       final BuildContext page = await pump(tester);
       final HarborToastEntry kept = HarborToasts.show(
         page,
@@ -115,7 +115,7 @@ void main() {
     });
   });
 
-  group('in an overlay, with no harbor', () {
+  group('in an overlay, with no frame', () {
     Future<BuildContext> pump(final WidgetTester tester, {final bool withAnchor = false}) async {
       late BuildContext page;
       await tester.pumpHarborTrial(
@@ -134,15 +134,15 @@ void main() {
 
     bool oneScreen(final Rect r) => r.right <= 540 || r.left >= 574;
 
-    for (final bool reachesCoast in <bool>[false, true]) {
-      testWidgets('an aligned flare keeps to one screen, and spans with never (reachesCoast: $reachesCoast)', (
+    for (final bool reachesSystemEdges in <bool>[false, true]) {
+      testWidgets('an aligned toast keeps to one screen, and spans with never (reachesSystemEdges: $reachesSystemEdges)', (
         final tester,
       ) async {
         final BuildContext page = await pump(tester);
         final HarborToastEntry kept = HarborToasts.show(
           page,
           slot: HarborToastSlot.low,
-          reachesSystemEdges: reachesCoast,
+          reachesSystemEdges: reachesSystemEdges,
           builder: (final BuildContext _) => _toast('kept'),
           timing: HarborToastTiming.untilHidden,
         );
@@ -156,7 +156,7 @@ void main() {
         HarborToasts.show(
           page,
           slot: HarborToastSlot.low,
-          reachesSystemEdges: reachesCoast,
+          reachesSystemEdges: reachesSystemEdges,
           hinge: HarborHinge.never,
           timing: HarborToastTiming.untilHidden,
           builder: (final BuildContext _) => _toast('spans'),
@@ -166,7 +166,7 @@ void main() {
       });
     }
 
-    testWidgets('an anchored flare keeps to its anchor\'s screen (positive control: already did)', (
+    testWidgets('an anchored toast keeps to its anchor\'s screen (positive control: already did)', (
       final tester,
     ) async {
       final BuildContext page = await pump(tester, withAnchor: true);

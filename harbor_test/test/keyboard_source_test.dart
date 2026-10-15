@@ -1,5 +1,5 @@
-// HarborTideSource (#71): a keyboard the platform does not report, fed into the tide through
-// MediaQuery, put through sea trials as a platform keyboard would be.
+// HarborKeyboardSource (#71): a keyboard the platform does not report, fed in through
+// MediaQuery, put through trials as a platform keyboard would be.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -50,7 +50,7 @@ Future<void> _follow(final WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('a source raises the tide: the floating composer rides it and the tab bar on pilings is covered', (
+  testWidgets('a source shows the keyboard: the composer rides it and the tab bar that stays is covered', (
     final tester,
   ) async {
     final ValueNotifier<double> source = ValueNotifier<double>(0);
@@ -72,7 +72,9 @@ void main() {
     expect(_rect(tester, 'composer').bottom, screen - 34 - _tabs);
   });
 
-  testWidgets('the tide is the larger of the platform keyboard and the source, never their sum', (final tester) async {
+  testWidgets('the keyboard is the larger of the platform keyboard and the source, never their sum', (
+    final tester,
+  ) async {
     final ValueNotifier<double> source = ValueNotifier<double>(200);
     addTearDown(source.dispose);
     final HarborTrial trial = await tester.pumpHarborTrial(_app(source), device: _device);

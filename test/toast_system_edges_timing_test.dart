@@ -1,5 +1,5 @@
-// HarborFlares.raise(reachesCoast:) (#100), a flare's countdown: countsEntrance and a settable
-// duration (#101), and what a flare's transition can know of where it hangs (#103).
+// HarborFlares.raise(reachesCoast:) (#100), a toast's countdown: countsEntrance and a settable
+// duration (#101), and what a toast's transition can know of where it hangs (#103).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +17,7 @@ Future<void> _step(final WidgetTester tester, [final int times = 5]) async {
 Future<BuildContext> _page(
   final WidgetTester tester, {
   final List<HarborBar> bottom = const <HarborBar>[],
-  final bool sea = true,
+  final bool root = true,
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
 }) async {
   late BuildContext page;
@@ -29,8 +29,8 @@ Future<BuildContext> _page(
   );
   await tester.pumpHarborTrial(
     MaterialApp(
-      builder: sea ? (final c, final child) => HarborRoot(child: child!) : null,
-      home: sea ? HarborFrame(bottom: bottom, body: body) : body,
+      builder: root ? (final c, final child) => HarborRoot(child: child!) : null,
+      home: root ? HarborFrame(bottom: bottom, body: body) : body,
     ),
     device: device,
   );
@@ -38,7 +38,7 @@ Future<BuildContext> _page(
 }
 
 void main() {
-  group('#100 a flare that reaches the coast', () {
+  group('#100 a toast that reaches the system edges', () {
     late EdgeInsets padding;
     Widget bar(final BuildContext c) {
       padding = MediaQuery.paddingOf(c);
@@ -71,7 +71,7 @@ void main() {
       expect(padding, const EdgeInsets.only(bottom: 34));
     });
 
-    testWidgets('it still keeps off the docks: above a tab bar that took the home indicator, with no padding', (
+    testWidgets('it still keeps off the bars: above a tab bar that took the home indicator, with no padding', (
       final tester,
     ) async {
       final BuildContext page = await _page(
@@ -118,8 +118,8 @@ void main() {
       expect(padding, const EdgeInsets.only(top: 62));
     });
 
-    testWidgets('with no harbor, in an overlay, the same', (final tester) async {
-      final BuildContext page = await _page(tester, sea: false);
+    testWidgets('with no frame, in an overlay, the same', (final tester) async {
+      final BuildContext page = await _page(tester, root: false);
       HarborToasts.show(
         page,
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
@@ -133,8 +133,8 @@ void main() {
     });
   });
 
-  group('#101 a flare\'s countdown', () {
-    Future<HarborToastEntry> raise(final WidgetTester tester, {final bool countsEntrance = false}) async {
+  group('#101 a toast\'s countdown', () {
+    Future<HarborToastEntry> show(final WidgetTester tester, {final bool countsEntrance = false}) async {
       final BuildContext page = await _page(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,
@@ -146,21 +146,21 @@ void main() {
     }
 
     testWidgets('positive control: by default the second starts after the 220 ms entrance', (final tester) async {
-      final HarborToastEntry entry = await raise(tester);
+      final HarborToastEntry entry = await show(tester);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 850));
       expect(entry.showing.value, isTrue, reason: '1150 ms after the raise, 930 into its second');
     });
 
     testWidgets('countsEntrance: the second includes the entrance', (final tester) async {
-      final HarborToastEntry entry = await raise(tester, countsEntrance: true);
+      final HarborToastEntry entry = await show(tester, countsEntrance: true);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 750));
       expect(entry.showing.value, isFalse, reason: 'gone 1050 ms after the raise');
     });
 
     testWidgets('setting the duration starts the time over with it', (final tester) async {
-      final HarborToastEntry entry = await raise(tester);
+      final HarborToastEntry entry = await show(tester);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 800));
       entry.duration = const Duration(seconds: 3);
@@ -171,7 +171,7 @@ void main() {
     });
 
     testWidgets('setting it to null stops it timing out', (final tester) async {
-      final HarborToastEntry entry = await raise(tester);
+      final HarborToastEntry entry = await show(tester);
       await tester.pump(const Duration(milliseconds: 300));
       entry.duration = null;
       await tester.pump(const Duration(seconds: 10));
@@ -179,8 +179,8 @@ void main() {
     });
   });
 
-  group('#103 a flare\'s transition and its anchor', () {
-    testWidgets('the builder and the transition find their own entry; outside a flare there is none', (
+  group('#103 a toast\'s transition and its anchor', () {
+    testWidgets('the builder and the transition find their own entry; outside a toast there is none', (
       final tester,
     ) async {
       final BuildContext page = await _page(tester);
@@ -204,7 +204,7 @@ void main() {
       expect(HarborToastEntry.maybeOf(page), isNull);
     });
 
-    testWidgets('a hold taken from inside the builder holds the flare', (final tester) async {
+    testWidgets('a hold taken from inside the builder holds the toast', (final tester) async {
       final BuildContext page = await _page(tester);
       late BuildContext inside;
       final HarborToastEntry entry = HarborToasts.show(
@@ -273,7 +273,7 @@ void main() {
     }
   });
 
-  testWidgets('#102 a portal buoy shown in initState is afloat and takes taps in its first frame', (
+  testWidgets('#102 a popover shown in initState is up and takes taps in its first frame', (
     final tester,
   ) async {
     int taps = 0;

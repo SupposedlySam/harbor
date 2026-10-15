@@ -3,7 +3,7 @@
 // bar and the keyboard up: the numbers the enum's tests measured before it went.
 //
 // On an iPhone 17: status bar 62, home indicator 34, 874 tall, a keyboard of 336. The body does not
-// clear the tide, so the keyboard reaches the content and each widget decides for itself.
+// clear the keyboard, so the keyboard reaches the content and each widget decides for itself.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +24,7 @@ Widget _rows() => SliverList.builder(
 
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
-/// A 50 header and a 60 tab bar, both piers, over [body], with the keyboard up.
+/// A 50 header and a 60 tab bar, both overlay bars, over [body], with the keyboard up.
 Future<HarborTrial> _pumpPage(final WidgetTester tester, final Widget body) async {
   // A fresh tree each time, so one variant's scroll offset does not carry into the next.
   await tester.pumpWidget(const SizedBox());
@@ -47,9 +47,9 @@ Future<HarborTrial> _pumpPage(final WidgetTester tester, final Widget body) asyn
   return trial;
 }
 
-/// Where a fairway's first row rests and, scrolled to the end, where its last row rests.
-Future<(double, double)> _fairwayEnds(final WidgetTester tester, final Widget fairway) async {
-  await _pumpPage(tester, fairway);
+/// Where a scroll view's first row rests and, scrolled to the end, where its last row rests.
+Future<(double, double)> _scrollViewEnds(final WidgetTester tester, final Widget scrollView) async {
+  await _pumpPage(tester, scrollView);
   final double first = _rect(tester, 'row0').top;
   await tester.drag(find.byType(Scrollable).first, const Offset(0, -5000));
   await tester.pumpAndSettle();
@@ -72,18 +72,18 @@ class _Probe extends StatelessWidget {
 }
 
 void main() {
-  group('HarborMoored(bars: false)', () {
-    // Breaks if: bars: false keeps clear of the docks or the keyboard, where clear: coast did not.
-    testWidgets('places its child clear of the coast alone, the keyboard left out', (final tester) async {
+  group('HarborClear(bars: false)', () {
+    // Breaks if: bars: false keeps clear of the bars or the keyboard, where clear: coast did not.
+    testWidgets('places its child clear of the system edges alone, the keyboard left out', (final tester) async {
       await _pumpPage(tester, HarborClear(bars: false, child: _content()));
       final Rect bars = _rect(tester, 'content');
-      // bars: false leaves the keyboard out though tide is true, and runs
-      // to the bottom of the screen, where the home indicator's coast is under the keyboard.
+      // bars: false leaves the keyboard out though clearsKeyboard is true, and runs
+      // to the bottom of the screen, where the home indicator's system edge is under the keyboard.
       expect(bars, const Rect.fromLTRB(0, _statusBar, 402, _screen));
     });
 
-    // Breaks if: bars: false casts off something clear: coast did not, or stops casting off what it did.
-    testWidgets('casts off the coast and the docks but not the keyboard', (final tester) async {
+    // Breaks if: bars: false marks handled something clear: coast did not, or stops marking handled what it did.
+    testWidgets('marks the system edges and the bars handled but not the keyboard', (final tester) async {
       late BuildContext bars;
       await _pumpPage(tester, HarborClear(bars: false, child: _Probe((final c) => bars = c)));
       expect(HarborRoom.of(bars).systemEdges.top, 0, reason: 'the coast is cast off');
@@ -92,7 +92,7 @@ void main() {
     });
 
     // Breaks if: clearanceOf ignores bars.
-    testWidgets('clearanceOf gives the coast alone', (final tester) async {
+    testWidgets('clearanceOf gives the system edges alone', (final tester) async {
       late EdgeInsetsDirectional bars;
       await _pumpPage(
         tester,
@@ -112,19 +112,19 @@ void main() {
     });
   });
 
-  group('HarborFairway(bars: false)', () {
-    // Breaks if: bars: false clears the docks, or drops the keyboard a coast-only fairway keeps.
-    testWidgets('rests its ends clear of the coast alone, the keyboard kept', (final tester) async {
-      final (double, double) bars = await _fairwayEnds(
+  group('HarborScrollView(bars: false)', () {
+    // Breaks if: bars: false clears the bars, or drops the keyboard a system-edges-only scroll view keeps.
+    testWidgets('rests its ends clear of the system edges alone, the keyboard kept', (final tester) async {
+      final (double, double) bars = await _scrollViewEnds(
         tester,
         HarborScrollView(bars: false, slivers: <Widget>[_rows()]),
       );
-      // Unlike HarborMoored, a fairway's bottom end keeps clear of the keyboard while tide is true.
+      // Unlike HarborClear, a scroll view's bottom end keeps clear of the keyboard while clearsKeyboard is true.
       expect(bars, (_statusBar, _keyboardTop));
     });
 
     // Breaks if: paddingOf ignores bars.
-    testWidgets('paddingOf gives the coast alone, and the keyboard', (final tester) async {
+    testWidgets('paddingOf gives the system edges alone, and the keyboard', (final tester) async {
       late EdgeInsets bars;
       await _pumpPage(
         tester,
@@ -139,9 +139,9 @@ void main() {
     });
 
     // Breaks if: the sliver ignores bars.
-    testWidgets('a fairway sliver rests its ends clear of the coast alone', (final tester) async {
+    testWidgets('a sliver clear rests its ends clear of the system edges alone', (final tester) async {
       Future<(double, double)> ends(final Widget sliver) =>
-          _fairwayEnds(tester, CustomScrollView(slivers: <Widget>[sliver]));
+          _scrollViewEnds(tester, CustomScrollView(slivers: <Widget>[sliver]));
       final (double, double) bars = await ends(HarborSliverClear(bars: false, sliver: _rows()));
       expect(bars, (_statusBar, _keyboardTop));
     });

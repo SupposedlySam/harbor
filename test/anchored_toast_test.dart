@@ -1,5 +1,5 @@
-// HarborFlares.raise(anchor:) (#65): a flare by a HarborAnchorPoint, as a HarborBuoy.anchored sits
-// by one. Before #65 a flare could only be raised at a slot or an alignment of the clear water.
+// HarborFlares.raise(anchor:) (#65): a toast by a HarborAnchorPoint, as a HarborBuoy.anchored sits
+// by one. Before #65 a toast could only be shown at a slot or an alignment of the room.
 
 import 'dart:async';
 import 'dart:ui' show SemanticsAction, SemanticsFlag;
@@ -80,7 +80,7 @@ void main() {
     expect(_rect(tester, 'toast').center.dx, button.center.dx);
   });
 
-  testWidgets('takes its side, gap and cross alignment, as an anchored buoy does', (final tester) async {
+  testWidgets('takes its side, gap and cross alignment, as an anchored float does', (final tester) async {
     late BuildContext page;
     await tester.pumpHarborTrial(
       _app(
@@ -267,7 +267,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets("if its page is popped, is lowered with remove rather than moving to the port on top", (
+  testWidgets("if its page is popped, is hidden with remove rather than moving to the page on top", (
     final tester,
   ) async {
     final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
@@ -313,7 +313,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('is shown by the page that raised it, not a dialog over it', (final tester) async {
+  testWidgets('is shown by the page that showed it, not a dialog over it', (final tester) async {
     late BuildContext page;
     await tester.pumpHarborTrial(
       _app(
@@ -349,7 +349,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('without a harbor, sits by its anchor in the nearest overlay', (final tester) async {
+  testWidgets('without a frame, sits by its anchor in the nearest overlay', (final tester) async {
     late BuildContext page;
     await tester.pumpHarborTrial(
       MaterialApp(

@@ -1,6 +1,6 @@
 // An Android phone on its side with three-button navigation: the status bar stays on top and the
-// navigation bar moves to the right, so the right is a side coast with nothing on the left. A pier
-// clears the status bar and the side coast, and so does what is moored in the body, in either
+// navigation bar moves to the right, so the right is a side system edge with nothing on the left. An overlay
+// bar clears the status bar and the side system edge, and so does what keeps clear in the body, in either
 // reading direction: the bar is on the physical right whichever side the end is.
 
 import 'package:flutter/material.dart';
@@ -40,17 +40,17 @@ void main() {
     expect(MediaQueryData.fromView(tester.view).padding, const EdgeInsets.only(top: 24, right: 48));
   });
 
-  testWidgets('a pier clears the status bar and the navigation bar on the side', (final tester) async {
+  testWidgets('an overlay bar clears the status bar and the navigation bar on the side', (final tester) async {
     await tester.pumpHarborTrial(_page(), device: _device);
     expect(_rect(tester, 'title').top, 24, reason: 'below the status bar');
     expect(_rect(tester, 'title').left, 16, reason: 'no coast on the left: the margin alone');
     expect(_rect(tester, 'title').right, 915 - 48 - 16, reason: 'clear of the navigation bar, then the margin');
   });
 
-  testWidgets('what is moored in the body clears the pier and the side coast', (final tester) async {
+  testWidgets('what keeps clear in the body clears the overlay bar and the side system edge', (final tester) async {
     await tester.pumpHarborTrial(_page(), device: _device);
     expect(_rect(tester, 'row').top, greaterThanOrEqualTo(_rect(tester, 'title').bottom));
-    // Moored keeps off the coast; the margin is a mooring line's, so none is added here.
+    // HarborClear keeps off the system edges; the margin is the row insets', so none is added here.
     expect(_rect(tester, 'row').left, 0);
     expect(_rect(tester, 'row').right, 915 - 48);
   });

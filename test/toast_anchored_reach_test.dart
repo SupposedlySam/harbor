@@ -1,8 +1,8 @@
-// HarborFlares.raise(anchor:, reachesCoast: true) in a harbor. An anchored flare sits by its
-// anchor in the clear water, so it covers no coast, and reachesCoast has no effect on it, as with
-// no harbor above it. Before 0.6.3 the harbor's buoy layer still treated it as reaching: it was
-// laid out in the open water, wider than the clear water it is placed in, and its content was
-// handed the coast that open water reached over as its padding.
+// HarborFlares.raise(anchor:, reachesCoast: true) in a frame. An anchored toast sits by its
+// anchor in the room, so it covers no system edge, and reachesCoast has no effect on it, as with
+// no frame above it. Before 0.6.3 the frame's float layer still treated it as reaching: it was
+// laid out under the system edges, wider than the room it is placed in, and its content was
+// handed the system edges it reached over as its padding.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,14 +54,14 @@ void main() {
     }
   }
 
-  testWidgets('the device has a side coast to cover', (final tester) async {
+  testWidgets('the device has a side system edge to cover', (final tester) async {
     final BuildContext page = await pump(tester);
     final EdgeInsets padding = MediaQuery.paddingOf(page);
     expect(padding.left, greaterThan(0));
     expect(padding.right, greaterThan(0));
   });
 
-  testWidgets('an anchored flare with reachesCoast is laid out and padded as without it', (final tester) async {
+  testWidgets('an anchored toast with reachesCoast is laid out and padded as without it', (final tester) async {
     final BuildContext page = await pump(tester);
     EdgeInsets? plain;
     final HarborToastEntry first = HarborToasts.show(
@@ -90,17 +90,17 @@ void main() {
     );
     await settle(tester);
 
-    // Its content keeps the page's padding, as the flare raised without reachesCoast does, rather
-    // than being handed a coast it covers.
+    // Its content keeps the page's padding, as the toast shown without reachesCoast does, rather
+    // than being handed a system edge it covers.
     expect(reaching, plain);
     expect(_rect(tester, 'reaching'), without);
   });
 
-  testWidgets('an aligned low flare with reachesCoast and no margin is still handed the whole side coast', (
+  testWidgets('an aligned low toast with reachesSystemEdges and no margin is still handed the whole side system edges', (
     final tester,
   ) async {
     final BuildContext page = await pump(tester);
-    final EdgeInsets coast = MediaQuery.paddingOf(page);
+    final EdgeInsets systemEdges = MediaQuery.paddingOf(page);
     EdgeInsets? padding;
     HarborToasts.show(
       page,
@@ -110,7 +110,7 @@ void main() {
       timing: HarborToastTiming.untilHidden,
     );
     await settle(tester);
-    expect(padding!.left, coast.left);
-    expect(padding!.right, coast.right);
+    expect(padding!.left, systemEdges.left);
+    expect(padding!.right, systemEdges.right);
   });
 }

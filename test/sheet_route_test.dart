@@ -41,7 +41,7 @@ class _Observer extends NavigatorObserver {
   void didPush(final Route<dynamic> route, final Route<dynamic>? previousRoute) => pushed.add(route);
 }
 
-/// Pumps a page in a harbor and returns its context, to open sheets from.
+/// Pumps a page in a frame and returns its context, to open sheets from.
 Future<BuildContext> _page(
   final WidgetTester tester, {
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,

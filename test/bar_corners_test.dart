@@ -1,6 +1,6 @@
-// Who owns the corners: the side docks. A rail runs the frame's full height, and a header or a tab
-// bar runs between the rails, as a tablet's navigation rail sits beside its app bar. What is moored
-// in the header keeps its margin from the rail's edge and the coast on the side no rail holds.
+// Who owns the corners: the side bars. A rail runs the frame's full height, and a header or a tab
+// bar runs between the rails, as a tablet's navigation rail sits beside its app bar. What keeps clear
+// in the header keeps its margin from the rail's edge and the system edge on the side no rail holds.
 // Before 0.4.0 the header ran the full width, under the rail, and its title sat under it.
 
 import 'package:flutter/material.dart';
@@ -42,13 +42,13 @@ HarborBar _rail(final double width, {final HarborBarState state = HarborBarState
 );
 
 void main() {
-  testWidgets('positive control: with no side docks, a header lines up with the margin', (final tester) async {
+  testWidgets('positive control: with no side bars, a header lines up with the margin', (final tester) async {
     await tester.pumpHarborTrial(_page());
     expect(_rect(tester, 'title').left, 16);
     expect(_rect(tester, 'title').right, 402 - 16);
   });
 
-  testWidgets('a header moored beside a rail lines up with the body, past the rail', (final tester) async {
+  testWidgets('a header kept clear beside a rail lines up with the body, past the rail', (final tester) async {
     await tester.pumpHarborTrial(_page(start: <HarborBar>[_rail(80)]));
     expect(_rect(tester, 'rail').left, 0);
     expect(_rect(tester, 'title').left, 80 + 16);
@@ -69,7 +69,9 @@ void main() {
     expect(_rect(tester, 'band').right, 402 - 40);
   });
 
-  testWidgets('on a phone on its side the rail takes the coast, and the header clears both', (final tester) async {
+  testWidgets('on a phone on its side the rail takes the system edge, and the header clears both', (
+    final tester,
+  ) async {
     await tester.pumpHarborTrial(_page(start: <HarborBar>[_rail(80)]), device: HarborTrialDevice.iPhone17Landscape);
     final double rail = _rect(tester, 'rail').right;
     expect(_rect(tester, 'title').left, rail + 16);
@@ -95,7 +97,7 @@ void main() {
     expect(_rect(tester, 'title').left, 16);
   });
 
-  testWidgets('beside a rail, a header is not handed the coast the rail took, and keeps the other side\'s', (
+  testWidgets('beside a rail, a header is not handed the system edge the rail took, and keeps the other side\'s', (
     final tester,
   ) async {
     late EdgeInsets padding;
@@ -115,7 +117,7 @@ void main() {
     expect(padding.right, 62);
   });
 
-  testWidgets('positive control: with no rail, the header is handed the side coast on both sides', (
+  testWidgets('positive control: with no rail, the header is handed the side system edges on both sides', (
     final tester,
   ) async {
     late EdgeInsets padding;

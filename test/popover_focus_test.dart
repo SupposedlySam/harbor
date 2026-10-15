@@ -1,5 +1,5 @@
-// HarborPortalBuoy(requestFocus: true) (#66): the buoy takes keyboard focus as it opens, as a sheet
-// with no barrier does with requestFocus, and hands it back as it closes. Before #66 a portal buoy
+// HarborPortalBuoy(requestFocus: true) (#66): the popover takes keyboard focus as it opens, as a sheet
+// with no barrier does with requestFocus, and hands it back as it closes. Before #66 a popover
 // had no such option: focus stayed where it was, as it does for a MenuAnchor, which is still the
 // default and is checked here as the control.
 
@@ -14,7 +14,7 @@ Widget _app(final Widget home) => MaterialApp(
   home: Material(child: home),
 );
 
-/// A row's "Open" button with a portal buoy menu of two items, and a button below it.
+/// A row's "Open" button with a popover menu of two items, and a button below it.
 Widget _row({
   required final OverlayPortalController menu,
   required final List<String> events,
@@ -51,10 +51,10 @@ Widget _row({
   ],
 );
 
-/// The portal buoy's own focus scope, found from one of its items.
-FocusScopeNode _buoyScope(final WidgetTester tester) => FocusScope.of(tester.element(find.text('Copy')));
+/// The popover's own focus scope, found from one of its items.
+FocusScopeNode _popoverScope(final WidgetTester tester) => FocusScope.of(tester.element(find.text('Copy')));
 
-bool _focusInBuoy(final WidgetTester tester) => _buoyScope(tester).hasFocus;
+bool _focusInPopover(final WidgetTester tester) => _popoverScope(tester).hasFocus;
 
 String _focused() {
   final TextButton? button = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<TextButton>();
@@ -112,8 +112,8 @@ void main() {
     );
     await open(tester);
     expect(opener.hasFocus, isFalse, reason: 'focus left the opener');
-    expect(_focusInBuoy(tester), isTrue, reason: 'focus moved into the menu');
-    expect(_buoyScope(tester).debugLabel, 'HarborPopover');
+    expect(_focusInPopover(tester), isTrue, reason: 'focus moved into the menu');
+    expect(_popoverScope(tester).debugLabel, 'HarborPopover');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
@@ -139,8 +139,8 @@ void main() {
     );
     await open(tester);
     final NavigatorState navigator = Navigator.of(tester.element(find.text('Copy')));
-    expect(_buoyScope(tester).traversalEdgeBehavior, navigator.widget.routeTraversalEdgeBehavior);
-    expect(_buoyScope(tester).traversalEdgeBehavior, isNot(TraversalEdgeBehavior.closedLoop));
+    expect(_popoverScope(tester).traversalEdgeBehavior, navigator.widget.routeTraversalEdgeBehavior);
+    expect(_popoverScope(tester).traversalEdgeBehavior, isNot(TraversalEdgeBehavior.closedLoop));
 
     final List<String> reached = <String>[];
     for (int i = 0; i < 3; i++) {
@@ -154,7 +154,7 @@ void main() {
       isNot(isIn(<String>['Copy', 'Share'])),
       reason: 'Tab left the menu after its last item: $reached',
     );
-    expect(_focusInBuoy(tester), isFalse);
+    expect(_focusInPopover(tester), isFalse);
   });
 
   testWidgets('it leaves focus alone as it closes once focus has moved out of it', (final tester) async {
@@ -166,7 +166,7 @@ void main() {
       ),
     );
     await open(tester);
-    expect(_focusInBuoy(tester), isTrue, reason: 'positive control: the menu took focus');
+    expect(_focusInPopover(tester), isTrue, reason: 'positive control: the menu took focus');
     below.requestFocus();
     await tester.pump();
     menu.hide();
@@ -183,7 +183,7 @@ void main() {
       ),
     );
     await open(tester);
-    final FocusScopeNode first = _buoyScope(tester);
+    final FocusScopeNode first = _popoverScope(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     await tester.pump();
@@ -194,8 +194,8 @@ void main() {
     );
 
     await open(tester);
-    expect(_buoyScope(tester), isNot(same(first)));
-    expect(_focusInBuoy(tester), isTrue, reason: 'it takes focus again');
+    expect(_popoverScope(tester), isNot(same(first)));
+    expect(_focusInPopover(tester), isTrue, reason: 'it takes focus again');
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(events, <String>['menu', 'menu']);
@@ -218,7 +218,7 @@ void main() {
     expect(opener.hasPrimaryFocus, isTrue);
   });
 
-  group('in a modal buoy', () {
+  group('in a modal float', () {
     Widget modalPage() => StatefulBuilder(
       builder: (final BuildContext context, final StateSetter setState) => HarborFrame(
         floats: <HarborFloat>[
@@ -235,18 +235,18 @@ void main() {
       ),
     );
 
-    testWidgets('Escape from inside it closes it before the modal buoy (#23)', (final tester) async {
+    testWidgets('Escape from inside it closes it before the modal float (#23)', (final tester) async {
       await tester.pumpHarborTrial(_app(modalPage()));
       await tester.pump();
       await open(tester);
-      expect(_buoyScope(tester).debugLabel, 'HarborPopover');
-      expect(_focusInBuoy(tester), isTrue, reason: 'positive control: the menu took focus from the modal buoy');
+      expect(_popoverScope(tester).debugLabel, 'HarborPopover');
+      expect(_focusInPopover(tester), isTrue, reason: 'positive control: the menu took focus from the modal buoy');
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
       expect(events, <String>['menu'], reason: 'the first Escape closed the menu alone');
       expect(find.text('Open'), findsOneWidget, reason: 'the modal buoy is still up');
-      // The portal buoy lets go of Escape the frame after it has gone, as it always has.
+      // The popover lets go of Escape the frame after it has gone, as it always has.
       await tester.pump();
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -254,12 +254,12 @@ void main() {
       expect(events, <String>['menu', 'modal'], reason: 'the next Escape reached the modal buoy');
     });
 
-    testWidgets("it gives focus back to the modal buoy's scope", (final tester) async {
+    testWidgets("it gives focus back to the modal float's scope", (final tester) async {
       await tester.pumpHarborTrial(_app(modalPage()));
       await tester.pump();
       final FocusScopeNode modal = FocusScope.of(tester.element(find.text('Open')));
       await open(tester);
-      expect(_buoyScope(tester).parent, same(modal), reason: "the menu's scope is in the modal buoy's");
+      expect(_popoverScope(tester).parent, same(modal), reason: "the menu's scope is in the modal buoy's");
 
       menu.hide();
       await tester.pump();
@@ -268,7 +268,7 @@ void main() {
     });
   });
 
-  test('a portal buoy that takes focus must be one Escape can close', () {
+  test('a popover that takes focus must be one Escape can close', () {
     expect(
       () => HarborPopover(
         controller: OverlayPortalController(),

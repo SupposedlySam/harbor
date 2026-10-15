@@ -1,4 +1,4 @@
-// HarborSheet(bodyClearsTide: false) (#95): a sheet whose body manages the keyboard itself.
+// HarborSheet(bodyClearsKeyboard: false) (#95): a sheet whose body manages the keyboard itself.
 
 import 'dart:async';
 
@@ -59,7 +59,7 @@ void main() {
     expect(insets, 336);
   });
 
-  testWidgets('false: a floating footer still rides up on the keyboard', (final tester) async {
+  testWidgets('false: a footer that rides the keyboard still rises with it', (final tester) async {
     final (HarborTrial trial, BuildContext page) = await _page(tester);
     await trial.showKeyboard(settle: true);
     await _open(

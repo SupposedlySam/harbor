@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-// On an iPhone 17 (status bar 62, home indicator 34, 874 tall): a 50 header
-// pier ends at 112, and a 60 tab bar quay starts at 874 - 34 - 60.
+// On an iPhone 17 (status bar 62, home indicator 34, 874 tall): a 50 overlay
+// header ends at 112, and a 60 solid tab bar starts at 874 - 34 - 60.
 const double _headerBottom = 62 + 50;
-const double _quayTop = 874 - 34 - 60;
+const double _tabBarTop = 874 - 34 - 60;
 
 Widget _bar(final String label, final double height) =>
     SizedBox(key: ValueKey<String>(label), height: height, width: double.infinity, child: Text(label));
@@ -59,7 +59,7 @@ void main() {
   group('keyboardDismissBehavior', () {
     Future<FocusNode> pumpFocusedField(
       final WidgetTester tester,
-      final HarborScrollView Function(Widget field) fairway,
+      final HarborScrollView Function(Widget field) scrollView,
     ) async {
       final FocusNode focus = FocusNode();
       addTearDown(focus.dispose);
@@ -67,7 +67,7 @@ void main() {
         _app(
           ScrollConfiguration(
             behavior: const _DismissOnDrag(),
-            child: HarborFrame(body: fairway(TextField(focusNode: focus))),
+            child: HarborFrame(body: scrollView(TextField(focusNode: focus))),
           ),
         ),
       );
@@ -79,7 +79,7 @@ void main() {
       return focus;
     }
 
-    testWidgets('left unset, follows the scroll behavior above the fairway', (final tester) async {
+    testWidgets('left unset, follows the scroll behavior above the scroll view', (final tester) async {
       final FocusNode focus = await pumpFocusedField(
         tester,
         (final Widget field) => HarborScrollView(
@@ -92,7 +92,7 @@ void main() {
       expect(focus.hasFocus, isFalse);
     });
 
-    testWidgets('given, overrides the scroll behavior above the fairway', (final tester) async {
+    testWidgets('given, overrides the scroll behavior above the scroll view', (final tester) async {
       final FocusNode focus = await pumpFocusedField(
         tester,
         (final Widget field) => HarborScrollView(
@@ -106,7 +106,7 @@ void main() {
       expect(focus.hasFocus, isTrue);
     });
 
-    testWidgets('left unset on a box fairway, follows the scroll behavior above it', (final tester) async {
+    testWidgets('left unset on a box scroll view, follows the scroll behavior above it', (final tester) async {
       final FocusNode focus = await pumpFocusedField(
         tester,
         (final Widget field) =>
@@ -117,7 +117,7 @@ void main() {
   });
 
   group('reverse', () {
-    // A chat: a header pier on top, a composer pier that floats on the
+    // A chat: an overlay header on top, an overlay composer that rides the
     // keyboard, and the newest message at the bottom.
     Widget chat({final List<Widget> before = const <Widget>[]}) => HarborFrame(
       bodyClearsKeyboard: false,
@@ -140,7 +140,7 @@ void main() {
       expect(_rect(tester, 'message0').bottom, _rect(tester, 'composer').top);
     });
 
-    testWidgets('pins a sliver dock at the composer, the leading end', (final tester) async {
+    testWidgets('pins a sliver bar at the composer, the leading end', (final tester) async {
       await tester.pumpHarborTrial(_app(chat(before: <Widget>[HarborSliverBar(child: _bar('day', 30))])));
       expect(_rect(tester, 'day').bottom, _rect(tester, 'composer').top);
       await _scrollBy(tester, 600);
@@ -195,7 +195,7 @@ void main() {
       );
     });
 
-    testWidgets('reach the scroll view of a box fairway', (final tester) async {
+    testWidgets('reach the Scrollable of a box scroll view', (final tester) async {
       await tester.pumpHarborTrial(
         _app(
           HarborFrame(
@@ -242,17 +242,17 @@ void main() {
       body: HarborScrollView(center: center, anchor: anchor, slivers: slivers),
     );
 
-    testWidgets('rest the center sliver clear of the header, and both ends clear of the docks', (final tester) async {
+    testWidgets('rest the center sliver clear of the header, and both ends clear of the bars', (final tester) async {
       await tester.pumpHarborTrial(_app(page(<Widget>[_rows('older'), _rows('newer', key: newer)])));
       expect(_rect(tester, 'newer0').top, moreOrLessEquals(_headerBottom));
       expect(_rect(tester, 'older0').bottom, moreOrLessEquals(_headerBottom));
       await _scrollBy(tester, 5000);
       expect(_rect(tester, 'older19').top, moreOrLessEquals(_headerBottom));
       await _scrollBy(tester, -10000);
-      expect(_rect(tester, 'newer19').bottom, moreOrLessEquals(_quayTop));
+      expect(_rect(tester, 'newer19').bottom, moreOrLessEquals(_tabBarTop));
     });
 
-    testWidgets("pin a sliver dock after the center at the header's face", (final tester) async {
+    testWidgets("pin a sliver bar after the center at the header's face", (final tester) async {
       await tester.pumpHarborTrial(
         _app(
           page(<Widget>[
@@ -283,9 +283,9 @@ void main() {
       expect(_rect(tester, 'newer2').top, moreOrLessEquals(_headerBottom));
     });
 
-    testWidgets('anchor is a fraction of the water between the docks', (final tester) async {
+    testWidgets('anchor is a fraction of the room between the bars', (final tester) async {
       await tester.pumpHarborTrial(_app(page(<Widget>[_rows('row')], center: null, anchor: 0.5)));
-      expect(_rect(tester, 'row0').top, moreOrLessEquals(_headerBottom + (_quayTop - _headerBottom) / 2));
+      expect(_rect(tester, 'row0').top, moreOrLessEquals(_headerBottom + (_tabBarTop - _headerBottom) / 2));
     });
 
     testWidgets('anchored at the end, keep the center on the composer as it rides the keyboard', (final tester) async {
@@ -313,7 +313,7 @@ void main() {
       expect(_rect(tester, 'older0').bottom, moreOrLessEquals(_rect(tester, 'composer').top));
     });
 
-    testWidgets('reversed, rest the center on the composer and both ends clear of the docks', (final tester) async {
+    testWidgets('reversed, rest the center on the composer and both ends clear of the bars', (final tester) async {
       await tester.pumpHarborTrial(
         _app(
           HarborFrame(

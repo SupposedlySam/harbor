@@ -81,7 +81,7 @@ void main() {
     expect(_rect(tester, 'detail'), const Rect.fromLTRB(0, 0, 540, 720));
   });
 
-  testWidgets('each pane is a screen of its own: its size, the coast on its outer edges, no hinge', (
+  testWidgets('each pane is a screen of its own: its size, the system edges on its outer edges, no hinge', (
     final tester,
   ) async {
     await _pump(tester, device: _dual);
@@ -129,7 +129,7 @@ void main() {
     expect(_rect(tester, 'detail'), const Rect.fromLTRB(0, 437, 402, 874));
   });
 
-  testWidgets('a pane can be a harbor with docks of its own', (final tester) async {
+  testWidgets('a pane can be a frame with bars of its own', (final tester) async {
     await tester.pumpHarborTrial(
       MaterialApp(
         builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),

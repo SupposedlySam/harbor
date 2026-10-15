@@ -1,4 +1,4 @@
-// What a fairway keeps clear of at its ends, and what it leaves to the content beneath.
+// What a scroll view keeps clear of at its ends, and what it leaves to the content beneath.
 //
 // On an iPhone 17: status bar 62, home indicator 34, 874 tall, a keyboard of 336.
 
@@ -45,8 +45,8 @@ class _Probe extends StatelessWidget {
 }
 
 void main() {
-  group('HarborFairwaySliver casts off what it cleared (#67)', () {
-    // Breaks if: the sliver returns its padding alone again, without casting the ends off.
+  group('HarborSliverClear marks what it cleared as handled (#67)', () {
+    // Breaks if: the sliver returns its padding alone again, without marking the ends handled.
     testWidgets('a reader in the sliver does not clear the header and status bar a second time', (final tester) async {
       late BuildContext item;
       await tester.pumpHarborTrial(
@@ -73,7 +73,7 @@ void main() {
       expect(HarborRoom.of(item).systemEdges.top, 0);
     });
 
-    // Breaks if: the sliver casts off an end it was told not to clear.
+    // Breaks if: the sliver marks handled an end it was told not to clear.
     testWidgets('an end it does not clear is left to the content beneath', (final tester) async {
       late BuildContext item;
       await tester.pumpHarborTrial(
@@ -92,8 +92,8 @@ void main() {
       expect(MediaQuery.paddingOf(item).bottom, _homeIndicator);
     });
 
-    // Breaks if: the sliver casts off the keyboard it did not clear, or keeps the one it did.
-    testWidgets('it casts off the keyboard with the bottom it cleared', (final tester) async {
+    // Breaks if: the sliver marks handled the keyboard it did not clear, or keeps the one it did.
+    testWidgets('it marks the keyboard handled with the bottom it cleared', (final tester) async {
       late BuildContext item;
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
@@ -112,10 +112,10 @@ void main() {
     });
   });
 
-  group('With startsInOpenWater, the first sliver gets back its leading end alone (#60)', () {
-    // Breaks if: open water zeroes the whole leading spacer again, the caller's padding and minimum
+  group('With startsUnderBars, the first sliver gets back its leading end alone (#60)', () {
+    // Breaks if: starting under the bars zeroes the whole leading spacer again, the caller's padding and minimum
     // with the clearance (#74).
-    testWidgets("open water skips the leading clearance but keeps the fairway's own padding and minimum", (
+    testWidgets('starting under the bars skips the leading clearance but keeps its own padding and minimum', (
       final tester,
     ) async {
       Future<double> firstRowTop(final EdgeInsetsDirectional padding, final EdgeInsetsDirectional minimum) async {
@@ -152,9 +152,9 @@ void main() {
       );
     });
 
-    // Breaks if: the first sliver is handed the fairway's own MediaQuery and waters again, from
-    // above its cast-off, trailing end and keyboard included.
-    testWidgets('a vertical fairway hands its first sliver neither the trailing end nor the keyboard', (
+    // Breaks if: the first sliver is handed the scroll view's own MediaQuery and room again, from
+    // above where it marks them handled, trailing end and keyboard included.
+    testWidgets('a vertical scroll view hands its first sliver neither the trailing end nor the keyboard', (
       final tester,
     ) async {
       final List<double> bottomPadding = <double>[];
@@ -191,8 +191,8 @@ void main() {
       expect(keyboard.last, 0);
     });
 
-    // Breaks if: a horizontal fairway's first item is handed the trailing end's mooring line.
-    testWidgets("a horizontal fairway hands its first item the leading side's mooring line alone", (
+    // Breaks if: a horizontal scroll view's first item is handed the trailing end's row insets.
+    testWidgets("a horizontal scroll view hands its first item the leading side's row insets alone", (
       final tester,
     ) async {
       late BuildContext item;
@@ -216,8 +216,8 @@ void main() {
     });
   });
 
-  group('A fairway that clears the coast alone (#57)', () {
-    // A 50 header and a 60 tab bar, both piers: the body runs under them.
+  group('A scroll view that clears the system edges alone (#57)', () {
+    // A 50 header and a 60 tab bar, both overlay bars: the body runs under them.
     const double headerFace = _statusBar + 50;
     const double tabsFace = _screen - _homeIndicator - 60;
     Widget page(final Widget body) => _app(
@@ -228,16 +228,16 @@ void main() {
       ),
     );
 
-    // Breaks if: a coast-only fairway's ends clear the docks too.
-    testWidgets('its ends rest clear of the status bar and home indicator, under the docks', (final tester) async {
+    // Breaks if: a system-edges-only scroll view's ends clear the bars too.
+    testWidgets('its ends rest clear of the status bar and home indicator, under the bars', (final tester) async {
       await tester.pumpHarborTrial(page(HarborScrollView(bars: false, slivers: <Widget>[_rows()])));
       expect(_rect(tester, 'row0').top, _statusBar);
       await _scrollBy(tester, -5000);
       expect(_rect(tester, 'row29').bottom, _screen - _homeIndicator);
     });
 
-    // Breaks if: the fairway casts off the docks with the coast, or the coast is left in.
-    testWidgets('its rows read the docks, measured from its edge, and no coast', (final tester) async {
+    // Breaks if: the scroll view marks the bars handled with the system edges, or the system edges are left in.
+    testWidgets('its rows read the bars, measured from its edge, and no system edges', (final tester) async {
       late BuildContext item;
       await tester.pumpHarborTrial(
         page(
@@ -255,9 +255,9 @@ void main() {
       expect(HarborRoom.of(item).systemEdges.bottom, 0);
     });
 
-    // Breaks if: the cover is taken from the coast-only end, so a pinned header pins under the
+    // Breaks if: the cover is taken from the system-edges-only end, so a pinned header pins under the
     // status bar, behind the header.
-    testWidgets("a pinned sliver dock still pins at the docks' face", (final tester) async {
+    testWidgets("a pinned sliver bar still pins at the bars' face", (final tester) async {
       await tester.pumpHarborTrial(
         page(
           HarborScrollView(
@@ -274,7 +274,7 @@ void main() {
       expect(_rect(tester, 'pinned').top, headerFace);
     });
 
-    // Breaks if: reveals are widened by the coast-only ends rather than by what is over the viewport.
+    // Breaks if: reveals are widened by the system-edges-only ends rather than by what is over the viewport.
     testWidgets('reveals still keep clear of the header and the tab bar', (final tester) async {
       await tester.pumpHarborTrial(page(HarborScrollView(bars: false, slivers: <Widget>[_rows()])));
       // Row 14 starts at 62 + 14 * 50 = 762, under the tab bar's face at 780.
@@ -287,7 +287,7 @@ void main() {
       expect(_rect(tester, 'row14').top, headerFace);
     });
 
-    // Breaks if: a horizontal fairway clears the rail at its ends or casts it off.
+    // Breaks if: a horizontal scroll view clears the rail at its ends or marks it handled.
     testWidgets('a horizontal one rests under a rail, and its items read how far the rail reaches', (
       final tester,
     ) async {
@@ -317,7 +317,7 @@ void main() {
     });
 
     // Breaks if: paddingOf ignores bars.
-    testWidgets('paddingOf gives the coast alone', (final tester) async {
+    testWidgets('paddingOf gives the system edges alone', (final tester) async {
       late EdgeInsets padding;
       await tester.pumpHarborTrial(
         page(
@@ -332,8 +332,8 @@ void main() {
       expect(padding, const EdgeInsets.only(top: _statusBar, bottom: _homeIndicator));
     });
 
-    // Breaks if: the sliver ignores bars, or casts off the docks with the coast.
-    testWidgets('so does a fairway sliver, and its sliver reads the docks', (final tester) async {
+    // Breaks if: the sliver ignores bars, or marks the bars handled with the system edges.
+    testWidgets('so does a sliver clear, and its sliver reads the bars', (final tester) async {
       late BuildContext item;
       await tester.pumpHarborTrial(
         page(
@@ -353,12 +353,12 @@ void main() {
     });
   });
 
-  group('A fairway that leaves the keyboard to someone else (#59)', () {
-    // An iPhone SE has no bottom coast, so the keyboard is all that is in the way at the bottom.
+  group('A scroll view that leaves the keyboard to someone else (#59)', () {
+    // An iPhone SE has no bottom system edge, so the keyboard is all that is in the way at the bottom.
     const HarborTrialDevice phone = HarborTrialDevice.iPhoneSE;
     const double keyboardTop = 667 - 260;
 
-    // Breaks if: tide: false still adds the keyboard to the bottom end, or casts it off.
+    // Breaks if: clearsKeyboard: false still adds the keyboard to the bottom end, or marks it handled.
     testWidgets('its last row rests at the bottom with the keyboard up, and its rows still read the keyboard', (
       final tester,
     ) async {
@@ -400,7 +400,7 @@ void main() {
       expect(_rect(tester, 'row8').bottom, 470);
     });
 
-    // Breaks if: paddingOf ignores tide.
+    // Breaks if: paddingOf ignores clearsKeyboard.
     testWidgets('paddingOf leaves the keyboard out', (final tester) async {
       late EdgeInsets padding;
       final HarborTrial trial = await tester.pumpHarborTrial(
@@ -421,8 +421,8 @@ void main() {
       expect(padding, const EdgeInsets.only(top: 20));
     });
 
-    // Breaks if: the sliver ignores tide, or casts off the keyboard it left.
-    testWidgets('so does a fairway sliver, and its sliver still reads the keyboard', (final tester) async {
+    // Breaks if: the sliver ignores clearsKeyboard, or marks handled the keyboard it left.
+    testWidgets('so does a sliver clear, and its sliver still reads the keyboard', (final tester) async {
       late BuildContext item;
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
@@ -452,9 +452,9 @@ void main() {
     });
   });
 
-  // The README's answer to #58, held: no per-end flags, a cast-off around the fairway.
-  // Breaks if: a fairway's spacer or cover keeps a top that a cast-off above it zeroed.
-  testWidgets("in a cast-off of the top, a fairway leaves the top to the header that already cleared it", (
+  // The README's answer to #58, held: no per-end flags, a HarborHandled around the scroll view.
+  // Breaks if: a scroll view's spacer or cover keeps a top that a HarborHandled above it zeroed.
+  testWidgets("under a HarborHandled of the top, a scroll view leaves the top to the header that already cleared it", (
     final tester,
   ) async {
     await tester.pumpHarborTrial(
