@@ -1,0 +1,155 @@
+// HarborRoom.barFaceOf: where the bars on an edge end, with or without an edge effect (#61).
+//
+// On an iPhone 17: status bar 62, home indicator 34, a keyboard of 336.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:harbor/harbor.dart';
+import 'package:harbor_test/harbor_test.dart';
+
+const double _statusBar = 62;
+
+Widget _bar(final String label, final double height) =>
+    SizedBox(key: ValueKey<String>(label), height: height, width: double.infinity, child: Text(label));
+
+Widget _app(final Widget home) => MaterialApp(
+  builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+  home: Material(child: home),
+);
+
+/// Records the top bar face each time it is built.
+class _FaceReader extends StatelessWidget {
+  const _FaceReader(this.seen, {this.edge = HarborEdge.top});
+
+  final List<double> seen;
+  final HarborEdge edge;
+
+  @override
+  Widget build(final BuildContext context) {
+    seen.add(HarborRoom.barFaceOf(context, edge));
+    return const SizedBox.expand();
+  }
+}
+
+void main() {
+  Future<double> faceUnder(final WidgetTester tester, final HarborEdgeEffect edgeEffect) async {
+    final List<double> seen = <double>[];
+    await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(edgeEffect: edgeEffect, child: _bar('header', 50))],
+          body: _FaceReader(seen),
+        ),
+      ),
+    );
+    expect(
+      tester.getRect(find.byKey(const ValueKey<String>('header'))).bottom,
+      _statusBar + 50,
+      reason: 'positive control',
+    );
+    return seen.last;
+  }
+
+  // Breaks if: the face is read from the bars where a fade rests past them.
+  testWidgets("is the header's inner face under a fade that the content rests past", (final tester) async {
+    expect(await faceUnder(tester, const HarborEdgeEffect.fade(length: 12)), _statusBar + 50);
+  });
+
+  // Breaks if: the face is read from the fade band alone, which only a fade has.
+  testWidgets("is the header's inner face with no edge effect, a hairline, or a fade that rests at the bar", (
+    final tester,
+  ) async {
+    expect(await faceUnder(tester, HarborEdgeEffect.none), _statusBar + 50);
+    expect(await faceUnder(tester, const HarborEdgeEffect.hairline()), _statusBar + 50);
+    expect(
+      await faceUnder(tester, const HarborEdgeEffect.fade(length: 12, restsAt: HarborRest.barFace)),
+      _statusBar + 50,
+    );
+  });
+
+  testWidgets('is zero where no bar is, the system edge left out', (final tester) async {
+    final List<double> seen = <double>[];
+    await tester.pumpHarborTrial(_app(HarborFrame(body: _FaceReader(seen, edge: HarborEdge.bottom))));
+    expect(seen.last, 0);
+  });
+
+  // Breaks if: barFaceOf reads the room beyond the bars aspect. On a phone with a home
+  // indicator the steady system edge's clamp follows the keyboard for such a reader.
+  testWidgets('its reader holds still while the keyboard rises', (final tester) async {
+    final List<double> seen = <double>[];
+    final List<double> keyboard = <double>[];
+    final HarborTrial trial = await tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+          body: Column(
+            children: <Widget>[
+              SizedBox(height: 10, child: _FaceReader(seen)),
+              SizedBox(
+                height: 10,
+                child: Builder(
+                  builder: (final BuildContext context) {
+                    keyboard.add(HarborKeyboard.of(context).height);
+                    return const SizedBox.expand();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    seen.clear();
+    keyboard.clear();
+    await trial.showKeyboard();
+    expect(keyboard.length, greaterThan(1), reason: 'positive control: the keyboard moved over several frames');
+    // At most once, for the home indicator leaving the padding, which the bars' clamp reads.
+    expect(seen.length, lessThanOrEqualTo(1));
+    expect(seen, everyElement(_statusBar + 50));
+  });
+
+  // A reader of the room as a whole would rebuild when any part of it changes; this one
+  // depends on the bars alone. The margin changes and the bars do not.
+  // Breaks if: barFaceOf reads the room beyond the bars aspect.
+  testWidgets('its reader holds still when another part of the room changes', (final tester) async {
+    final List<double> faces = <double>[];
+    final List<double> margins = <double>[];
+    // Built once, so only what they depend on rebuilds them.
+    final Widget body = Column(
+      children: <Widget>[
+        SizedBox(height: 10, child: _FaceReader(faces)),
+        SizedBox(
+          height: 10,
+          child: Builder(
+            builder: (final BuildContext context) {
+              margins.add(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin.start);
+              return const SizedBox.expand();
+            },
+          ),
+        ),
+      ],
+    );
+    late StateSetter setState;
+    double margin = 0;
+    await tester.pumpHarborTrial(
+      _app(
+        StatefulBuilder(
+          builder: (final BuildContext context, final StateSetter set) {
+            setState = set;
+            return HarborFrame(
+              margin: EdgeInsetsDirectional.symmetric(horizontal: margin),
+              top: <HarborBar>[HarborBar.overlay(child: _bar('header', 50))],
+              body: body,
+            );
+          },
+        ),
+      ),
+    );
+    faces.clear();
+    margins.clear();
+    setState(() => margin = 24);
+    await tester.pumpAndSettle();
+    expect(margins, <double>[24], reason: 'positive control: the margin changed under the reader');
+    expect(faces, isEmpty);
+  });
+}

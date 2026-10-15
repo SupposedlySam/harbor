@@ -17,7 +17,7 @@ const Widget _child = SizedBox.shrink();
 
 void main() {
   group('value classes describe themselves', () {
-    test('a dock names its kind and shows only what differs from the defaults', () {
+    test('a bar names its kind and shows only what differs from the defaults', () {
       expect(const HarborBar.overlay(child: _child).toString(), 'HarborBar.overlay');
       expect(
         const HarborBar.solid(
@@ -34,7 +34,7 @@ void main() {
       );
     });
 
-    test('a wake names its kind and shows its non-default sizes', () {
+    test('an edge effect names its kind and shows its non-default sizes', () {
       expect(HarborEdgeEffect.none.toString(), 'HarborEdgeEffect.none');
       expect(const HarborEdgeEffect.fade().toString(), 'HarborEdgeEffect.fade');
       expect(
@@ -44,7 +44,7 @@ void main() {
       expect(const HarborEdgeEffect.hairline(thickness: 0.5).toString(), 'HarborEdgeEffect.hairline(thickness: 0.5)');
     });
 
-    test('a coast names where it comes from', () {
+    test('a system edges value names where it comes from', () {
       expect(HarborSystemEdges.ambient.toString(), 'HarborSystemEdges.ambient');
       expect(HarborSystemEdges.none.toString(), 'HarborSystemEdges.none');
       expect(
@@ -57,12 +57,12 @@ void main() {
       );
     });
 
-    test('a buoy shows how it is placed', () {
+    test('a float shows how it is placed', () {
       expect(const HarborFloat(child: _child).toString(), 'HarborFloat');
       final HarborAnchor anchor = HarborAnchor(debugLabel: 'more button');
       addTearDown(anchor.dispose);
       // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
-      // how a buoy given a placement describes itself.
+      // how a float given a placement describes itself.
       // ignore: deprecated_member_use_from_same_package
       final HarborFloat menu = HarborFloat.anchored(
         // ignore: deprecated_member_use_from_same_package
@@ -104,7 +104,7 @@ void main() {
   });
 
   group('widgets describe their configuration', () {
-    test('a harbor shows its docks, buoys and sizing, and nothing at its defaults', () {
+    test('a frame shows its bars, floats and sizing, and nothing at its defaults', () {
       expect(_shown(const HarborFrame(body: _child)), isEmpty);
       expect(
         _shown(
@@ -145,7 +145,7 @@ void main() {
       );
     });
 
-    test('a fairway reads as a scroll view does, plus its clearance', () {
+    test('a scroll view reads as a Flutter scroll view does, plus its clearance', () {
       expect(_shown(const HarborScrollView(slivers: <Widget>[])), <String>['scrollDirection: vertical']);
       expect(
         _shown(
@@ -172,7 +172,7 @@ void main() {
       );
     });
 
-    test('moored content shows what it keeps clear of', () {
+    test('cleared content shows what it keeps clear of', () {
       expect(_shown(const HarborClear(child: _child)), isEmpty);
       expect(
         _shown(
@@ -195,7 +195,7 @@ void main() {
       );
     });
 
-    test('a beacon, a scale model and a portal buoy show their settings', () {
+    test('a keep-in-sight, a scaled screen and a popover show their settings', () {
       expect(_shown(const HarborKeepInSight(child: _child)), isEmpty);
       expect(
         _shown(const HarborKeepInSight(edge: HarborEdge.bottom, keepInSight: true, clearance: 8.0, child: _child)),
@@ -209,7 +209,7 @@ void main() {
       final OverlayPortalController controller = OverlayPortalController(debugLabel: 'row menu');
       final List<String> portal = _shown(
         // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
-        // how a portal buoy given a placement describes itself.
+        // how a popover given a placement describes itself.
         HarborPopover(
           controller: controller,
           // ignore: deprecated_member_use_from_same_package
@@ -239,7 +239,7 @@ void main() {
     });
   });
 
-  testWidgets('the widget tree dump shows a mounted harbor\'s docks', (final WidgetTester tester) async {
+  testWidgets('the widget tree dump shows a mounted frame\'s bars', (final WidgetTester tester) async {
     await tester.pumpHarborTrial(
       const Directionality(
         textDirection: TextDirection.ltr,

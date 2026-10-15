@@ -1,3 +1,7 @@
+## Unreleased
+
+* Internal: source files, private names and test descriptions renamed after the 0.9 vocabulary (`lib/src/buoy.dart` is now `float.dart` and its parts, `dock.dart` is `bar.dart`, `tide.dart` is `keyboard.dart`, and so on). No public name, behaviour or import changes: `package:harbor/harbor.dart` exports the same names. Code that imported a `package:harbor/src/...` file by path, which was never supported, needs the new path.
+
 ## 0.10.1
 
 * **A frame in an `OverlayPortal`'s child reads the overlay's system edges** (#142). Flutter hands an overlay child the padding of the overlay it paints in, but a frame there split that padding by the room of the frame where the portal was declared: under a tab host whose bar holds the home indicator, a `HarborFrame.page` shown on the root overlay read no bottom system edge, and its body ran into the home indicator. The root now publishes the padding it hands its body, and a frame whose padding on an edge is exactly the root's, where neither the outer room's system edge nor its bars reach that far, takes it all as system edge. Padding an app raises with its own `MediaQuery` is split as before, and frames outside an overlay are unchanged. The recipe, a full-screen page over everything, is in the README.

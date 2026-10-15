@@ -12,19 +12,19 @@ import 'package:harbor_test/harbor_test.dart';
 /// the pixel ratio the trial put on it.
 void _resizeTo(final WidgetTester tester, final HarborTrialDevice device) {
   final double ratio = tester.view.devicePixelRatio;
-  final EdgeInsets coast = device.systemEdges * ratio;
+  final EdgeInsets edges = device.systemEdges * ratio;
   tester.view
     ..physicalSize = device.size * ratio
-    ..padding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
-    ..viewPadding = FakeViewPadding(left: coast.left, top: coast.top, right: coast.right, bottom: coast.bottom)
+    ..padding = FakeViewPadding(left: edges.left, top: edges.top, right: edges.right, bottom: edges.bottom)
+    ..viewPadding = FakeViewPadding(left: edges.left, top: edges.top, right: edges.right, bottom: edges.bottom)
     ..viewInsets = FakeViewPadding.zero;
 }
 
 void main() {
-  // Failed before: for the first frame after a turn, the page under a breakwater sheet was laid out
+  // Failed before: for the first frame after a turn, the page under a sheet that covers it was laid out
   // against the cover the sheet had in the old orientation, in pixels: 365 of portrait's 874 is
   // nearly all of landscape's 402, and the page's content overflowed by 83.
-  testWidgets('a page under a breakwater sheet is not laid out against the old orientation after a turn', (
+  testWidgets('a page under a sheet that covers it is not laid out against the old orientation after a turn', (
     final tester,
   ) async {
     late BuildContext page;
@@ -67,9 +67,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // Failed before: the flare kept the clear water captured when it was raised, so after the
+  // Failed before: the toast kept the room captured when it was shown, so after the
   // foldable opened it stayed boxed into the old 382-wide cover screen.
-  testWidgets('a flare follows the clear water of the harbor that raised it when the screen grows', (
+  testWidgets('a toast follows the room of the frame that showed it when the screen grows', (
     final tester,
   ) async {
     late BuildContext page;

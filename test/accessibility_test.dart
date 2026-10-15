@@ -81,8 +81,8 @@ Rect _semanticsRect(final SemanticsNode node) {
 }
 
 void main() {
-  group('A hidden dock is out of reach', () {
-    testWidgets('an open dock is focusable and read out (positive control)', (final tester) async {
+  group('A hidden bar is out of reach', () {
+    testWidgets('an open bar is focusable and read out (positive control)', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       await tester.pumpHarborTrial(_app(_page(HarborBarState.open)));
       expect(find.bySemanticsLabel('Header action'), findsOneWidget);
@@ -91,7 +91,7 @@ void main() {
     });
 
     // Failed before: Tab reached the invisible header button.
-    testWidgets('a dark dock is skipped by Tab and by screen readers', (final tester) async {
+    testWidgets('a dark bar is skipped by Tab and by screen readers', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       await tester.pumpHarborTrial(_app(_page(HarborBarState.dark)));
       expect(find.bySemanticsLabel('Header action'), findsNothing);
@@ -102,7 +102,7 @@ void main() {
     });
 
     // Failed before: a withdrawn header was still read out and still took focus.
-    testWidgets('a withdrawn dock is skipped by Tab and by screen readers', (final tester) async {
+    testWidgets('a withdrawn bar is skipped by Tab and by screen readers', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       await tester.pumpHarborTrial(_app(_page(HarborBarState.withdrawn)));
       expect(find.bySemanticsLabel('Header action'), findsNothing);
@@ -113,7 +113,7 @@ void main() {
     });
   });
 
-  group('A flare', () {
+  group('A toast', () {
     Future<BuildContext> pumpPage(
       final WidgetTester tester, {
       final bool disableAnimations = false,
@@ -163,7 +163,7 @@ void main() {
     });
 
     // Failed before: the toast saw the app's theme, not the page's.
-    testWidgets('keeps the theme of the page that raised it', (final tester) async {
+    testWidgets('keeps the theme of the page that showed it', (final tester) async {
       const Color red = Color(0xFFFF0000);
       final BuildContext page = await pumpPage(tester, pagePrimary: red);
       Color? seen;
@@ -209,8 +209,8 @@ void main() {
       semantics.dispose();
     });
 
-    // Failed before: no dismiss action, so a screen reader could not take a flare away, as it can a SnackBar.
-    testWidgets('is lowered by the screen reader’s dismiss action', (final tester) async {
+    // Failed before: no dismiss action, so a screen reader could not take a toast away, as it can a SnackBar.
+    testWidgets('is hidden by the screen reader’s dismiss action', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
       final HarborToastEntry entry = HarborToasts.show(
@@ -248,7 +248,7 @@ void main() {
     });
   });
 
-  group("A flare's entrance", () {
+  group("A toast's entrance", () {
     Future<BuildContext> pumpPage(final WidgetTester tester) async {
       late BuildContext page;
       await tester.pumpHarborTrial(
@@ -266,14 +266,14 @@ void main() {
       return page;
     }
 
-    // The transitions harbor puts between [entry]'s buoy and its text; the page's own route
-    // transition sits above the buoy and is not counted.
+    // The transitions harbor puts between [entry]'s float and its text; the page's own route
+    // transition sits above the float and is not counted.
     Finder harborTransitions(final HarborToastEntry entry, final Type type) => find.ancestor(
       of: find.text('Saved'),
       matching: find.descendant(of: find.byKey(ObjectKey(entry)), matching: find.byType(type)),
     );
 
-    // Failed before: every flare faded and scaled in, so a widget with its own entrance played two.
+    // Failed before: every toast faded and scaled in, so a widget with its own entrance played two.
     testWidgets('with AnimationStyle.noAnimation, shows the child as it is and keeps it for its own exit', (
       final tester,
     ) async {
@@ -332,7 +332,7 @@ void main() {
       expect(find.text('Saved'), findsNothing);
     });
 
-    // Failed before: a lowered flare was removed after 300 ms whatever its exit took.
+    // Failed before: a hidden toast was removed after 300 ms whatever its exit took.
     testWidgets('stays up for the whole of a longer exit', (final tester) async {
       final BuildContext page = await pumpPage(tester);
       final HarborToastEntry entry = HarborToasts.show(
@@ -414,7 +414,7 @@ void main() {
       return page;
     }
 
-    // Failed before: like sheets and flares, the builder ran outside the captured themes.
+    // Failed before: like sheets and toasts, the builder ran outside the captured themes.
     testWidgets("'s builder sees the theme of the page that opened it", (final tester) async {
       const Color red = Color(0xFFFF0000);
       final BuildContext page = await pumpPage(tester, pagePrimary: red);
@@ -451,8 +451,8 @@ void main() {
   });
 
   group('Reduced motion', () {
-    /// Frames a dock takes to withdraw. One measurement per test, on a fresh tree: measuring
-    /// twice in one test reused the first tree's dock state and measured nothing.
+    /// Frames a bar takes to withdraw. One measurement per test, on a fresh tree: measuring
+    /// twice in one test reused the first tree's bar state and measured nothing.
     Future<int> framesToWithdraw(final WidgetTester tester, {required final bool disableAnimations}) async {
       final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
       addTearDown(state.dispose);
@@ -476,12 +476,12 @@ void main() {
       return frames;
     }
 
-    testWidgets('a dock withdraws over several frames normally (positive control)', (final tester) async {
+    testWidgets('a bar withdraws over several frames normally (positive control)', (final tester) async {
       expect(await framesToWithdraw(tester, disableAnimations: false), greaterThan(5));
     });
 
-    // Failed before: the dock took the same 16 frames to leave either way.
-    testWidgets('a dock withdraws at once', (final tester) async {
+    // Failed before: the bar took the same 16 frames to leave either way.
+    testWidgets('a bar withdraws at once', (final tester) async {
       expect(await framesToWithdraw(tester, disableAnimations: true), lessThanOrEqualTo(2));
     });
 
@@ -553,7 +553,7 @@ void main() {
       expect(firstFrame, rest);
     });
 
-    /// Where a lifted beacon is one frame after the cover rises under it, and where it comes to rest.
+    /// Where a lifted keep-in-sight child is one frame after the cover rises under it, and where it comes to rest.
     Future<(double, double)> liftFrames(final WidgetTester tester, {required final bool disableAnimations}) async {
       final ValueNotifier<double> cover = ValueNotifier<double>(10);
       addTearDown(cover.dispose);
@@ -610,7 +610,7 @@ void main() {
     });
   });
 
-  group('A buoy follows the reading direction', () {
+  group('A float follows the reading direction', () {
     Future<Rect> place(final WidgetTester tester, final TextDirection direction) async {
       await tester.pumpHarborTrial(
         _app(
@@ -634,7 +634,7 @@ void main() {
     }
 
     // Failed before: alignment and margin only took physical Alignment and EdgeInsets, so this
-    // did not compile; a buoy could not follow a right-to-left reading direction.
+    // did not compile; a float could not follow a right-to-left reading direction.
     testWidgets('bottomEnd is bottom right left to right, bottom left right to left', (final tester) async {
       final Rect ltr = await place(tester, TextDirection.ltr);
       final Rect rtl = await place(tester, TextDirection.rtl);
@@ -645,11 +645,11 @@ void main() {
   });
 
   // Reported by the controllers-and-notifications audit. Failed before: only Scaffold handles the
-  // status bar tap, and a page built from a harbor has none, so the list stayed at 800.
+  // status bar tap, and a page built from a frame has none, so the list stayed at 800.
   group('A status bar tap on iOS scrolls the page to the top', () {
     for (final bool scaffold in <bool>[false, true]) {
       testWidgets(scaffold ? 'with a Scaffold too (positive control)' : 'with no Scaffold', (final tester) async {
-        final Widget harbor = HarborFrame(
+        final Widget frame = HarborFrame(
           top: const <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50))],
           body: HarborScrollView(
             slivers: <Widget>[
@@ -660,7 +660,7 @@ void main() {
             ],
           ),
         );
-        await tester.pumpHarborTrial(_app(scaffold ? Scaffold(resizeToAvoidBottomInset: false, body: harbor) : harbor));
+        await tester.pumpHarborTrial(_app(scaffold ? Scaffold(resizeToAvoidBottomInset: false, body: frame) : frame));
         final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
         position.jumpTo(800);
         await tester.pump();
@@ -675,7 +675,7 @@ void main() {
     }
   });
 
-  group('A buoy that is not shown is not read out', () {
+  group('A float that is not shown is not read out', () {
     Widget bubble() => Semantics(
       label: 'bubble',
       container: true,
@@ -700,7 +700,7 @@ void main() {
     );
 
     // Failed before: unpainted, the bubble was still in the semantics tree at the top-left corner.
-    testWidgets('an anchored buoy is read out only while its anchor is in the tree', (final tester) async {
+    testWidgets('an anchored float is read out only while its anchor is in the tree', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
@@ -723,9 +723,9 @@ void main() {
     });
 
     // Failed before: shown with its anchor out of the tree, the menu was read out at the overlay's
-    // top-left corner. A portal buoy is placed when it paints, not when it lays out, so each step
+    // top-left corner. A popover is placed when it paints, not when it lays out, so each step
     // here also fails if its semantics are not refreshed then.
-    testWidgets('a portal buoy is read out only while it is placed, where it is placed', (final tester) async {
+    testWidgets('a popover is read out only while it is placed, where it is placed', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final HarborAnchor anchor = HarborAnchor();
       addTearDown(anchor.dispose);
@@ -790,7 +790,7 @@ void main() {
 
   // Scaffold scrolls only when its status bar region is what a tap at the screen's top left would
   // hit, so it leaves a covered page alone however that page is covered. Each case runs under a
-  // Scaffold too, as the control for what a harbor page should do. Failed before: the harbor asked
+  // Scaffold too, as the control for what a page with a frame should do. Failed before: the frame asked
   // only whether its route was the top of its own navigator, so it scrolled each of these.
   group('A status bar tap scrolls only the page a Scaffold would', () {
     Future<void> tapStatusBar(final WidgetTester tester) async {
@@ -830,7 +830,7 @@ void main() {
     }
 
     for (final bool scaffold in <bool>[false, true]) {
-      final String under = scaffold ? 'under a Scaffold' : 'under a harbor';
+      final String under = scaffold ? 'under a Scaffold' : 'under a frame';
 
       testWidgets('$under: a page in a nested navigator stays put once a route covers the navigator', (
         final tester,

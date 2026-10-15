@@ -1,6 +1,6 @@
 // What an app gets in its own dependency graph by depending on harbor.
 //
-// Sea trials live in package:harbor_test, a dev_dependency, so the test framework never reaches
+// Trials live in package:harbor_test, a dev_dependency, so the test framework never reaches
 // an app's main graph. Some dependency policies reject a package that brings flutter_test along.
 
 import 'dart:io';

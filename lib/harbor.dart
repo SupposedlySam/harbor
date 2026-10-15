@@ -6,22 +6,10 @@
 /// does not ride it.
 library;
 
+export 'src/attached_bar.dart';
+export 'src/bar.dart';
 export 'src/barrier.dart' show HarborBarrier, HarborSheetBarrier;
-export 'src/buoy.dart'
-    show
-        HarborAnchor,
-        HarborAnchorClip,
-        HarborAnchorPoint,
-        HarborBuoy,
-        HarborFloat,
-        HarborPopover,
-        HarborPortalBuoy,
-        HarborFlarePolicy,
-        HarborToastSlot,
-        HarborToastTarget,
-        HarborToasts;
-export 'src/chart.dart';
-export 'src/coast.dart';
+export 'src/clear.dart';
 export 'src/controller.dart'
     show
         HarborPageCover,
@@ -44,31 +32,9 @@ export 'src/controller.dart'
 export 'src/defaults.dart' show HarborDefaults, HarborDefaultsScope;
 export 'src/deprecated.dart';
 export 'src/dialog.dart';
-export 'src/dock.dart';
 export 'src/dock_slot.dart' show HarborDockSlot;
 export 'src/edge.dart';
-export 'src/fairway.dart';
-export 'src/harbor.dart';
-export 'src/hinge.dart' show HarborHinge, HarborPosture;
-export 'src/panes.dart';
-export 'src/placement.dart' show HarborAligned, HarborAnchorSide, HarborAnchored, HarborCrossAlignment, HarborPlacement;
-export 'src/lighthouse.dart';
-export 'src/make_way.dart';
-export 'src/moored.dart';
-export 'src/render_harbor.dart' show HarborSizing;
-export 'src/scale_model.dart';
-export 'src/sheet.dart' hide HarborNonModalSheetActions, HarborPageSheetHost;
-export 'src/sticky.dart';
-export 'src/tide.dart'
-    show
-        HarborKeyboardSpace,
-        HarborKeyboard,
-        HarborKeyboardPhase,
-        HarborKeyboardSource,
-        HarborKeyboardStance,
-        HarborKeyboardState,
-        HarborTideState;
-export 'src/wake.dart'
+export 'src/edge_effect.dart'
     show
         HarborRest,
         HarborEdgeEffect,
@@ -78,5 +44,39 @@ export 'src/wake.dart'
         HarborWakeMask,
         HarborEdgeEffectPainter,
         harborAlphaWake;
-export 'src/waters.dart'
-    show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData, HarborWakeBand;
+export 'src/float.dart'
+    show
+        HarborAnchor,
+        HarborAnchorClip,
+        HarborAnchorPoint,
+        HarborBuoy,
+        HarborFloat,
+        HarborPopover,
+        HarborPortalBuoy,
+        HarborFlarePolicy,
+        HarborToastSlot,
+        HarborToastTarget,
+        HarborToasts;
+export 'src/frame.dart';
+export 'src/hide_bar.dart';
+export 'src/hinge.dart' show HarborHinge, HarborPosture;
+export 'src/inspector.dart';
+export 'src/keep_in_sight.dart';
+export 'src/keyboard.dart'
+    show
+        HarborKeyboardSpace,
+        HarborKeyboard,
+        HarborKeyboardPhase,
+        HarborKeyboardSource,
+        HarborKeyboardStance,
+        HarborKeyboardState,
+        HarborTideState;
+export 'src/panes.dart';
+export 'src/placement.dart' show HarborAligned, HarborAnchorSide, HarborAnchored, HarborCrossAlignment, HarborPlacement;
+export 'src/render_frame.dart' show HarborSizing;
+export 'src/room.dart' show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData, HarborWakeBand;
+export 'src/scaled_screen.dart';
+export 'src/scroll_view.dart';
+export 'src/sheet.dart' hide HarborNonModalSheetActions, HarborPageSheetHost;
+export 'src/sticky.dart';
+export 'src/system_edges.dart';

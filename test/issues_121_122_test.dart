@@ -1,5 +1,5 @@
 // #121: a sheet controller's close() and remove() do nothing once its sheet has left.
-// #122: a flare's lifecycle, read synchronously: waiting, shown, closed, and whether it was seen.
+// #122: a toast's lifecycle, read synchronously: waiting, shown, closed, and whether it was seen.
 
 import 'dart:async';
 
@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-Future<BuildContext> _page(final WidgetTester tester, {final bool sea = true}) async {
+Future<BuildContext> _page(final WidgetTester tester, {final bool root = true}) async {
   late BuildContext inside;
   final Widget body = Builder(
     builder: (final BuildContext context) {
@@ -18,8 +18,8 @@ Future<BuildContext> _page(final WidgetTester tester, {final bool sea = true}) a
   );
   await tester.pumpHarborTrial(
     MaterialApp(
-      builder: sea ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
-      home: sea ? HarborFrame(body: body) : body,
+      builder: root ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
+      home: root ? HarborFrame(body: body) : body,
     ),
   );
   return inside;
@@ -84,10 +84,10 @@ void main() {
     });
   });
 
-  group('#122 a flare\'s phase', () {
-    for (final bool sea in <bool>[true, false]) {
-      testWidgets('lowered while it waits its turn: closed at once, never shown (sea: $sea)', (final tester) async {
-        final BuildContext page = await _page(tester, sea: sea);
+  group('#122 a toast\'s phase', () {
+    for (final bool root in <bool>[true, false]) {
+      testWidgets('hidden while it waits its turn: closed at once, never shown (root: $root)', (final tester) async {
+        final BuildContext page = await _page(tester, root: root);
         final HarborToastEntry up = HarborToasts.show(
           page,
           builder: (final BuildContext _) => const Text('up'),
@@ -109,8 +109,8 @@ void main() {
         expect(waiting.wasShown, isFalse);
       });
 
-      testWidgets('raised and lowered in the same frame: closed, never shown (sea: $sea)', (final tester) async {
-        final BuildContext page = await _page(tester, sea: sea);
+      testWidgets('shown and hidden in the same frame: closed, never shown (root: $root)', (final tester) async {
+        final BuildContext page = await _page(tester, root: root);
         final HarborToastEntry entry = HarborToasts.show(
           page,
           builder: (final BuildContext _) => const Text('cancelled'),
@@ -123,7 +123,7 @@ void main() {
       });
     }
 
-    testWidgets('shown, then lowered: closed once it has left, and it was shown', (final tester) async {
+    testWidgets('shown, then hidden: closed once it has left, and it was shown', (final tester) async {
       final BuildContext page = await _page(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,

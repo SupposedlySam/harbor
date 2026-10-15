@@ -1,3 +1,7 @@
+## Unreleased
+
+* Internal: `lib/src/sea_trial.dart` is `lib/src/trial.dart`, and the tests are named and described in the 0.9 vocabulary. No public name or behaviour changes.
+
 ## 0.4.1
 
 Needs harbor 0.10.0. Nothing in harbor_test's API changes. Its `dart fix` data now migrates a bare `pumpSeaTrial(...)` (and every other renamed extension member) called through implicit `this` inside an extension on `WidgetTester`, which 0.4.0's fix turned into a call that did not compile (#143).

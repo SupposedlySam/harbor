@@ -1,4 +1,4 @@
-// HarborPlacement (0.7.0): one placement value for buoys, portal buoys and flares, placed by one
+// HarborPlacement (0.7.0): one placement value for floats, popovers and toasts, placed by one
 // engine. The deprecated spellings it replaces are covered in deprecated_placement_test.dart.
 
 import 'package:flutter/foundation.dart';
@@ -22,10 +22,10 @@ Future<void> _settle(final WidgetTester tester) async {
 
 Future<BuildContext> _page(
   final WidgetTester tester, {
-  final List<HarborFloat> buoys = const <HarborFloat>[],
+  final List<HarborFloat> floats = const <HarborFloat>[],
   final HarborTrialDevice device = HarborTrialDevice.iPhone17,
   final Widget? body,
-  final bool harbor = true,
+  final bool inFrame = true,
 }) async {
   late BuildContext page;
   final Widget content = Builder(
@@ -36,8 +36,8 @@ Future<BuildContext> _page(
   );
   await tester.pumpHarborTrial(
     MaterialApp(
-      builder: harbor ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
-      home: harbor ? HarborFrame(floats: buoys, body: content) : content,
+      builder: inFrame ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
+      home: inFrame ? HarborFrame(floats: floats, body: content) : content,
     ),
     device: device,
   );
@@ -89,7 +89,7 @@ void main() {
       );
     });
 
-    test('a buoy and a portal buoy show their placement', () {
+    test('a float and a popover show their placement', () {
       expect(
         const HarborFloat(
           placement: HarborAligned(alignment: Alignment.topCenter),
@@ -114,10 +114,10 @@ void main() {
   });
 
   group('one rule for the hinge: the screen first, then the margin', () {
-    // Before 0.7.0 an aligned buoy in a harbor took its margin off the water before splitting it
+    // Before 0.7.0 an aligned float in a frame took its margin off the room before splitting it
     // at the hinge, so it kept no margin off the hinge, and was centred 8 nearer it than an aligned
-    // flare with no harbor, an anchored buoy or a portal buoy, which all split first.
-    testWidgets('right to left, an aligned buoy on the hinge goes to the right screen, where reading starts', (
+    // toast with no frame, an anchored float or a popover, which all split first.
+    testWidgets('right to left, an aligned float on the hinge goes to the right screen, where reading starts', (
       final tester,
     ) async {
       await tester.pumpHarborTrial(
@@ -143,50 +143,50 @@ void main() {
       expect(_rect(tester, 'buoy').center.dx, 844);
     });
 
-    testWidgets('an aligned buoy keeps its margin off the hinge as off an edge', (final tester) async {
+    testWidgets('an aligned float keeps its margin off the hinge as off an edge', (final tester) async {
       await _page(
         tester,
         device: _dual,
-        buoys: const <HarborFloat>[
+        floats: const <HarborFloat>[
           HarborFloat(
             placement: HarborAligned(),
             child: SizedBox(key: ValueKey<String>('buoy'), width: 200, height: 30),
           ),
         ],
       );
-      final Rect buoy = _rect(tester, 'buoy');
+      final Rect float = _rect(tester, 'buoy');
       // The left screen (reading starts there) is 0 to 540: 16 in from each side, 16 to 524.
-      expect(buoy.center.dx, 270);
-      expect(buoy.left, 170);
+      expect(float.center.dx, 270);
+      expect(float.left, 170);
     });
 
-    testWidgets('an aligned buoy as wide as it may be stops 16 short of the hinge', (final tester) async {
+    testWidgets('an aligned float as wide as it may be stops 16 short of the hinge', (final tester) async {
       await _page(
         tester,
         device: _dual,
-        buoys: const <HarborFloat>[
+        floats: const <HarborFloat>[
           HarborFloat(
             placement: HarborAligned(),
             child: SizedBox(key: ValueKey<String>('buoy'), width: double.infinity, height: 30),
           ),
         ],
       );
-      final Rect buoy = _rect(tester, 'buoy');
-      expect(buoy.left, 16);
-      expect(buoy.right, 524);
+      final Rect float = _rect(tester, 'buoy');
+      expect(float.left, 16);
+      expect(float.right, 524);
     });
 
-    testWidgets('an aligned flare in a harbor and one with no harbor land in the same place', (final tester) async {
-      final BuildContext inHarbor = await _page(tester, device: _dual);
+    testWidgets('an aligned toast in a frame and one with no frame land in the same place', (final tester) async {
+      final BuildContext framedPage = await _page(tester, device: _dual);
       HarborToasts.show(
-        inHarbor,
+        framedPage,
         slot: HarborToastSlot.low,
         builder: (final BuildContext _) => _box('flare'),
         timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
-      final Rect harbor = _rect(tester, 'flare');
-      final BuildContext bare = await _page(tester, device: _dual, harbor: false);
+      final Rect framed = _rect(tester, 'flare');
+      final BuildContext bare = await _page(tester, device: _dual, inFrame: false);
       HarborToasts.show(
         bare,
         slot: HarborToastSlot.low,
@@ -194,8 +194,8 @@ void main() {
         timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
-      expect(_rect(tester, 'bare').center.dx, harbor.center.dx);
-      expect(harbor.center.dx, 270);
+      expect(_rect(tester, 'bare').center.dx, framed.center.dx);
+      expect(framed.center.dx, 270);
     });
   });
 
@@ -214,19 +214,19 @@ void main() {
       ],
     );
 
-    testWidgets('an anchored buoy sits below its anchor by default', (final tester) async {
+    testWidgets('an anchored float sits below its anchor by default', (final tester) async {
       await _page(
         tester,
         body: anchored(),
-        buoys: <HarborFloat>[HarborFloat(placement: HarborAnchored(anchor), child: _box('buoy', width: 80))],
+        floats: <HarborFloat>[HarborFloat(placement: HarborAnchored(anchor), child: _box('buoy', width: 80))],
       );
       await tester.pump();
-      final Rect buoy = _rect(tester, 'buoy');
-      expect(buoy.top, 348);
-      expect(buoy.center.dx, 120);
+      final Rect float = _rect(tester, 'buoy');
+      expect(float.top, 348);
+      expect(float.center.dx, 120);
     });
 
-    testWidgets('an anchored buoy keeps its side with no room on it: held in the water, not flipped', (
+    testWidgets('an anchored float keeps its side with no room on it: held in the room, not flipped', (
       final tester,
     ) async {
       await _page(
@@ -240,21 +240,21 @@ void main() {
             ),
           ],
         ),
-        buoys: <HarborFloat>[
+        floats: <HarborFloat>[
           HarborFloat(placement: HarborAnchored(anchor), child: _box('buoy', width: 80, height: 100)),
         ],
       );
       await tester.pump();
-      // No room below an anchor ending 60 from the bottom: it is pushed up to the clear water's
-      // bottom, 8 in (874 less the 34 home indicator), where a portal buoy would flip above it.
+      // No room below an anchor ending 60 from the bottom: it is pushed up to the room's
+      // bottom, 8 in (874 less the 34 home indicator), where a popover would flip above it.
       expect(_rect(tester, 'buoy').bottom, 874 - 34 - 8);
     });
 
-    testWidgets('an anchored buoy honours within, as an aligned one does', (final tester) async {
+    testWidgets('an anchored float honours within, as an aligned one does', (final tester) async {
       await _page(
         tester,
         body: anchored(),
-        buoys: <HarborFloat>[
+        floats: <HarborFloat>[
           HarborFloat(
             placement: HarborAnchored(anchor),
             within: const Rect.fromLTRB(110, 0, 400, 800),
@@ -267,7 +267,7 @@ void main() {
       expect(_rect(tester, 'buoy').left, 118);
     });
 
-    testWidgets('an anchored flare can overlap its anchor and move across it', (final tester) async {
+    testWidgets('an anchored toast can overlap its anchor and move across it', (final tester) async {
       final BuildContext page = await _page(tester, body: anchored());
       final HarborToastEntry entry = HarborToasts.show(
         page,
@@ -276,15 +276,15 @@ void main() {
         timing: HarborToastTiming.untilHidden,
       );
       await _settle(tester);
-      final Rect flare = _rect(tester, 'flare');
-      expect(flare.top, 344);
-      expect(flare.center.dx, 130);
+      final Rect toast = _rect(tester, 'flare');
+      expect(toast.top, 344);
+      expect(toast.center.dx, 130);
       expect(entry.anchor, anchor);
       expect(entry.side, HarborAnchorSide.below);
       expect(entry.placement, HarborAnchored(anchor, overlap: 4, crossOffset: 10));
     });
 
-    testWidgets('a flare resolves its placement in the reading direction of the page that raised it', (
+    testWidgets('a toast resolves its placement in the reading direction of the page that showed it', (
       final tester,
     ) async {
       final BuildContext page = await _page(tester);
@@ -305,7 +305,7 @@ void main() {
       expect(_rect(tester, 'flare').right, 402 - 30);
     });
 
-    testWidgets('a portal buoy with no placement still sits above its child, as before placements', (
+    testWidgets('a popover with no placement still sits above its child, as before placements', (
       final tester,
     ) async {
       final OverlayPortalController menu = OverlayPortalController();
@@ -325,7 +325,7 @@ void main() {
       expect(_rect(tester, 'menu').bottom, _rect(tester, 'row').top - 8);
     });
 
-    testWidgets('a portal buoy placed by HarborAnchored(null) sits below its child', (final tester) async {
+    testWidgets('a popover placed by HarborAnchored(null) sits below its child', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       await _page(
         tester,
@@ -344,7 +344,7 @@ void main() {
       expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
     });
 
-    testWidgets('a portal buoy flips by default, and not with flips: false', (final tester) async {
+    testWidgets('a popover flips by default, and not with flips: false', (final tester) async {
       Future<Rect> menuBy(final bool? flips) async {
         final OverlayPortalController menu = OverlayPortalController();
         await _page(
@@ -371,7 +371,7 @@ void main() {
       expect(kept.bottom, 874 - 34 - 8, reason: 'held below, pushed up only as far as the clear water needs');
     });
 
-    testWidgets('slot and placement are exclusive, and an anchored flare does not reach the coast', (
+    testWidgets('slot and placement are exclusive, and an anchored toast does not reach the system edges', (
       final tester,
     ) async {
       final BuildContext page = await _page(tester, body: anchored());
@@ -403,22 +403,22 @@ void main() {
       );
     });
 
-    testWidgets('a buoy placed by an anchor needs one', (final tester) async {
+    testWidgets('a float placed by an anchor needs one', (final tester) async {
       await _page(
         tester,
-        buoys: const <HarborFloat>[HarborFloat(placement: HarborAnchored(null), child: SizedBox())],
+        floats: const <HarborFloat>[HarborFloat(placement: HarborAnchored(null), child: SizedBox())],
       );
       expect(tester.takeException(), isAssertionError);
     });
   });
 
-  group('a flare with no harbor that reaches the coast', () {
-    // Before 0.7.0 a flare with no harbor above it handed its content the whole coast on its
-    // edges whatever its margin, though with a margin it covers less of it; in a harbor it was
+  group('a toast with no frame that reaches the system edges', () {
+    // Before 0.7.0 a toast with no frame above it handed its content the whole system edges on its
+    // sides whatever its margin, though with a margin it covers less of them; in a frame it was
     // handed only what it covers. Both now hand over what it covers.
-    testWidgets('is handed only the coast it covers, its margin taken off', (final tester) async {
+    testWidgets('is handed only the system edges it covers, its margin taken off', (final tester) async {
       EdgeInsets? padding;
-      final BuildContext page = await _page(tester, harbor: false, device: HarborTrialDevice.iPhone17Landscape);
+      final BuildContext page = await _page(tester, inFrame: false, device: HarborTrialDevice.iPhone17Landscape);
       HarborToasts.show(
         page,
         placement: const HarborAligned(margin: EdgeInsets.all(10)),

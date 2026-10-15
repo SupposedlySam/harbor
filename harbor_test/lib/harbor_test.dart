@@ -5,5 +5,5 @@
 /// stays out of an app's own dependencies.
 library;
 
-export 'src/sea_trial.dart';
+export 'src/trial.dart';
 export 'src/trial_device.dart';

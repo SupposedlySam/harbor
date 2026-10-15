@@ -1,7 +1,7 @@
 // The README's recipe for a page under PopScope(canPop: false) (#62, declined in favour of it).
 //
 // With canPop false, Navigator.maybePop reports doNotPop before it looks at the page's local
-// history, so back never reaches the modal buoy, portal buoy or sheet with no barrier that harbor
+// history, so back never reaches the modal float, popover or sheet with no barrier that harbor
 // tied to the page: only the app's own handler hears it, as the first test shows. The recipe calls
 // Navigator.pop while the route will handle the pop internally, which removes the newest local
 // history entry, so back closes them one at a time and only then reaches the app's handler.
@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
-/// A page under PopScope(canPop: false), with a modal buoy, a portal buoy and a sheet with no
+/// A page under PopScope(canPop: false), with a modal float, a popover and a sheet with no
 /// barrier to open. Its back() stands for the app's own handler (a tab bar going back a tab).
 class _Page extends StatefulWidget {
   const _Page({super.key, required this.recipe, required this.events});
@@ -50,7 +50,7 @@ class _PageState extends State<_Page> {
         return;
       }
       if (widget.recipe && ModalRoute.of(context)!.willHandlePopInternally) {
-        Navigator.of(context).pop(); // closes the top buoy, portal buoy or barrier-less sheet
+        Navigator.of(context).pop(); // closes the top float, popover or barrier-less sheet
         return;
       }
       back();
@@ -135,7 +135,7 @@ void main() {
   });
 
   testWidgets(
-    'with the recipe, back closes the sheet, the portal buoy and the modal buoy one at a time, then reaches the app',
+    'with the recipe, back closes the sheet, the popover and the modal float one at a time, then reaches the app',
     (final tester) async {
       final List<String> events = <String>[];
       await _pumpAndOpenAll(tester, recipe: true, events: events);

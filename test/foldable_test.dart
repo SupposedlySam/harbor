@@ -12,13 +12,13 @@ import 'package:harbor_test/harbor_test.dart';
 const HarborTrialDevice _device = HarborTrialDevice.dualScreenOpen;
 final Rect _hinge = _device.displayFeatures.single.bounds;
 
-Future<BuildContext> _pump(final WidgetTester tester, {final List<HarborFloat> buoys = const <HarborFloat>[]}) async {
+Future<BuildContext> _pump(final WidgetTester tester, {final List<HarborFloat> floats = const <HarborFloat>[]}) async {
   late BuildContext page;
   await tester.pumpHarborTrial(
     MaterialApp(
       builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
       home: HarborFrame(
-        floats: buoys,
+        floats: floats,
         body: Builder(
           builder: (final BuildContext context) {
             page = context;
@@ -111,7 +111,7 @@ void main() {
     expect(_rect(tester, 'dialog').left, greaterThanOrEqualTo(_hinge.right));
   });
 
-  testWidgets('a flare keeps off the hinge', (final tester) async {
+  testWidgets('a toast keeps off the hinge', (final tester) async {
     final BuildContext page = await _pump(tester);
     HarborToasts.show(
       page,
@@ -123,10 +123,10 @@ void main() {
     expect(_rect(tester, 'toast').overlaps(_hinge), isFalse);
   });
 
-  testWidgets('a centred buoy keeps off the hinge', (final tester) async {
+  testWidgets('a centred float keeps off the hinge', (final tester) async {
     await _pump(
       tester,
-      buoys: const <HarborFloat>[
+      floats: const <HarborFloat>[
         HarborFloat(
           placement: HarborAligned(alignment: Alignment.center),
           child: SizedBox(key: ValueKey<String>('buoy'), width: 120, height: 40),
@@ -136,7 +136,7 @@ void main() {
     expect(_rect(tester, 'buoy').overlaps(_hinge), isFalse);
   });
 
-  testWidgets('on a flat fold, which has no width, a centred buoy is free to span it', (final tester) async {
+  testWidgets('on a flat fold, which has no width, a centred float is free to span it', (final tester) async {
     late BuildContext page;
     await tester.pumpHarborTrial(
       MaterialApp(

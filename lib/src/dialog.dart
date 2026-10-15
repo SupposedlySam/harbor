@@ -4,10 +4,10 @@ import 'package:flutter/widgets.dart';
 
 import 'barrier.dart';
 import 'barrier_label.dart';
+import 'clear.dart';
 import 'controller.dart';
 import 'defaults.dart';
 import 'hinge.dart';
-import 'moored.dart';
 import 'renamed.dart';
 
 /// Opens [builder]'s dialog over [context].
@@ -283,7 +283,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     if (context != null && context.mounted) {
       _page.themes ??= InheritedTheme.capture(from: context, to: navigator.context);
       if (inheritRoom) {
-        _page.inherited = _clearWaterInOverlay(context, navigator);
+        _page.inherited = _roomInOverlay(context, navigator);
       }
     }
     super.install();
@@ -292,7 +292,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   /// The opening frame's room as insets of [navigator]'s overlay,
   /// where the dialog will be, so a scaled screen between the two is accounted
   /// for.
-  static EdgeInsets? _clearWaterInOverlay(final BuildContext context, final NavigatorState navigator) {
+  static EdgeInsets? _roomInOverlay(final BuildContext context, final NavigatorState navigator) {
     final Rect? clear = HarborController.maybeOf(context)?.roomInGlobal();
     final RenderObject? overlay = navigator.overlay?.context.findRenderObject();
     if (clear == null || overlay is! RenderBox || !overlay.hasSize) {
