@@ -41,6 +41,7 @@ export 'src/controller.dart'
         HarborToastTiming,
         HarborToastTransitionBuilder,
         HarborYield;
+export 'src/defaults.dart' show HarborDefaults, HarborDefaultsScope;
 export 'src/deprecated.dart';
 export 'src/dialog.dart';
 export 'src/dock.dart';

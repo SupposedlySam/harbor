@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
+import 'defaults.dart';
 import 'hinge.dart';
 import 'placement.dart';
 import 'render_harbor.dart';
@@ -675,7 +676,8 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
               color: modal.barrier.color,
               dismissible: modal.barrier.isDismissible,
               onDismiss: modal.barrier.isDismissible ? modal.onDismiss : null,
-              semanticsLabel: modal.barrier.label ?? harborBarrierDismissLabel,
+              semanticsLabel:
+                  modal.barrier.label ?? HarborDefaults.of(context).barrierLabel ?? harborBarrierDismissLabel,
               semanticsOnTapHint: modal.barrier.onTapHint,
             ),
           ),
@@ -1964,8 +1966,12 @@ abstract final class HarborToasts {
   ///
   /// [queue] is what it does when a toast is already up at its place: wait its
   /// turn ([HarborToastQueue.wait]) or take it at once
-  /// ([HarborToastQueue.replace]), hiding the one up. A [HarborFlarePolicy]
-  /// above [context] sets it for a subtree; [HarborToastQueue.wait] with none.
+  /// ([HarborToastQueue.replace]), hiding the one up. Null takes [HarborDefaults.toastQueue] at
+  /// [context]: [HarborToastQueue.wait] unless a scope above sets it. Likewise a null [timing],
+  /// [animationStyle] or [hinge] takes [HarborDefaults.toastTiming],
+  /// [HarborDefaults.toastAnimationStyle] or [HarborDefaults.hinge], and a toast at a [slot] (or at
+  /// none) keeps [HarborDefaults.toastMargin] in from the room's edges; a toast given a [placement]
+  /// keeps the placement's own margin.
   ///
   /// A placement's margin is how far the toast keeps in from the room's
   /// edges: 16 at a slot or an alignment and 8 by an anchor unless it says.
@@ -2082,6 +2088,9 @@ abstract final class HarborToasts {
       'reachesSystemEdges is for an aligned toast: an anchored one sits by its anchor, clear of the system edges.',
     );
     final TextDirection textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
+    // Read once, where it is shown from: what the page that showed it, and the root above it, chose
+    // for what this call leaves out.
+    final HarborDefaults defaults = HarborDefaults.read(context);
     // Resolved where it is shown from: the page that showed it decides its reading direction, wherever
     // it is shown.
     final HarborPlacement placed = switch (placement ??
@@ -2095,7 +2104,9 @@ abstract final class HarborToasts {
               )
             : HarborAligned(
                 alignment: alignment ?? (slot ?? HarborToastSlot.high).alignment,
-                margin: margin ?? HarborAligned.defaultMargin,
+                // The defaults' margin is for a toast at a slot, or at none: the deprecated alignment
+                // keeps the margin it had, so a call `dart fix` moves to a placement sits where it did.
+                margin: margin ?? (alignment == null ? defaults.toastMargin : null) ?? HarborAligned.defaultMargin,
               ))) {
       HarborAligned(:final AlignmentGeometry alignment, :final EdgeInsetsGeometry margin) => HarborAligned(
         alignment: alignment.resolve(textDirection),
@@ -2124,6 +2135,11 @@ abstract final class HarborToasts {
       // The deprecated spellings, merged: persist was a duration that never ran out.
       timing:
           timing ??
+          // The defaults' timing is for a call that says nothing about time; the deprecated
+          // spellings keep the defaults they had.
+          (identical(duration, _unsetDuration) && persist == null && countsEntrance == null && countsWhileCovered == null
+              ? defaults.toastTiming ?? const HarborToastTiming()
+              : null) ??
           HarborToastTiming(
             duration: persist ?? false
                 ? null
@@ -2136,13 +2152,13 @@ abstract final class HarborToasts {
       // Sent to the root, a toast clears only the system edges.
       avoidInGlobal: target == HarborToastTarget.topmost ? HarborController.maybeOf(context)?.roomInGlobal() : null,
       shownFrom: target == HarborToastTarget.topmost ? HarborController.maybeOf(context) : null,
-      animationStyle: animationStyle,
+      animationStyle: animationStyle ?? defaults.toastAnimationStyle,
       transitionBuilder: transitionBuilder,
       liveRegion: liveRegion,
       reachesSystemEdges: reachesSystemEdges,
       // Read where it is shown from: the page that showed it decides, wherever it is shown.
-      hinge: hinge ?? HarborHinge.of(context),
-      queue: queue ?? HarborFlarePolicy.queueOf(context),
+      hinge: hinge ?? defaults.hinge ?? HarborHinge.avoidSeparating,
+      queue: queue ?? defaults.toastQueue ?? HarborToastQueue.wait,
     );
     final HarborController? controller = placed is HarborAnchored
         ? _portOf(HarborController.maybeOf(context))
@@ -2770,20 +2786,29 @@ class _RenderAnchorClip extends RenderProxyBox {
 }
 
 /// Sets what toasts shown beneath it do when one is already up at their place, for a subtree:
-/// on a remote-driven screen, `HarborFlarePolicy(queue: HarborToastQueue.replace)` makes a
-/// newer "Saved" replace the one up rather than arrive seconds late. A toast's own
-/// `HarborToasts.show(queue:)` overrides it.
-class HarborFlarePolicy extends InheritedWidget {
-  const HarborFlarePolicy({super.key, required this.queue, required super.child});
+/// now `HarborDefaultsScope(defaults: HarborDefaults(toastQueue: queue))`, which it builds.
+///
+/// Since it builds a [HarborDefaultsScope], it is no longer an [InheritedWidget]: code that looked
+/// it up by type finds nothing, and reads [HarborDefaults.toastQueue] instead.
+class HarborFlarePolicy extends StatelessWidget {
+  @Deprecated(
+    'Use HarborDefaultsScope(defaults: HarborDefaults(toastQueue: ...)). `dart fix` applies it. '
+    'Deprecated after 0.9.1.',
+  )
+  const HarborFlarePolicy({super.key, required this.queue, required this.child});
 
   final HarborToastQueue queue;
 
-  /// The queue at [context]: the nearest policy's, or [HarborToastQueue.wait] with none.
+  final Widget child;
+
+  /// The queue at [context]: [HarborDefaults.toastQueue] there, read without a dependency.
+  @Deprecated('Use HarborDefaults.read(context).toastQueue. Deprecated after 0.9.1.')
   static HarborToastQueue queueOf(final BuildContext context) =>
-      context.getInheritedWidgetOfExactType<HarborFlarePolicy>()?.queue ?? HarborToastQueue.wait;
+      HarborDefaults.read(context).toastQueue ?? HarborToastQueue.wait;
 
   @override
-  bool updateShouldNotify(final HarborFlarePolicy oldWidget) => queue != oldWidget.queue;
+  Widget build(final BuildContext context) =>
+      HarborDefaultsScope(defaults: HarborDefaults(toastQueue: queue), child: child);
 }
 
 /// The old name of [HarborPopover], which takes the old name of its builder.
