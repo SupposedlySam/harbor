@@ -102,6 +102,14 @@ the `show` list too, but a fix that brings in a name the call did not have (`Har
 (`undefined_function`), and a second run does not repair it. That is the analyzer's data-driven
 fixes, which do not extend an import's combinators (#146).
 
+**A file that reaches harbor through a helper**, without importing harbor itself (it calls
+`session.frame.coast` on a helper's typed field, or imports a library of yours that re-exports
+harbor), needs `import 'package:harbor/harbor.dart';` added before `dart fix`, or it is left as it
+was, and a second run says "Nothing to fix!". `dart fix` removes the import again afterwards if the
+file names nothing from it. The analyzer offers a package's fixes only in a file that imports that
+package's library (#150). harbor_test's fixes are the same, with
+`import 'package:harbor_test/harbor_test.dart';`.
+
 ## The one rule
 
 A frame has layers: the **body** (your content) at the bottom, **bars** above it, **floats,

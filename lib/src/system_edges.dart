@@ -89,7 +89,8 @@ class HarborSystemEdges with Diagnosticable {
   const HarborSystemEdges.fixed(
     final EdgeInsetsGeometry insets, {
     final bool ignoresKeyboard = false,
-    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.') final bool? calmTide,
+    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? calmTide,
   }) : assert(
          calmTide == null || !ignoresKeyboard || calmTide == ignoresKeyboard,
          'ignoresKeyboard and the deprecated calmTide disagree. Give ignoresKeyboard alone.',
@@ -109,7 +110,7 @@ class HarborSystemEdges with Diagnosticable {
   final bool ignoresKeyboard;
 
   /// The old name of [ignoresKeyboard].
-  @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.')
+  @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get calmTide => ignoresKeyboard;
 
   /// [mediaQuery] with its padding and view padding replaced by these system edges.
@@ -208,7 +209,7 @@ class HarborSystemEdges with Diagnosticable {
 ///
 /// A subclass rather than a typedef: `dart fix` renames `fixed(calmTide:)`, and a typedef cannot
 /// carry a fix on a named constructor's call.
-@Deprecated('Renamed HarborSystemEdges. `dart fix` applies it.')
+@Deprecated('Renamed HarborSystemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborCoast extends HarborSystemEdges {
   const HarborCoast._({super.titleSafe, super.fixedInsets, super.ignoresKeyboard}) : super._();
 
@@ -219,11 +220,14 @@ class HarborCoast extends HarborSystemEdges {
   static const HarborCoast none = HarborCoast._(fixedInsets: EdgeInsetsDirectional.zero, ignoresKeyboard: true);
 
   /// The old name of [HarborSystemEdges.fixed].
-  @Deprecated('Renamed HarborSystemEdges.fixed. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed HarborSystemEdges.fixed. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+  )
   const HarborCoast.fixed(
     final EdgeInsetsGeometry insets, {
     final bool ignoresKeyboard = false,
-    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it.') final bool? calmTide,
+    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? calmTide,
   }) : assert(
          calmTide == null || !ignoresKeyboard || calmTide == ignoresKeyboard,
          'ignoresKeyboard and the deprecated calmTide disagree. Give ignoresKeyboard alone.',
@@ -231,6 +235,8 @@ class HarborCoast extends HarborSystemEdges {
        super._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
 
   /// The old name of [HarborSystemEdges.titleSafe].
-  @Deprecated('Renamed HarborSystemEdges.titleSafe. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed HarborSystemEdges.titleSafe. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+  )
   const HarborCoast.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
 }

@@ -28,14 +28,16 @@ class HarborTrialDevice {
   final EdgeInsets systemEdges;
 
   /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it.')
+  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
   EdgeInsets get coast => systemEdges;
 
   /// How far the software keyboard reaches up when it's in.
   final double keyboardHeight;
 
   /// The old name of [keyboardHeight].
-  @Deprecated('Renamed keyboardHeight. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed keyboardHeight. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   double get tideHeight => keyboardHeight;
 
   /// Physical pixels per logical pixel, as `MediaQuery.devicePixelRatio`
@@ -47,7 +49,9 @@ class HarborTrialDevice {
   final bool reportsSystemEdgesUnderKeyboard;
 
   /// The old name of [reportsSystemEdgesUnderKeyboard].
-  @Deprecated('Renamed reportsSystemEdgesUnderKeyboard. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed reportsSystemEdgesUnderKeyboard. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   bool get reportsCoastUnderTide => reportsSystemEdgesUnderKeyboard;
 
   /// Folds and hinges, as the platform reports them in `MediaQuery.displayFeatures`. A hinge
@@ -230,7 +234,9 @@ class HarborTrialDevice {
       keyboardShown && !reportsSystemEdgesUnderKeyboard ? systemEdges.copyWith(bottom: 0.0) : systemEdges;
 
   /// The old name of [systemEdgesWhen].
-  @Deprecated('Renamed systemEdgesWhen, and tideIn keyboardShown. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed systemEdgesWhen, and tideIn keyboardShown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   EdgeInsets coastWhen({required final bool tideIn}) => systemEdgesWhen(keyboardShown: tideIn);
 
   @override

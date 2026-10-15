@@ -14,8 +14,9 @@ import 'placement.dart';
 /// How a bar hides when content asks it to: the old spelling of the two hidden [HarborBarState]s.
 @Deprecated(
   'Use HarborBarState: HarborYield.dark is HarborBarState.dark, and HarborYield.withdraw is '
-  'HarborBarState.withdrawn. `dart fix` applies it where the value is written out. Deprecated after 0.9.1.'
-  ' A file that imports harbor with `show` needs HarborBarState added after `dart fix`, or the import widened.',
+  'HarborBarState.withdrawn. `dart fix` applies it where the value is written out, in a file that imports '
+  'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarState '
+  'added after `dart fix`, or the import widened.',
 )
 enum HarborYield {
   /// Lights out: the bar disappears but keeps its space.
@@ -114,7 +115,7 @@ enum HarborToastClosedReason {
   replaced;
 
   /// The old name of [hide].
-  @Deprecated('Renamed hide. `dart fix` applies it.')
+  @Deprecated('Renamed hide. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborToastClosedReason lower = hide;
 }
 
@@ -357,7 +358,7 @@ abstract final class HarborToastEntry {
   }
 
   /// The old name of [hide].
-  @Deprecated('Renamed hide. `dart fix` applies it.')
+  @Deprecated('Renamed hide. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   void lower({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) => _hideAs(reason);
 
   void _left() {
@@ -408,7 +409,7 @@ abstract final class HarborToastEntry {
   bool get reachesSystemEdges;
 
   /// The old name of [reachesSystemEdges].
-  @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it.')
+  @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get reachesCoast;
 
   /// Which hinges and folds the toast keeps to one side of.
@@ -467,7 +468,7 @@ abstract final class HarborToastEntry {
   HarborController? get shownFrom;
 
   /// The old name of [shownFrom].
-  @Deprecated('Renamed shownFrom. `dart fix` applies it.')
+  @Deprecated('Renamed shownFrom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborController? get raisedIn;
 
   /// The room of the frame the toast was shown from, in global coordinates.
@@ -665,18 +666,18 @@ class HarborLayoutRecord {
   final Rect room;
 
   /// The old name of [room].
-  @Deprecated('Renamed room. `dart fix` applies it.')
+  @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   Rect get clearWater => room;
   final List<HarborBarRecord> bars;
 
   /// The old name of [bars].
-  @Deprecated('Renamed bars. `dart fix` applies it.')
+  @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   List<HarborBarRecord> get docks => bars;
   final EdgeInsetsDirectional obstruction;
   final double keyboard;
 
   /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it.')
+  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   double get tide => keyboard;
 }
 
@@ -704,7 +705,7 @@ class HarborBarRecord {
   final HarborKeyboardStance keyboard;
 
   /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it.')
+  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborKeyboardStance get tide => keyboard;
 }
 
@@ -712,10 +713,10 @@ class HarborBarRecord {
 ///
 /// A subclass rather than a typedef, so the new constructor can keep [HarborBarRecord.keyboard]
 /// required.
-@Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
+@Deprecated('Renamed HarborBarRecord. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborDockRecord extends HarborBarRecord {
   /// The old name of [HarborBarRecord.new].
-  @Deprecated('Renamed HarborBarRecord. `dart fix` applies it.')
+  @Deprecated('Renamed HarborBarRecord. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   const HarborDockRecord({
     required super.edge,
     required super.kind,
@@ -723,7 +724,8 @@ class HarborDockRecord extends HarborBarRecord {
     required super.extent,
     required super.restingExtent,
     required super.state,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final HarborKeyboardStance? tide,
+    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final HarborKeyboardStance? tide,
     super.label,
   }) : assert(tide != null, 'tide is required.'),
        super(keyboard: tide ?? HarborKeyboardStance.stays);
@@ -770,7 +772,7 @@ class HarborFrameRegistry {
   List<HarborController> get frames => List<HarborController>.unmodifiable(_frames);
 
   /// The old name of [frames].
-  @Deprecated('Renamed frames. `dart fix` applies it.')
+  @Deprecated('Renamed frames. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   List<HarborController> get harbors => frames;
 
   final List<HarborFrameObserver> _observers = <HarborFrameObserver>[];
@@ -876,7 +878,7 @@ class HarborFrameRegistry {
   HarborController? get root => _frames.isEmpty ? null : _frames.first;
 
   /// The old name of [root].
-  @Deprecated('Renamed root. `dart fix` applies it.')
+  @Deprecated('Renamed root. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborController? get sea => root;
 }
 
@@ -910,7 +912,7 @@ class HarborController {
   final HarborFrameRegistry registry;
 
   /// The old name of [registry].
-  @Deprecated('Renamed registry. `dart fix` applies it.')
+  @Deprecated('Renamed registry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborFrameRegistry get fleet => registry;
 
   /// Whether this frame was built as a page (`HarborFrame.page` or `isPage: true`, as a root, a
@@ -920,7 +922,7 @@ class HarborController {
   final bool isPage;
 
   /// The old name of [isPage].
-  @Deprecated('Renamed isPage. `dart fix` applies it.')
+  @Deprecated('Renamed isPage. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get isPort => isPage;
 
   /// Whether this frame is a `HarborRoot`, whose children are each a page.
@@ -1045,8 +1047,9 @@ class HarborController {
     final HarborEdge edge, {
     final HarborBarState state = HarborBarState.withdrawn,
     @Deprecated(
-      'Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarState added after `dart fix`, or the import widened.',
+      'Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
+      'HarborBarState added after `dart fix`, or the import widened.',
     )
     final HarborYield? mode,
   }) {
@@ -1063,7 +1066,7 @@ class HarborController {
   }
 
   /// The old name of [hideBar].
-  @Deprecated('Renamed hideBar. `dart fix` applies it.')
+  @Deprecated('Renamed hideBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborClaim makeWay(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) =>
       hideBar(edge, state: hiddenStateOf(mode));
 
@@ -1101,7 +1104,7 @@ class HarborController {
   }
 
   /// The old name of [attachBar].
-  @Deprecated('Renamed attachBar. `dart fix` applies it.')
+  @Deprecated('Renamed attachBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborAttachedBarHandle addPontoon(final HarborEdge edge, final HarborBar dock) => attachBar(edge, dock);
 
   /// Moves the attached bar [handle] stands for to [edge] and rebuilds it as [bar].
@@ -1116,7 +1119,7 @@ class HarborController {
   }
 
   /// The old name of [updateAttachedBar].
-  @Deprecated('Renamed updateAttachedBar. `dart fix` applies it.')
+  @Deprecated('Renamed updateAttachedBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   void updatePontoon(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar dock) =>
       updateAttachedBar(handle, edge, dock);
 
@@ -1128,7 +1131,7 @@ class HarborController {
   }
 
   /// The old name of [detachBar].
-  @Deprecated('Renamed detachBar. `dart fix` applies it.')
+  @Deprecated('Renamed detachBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   void removePontoon(final HarborAttachedBarHandle handle) => detachBar(handle);
 
   /// Bars attached here from deeper in the tree, by edge, in arrival order.
@@ -1158,7 +1161,7 @@ class HarborController {
   }
 
   /// The old name of [addPageCover].
-  @Deprecated('Renamed addPageCover. `dart fix` applies it.')
+  @Deprecated('Renamed addPageCover. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborPageCover addBreakwater(final ValueListenable<double> coverage) => addPageCover(coverage);
 
   void _removePageCover(final HarborPageCover coversPage) {
@@ -1180,7 +1183,7 @@ class HarborController {
   }
 
   /// The old name of [addPageCoverEdge].
-  @Deprecated('Renamed addPageCoverEdge. `dart fix` applies it.')
+  @Deprecated('Renamed addPageCoverEdge. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborPageCover addBreakwaterEdge(final ValueListenable<double> topInGlobal) => addPageCoverEdge(topInGlobal);
 
   /// The old name of [pageCoverTopsInGlobal].
@@ -1371,7 +1374,7 @@ class HarborController {
   ValueListenable<Rect> get room => _room;
 
   /// The old name of [room].
-  @Deprecated('Renamed room. `dart fix` applies it.')
+  @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   ValueListenable<Rect> get clearWater => room;
 
   /// Called by the frame's layout.
@@ -1402,7 +1405,7 @@ class HarborController {
   }
 
   /// The old name of [roomInGlobal].
-  @Deprecated('Renamed roomInGlobal. `dart fix` applies it.')
+  @Deprecated('Renamed roomInGlobal. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   Rect? clearWaterInGlobal() => roomInGlobal();
 }
 
@@ -1421,7 +1424,7 @@ class HarborAttachedBarHandle {
   HarborBar get bar => _bar;
 
   /// The old name of [bar].
-  @Deprecated('Renamed bar. `dart fix` applies it.')
+  @Deprecated('Renamed bar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborBar get dock => bar;
 }
 
