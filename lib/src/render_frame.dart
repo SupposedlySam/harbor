@@ -36,7 +36,9 @@ class HarborSizing with Diagnosticable {
   static const HarborSizing fill = HarborSizing._fill();
 
   /// The old spelling of [HarborSizing.hug] with no cap.
-  @Deprecated('Use HarborSizing.hug(). `dart fix` applies it. Deprecated after 0.9.1.')
+  @Deprecated(
+    'Use HarborSizing.hug(). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
+  )
   static const HarborSizing hugBody = HarborSizing._hugBody();
 
   /// The enum's values, [fill] and [hugBody].

@@ -28,7 +28,7 @@ class HarborAttachedBar extends StatefulWidget {
   final HarborBar bar;
 
   /// The old name of [bar].
-  @Deprecated('Renamed bar. `dart fix` applies it.')
+  @Deprecated('Renamed bar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborBar get dock => bar;
   final bool active;
 
@@ -107,14 +107,15 @@ class _HarborAttachedBarState extends State<HarborAttachedBar> {
 ///
 /// A subclass rather than a typedef, so the new constructor can keep [HarborAttachedBar.bar]
 /// required.
-@Deprecated('Renamed HarborAttachedBar. `dart fix` applies it.')
+@Deprecated('Renamed HarborAttachedBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborPontoon extends HarborAttachedBar {
   /// The old name of [HarborAttachedBar.new].
-  @Deprecated('Renamed HarborAttachedBar. `dart fix` applies it.')
+  @Deprecated('Renamed HarborAttachedBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   const HarborPontoon({
     super.key,
     required super.edge,
-    @Deprecated('Renamed bar. `dart fix` applies it.') final HarborBar? dock,
+    @Deprecated('Renamed bar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final HarborBar? dock,
     super.active,
     required super.child,
   }) : assert(dock != null, 'dock is required.'),

@@ -19,51 +19,51 @@ import 'system_edges.dart';
 
 /// The old name of [HarborToasts].
 @Deprecated(
-  'Use HarborToasts. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it.',
+  'Use HarborToasts. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
 )
 typedef HarborSignals = HarborToasts;
 
 /// The old name of [HarborToastSlot].
 @Deprecated(
-  'Use HarborToastSlot. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it.',
+  'Use HarborToastSlot. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
 )
 typedef HarborSignalSlot = HarborToastSlot;
 
 /// The old name of [HarborToastTarget].
 @Deprecated(
-  'Use HarborToastTarget. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it.',
+  'Use HarborToastTarget. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
 )
 typedef HarborSignalTarget = HarborToastTarget;
 
 /// The old name of [HarborToastEntry].
 @Deprecated(
-  'Use HarborToastEntry. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it.',
+  'Use HarborToastEntry. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
 )
 typedef HarborSignalEntry = HarborToastEntry;
 
 /// The old name of [HarborToastTransitionBuilder].
 @Deprecated(
-  'Use HarborToastTransitionBuilder. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it.',
+  'Use HarborToastTransitionBuilder. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
 )
 typedef HarborSignalTransitionBuilder = HarborToastTransitionBuilder;
 
 /// The old name of [HarborToastClosedReason].
 @Deprecated(
-  'Use HarborToastClosedReason. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it.',
+  'Use HarborToastClosedReason. Signals were renamed flares in 0.3.1, and flares toasts in 0.9.0. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
 )
 typedef HarborSignalClosedReason = HarborToastClosedReason;
 
 /// The old name of [HarborAnchorSide].
 @Deprecated(
   'Use HarborAnchorSide. Flares and HarborAnchorClip take it too, so it is not a buoy\'s alone. '
-  '`dart fix` applies it. Deprecated after 0.7.0.',
+  '`dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.7.0.',
 )
 typedef HarborBuoySide = HarborAnchorSide;
 
 /// The old name of [HarborCrossAlignment].
 @Deprecated(
   'Use HarborCrossAlignment. Flares take it too, so it is not a buoy\'s alone. '
-  '`dart fix` applies it. Deprecated after 0.7.0.',
+  '`dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.7.0.',
 )
 typedef HarborBuoyCrossAlignment = HarborCrossAlignment;
 
@@ -76,170 +76,172 @@ typedef HarborBuoyCrossAlignment = HarborCrossAlignment;
 // HarborMooringLine is a widget in moored.dart, since it became a constructor of HarborClear.
 
 /// The old name of [HarborRoot].
-@Deprecated('Renamed HarborRoot. `dart fix` applies it.')
+@Deprecated('Renamed HarborRoot. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborSea = HarborRoot;
 
 /// The old name of [HarborFrame].
-@Deprecated('Renamed HarborFrame. `dart fix` applies it.')
+@Deprecated('Renamed HarborFrame. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef Harbor = HarborFrame;
 
 /// The old name of [HarborBarKind].
-@Deprecated('Renamed HarborBarKind. `dart fix` applies it.')
+@Deprecated('Renamed HarborBarKind. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborDockKind = HarborBarKind;
 
 /// The old name of [HarborBarState].
-@Deprecated('Renamed HarborBarState. `dart fix` applies it.')
+@Deprecated('Renamed HarborBarState. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborDockState = HarborBarState;
 
 /// The old name of [HarborSystemEdgeStance].
-@Deprecated('Renamed HarborSystemEdgeStance. `dart fix` applies it.')
+@Deprecated('Renamed HarborSystemEdgeStance. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborCoastStance = HarborSystemEdgeStance;
 
 /// The old name of [HarborSliverBar].
-@Deprecated('Renamed HarborSliverBar. `dart fix` applies it.')
+@Deprecated('Renamed HarborSliverBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborSliverDock = HarborSliverBar;
 
 /// The old name of [HarborAttachedBarHandle].
-@Deprecated('Renamed HarborAttachedBarHandle. `dart fix` applies it.')
+@Deprecated('Renamed HarborAttachedBarHandle. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborPontoonHandle = HarborAttachedBarHandle;
 
 /// The old name of [HarborHideBar].
-@Deprecated('Renamed HarborHideBar. `dart fix` applies it.')
+@Deprecated('Renamed HarborHideBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborMakeWay = HarborHideBar;
 
 /// The old name of [HarborSystemEdgeFeature].
-@Deprecated('Renamed HarborSystemEdgeFeature. `dart fix` applies it.')
+@Deprecated('Renamed HarborSystemEdgeFeature. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborCoastFeature = HarborSystemEdgeFeature;
 
 /// The old name of [HarborKeyboard].
-@Deprecated('Renamed HarborKeyboard. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborTide = HarborKeyboard;
 
 /// The old name of [HarborKeyboardPhase].
-@Deprecated('Renamed HarborKeyboardPhase. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeyboardPhase. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborTidePhase = HarborKeyboardPhase;
 
 /// The old name of [HarborKeyboardStance].
-@Deprecated('Renamed HarborKeyboardStance. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeyboardStance. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborTideStance = HarborKeyboardStance;
 
 /// The old name of [HarborKeyboardSpace].
-@Deprecated('Renamed HarborKeyboardSpace. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeyboardSpace. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborDryDock = HarborKeyboardSpace;
 
 /// The old name of [HarborKeyboardSource].
-@Deprecated('Renamed HarborKeyboardSource. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeyboardSource. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborTideSource = HarborKeyboardSource;
 
 /// The old name of [HarborRoom].
-@Deprecated('Renamed HarborRoom. `dart fix` applies it.')
+@Deprecated('Renamed HarborRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborWaters = HarborRoom;
 
 /// The old name of [HarborRoomData].
-@Deprecated('Renamed HarborRoomData. `dart fix` applies it.')
+@Deprecated('Renamed HarborRoomData. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborWatersData = HarborRoomData;
 
 /// The old name of [HarborRoomAspect].
-@Deprecated('Renamed HarborRoomAspect. `dart fix` applies it.')
+@Deprecated('Renamed HarborRoomAspect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborWatersAspect = HarborRoomAspect;
 
 /// The old name of [HarborHandled].
-@Deprecated('Renamed HarborHandled. `dart fix` applies it.')
+@Deprecated('Renamed HarborHandled. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborCastOff = HarborHandled;
 
 /// The old name of [HarborClear].
-@Deprecated('Renamed HarborClear. `dart fix` applies it.')
+@Deprecated('Renamed HarborClear. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborMoored = HarborClear;
 
 /// The old name of [HarborSliverClear].
-@Deprecated('Renamed HarborSliverClear. `dart fix` applies it.')
+@Deprecated('Renamed HarborSliverClear. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFairwaySliver = HarborSliverClear;
 
 /// The old name of [HarborEdgeEffectKind].
-@Deprecated('Renamed HarborEdgeEffectKind. `dart fix` applies it.')
+@Deprecated('Renamed HarborEdgeEffectKind. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborWakeKind = HarborEdgeEffectKind;
 
 /// The old name of [HarborEdgeEffectPainter].
-@Deprecated('Renamed HarborEdgeEffectPainter. `dart fix` applies it.')
+@Deprecated('Renamed HarborEdgeEffectPainter. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborWakePainter = HarborEdgeEffectPainter;
 
 /// The old name of [HarborToasts].
-@Deprecated('Renamed HarborToasts. `dart fix` applies it.')
+@Deprecated('Renamed HarborToasts. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlares = HarborToasts;
 
 /// The old name of [HarborToastSlot].
-@Deprecated('Renamed HarborToastSlot. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastSlot. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlareSlot = HarborToastSlot;
 
 /// The old name of [HarborToastTarget].
-@Deprecated('Renamed HarborToastTarget. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastTarget. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlareTarget = HarborToastTarget;
 
 /// The old name of [HarborToastEntry].
-@Deprecated('Renamed HarborToastEntry. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastEntry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlareEntry = HarborToastEntry;
 
 /// The old name of [HarborToastClosedReason].
-@Deprecated('Renamed HarborToastClosedReason. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastClosedReason. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlareClosedReason = HarborToastClosedReason;
 
 /// The old name of [HarborToastPhase].
-@Deprecated('Renamed HarborToastPhase. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastPhase. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlarePhase = HarborToastPhase;
 
 /// The old name of [HarborToastQueue].
-@Deprecated('Renamed HarborToastQueue. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastQueue. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlareQueue = HarborToastQueue;
 
 /// The old name of [HarborToastHold].
-@Deprecated('Renamed HarborToastHold. `dart fix` applies it.')
+@Deprecated('Renamed HarborToastHold. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFlareHold = HarborToastHold;
 
 /// The old name of [HarborToastTransitionBuilder].
-@Deprecated('Renamed HarborToastTransitionBuilder. `dart fix` applies it.')
+@Deprecated(
+  'Renamed HarborToastTransitionBuilder. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+)
 typedef HarborFlareTransitionBuilder = HarborToastTransitionBuilder;
 
 /// The old name of [HarborPageCover].
-@Deprecated('Renamed HarborPageCover. `dart fix` applies it.')
+@Deprecated('Renamed HarborPageCover. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborBreakwater = HarborPageCover;
 
 /// The 0.8 name of [HarborKeepInSight], which is split into [HarborCoverageListener],
 /// [HarborKeepVisible] and [HarborLift].
 @Deprecated(
-  'Split into HarborCoverageListener, HarborKeepVisible and HarborLift. `dart fix` applies it to a call that '
-  'does one job.'
-  ' A file that imports harbor with `show` needs HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import widened.',
+  'Split into HarborCoverageListener, HarborKeepVisible and HarborLift. `dart fix` applies it to a call that does one '
+  'job, in a file that imports package:harbor/harbor.dart. A file that imports harbor with `show` needs '
+  'HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import widened.',
 )
 typedef HarborBeacon = HarborKeepInSight;
 
 /// The 0.8 name of [HarborKeepInSight], whose statics are [HarborKeepVisible.reveal] and
 /// [HarborKeepVisible.coverageOf] now.
 @Deprecated(
-  'Its statics moved to HarborKeepVisible. `dart fix` applies it.'
-  ' A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the import widened.',
+  'Its statics moved to HarborKeepVisible. `dart fix` applies it in a file that imports package:harbor/harbor.dart. A '
+  'file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the import widened.',
 )
 typedef HarborLighthouse = HarborKeepInSight;
 
 /// The 0.8 name of [HarborKeepVisibleRegion].
-@Deprecated('Renamed HarborKeepVisibleRegion. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeepVisibleRegion. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborLighthouseRegion = HarborKeepVisibleRegion;
 
 /// The old name of [HarborInspector].
-@Deprecated('Renamed HarborInspector. `dart fix` applies it.')
+@Deprecated('Renamed HarborInspector. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborChart = HarborInspector;
 
 /// The old name of [HarborInspectorOverlay].
-@Deprecated('Renamed HarborInspectorOverlay. `dart fix` applies it.')
+@Deprecated('Renamed HarborInspectorOverlay. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborChartOverlay = HarborInspectorOverlay;
 
 /// The old name of [HarborFrameRegistry].
-@Deprecated('Renamed HarborFrameRegistry. `dart fix` applies it.')
+@Deprecated('Renamed HarborFrameRegistry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFleet = HarborFrameRegistry;
 
 /// The old name of [HarborFrameObserver].
-@Deprecated('Renamed HarborFrameObserver. `dart fix` applies it.')
+@Deprecated('Renamed HarborFrameObserver. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborFleetObserver = HarborFrameObserver;
 
 /// The old name of [HarborScaledScreen].
-@Deprecated('Renamed HarborScaledScreen. `dart fix` applies it.')
+@Deprecated('Renamed HarborScaledScreen. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 typedef HarborScaleModel = HarborScaledScreen;

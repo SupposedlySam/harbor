@@ -46,14 +46,19 @@ extension HarborTrials on WidgetTester {
 ///
 /// An extension cannot be aliased, so this is an extension of its own. It names no method that
 /// [HarborTrials] has, so the two never conflict.
-@Deprecated('Renamed HarborTrials. `dart fix` applies it.')
+@Deprecated('Renamed HarborTrials. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
 extension HarborSeaTrials on WidgetTester {
   /// The old name of [HarborTrials.pumpHarborTrial].
-  @Deprecated('Renamed pumpHarborTrial. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed pumpHarborTrial. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   Future<HarborTrial> pumpSeaTrial(
     final Widget widget, {
     final HarborTrialDevice device = HarborTrialDevice.iPhone17,
-    @Deprecated('Renamed keyboardShown. `dart fix` applies it.') final bool tideIn = false,
+    @Deprecated(
+      'Renamed keyboardShown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+    )
+    final bool tideIn = false,
     final TextDirection textDirection = TextDirection.ltr,
     final double textScaleFactor = 1.0,
     final bool wrapInView = true,
@@ -79,7 +84,9 @@ class HarborTrial {
   bool get keyboardShown => _keyboardShown;
 
   /// The old name of [keyboardShown].
-  @Deprecated('Renamed keyboardShown. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed keyboardShown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   bool get tideIn => keyboardShown;
 
   /// Brings the keyboard in.
@@ -87,7 +94,9 @@ class HarborTrial {
       setKeyboard(shown: true, settle: settle, pumpFor: pumpFor);
 
   /// The old name of [showKeyboard].
-  @Deprecated('Renamed showKeyboard. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed showKeyboard. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   Future<void> raiseTide({final bool settle = false, final Duration? pumpFor}) =>
       showKeyboard(settle: settle, pumpFor: pumpFor);
 
@@ -96,7 +105,9 @@ class HarborTrial {
       setKeyboard(shown: false, settle: settle, pumpFor: pumpFor);
 
   /// The old name of [hideKeyboard].
-  @Deprecated('Renamed hideKeyboard. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed hideKeyboard. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   Future<void> lowerTide({final bool settle = false, final Duration? pumpFor}) =>
       hideKeyboard(settle: settle, pumpFor: pumpFor);
 
@@ -128,7 +139,9 @@ class HarborTrial {
   }
 
   /// The old name of [setKeyboard].
-  @Deprecated('Renamed setKeyboard, and tideIn shown. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed setKeyboard, and tideIn shown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
+  )
   Future<void> setTide({required final bool tideIn, final bool settle = false, final Duration? pumpFor}) =>
       setKeyboard(shown: tideIn, settle: settle, pumpFor: pumpFor);
 
@@ -137,7 +150,7 @@ class HarborTrial {
   double get keyboardTop => device.size.height - (_keyboardShown ? device.keyboardHeight : 0.0);
 
   /// The old name of [keyboardTop].
-  @Deprecated('Renamed keyboardTop. `dart fix` applies it.')
+  @Deprecated('Renamed keyboardTop. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
   double get waterline => keyboardTop;
 
   void _apply({required final bool shown}) {
@@ -168,7 +181,7 @@ class HarborTrial {
   }
 
   /// The old name of [roomAround].
-  @Deprecated('Renamed roomAround. `dart fix` applies it.')
+  @Deprecated('Renamed roomAround. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
   Rect clearWaterAround(final Finder finder) => roomAround(finder);
 
   /// Every bar of the frame nearest [finder], in global coordinates.
@@ -176,12 +189,12 @@ class HarborTrial {
       HarborInspector.nearest(finder.evaluate().single)?.bars ?? const <HarborBarRecord>[];
 
   /// The old name of [barsAround].
-  @Deprecated('Renamed barsAround. `dart fix` applies it.')
+  @Deprecated('Renamed barsAround. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
   List<HarborBarRecord> docksAround(final Finder finder) => barsAround(finder);
 }
 
 /// The old name of [HarborTrial].
-@Deprecated('Renamed HarborTrial. `dart fix` applies it.')
+@Deprecated('Renamed HarborTrial. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
 typedef HarborSeaTrial = HarborTrial;
 
 /// Matches a [Finder] whose widget lies wholly in [room], within [tolerance]: read the room with
@@ -189,7 +202,7 @@ typedef HarborSeaTrial = HarborTrial;
 Matcher isInRoom(final Rect room, {final double tolerance = 0.5}) => _InRoom(room, tolerance);
 
 /// The old name of [isInRoom].
-@Deprecated('Renamed isInRoom. `dart fix` applies it.')
+@Deprecated('Renamed isInRoom. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
 Matcher isInClearWater(final Rect clearWater, {final double tolerance = 0.5}) =>
     isInRoom(clearWater, tolerance: tolerance);
 

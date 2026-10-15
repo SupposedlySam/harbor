@@ -36,15 +36,19 @@ class HarborClear extends StatelessWidget {
     super.key,
     this.edges = HarborEdge.all,
     final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? bars,
     this.follow = HarborFollow.live,
     final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? tide,
     final bool rowInsets = false,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? mooringLine,
     this.minimum = EdgeInsetsDirectional.zero,
     final EdgeInsetsGeometry padding = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed padding. `dart fix` applies it.') final EdgeInsetsGeometry? extra,
+    @Deprecated('Renamed padding. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsGeometry? extra,
     required this.child,
   }) : assert(
          bars == null || clearsBars || bars == clearsBars,
@@ -101,7 +105,7 @@ class HarborClear extends StatelessWidget {
   final bool clearsBars;
 
   /// The old name of [clearsBars].
-  @Deprecated('Renamed clearsBars. `dart fix` applies it.')
+  @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get bars => clearsBars;
 
   final HarborFollow follow;
@@ -111,14 +115,14 @@ class HarborClear extends StatelessWidget {
   final bool clearsKeyboard;
 
   /// The old name of [clearsKeyboard].
-  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.')
+  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get tide => clearsKeyboard;
 
   /// Whether the frame's margin is added on [edges], so the content lines up with the page.
   final bool rowInsets;
 
   /// The old name of [rowInsets].
-  @Deprecated('Renamed rowInsets. `dart fix` applies it.')
+  @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get mooringLine => rowInsets;
 
   /// A floor on each edge: the clearance or this, whichever is larger.
@@ -128,7 +132,7 @@ class HarborClear extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   /// The old name of [padding].
-  @Deprecated('Renamed padding. `dart fix` applies it.')
+  @Deprecated('Renamed padding. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   EdgeInsetsGeometry get extra => padding;
 
   final Widget child;
@@ -154,15 +158,19 @@ class HarborClear extends StatelessWidget {
     final BuildContext context, {
     final Set<HarborEdge> edges = HarborEdge.all,
     final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? bars,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? bars,
     final HarborFollow follow = HarborFollow.live,
     final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? tide,
     final bool rowInsets = false,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it.') final bool? mooringLine,
+    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? mooringLine,
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final EdgeInsetsGeometry padding = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed padding. `dart fix` applies it.') final EdgeInsetsGeometry? extra,
+    @Deprecated('Renamed padding. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsGeometry? extra,
   }) {
     final bool barsHere = renamed(bars, clearsBars, true, 'clearsBars', 'bars');
     final bool keyboardHere = renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide');
@@ -224,16 +232,16 @@ class HarborClear extends StatelessWidget {
 
 /// The old name of [HarborClear.rowInsets].
 @Deprecated(
-  'Use HarborClear.rowInsets(follow:, child:). `dart fix` applies it to a call; a type use '
-  '(find.byType(HarborMooringLine), is HarborMooringLine) or a tear-off is yours to change. '
-  'Deprecated after 0.8.0.',
+  'Use HarborClear.rowInsets(follow:, child:). `dart fix` applies it to a call, in a file that imports '
+  'package:harbor/harbor.dart; a type use (find.byType(HarborMooringLine), is HarborMooringLine) or a tear-off is '
+  'yours to change. Deprecated after 0.8.0.',
 )
 class HarborMooringLine extends StatelessWidget {
   /// The old name of [HarborClear.rowInsets].
   @Deprecated(
-    'Use HarborClear.rowInsets(follow:, child:). `dart fix` applies it to a call; a type use '
-    '(find.byType(HarborMooringLine), is HarborMooringLine) or a tear-off is yours to change. '
-    'Deprecated after 0.8.0.',
+    'Use HarborClear.rowInsets(follow:, child:). `dart fix` applies it to a call, in a file that imports '
+    'package:harbor/harbor.dart; a type use (find.byType(HarborMooringLine), is HarborMooringLine) or a tear-off is '
+    'yours to change. Deprecated after 0.8.0.',
   )
   const HarborMooringLine({super.key, this.follow = HarborFollow.live, required this.child});
 

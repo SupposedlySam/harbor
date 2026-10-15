@@ -17,7 +17,22 @@ wins.
 - **Every transform has a golden test** in `test_fixes/`, checked by
   `dart fix --compare-to-golden` in `tool/check.sh`. A fix that is not tested is a fix that rots.
   `test_fixes/` is excluded from analysis and pubignored.
-- **A deprecation message names the replacement and says `dart fix` handles it**, where it does.
+- **A deprecation message names the replacement and says `dart fix` handles it**, where it does,
+  and in which files: "`dart fix` applies it in a file that imports package:harbor/harbor.dart"
+  (package:harbor_test/harbor_test.dart for harbor_test). The analyzer offers a data-driven fix only
+  in a file that imports one of the element's `uris:`, and reads the file's own imports, not the
+  library that declares the element or one that re-exports it (`ElementMatcher.matches`,
+  `data_driven/element_matcher.dart:132`, Dart 3.13.3). So a file that reaches a member through a
+  helper's typed field, without importing harbor, is not migrated (#150), and the Migrating notes
+  say to add the import first. Listing the declaring `src/` library in `uris:` does not help.
+  Listing `dart:core`, which every library imports implicitly, does make the fixes fire everywhere
+  (measured in #150), and was rejected: the documented contract is that `uris:` are public libraries
+  that include the element, so it is off-spec, and an analyzer that validated `uris:` could drop
+  every harbor fix rather than fall back. It also rewrote another package's class that shares a
+  harbor class's name and a deprecated member's name, into code that did not compile. The Dart team
+  knows the gap: dart-lang/sdk#59764 (following exports would be "ideal, but I don't know whether
+  it's feasible") and the open request dart-lang/sdk#62491. `test_fixes/helper_reach.dart` fails
+  when the analyzer follows the element, and the notes can go.
 - **The CHANGELOG has a "Migrating" note** for anything a fix cannot express, such as a behaviour
   change or a default that moved.
 - New public names are plain where the concept is plain (placement, aligned, anchored, barrier,

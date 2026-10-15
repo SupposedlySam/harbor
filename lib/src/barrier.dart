@@ -187,9 +187,10 @@ final class _NoBarrier extends HarborBarrier {
 /// [HarborBarrier] is taken, and means what it did.
 @Deprecated(
   'Use HarborBarrier: HarborSheetBarrier.dismissible is const HarborBarrier.dimmed(), .clear is '
-  'const HarborBarrier.clear(), and .none is HarborBarrier.none. `dart fix` applies it to a showHarborSheet '
-  'call that also gives isDismissible, barrierColor, barrierLabel or barrierOnTapHint. Deprecated after 0.9.1.'
-  ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+  'const HarborBarrier.clear(), and .none is HarborBarrier.none. `dart fix` applies it to a showHarborSheet call that '
+  'also gives isDismissible, barrierColor, barrierLabel or barrierOnTapHint, in a file that imports '
+  'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+  'added after `dart fix`, or the import widened.',
 )
 enum HarborSheetBarrier implements HarborBarrier {
   /// A dimmed barrier that closes the sheet when tapped, unless the sheet is opened with

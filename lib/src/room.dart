@@ -15,11 +15,11 @@ enum HarborRoomAspect {
   frame;
 
   /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it.')
+  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborRoomAspect coast = systemEdges;
 
   /// The old name of [bars].
-  @Deprecated('Renamed bars. `dart fix` applies it.')
+  @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborRoomAspect docks = bars;
 }
 
@@ -34,14 +34,14 @@ class HarborFadeBand {
   final double barFace;
 
   /// The old name of [barFace].
-  @Deprecated('Renamed barFace. `dart fix` applies it.')
+  @Deprecated('Renamed barFace. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   double get dockEdge => barFace;
 
   /// Distance from the body's edge to where the fade has fully faded out.
   final double fadeEnd;
 
   /// The old name of [fadeEnd].
-  @Deprecated('Renamed fadeEnd. `dart fix` applies it.')
+  @Deprecated('Renamed fadeEnd. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   double get wakeEnd => fadeEnd;
 
   /// How opaque content is at the bars' inner face: the edge effect's
@@ -50,7 +50,7 @@ class HarborFadeBand {
   final double? faceOpacity;
 
   /// The old name of [faceOpacity].
-  @Deprecated('Renamed faceOpacity. `dart fix` applies it.')
+  @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   double? get dockOpacity => faceOpacity;
 
   /// The shape of the ramp from [barFace] to [fadeEnd]: the edge effect's
@@ -91,14 +91,17 @@ class HarborFadeBand {
 /// The old name of [HarborFadeBand], which takes the old names of its parameters.
 ///
 /// A subclass rather than a typedef, so the new constructor can keep its parameters required.
-@Deprecated('Renamed HarborFadeBand. `dart fix` applies it.')
+@Deprecated('Renamed HarborFadeBand. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborWakeBand extends HarborFadeBand {
   /// The old name of [HarborFadeBand.new].
-  @Deprecated('Renamed HarborFadeBand. `dart fix` applies it.')
+  @Deprecated('Renamed HarborFadeBand. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   const HarborWakeBand({
-    @Deprecated('Renamed barFace. `dart fix` applies it.') final double? dockEdge,
-    @Deprecated('Renamed fadeEnd. `dart fix` applies it.') final double? wakeEnd,
-    @Deprecated('Renamed faceOpacity. `dart fix` applies it.') final double? dockOpacity,
+    @Deprecated('Renamed barFace. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final double? dockEdge,
+    @Deprecated('Renamed fadeEnd. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final double? wakeEnd,
+    @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final double? dockOpacity,
     super.curve,
   }) : assert(dockEdge != null, 'dockEdge is required.'),
        assert(wakeEnd != null, 'wakeEnd is required.'),
@@ -122,21 +125,28 @@ class HarborWakeBand extends HarborFadeBand {
 class HarborRoomData {
   const HarborRoomData({
     final EdgeInsetsDirectional systemEdges = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final EdgeInsetsDirectional? coast,
+    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? coast,
     final EdgeInsetsDirectional systemEdgesSteady = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it.') final EdgeInsetsDirectional? coastSteady,
+    @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? coastSteady,
     final EdgeInsetsDirectional bars = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed bars. `dart fix` applies it.') final EdgeInsetsDirectional? docks,
+    @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? docks,
     final EdgeInsetsDirectional barsResting = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed barsResting. `dart fix` applies it.') final EdgeInsetsDirectional? docksResting,
+    @Deprecated('Renamed barsResting. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? docksResting,
     final Map<HarborEdge, HarborFadeBand> fadeBands = const <HarborEdge, HarborFadeBand>{},
-    @Deprecated('Renamed fadeBands. `dart fix` applies it.') final Map<HarborEdge, HarborFadeBand>? wakes,
+    @Deprecated('Renamed fadeBands. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Map<HarborEdge, HarborFadeBand>? wakes,
     this.margin = EdgeInsetsDirectional.zero,
     this.frameSize = Size.zero,
     final Set<HarborEdge> hasBars = const <HarborEdge>{},
-    @Deprecated('Renamed hasBars. `dart fix` applies it.') final Set<HarborEdge>? hasDocks,
+    @Deprecated('Renamed hasBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Set<HarborEdge>? hasDocks,
     final Set<HarborEdge> fadeBandsPainted = const <HarborEdge>{},
-    @Deprecated('Renamed fadeBandsPainted. `dart fix` applies it.') final Set<HarborEdge>? wakesPainted,
+    @Deprecated('Renamed fadeBandsPainted. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Set<HarborEdge>? wakesPainted,
   }) : assert(
          coast == null || identical(systemEdges, EdgeInsetsDirectional.zero) || identical(coast, systemEdges),
          'systemEdges and the deprecated coast disagree. Give systemEdges alone.',
@@ -184,7 +194,7 @@ class HarborRoomData {
   final EdgeInsetsDirectional systemEdges;
 
   /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it.')
+  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   EdgeInsetsDirectional get coast => systemEdges;
 
   /// [systemEdges] as it is with the keyboard down, as `MediaQuery.viewPadding` is to
@@ -193,7 +203,7 @@ class HarborRoomData {
   final EdgeInsetsDirectional systemEdgesSteady;
 
   /// The old name of [systemEdgesSteady].
-  @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it.')
+  @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   EdgeInsetsDirectional get coastSteady => systemEdgesSteady;
 
   /// How far the bars (and their edge effect, where content rests past it) reach
@@ -201,7 +211,7 @@ class HarborRoomData {
   final EdgeInsetsDirectional bars;
 
   /// The old name of [bars].
-  @Deprecated('Renamed bars. `dart fix` applies it.')
+  @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   EdgeInsetsDirectional get docks => bars;
 
   /// How far the bars reach at rest, for content that holds still while a
@@ -209,14 +219,14 @@ class HarborRoomData {
   final EdgeInsetsDirectional barsResting;
 
   /// The old name of [barsResting].
-  @Deprecated('Renamed barsResting. `dart fix` applies it.')
+  @Deprecated('Renamed barsResting. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   EdgeInsetsDirectional get docksResting => barsResting;
 
   /// The fade band on each edge that has one, measured from this area's edge.
   final Map<HarborEdge, HarborFadeBand> fadeBands;
 
   /// The old name of [fadeBands].
-  @Deprecated('Renamed fadeBands. `dart fix` applies it.')
+  @Deprecated('Renamed fadeBands. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   Map<HarborEdge, HarborFadeBand> get wakes => fadeBands;
 
   /// The row insets: the margin content keeps from whatever is in its way.
@@ -231,7 +241,7 @@ class HarborRoomData {
   final Set<HarborEdge> hasBars;
 
   /// The old name of [hasBars].
-  @Deprecated('Renamed hasBars. `dart fix` applies it.')
+  @Deprecated('Renamed hasBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   Set<HarborEdge> get hasDocks => hasBars;
 
   /// The edges whose edge effect a frame's `edgeEffectPainter` already draws over its
@@ -239,14 +249,14 @@ class HarborRoomData {
   final Set<HarborEdge> fadeBandsPainted;
 
   /// The old name of [fadeBandsPainted].
-  @Deprecated('Renamed fadeBandsPainted. `dart fix` applies it.')
+  @Deprecated('Renamed fadeBandsPainted. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   Set<HarborEdge> get wakesPainted => fadeBandsPainted;
 
   /// The fade band on [edge], or [HarborFadeBand.none].
   HarborFadeBand fadeBandOf(final HarborEdge edge) => fadeBands[edge] ?? HarborFadeBand.none;
 
   /// The old name of [fadeBandOf].
-  @Deprecated('Renamed fadeBandOf. `dart fix` applies it.')
+  @Deprecated('Renamed fadeBandOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborFadeBand wakeOf(final HarborEdge edge) => fadeBandOf(edge);
 
   /// What a web view in this area should keep clear of, as CSS custom
@@ -264,21 +274,28 @@ class HarborRoomData {
 
   HarborRoomData copyWith({
     final EdgeInsetsDirectional? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it.') final EdgeInsetsDirectional? coast,
+    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? coast,
     final EdgeInsetsDirectional? systemEdgesSteady,
-    @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it.') final EdgeInsetsDirectional? coastSteady,
+    @Deprecated('Renamed systemEdgesSteady. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? coastSteady,
     final EdgeInsetsDirectional? bars,
-    @Deprecated('Renamed bars. `dart fix` applies it.') final EdgeInsetsDirectional? docks,
+    @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? docks,
     final EdgeInsetsDirectional? barsResting,
-    @Deprecated('Renamed barsResting. `dart fix` applies it.') final EdgeInsetsDirectional? docksResting,
+    @Deprecated('Renamed barsResting. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final EdgeInsetsDirectional? docksResting,
     final Map<HarborEdge, HarborFadeBand>? fadeBands,
-    @Deprecated('Renamed fadeBands. `dart fix` applies it.') final Map<HarborEdge, HarborFadeBand>? wakes,
+    @Deprecated('Renamed fadeBands. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Map<HarborEdge, HarborFadeBand>? wakes,
     final EdgeInsetsDirectional? margin,
     final Size? frameSize,
     final Set<HarborEdge>? hasBars,
-    @Deprecated('Renamed hasBars. `dart fix` applies it.') final Set<HarborEdge>? hasDocks,
+    @Deprecated('Renamed hasBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Set<HarborEdge>? hasDocks,
     final Set<HarborEdge>? fadeBandsPainted,
-    @Deprecated('Renamed fadeBandsPainted. `dart fix` applies it.') final Set<HarborEdge>? wakesPainted,
+    @Deprecated('Renamed fadeBandsPainted. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Set<HarborEdge>? wakesPainted,
   }) {
     assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.');
     assert(
@@ -307,7 +324,7 @@ class HarborRoomData {
   }
 
   /// The old name of [handled].
-  @Deprecated('Renamed handled. `dart fix` applies it.')
+  @Deprecated('Renamed handled. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   HarborRoomData castOff(final Set<HarborEdge> edges, {final bool margin = true}) => handled(edges, margin: margin);
 
   /// This room with [edges] handled: a layer has kept clear of them, so
@@ -499,7 +516,7 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
   }
 
   /// The old name of [steadySystemEdgeOf].
-  @Deprecated('Renamed steadySystemEdgeOf. `dart fix` applies it.')
+  @Deprecated('Renamed steadySystemEdgeOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static double steadyCoastOf(final BuildContext context, final HarborEdge edge) => steadySystemEdgeOf(context, edge);
 
   // Clamped to `MediaQuery.viewPadding` like the rest of the room data, so a layer
@@ -553,7 +570,7 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
   }
 
   /// The old name of [barFaceOf].
-  @Deprecated('Renamed barFaceOf. `dart fix` applies it.')
+  @Deprecated('Renamed barFaceOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static double dockFaceOf(final BuildContext context, final HarborEdge edge) => barFaceOf(context, edge);
 
   /// What is still in the way on [edge] at [context]: the one number content
@@ -563,7 +580,8 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
     final BuildContext context,
     final HarborEdge edge, {
     final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? tide,
   }) {
     final EdgeInsetsDirectional padding = HarborEdges.directional(
       MediaQuery.paddingOf(context),
@@ -598,10 +616,12 @@ class HarborHandled extends StatelessWidget {
     super.key,
     this.edges = HarborEdge.all,
     final bool clearsKeyboard = false,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.') final bool? tide,
+    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? tide,
     this.margin = true,
     final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it.') final bool? docks,
+    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? docks,
     required this.child,
   }) : assert(
          tide == null || !clearsKeyboard || tide == clearsKeyboard,
@@ -620,7 +640,7 @@ class HarborHandled extends StatelessWidget {
   final bool clearsKeyboard;
 
   /// The old name of [clearsKeyboard].
-  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it.')
+  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get tide => clearsKeyboard;
 
   /// Whether the margin on [edges] is handled too.
@@ -634,7 +654,7 @@ class HarborHandled extends StatelessWidget {
   final bool clearsBars;
 
   /// The old name of [clearsBars].
-  @Deprecated('Renamed clearsBars. `dart fix` applies it.')
+  @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get docks => clearsBars;
 
   final Widget child;

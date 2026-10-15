@@ -1,3 +1,7 @@
+## 0.4.3
+
+* **Migrating:** a test that reaches a trial through a helper (`session.trial.docksAround(finder)`), without importing harbor_test itself, needs `import 'package:harbor_test/harbor_test.dart';` added before `dart fix` (#150). The analyzer offers harbor_test's fixes only in a file that imports it; `dart fix --apply` removes the import again when the file names nothing from it. Every deprecation message now says so. harbor's CHANGELOG has the details.
+
 ## 0.4.2
 
 * Internal: `lib/src/sea_trial.dart` is `lib/src/trial.dart`, and the tests are named and described in the 0.9 vocabulary. No public name or behaviour changes.

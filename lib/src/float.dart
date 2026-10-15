@@ -39,34 +39,37 @@ class HarborFloat with Diagnosticable {
     required this.child,
     final HarborPlacement? placement,
     @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.'
-      ' A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or the import widened.',
+      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
+      'added after `dart fix`, or the import widened.',
     )
     final AlignmentGeometry? alignment,
     @Deprecated(
-      'Use placement: HarborAligned(margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.'
-      ' A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or the import widened.',
+      'Use placement: HarborAligned(margin: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
+      'added after `dart fix`, or the import widened.',
     )
     final EdgeInsetsGeometry? margin,
     final HarborBarrier barrier = HarborBarrier.none,
     @Deprecated(
       'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
-      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      '`dart fix` applies it to modal: true and modal: false, in a file that imports package:harbor/harbor.dart. '
+      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or '
+      'the import widened.',
     )
     final bool modal = false,
     this.onDismiss,
     @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     final Color? barrierColor,
     this.requestFocus = true,
     @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     final String? barrierLabel,
     this.within,
@@ -107,8 +110,9 @@ class HarborFloat with Diagnosticable {
   /// across that side, and never past its far edge.
   @Deprecated(
     'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
-    'by default. `dart fix` applies it to a call; a tear-off is yours to change. Deprecated after 0.7.0.'
-    ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
+    'by default. `dart fix` applies it to a call, in a file that imports package:harbor/harbor.dart; a tear-off is '
+    'yours to change. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored and '
+    'HarborAnchorSide added after `dart fix`, or the import widened.',
   )
   const HarborFloat.anchored({
     this.key,
@@ -117,9 +121,9 @@ class HarborFloat with Diagnosticable {
     // and a tear-off (which has no arguments to move) must keep compiling. So it is asserted, not typed.
     // ignore: tighten_type_of_initializing_formals
     @Deprecated(
-      'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it. '
-      'Deprecated after 0.7.0.'
-      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
+      'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it in a '
+      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
+      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     this._anchor,
     required this.child,
@@ -132,20 +136,23 @@ class HarborFloat with Diagnosticable {
     final HarborBarrier barrier = HarborBarrier.none,
     @Deprecated(
       'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
-      '`dart fix` applies it to modal: true and modal: false. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      '`dart fix` applies it to modal: true and modal: false, in a file that imports package:harbor/harbor.dart. '
+      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or '
+      'the import widened.',
     )
     final bool modal = false,
     this.onDismiss,
     @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     final Color? barrierColor,
     this.requestFocus = true,
     @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     final String? barrierLabel,
     this.hinge,
@@ -364,40 +371,45 @@ class HarborFloat with Diagnosticable {
 ///
 /// A subclass rather than a typedef: `dart fix` renames `HarborBuoy.anchored(...)` to a
 /// `HarborFloat(placement: ...)`, and a typedef cannot carry a constructor rename.
-@Deprecated('Renamed HarborFloat. `dart fix` applies it.')
+@Deprecated('Renamed HarborFloat. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborBuoy extends HarborFloat {
   /// The old name of [HarborFloat.new].
-  @Deprecated('Renamed HarborFloat. `dart fix` applies it.')
+  @Deprecated('Renamed HarborFloat. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   const HarborBuoy({
     super.key,
     required super.child,
     super.placement,
     @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. Deprecated after 0.7.0.'
-      ' A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or the import widened.',
+      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
+      'added after `dart fix`, or the import widened.',
     )
     super.alignment,
     @Deprecated(
-      'Use placement: HarborAligned(margin: ...). `dart fix` applies it. Deprecated after 0.7.0.'
-      ' A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or the import widened.',
+      'Use placement: HarborAligned(margin: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
+      'added after `dart fix`, or the import widened.',
     )
     super.margin,
     super.barrier,
     @Deprecated(
-      'Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: const HarborBarrier.clear(). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     super.modal,
     super.onDismiss,
     @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     super.barrierColor,
     super.requestFocus,
     @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     super.barrierLabel,
     super.within,
@@ -407,15 +419,16 @@ class HarborBuoy extends HarborFloat {
   /// The old name of [HarborFloat.anchored].
   @Deprecated(
     'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
-    'by default. `dart fix` applies it to a call; a tear-off is yours to change. Deprecated after 0.7.0.'
-    ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
+    'by default. `dart fix` applies it to a call, in a file that imports package:harbor/harbor.dart; a tear-off is '
+    'yours to change. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored and '
+    'HarborAnchorSide added after `dart fix`, or the import widened.',
   )
   const HarborBuoy.anchored({
     super.key,
     @Deprecated(
-      'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it. '
-      'Deprecated after 0.7.0.'
-      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
+      'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it in a '
+      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
+      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.anchor,
     required super.child,
@@ -427,20 +440,23 @@ class HarborBuoy extends HarborFloat {
     super.margin,
     super.barrier,
     @Deprecated(
-      'Use barrier: const HarborBarrier.clear(). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: const HarborBarrier.clear(). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     super.modal,
     super.onDismiss,
     @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     super.barrierColor,
     super.requestFocus,
     @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     super.barrierLabel,
     super.hinge,

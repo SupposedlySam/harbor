@@ -28,15 +28,15 @@ enum HarborKeyboardStance {
   withdraws;
 
   /// The old name of [rides].
-  @Deprecated('Renamed rides. `dart fix` applies it.')
+  @Deprecated('Renamed rides. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardStance float = rides;
 
   /// The old name of [stays].
-  @Deprecated('Renamed stays. `dart fix` applies it.')
+  @Deprecated('Renamed stays. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardStance pilings = stays;
 
   /// The old name of [reserves].
-  @Deprecated('Renamed reserves. `dart fix` applies it.')
+  @Deprecated('Renamed reserves. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardStance dryDock = reserves;
 }
 
@@ -48,19 +48,19 @@ enum HarborKeyboardPhase {
   closing;
 
   /// The old name of [hidden].
-  @Deprecated('Renamed hidden. `dart fix` applies it.')
+  @Deprecated('Renamed hidden. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardPhase low = hidden;
 
   /// The old name of [opening].
-  @Deprecated('Renamed opening. `dart fix` applies it.')
+  @Deprecated('Renamed opening. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardPhase rising = opening;
 
   /// The old name of [shown].
-  @Deprecated('Renamed shown. `dart fix` applies it.')
+  @Deprecated('Renamed shown. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardPhase high = shown;
 
   /// The old name of [closing].
-  @Deprecated('Renamed closing. `dart fix` applies it.')
+  @Deprecated('Renamed closing. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static const HarborKeyboardPhase falling = closing;
 }
 
@@ -95,18 +95,20 @@ class HarborKeyboardState {
   final HarborKeyboardPhase phase;
 
   /// The old name of [settledHeight].
-  @Deprecated('Renamed settledHeight. `dart fix` applies it.')
+  @Deprecated('Renamed settledHeight. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   double get highWater => settledHeight;
 
   /// The old name of [settledHeightIsEstimate].
-  @Deprecated('Renamed settledHeightIsEstimate. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed settledHeightIsEstimate. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+  )
   bool get highWaterIsEstimate => settledHeightIsEstimate;
 
   /// Whether the keyboard is shown at all.
   bool get isShown => height > 0.0;
 
   /// The old name of [isShown].
-  @Deprecated('Renamed isShown. `dart fix` applies it.')
+  @Deprecated('Renamed isShown. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get isIn => isShown;
 
   bool get isSettled => phase == HarborKeyboardPhase.hidden || phase == HarborKeyboardPhase.shown;
@@ -134,15 +136,19 @@ class HarborKeyboardState {
 /// The old name of [HarborKeyboardState], which takes the old names of its parameters.
 ///
 /// A subclass rather than a typedef, so the new constructor can keep its parameters required.
-@Deprecated('Renamed HarborKeyboardState. `dart fix` applies it.')
+@Deprecated('Renamed HarborKeyboardState. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborTideState extends HarborKeyboardState {
   /// The old name of [HarborKeyboardState.new].
-  @Deprecated('Renamed HarborKeyboardState. `dart fix` applies it.')
+  @Deprecated('Renamed HarborKeyboardState. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   const HarborTideState({
     required super.height,
     required super.remaining,
-    @Deprecated('Renamed settledHeight. `dart fix` applies it.') final double? highWater,
-    @Deprecated('Renamed settledHeightIsEstimate. `dart fix` applies it.') final bool? highWaterIsEstimate,
+    @Deprecated('Renamed settledHeight. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final double? highWater,
+    @Deprecated(
+      'Renamed settledHeightIsEstimate. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+    )
+    final bool? highWaterIsEstimate,
     required super.phase,
   }) : assert(highWater != null, 'highWater is required.'),
        assert(highWaterIsEstimate != null, 'highWaterIsEstimate is required.'),
@@ -389,7 +395,7 @@ abstract final class HarborKeyboard {
       0.0;
 
   /// The old name of [isShownOf].
-  @Deprecated('Renamed isShownOf. `dart fix` applies it.')
+  @Deprecated('Renamed isShownOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   static bool isInOf(final BuildContext context) => isShownOf(context);
 
   /// The keyboard's settled height at [context], rebuilding the caller only when
@@ -411,7 +417,10 @@ class HarborKeyboardSpace extends StatelessWidget {
     super.key,
     this.child,
     final bool showsChildWithKeyboard = false,
-    @Deprecated('Renamed showsChildWithKeyboard. `dart fix` applies it.') final bool? showsChildAtHighTide,
+    @Deprecated(
+      'Renamed showsChildWithKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+    )
+    final bool? showsChildAtHighTide,
   }) : assert(
          showsChildAtHighTide == null || !showsChildWithKeyboard || showsChildAtHighTide == showsChildWithKeyboard,
          'showsChildWithKeyboard and the deprecated showsChildAtHighTide disagree. Give showsChildWithKeyboard alone.',
@@ -426,7 +435,9 @@ class HarborKeyboardSpace extends StatelessWidget {
   final bool showsChildWithKeyboard;
 
   /// The old name of [showsChildWithKeyboard].
-  @Deprecated('Renamed showsChildWithKeyboard. `dart fix` applies it.')
+  @Deprecated(
+    'Renamed showsChildWithKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
+  )
   bool get showsChildAtHighTide => showsChildWithKeyboard;
 
   @override

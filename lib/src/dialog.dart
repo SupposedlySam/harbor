@@ -61,21 +61,25 @@ Future<T?> showHarborDialog<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
   final bool inheritRoom = false,
-  @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
+  @Deprecated('Renamed inheritRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+  final bool? inheritClearWater,
   final HarborBarrier barrier = const HarborBarrier.dimmed(),
   @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+    'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
+    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+    'added after `dart fix`, or the import widened.',
   )
   final Color? barrierColor,
   @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it in a file that imports '
+    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+    'added after `dart fix`, or the import widened.',
   )
   final bool? barrierDismissible,
   @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-    ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+    'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it in a file that imports '
+    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+    'added after `dart fix`, or the import widened.',
   )
   final String? barrierLabel,
   final String? semanticLabel,
@@ -141,22 +145,25 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required final WidgetBuilder builder,
     final CapturedThemes? themes,
     final bool inheritRoom = false,
-    @Deprecated('Renamed inheritRoom. `dart fix` applies it.') final bool? inheritClearWater,
+    @Deprecated('Renamed inheritRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final bool? inheritClearWater,
     final HarborBarrier barrier = const HarborBarrier.dimmed(),
     @Deprecated(
       'Use barrier: HarborBarrier.dimmed(color: ...), or HarborBarrier.clear() where it was null. '
-      '`dart fix` applies it to null. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      '`dart fix` applies it to null, in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1. A '
+      'file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
     )
     final Color? barrierColor = HarborBarrier.defaultColor,
     @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     final bool? barrierDismissible,
     @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it. Deprecated after 0.9.1.'
-      ' A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
+      'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it in a file that imports '
+      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
+      'added after `dart fix`, or the import widened.',
     )
     final String? barrierLabel,
     final String? semanticLabel,
@@ -269,7 +276,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   final bool inheritRoom;
 
   /// The old name of [inheritRoom].
-  @Deprecated('Renamed inheritRoom. `dart fix` applies it.')
+  @Deprecated('Renamed inheritRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   bool get inheritClearWater => inheritRoom;
 
   /// Builds the dialog's entrance and exit, in place of its fade, as

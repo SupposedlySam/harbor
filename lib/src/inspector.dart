@@ -34,18 +34,18 @@ class HarborInspectorEntry {
   final Rect room;
 
   /// The old name of [room].
-  @Deprecated('Renamed room. `dart fix` applies it.')
+  @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   Rect get clearWater => room;
   final List<HarborBarRecord> bars;
 
   /// The old name of [bars].
-  @Deprecated('Renamed bars. `dart fix` applies it.')
+  @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   List<HarborBarRecord> get docks => bars;
   final EdgeInsetsDirectional obstruction;
   final double keyboard;
 
   /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it.')
+  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   double get tide => keyboard;
 
   /// Whether this frame is under an isolated root: a `HarborRoot` mounted
@@ -123,19 +123,22 @@ class HarborInspectorEntry {
 /// The old name of [HarborInspectorEntry], which takes the old names of its parameters.
 ///
 /// A subclass rather than a typedef, so the new constructor can keep its parameters required.
-@Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it.')
+@Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
 class HarborChartEntry extends HarborInspectorEntry {
   /// The old name of [HarborInspectorEntry.new].
-  @Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it.')
+  @Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
   const HarborChartEntry({
     required super.label,
     required super.depth,
     required super.frame,
     required super.body,
-    @Deprecated('Renamed room. `dart fix` applies it.') final Rect? clearWater,
-    @Deprecated('Renamed bars. `dart fix` applies it.') final List<HarborBarRecord>? docks,
+    @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final Rect? clearWater,
+    @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final List<HarborBarRecord>? docks,
     required super.obstruction,
-    @Deprecated('Renamed keyboard. `dart fix` applies it.') final double? tide,
+    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
+    final double? tide,
     super.isolated,
   }) : assert(clearWater != null, 'clearWater is required.'),
        assert(docks != null, 'docks is required.'),
