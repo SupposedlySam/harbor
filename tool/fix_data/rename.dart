@@ -368,26 +368,22 @@ List<_Transform> _harbor() {
     ..._members('HarborHandled', getters: const <String, String>{'tide': 'clearsKeyboard', 'docks': 'clearsBars'}),
     _Parameters(_ctor('HarborLayoutRecord'), records),
     ..._members('HarborLayoutRecord', getters: records),
+    // The controller's internals (edgesWithBars, withBarOn, attachedBarsOn, the page-cover readings,
+    // toasts) went @internal after 0.9.1, so their 0.8 names are not renamed onto them: a fix would
+    // trade a deprecation for invalid_use_of_internal_member. They stay deprecated until 1.0.
     ..._members(
       'HarborController',
       getters: const <String, String>{
         'clearWater': 'room',
         'fleet': 'registry',
         'isPort': 'isPage',
-        'dockedEdges': 'edgesWithBars',
-        'breakwaterTopsInGlobal': 'pageCoverTopsInGlobal',
-        'breakwaterCoverage': 'pageCoverage',
-        'breakwaterChanges': 'pageCoverChanges',
-        'flares': 'toasts',
       },
       methods: const <String, String>{
         'clearWaterInGlobal': 'roomInGlobal',
-        'withDockOn': 'withBarOn',
         'makeWay': 'hideBar',
         'addPontoon': 'attachBar',
         'updatePontoon': 'updateAttachedBar',
         'removePontoon': 'detachBar',
-        'pontoonsOn': 'attachedBarsOn',
         'addBreakwater': 'addPageCover',
         'addBreakwaterEdge': 'addPageCoverEdge',
       },

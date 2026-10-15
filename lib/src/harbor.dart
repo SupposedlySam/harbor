@@ -68,7 +68,8 @@ class HarborFrame extends StatefulWidget {
     this.margin,
     this.minimum = EdgeInsetsDirectional.zero,
     this.sizing = HarborSizing.fill,
-    this.maxExtentFraction,
+    @Deprecated('Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    this._maxExtentFraction,
     final HarborEdgeEffectPainter? edgeEffectPainter,
     @Deprecated('Renamed edgeEffectPainter. `dart fix` applies it.') final HarborEdgeEffectPainter? wakePainter,
     this.debugLabel,
@@ -118,7 +119,8 @@ class HarborFrame extends StatefulWidget {
     this.margin,
     this.minimum = EdgeInsetsDirectional.zero,
     this.sizing = HarborSizing.fill,
-    this.maxExtentFraction,
+    @Deprecated('Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+    this._maxExtentFraction,
     this.edgeEffectPainter,
     this.debugLabel,
     this.hinge,
@@ -144,7 +146,7 @@ class HarborFrame extends StatefulWidget {
        bodyClearsKeyboard = false,
        minimum = EdgeInsetsDirectional.zero,
        sizing = HarborSizing.fill,
-       maxExtentFraction = null,
+       _maxExtentFraction = null,
        edgeEffectPainter = null,
        debugLabel = 'sea',
        _isSea = true;
@@ -222,11 +224,16 @@ class HarborFrame extends StatefulWidget {
   /// of a phone with no home indicator.
   final EdgeInsetsGeometry minimum;
 
+  /// Whether the frame fills the space it is given ([HarborSizing.fill], the default) or is as tall
+  /// as its body and solid bars ([HarborSizing.hug]).
   final HarborSizing sizing;
 
-  /// For [HarborSizing.hugBody]: the most of the space above the keyboard the
-  /// frame may take.
-  final double? maxExtentFraction;
+  /// For a frame that hugs: the most of the space above the keyboard it may take. [sizing]'s
+  /// `maxFraction`, or the deprecated `maxExtentFraction:` when [sizing] gives none. A frame that
+  /// fills never reads it.
+  @Deprecated('Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it. Deprecated after 0.9.1.')
+  double? get maxExtentFraction => sizing.maxFraction ?? _maxExtentFraction;
+  final double? _maxExtentFraction;
 
   /// Paints an edge effect over the whole body. Null (the default) leaves the
   /// edge effect to the scroll views in it, which fade their content as it
@@ -285,12 +292,14 @@ class HarborFrame extends StatefulWidget {
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
-    properties.add(EnumProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill));
+    properties.add(
+      DiagnosticsProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill, description: '$sizing'),
+    );
     properties.add(
       PercentProperty(
         'maxExtentFraction',
-        maxExtentFraction,
-        level: maxExtentFraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info,
+        _maxExtentFraction,
+        level: _maxExtentFraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info,
       ),
     );
     properties.add(ObjectFlagProperty<HarborEdgeEffectPainter>.has('edgeEffectPainter', edgeEffectPainter));
@@ -492,7 +501,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     // the system edges on those sides, so it is not handed those system edges again.
     HarborBarState stateOf(final HarborBar dock, final HarborEdge edge) {
       final HarborBarState? claimed = controller.claimedStateOf(edge);
-      if (claimed == HarborBarState.withdrawn || (dock.withdrawsAtHighTide && keyboard > 0)) {
+      if (claimed == HarborBarState.withdrawn || (dock.withdrawsWithKeyboard && keyboard > 0)) {
         return HarborBarState.withdrawn;
       }
       if (claimed == HarborBarState.dark && dock.state == HarborBarState.open) {
@@ -628,7 +637,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         sizing: widget.sizing,
         viewHeight: ambient.size.height,
         frameSize: widget.isPage || outer == null || outer.frameSize.isEmpty ? null : outer.frameSize,
-        maxExtentFraction: widget.maxExtentFraction,
+        maxExtentFraction: widget.sizing.maxFraction ?? widget._maxExtentFraction,
         clearWaterFloor: HarborClearWaterFloor.of(context),
         hinges: <Rect>[
           for (final DisplayFeature feature in (widget.barHinge ?? widget.hinge ?? HarborHinge.of(context)).keptOff(

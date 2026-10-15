@@ -18,7 +18,14 @@ enum HarborKeyboardStance {
   /// The bar holds the keyboard's settled height either way, so nothing moves when the keyboard
   /// comes and goes. Its child holds a [HarborKeyboardSpace] that fills that space while the
   /// keyboard is hidden.
-  reserves;
+  reserves,
+
+  /// Withdraws while the keyboard is shown, and comes back once it is hidden (a tool strip that
+  /// would otherwise park mid-screen). It lays out as [stays] does, so the keyboard covers it as it
+  /// slides out.
+  ///
+  /// It cannot also [reserves]: a bar that holds the keyboard's space has nothing to withdraw for.
+  withdraws;
 
   /// The old name of [rides].
   @Deprecated('Renamed rides. `dart fix` applies it.')

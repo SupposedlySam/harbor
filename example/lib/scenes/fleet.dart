@@ -202,7 +202,7 @@ class _EmptyRegistry extends StatelessWidget {
 ///
 /// - **#10 hero:** a background (a sea and the boat) runs under the header and
 ///   the status bar; its title block keeps clear of the system edges alone.
-/// - **#11 title handoff:** a HarborKeepInSight on the hero title reports how much of it
+/// - **#11 title handoff:** a HarborCoverageListener on the hero title reports how much of it
 ///   the header covers, and the header's title fades in by as much.
 /// - **#12 logbook tabs:** two sliver bars that pin under the header, stacked.
 /// - **#13 crew carousel:** a horizontal scroll view, edge to edge, padded at both
@@ -259,7 +259,6 @@ class _BoatDetailPageState extends State<BoatDetailPage> {
     final List<_Voyage> voyages = _Voyage.of(boat, _sort);
     return HarborPage(
       child: HarborFrame(
-        isPage: true,
         debugLabel: 'boat detail',
         top: <HarborBar>[
           HarborBar.overlay(
@@ -403,8 +402,8 @@ class _BoatHero extends StatelessWidget {
                       style: text.labelMedium?.copyWith(color: Palette.brass, letterSpacing: 1.6),
                     ),
                     const SizedBox(height: 4),
-                    HarborKeepInSight(
-                      onObscured: onTitleObscured,
+                    HarborCoverageListener(
+                      onCoverage: onTitleObscured,
                       child: Text(
                         boat.name,
                         key: const ValueKey<String>('hero title'),

@@ -105,12 +105,15 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 250),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    this.withdrawsAtHighTide = false,
+    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
@@ -126,12 +129,15 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 250),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    this.withdrawsAtHighTide = false,
+    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
@@ -163,10 +169,13 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 250),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
-    this.withdrawsAtHighTide = false,
+    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    this._withdrawsAtHighTide = false,
     this.debugLabel,
   }) : assert(extent >= 0.0, 'A reserved extent cannot be negative.'),
        reserved = extent,
@@ -213,15 +222,19 @@ class HarborBar with Diagnosticable {
   /// How a withdrawing bar gives its space back.
   final HarborExtentPolicy extentPolicy;
 
-  /// How long the bar takes to go dark, withdraw or return.
+  /// How long the bar takes to go dark, withdraw or return, where [animationStyle] does not say.
+  @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Duration duration;
+
+  /// The curve the bar goes dark, withdraws or returns along, where [animationStyle] does not say.
+  @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Curve curve;
 
-  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
-  /// duration and curve. Its `duration` and `curve` are for returning and lighting up, and its
-  /// `reverseDuration` and `reverseCurve` for withdrawing and going dark; each falls back to the
-  /// forward one, then to [duration] and [curve]. [AnimationStyle.noAnimation] changes the bar's
-  /// state at once.
+  /// How the bar moves, as `AnimationStyle` sets it on Flutter's routes: its `duration` and `curve`
+  /// are for returning and lighting up, and its `reverseDuration` and `reverseCurve` for withdrawing
+  /// and going dark; each reverse one falls back to the forward one. Left unset, a bar moves over
+  /// 250 ms along [Curves.easeInOutCubic]. [AnimationStyle.noAnimation] changes the bar's state at
+  /// once.
   final AnimationStyle? animationStyle;
 
   /// Painted under the bar's whole space, system edge included: its surface, or a
@@ -232,9 +245,17 @@ class HarborBar with Diagnosticable {
   /// a tap on a header never reaches a row scrolled under it.
   final HitTestBehavior hitTestBehavior;
 
-  /// Whether the bar withdraws while the keyboard is up (a tool strip that
-  /// would otherwise park mid-screen).
-  final bool withdrawsAtHighTide;
+  /// Whether the bar withdraws while the keyboard is up: [keyboard] is
+  /// [HarborKeyboardStance.withdraws], or the deprecated flag was given.
+  @Deprecated('Read keyboard == HarborKeyboardStance.withdraws. Deprecated after 0.9.1.')
+  bool get withdrawsAtHighTide => withdrawsWithKeyboard;
+
+  /// Whether the bar withdraws while the keyboard is up, by its [keyboard] or the deprecated flag.
+  @internal
+  bool get withdrawsWithKeyboard => keyboard == HarborKeyboardStance.withdraws || _withdrawsAtHighTide;
+
+  /// The deprecated `withdrawsAtHighTide:`, which a bar of any stance could be given.
+  final bool _withdrawsAtHighTide;
 
   /// How far the bar reaches at rest, for a bar whose child grows (a rail that
   /// opens on focus). Content that follows the bar at rest keeps this
@@ -254,7 +275,7 @@ class HarborBar with Diagnosticable {
       systemEdges ??
       switch (keyboard) {
         HarborKeyboardStance.rides => HarborSystemEdgeStance.live,
-        HarborKeyboardStance.stays => HarborSystemEdgeStance.steady,
+        HarborKeyboardStance.stays || HarborKeyboardStance.withdraws => HarborSystemEdgeStance.steady,
         HarborKeyboardStance.reserves => HarborSystemEdgeStance.none,
       };
 
@@ -286,7 +307,7 @@ class HarborBar with Diagnosticable {
           duration: duration,
           curve: curve,
           animationStyle: animationStyle,
-          withdrawsAtHighTide: withdrawsAtHighTide,
+          withdrawsAtHighTide: _withdrawsAtHighTide,
           debugLabel: debugLabel,
         )
       : kind == HarborBarKind.overlay
@@ -303,7 +324,7 @@ class HarborBar with Diagnosticable {
           animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
-          withdrawsAtHighTide: withdrawsAtHighTide,
+          withdrawsAtHighTide: _withdrawsAtHighTide,
           restingExtent: restingExtent,
           minimum: minimum,
           debugLabel: debugLabel,
@@ -321,7 +342,7 @@ class HarborBar with Diagnosticable {
           animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
-          withdrawsAtHighTide: withdrawsAtHighTide,
+          withdrawsAtHighTide: _withdrawsAtHighTide,
           restingExtent: restingExtent,
           minimum: minimum,
           debugLabel: debugLabel,
@@ -347,12 +368,13 @@ class HarborBar with Diagnosticable {
       DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 250)),
     );
     properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeInOutCubic));
+    properties.add(DiagnosticsProperty<AnimationStyle>('animationStyle', animationStyle, defaultValue: null));
     properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
     properties.add(
       EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
     );
     properties.add(
-      FlagProperty('withdrawsAtHighTide', value: withdrawsAtHighTide, ifTrue: 'withdraws while the keyboard is up'),
+      FlagProperty('withdrawsAtHighTide', value: _withdrawsAtHighTide, ifTrue: 'withdraws while the keyboard is up'),
     );
     properties.add(DoubleProperty('restingExtent', restingExtent, defaultValue: null));
     properties.add(DoubleProperty('minimum', minimum, defaultValue: 0.0));

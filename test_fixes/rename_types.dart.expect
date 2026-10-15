@@ -63,8 +63,8 @@ void types(BuildContext context, HarborController controller, ValueNotifier<doub
   // Sheets, keeping in sight, the inspector, the registry and the scaled screen.
   final HarborPageCover cover = controller.addPageCover(ValueNotifier<double>(0));
   const HarborKeepInSight keep = HarborKeepInSight(child: SizedBox());
-  HarborKeepInSight.reveal(context);
-  const HarborKeepInSightRegion region = HarborKeepInSightRegion(child: SizedBox());
+  HarborKeepVisible.reveal(context);
+  const HarborKeepVisibleRegion region = HarborKeepVisibleRegion(child: SizedBox());
   final List<HarborInspectorEntry> entries = HarborInspector.snapshot(context);
   const HarborInspectorOverlay inspector = HarborInspectorOverlay(child: SizedBox());
   final HarborFrameRegistry registry = controller.registry;

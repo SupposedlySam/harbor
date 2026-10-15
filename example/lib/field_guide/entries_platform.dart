@@ -419,7 +419,6 @@ class _TitleSafeEntryState extends State<TitleSafeEntry> {
           children: <Widget>[
             HarborFrame(
               key: const ValueKey<String>('tv harbor'),
-              isPage: true,
               systemEdges: HarborSystemEdges.titleSafe(_safe),
               debugLabel: 'tv page',
               top: <HarborBar>[

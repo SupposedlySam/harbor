@@ -37,7 +37,7 @@ final List<GuideEntry> frameEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'frame-hug-body',
-    className: 'HarborSizing.hugBody',
+    className: 'HarborSizing.hug',
     group: GuideGroup.frames,
     realWorld: 'Like a skiff on a davit: hoisted as high as the boat',
     art: (final BuildContext context) => const HugBodyArt(),
@@ -453,7 +453,7 @@ class _PageEntryState extends State<PageEntry> {
   );
 }
 
-/// `HarborSizing.hugBody`: a frame as tall as its body and solid bars.
+/// `HarborSizing.hug`: a frame as tall as its body and solid bars.
 class HugBodyEntry extends StatefulWidget {
   const HugBodyEntry({super.key});
 
@@ -462,16 +462,16 @@ class HugBodyEntry extends StatefulWidget {
 }
 
 class _HugBodyEntryState extends State<HugBodyEntry> {
-  HarborSizing _sizing = HarborSizing.hugBody;
+  HarborSizing _sizing = const HarborSizing.hug();
   double _height = 180;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborSizing.hugBody',
+    className: 'HarborSizing.hug',
     tryThis: const <TryStep>[
       TryStep(
         'Slide body height to 300',
-        'The sheet grows with its body and stays on the bottom: hugBody makes the frame as tall as its body plus its bar.',
+        'The sheet grows with its body and stays on the bottom: hug() makes the frame as tall as its body plus its bar.',
       ),
       TryStep(
         'Open The stage and pick Device: iPhone SE',
@@ -496,9 +496,9 @@ class _HugBodyEntryState extends State<HugBodyEntry> {
     controls: <Widget>[
       ChoiceControl<HarborSizing>(
         label: 'sizing',
-        values: HarborSizing.values,
+        values: const <HarborSizing>[HarborSizing.hug(), HarborSizing.fill],
         value: _sizing,
-        labelOf: (final HarborSizing s) => s.name,
+        labelOf: (final HarborSizing s) => s.hugs ? 'hug()' : 'fill',
         onChanged: (final HarborSizing s) => setState(() => _sizing = s),
       ),
       SliderControl(
@@ -511,7 +511,7 @@ class _HugBodyEntryState extends State<HugBodyEntry> {
     ],
     code:
         'HarborFrame(\n'
-        '  sizing: HarborSizing.${_sizing.name},\n'
+        '  sizing: HarborSizing.${_sizing.hugs ? 'hug()' : 'fill'},\n'
         '  bottom: [HarborBar.solid(child: Actions())],\n'
         '  body: SizedBox(height: ${_height.toStringAsFixed(0)}, child: Crate()),\n'
         ')',
@@ -552,7 +552,7 @@ class _HugBodyEntryState extends State<HugBodyEntry> {
                   ),
                 ],
                 body: StageProbe(
-                  label: 'frame body (${_sizing.name})',
+                  label: 'frame body (${_sizing.hugs ? 'hug' : 'fill'})',
                   child: SizedBox(
                     key: const ValueKey<String>('sized body'),
                     height: _height,

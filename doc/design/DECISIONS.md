@@ -42,8 +42,8 @@ The RFC's table is adopted, with these choices on its open questions and one cor
   `SafeArea`, so it should not borrow that name.
 - **`HarborToast`** / **`HarborToasts.show`**, not `HarborNotice`. Toast is what developers search
   for, and harbor's flare is a transient message whatever it carries.
-- **`HarborFrame`** with a **`HarborFrame.page`** constructor for a route boundary, and the
-  boundary is inferred where the route changes, so `.page` is rarely written.
+- **`HarborFrame`** with a **`HarborFrame.page`** constructor for a route boundary. The boundary is
+  not inferred (see the audit's `newPort` step below): a route under the root needs no `.page`.
 - **Correction:** the portal buoy becomes **`HarborPopover`**, not `HarborAnchored`.
   `HarborAnchored` is the anchored placement value from the placement work. The three overlays
   then read by their lifetime, in words developers know: `HarborFloat` (declared in the tree,
@@ -143,11 +143,26 @@ All of these land after the four areas above, each with fixes:
   - `HarborOpenWater` is retired.
 - Trim the surface:
   - `HarborController`'s internals go `@internal`;
-  - `HarborTitleSafe` folds into `HarborCoast`;
+  - ~~`HarborTitleSafe` folds into `HarborCoast`~~ **dropped** (2026-10-14): `HarborTitleSafe` is plain
+    already (TV vocabulary, not harbour, as `naming.md` says), and its value is niche. Folding it
+    into `HarborSystemEdges.titleSafe(fraction:)` would cost either compiling code (Dart cannot give
+    one constructor the old positional `HarborTitleSafe` and the new named parameters) or ugly
+    constructor names, for no gain in clarity. It keeps its name;
   - fix the stale `HarborCoastFeature.hinge` and `isPort` docs.
-- `HarborBeacon` splits into three widgets, one per job.
+- `HarborBeacon` splits into three widgets, one per job. Named by the owner on 2026-10-14:
+  `HarborCoverageListener(edge:, onCoverage:)` reports what covers it, `HarborKeepVisible` keeps itself
+  scrolled clear (its whole job, so on by default; `reveal` and `coverageOf` move there), and
+  `HarborLift` lifts over the keyboard inside a `HarborKeepVisibleRegion`. `HarborKeepInSight` is
+  deprecated whole, forwarding exactly as before. `HarborKeepVisible` and `HarborLift` take `active:`,
+  as `HarborHideBar` does, so a job can be switched off without remounting the child.
 - One internal page-overlay host for flares and non-modal sheets.
-- **`newPort`:** infer it at route boundaries, and keep the parameter for the rare nested case.
+- **`newPort`:** ~~infer it at route boundaries~~ **not inferred** (2026-10-14, measured). On an iPhone 17
+  with a 50 overlay header and a 56 solid tab bar: `isPage` changes nothing for a route under
+  `HarborRoot` (the root has no bars to reach in: the same rectangles, room data and frame size, and
+  `test/audit_steps_test.dart` pins it), and inferring it at a nested `Navigator`'s routes would move
+  their content 50 up, under the outer header, which a tab's own stack does not want. So `.page` is
+  rarely written already, and `HarborFrame.page` stays explicit, for a frame inside another frame that
+  should ignore its bars.
 
 ## Product work outside the API
 

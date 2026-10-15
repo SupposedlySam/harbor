@@ -90,12 +90,13 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborSea.coast` | `systemEdges` | RP | And on `Harbor`, `HarborScaleModel` |
 | `HarborSea.observers` | unchanged | | Now `List<HarborFrameObserver>` |
 | `Harbor` | `HarborFrame` | T | `Harbor.of` / `maybeOf` keep their names |
-| `Harbor.newPort` | `isPage` | RP | Plus the decided `HarborFrame.page(...)` constructor, which sets it. `fix_data` cannot choose a constructor by a `bool`'s value, so the fix writes `isPage: true`, and `.page` is the documented spelling. Inferred at route boundaries in a later step |
+| `Harbor.newPort` | `isPage` | RP | Plus the decided `HarborFrame.page(...)` constructor, which sets it. `fix_data` cannot choose a constructor by a `bool`'s value, so the fix writes `isPage: true`, and `.page` is the documented spelling. Not inferred at route boundaries (DECISIONS.md, measured): a route under the root needs none, and a nested `Navigator` would move under the outer bars |
 | `Harbor.dockHinge` | `barHinge` | RP | |
 | `Harbor.buoys` | `floats` | RP | `List<HarborFloat>` |
 | `Harbor.bodyClearsTide` | `bodyClearsKeyboard` | RP | And on `HarborSheet` |
 | `Harbor.wakePainter` | `edgeEffectPainter` | RP | See Q4 |
-| `Harbor.top/bottom/start/end`, `body`, `margin`, `minimum`, `sizing`, `maxExtentFraction`, `hinge`, `debugLabel` | unchanged | | |
+| `Harbor.top/bottom/start/end`, `body`, `margin`, `minimum`, `sizing`, `hinge`, `debugLabel` | unchanged | | |
+| `Harbor.maxExtentFraction` | `sizing: HarborSizing.hug(maxFraction:)` | conditional fix | Deprecated after 0.9.1. Beside `fill` (or no `sizing`), which never read it, the fix removes it; beside a variable it is left |
 
 ### Bars (docks)
 
@@ -108,9 +109,10 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborDock.wake` | `edgeEffect` | RP | Q4 |
 | `HarborDock.tide` | `keyboard` | RP | `HarborKeyboardStance` (Q3) |
 | `HarborDock.coast` / `effectiveCoast` | `systemEdges` / `effectiveSystemEdges` | RP / rename | |
-| `HarborDock.withdrawsAtHighTide` | *later* | — | Becomes a `HarborKeyboardStance` value in audit step 6 (principle 5) |
+| `HarborDock.withdrawsAtHighTide` | `keyboard: HarborKeyboardStance.withdraws` | M + conditional fix | After 0.9.1. `withdraws` lays out as `stays` does. `audit.yaml` rewrites `withdrawsAtHighTide: true` on a bar that stays (the default) and drops `false`; with `rides`, `reserves` or a variable the deprecated flag is left, still working. `reserves` and withdrawing cannot both be said in one stance, which is the point: a bar that holds the keyboard's space has nothing to withdraw for |
 | `HarborDock.copyWith(tide:)` | `copyWith(keyboard:)` | RP | |
-| `HarborDock.kind`, `state`, `extentPolicy`, `duration`, `curve`, `animationStyle`, `backdrop`, `hitTestBehavior`, `restingExtent`, `minimum`, `reserved`, `key`, `debugLabel` | unchanged | | `duration`/`curve` go in a later step |
+| `HarborDock.kind`, `state`, `extentPolicy`, `animationStyle`, `backdrop`, `hitTestBehavior`, `restingExtent`, `minimum`, `reserved`, `key`, `debugLabel` | unchanged | | |
+| `HarborDock.duration` / `curve` | `animationStyle: AnimationStyle(duration:, curve:)` | conditional fix | Deprecated after 0.9.1, on the bar and on `HarborKeepInSightRegion`; the fix writes the style where the call gives none, and leaves a call that gives both |
 | `HarborDockKind` | `HarborBarKind` | T+E | |
 | `HarborDockKind.pier` / `.quay` | `.overlay` / `.solid` | T+E | |
 | `HarborDockState` | `HarborBarState` | T | `open`, `dark`, `withdrawn` unchanged. `HarborYield` merges into it later |
@@ -124,8 +126,8 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborPontoon.dock` | `bar` | RP | |
 | `HarborPontoonHandle` | `HarborAttachedBarHandle` | T | `.dock` → `.bar` (rename) |
 | `HarborMakeWay` | `HarborHideBar` | T | Departure, Q2 |
-| `HarborMakeWay.mode` | unchanged | | Still `HarborYield` until the merge |
-| `HarborYield` | *later* | — | "Yield" is plain English, and it merges into `HarborBarState` in audit step 5 (`withdraw` → `withdrawn`, RB measured) |
+| `HarborMakeWay.mode` | `HarborHideBar.state` | M + conditional fix | After 0.9.1: a `HarborBarState`, `withdrawn` by default, never `open` (asserted). `audit.yaml` rewrites a written-out `mode: HarborYield.dark` / `.withdraw`; a variable is left on the deprecated `mode` |
+| `HarborYield` | `HarborBarState` | M + conditional fix | Merged after 0.9.1 (`dark` → `dark`, `withdraw` → `withdrawn`). Deprecated, not aliased: a typedef would change the type of `HarborClaim.mode`. `hideBar(edge, mode:)` is `hideBar(edge, state:)`, and `HarborClaim.mode` is `state` |
 | `HarborClaim` | unchanged | | |
 
 ### The edges: system edges and the keyboard
@@ -135,7 +137,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborCoast` | `HarborSystemEdges` | **SUB** | `.fixed`, `.titleSafe`, `.ambient`, `.none`, `apply`, `features` unchanged. SUB, not T, as shipped: `.fixed(calmTide:)` (§2) |
 | `HarborCoast.calmTide` | `ignoresKeyboard` | RP + rename | It is what `none` sets for goldens |
 | `HarborCoastFeature` | `HarborSystemEdgeFeature` | T | Values unchanged |
-| `HarborTitleSafe` | unchanged | — | TV vocabulary, not harbour. Folds into `HarborSystemEdges` in audit step 9 |
+| `HarborTitleSafe` | unchanged | — | TV vocabulary, not harbour. The fold into `HarborSystemEdges` was dropped (DECISIONS.md): plain already, and the churn is not worth it |
 | `HarborTide` | `HarborKeyboard` | T+S | The reader. Q3 |
 | `HarborTide.of` | `HarborKeyboard.of` | T | |
 | `HarborTide.isInOf` | `HarborKeyboard.isShownOf` | T+S | |
@@ -274,9 +276,13 @@ public member was read, and the ones without a harbour word are left out to keep
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborBeacon` | `HarborKeepInSight` | T | From the RFC. The beacon splits into three widgets in audit step 10; this name goes to the keep-in-sight one, and the other two jobs (`onObscured`, `lift`) move off it then |
-| `HarborLighthouse` | `HarborKeepInSight` | T+S | Its statics `reveal` and `coverageOf` move onto the widget class, as `Scrollable.ensureVisible` sits on `Scrollable`. A typedef to a widget is harmless here: `HarborLighthouse` is `abstract final` and nobody constructs it |
-| `HarborLighthouseRegion` | `HarborKeepInSightRegion` | T | |
+| `HarborBeacon` | `HarborKeepInSight` | T | From the RFC. Split after 0.9.1 (below), and `HarborKeepInSight` is deprecated whole |
+| `HarborKeepInSight(onObscured:)` | `HarborCoverageListener(edge:, onCoverage:, child:)` | conditional fix | The audit's split (owner, 2026-10-14): reports what covers it |
+| `HarborKeepInSight(keepInSight:)` | `HarborKeepVisible(active:, onlyWhileFocused:, clearance:, child:)` | conditional fix | Keeps itself scrolled clear of the bars and the keyboard, on by default; `keepInSight:` given a variable becomes `active:` |
+| `HarborKeepInSight(lift:)` | `HarborLift(active:, clearance:, holdPosition:, child:)` | conditional fix | Lifts over what covers the bottom, inside a region. A call that does two jobs is manual: nest the widgets |
+| `HarborKeepInSight.reveal` / `coverageOf` | `HarborKeepVisible.reveal` / `coverageOf` | RB | |
+| `HarborLighthouse` | `HarborKeepInSight` | T+S | Its statics `reveal` and `coverageOf` move onto the widget class, as `Scrollable.ensureVisible` sits on `Scrollable`, and on to `HarborKeepVisible` after 0.9.1. A typedef to a widget is harmless here: `HarborLighthouse` is `abstract final` and nobody constructs it |
+| `HarborLighthouseRegion` | `HarborKeepInSightRegion` | T | And `HarborKeepVisibleRegion` after 0.9.1 (T), so the names match |
 
 ### The inspector (the chart) and the frame registry (the fleet)
 
@@ -290,7 +296,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborFleet` | `HarborFrameRegistry` | T | Every frame under one root |
 | `HarborFleet.harbors` / `sea` | `frames` / `root` | rename | `topmost`, `addObserver`, `removeObserver` unchanged |
 | `HarborFleetObserver` | `HarborFrameObserver` | T | As `NavigatorObserver`. `didJoin`, `didLeave` unchanged |
-| `HarborController` | unchanged | | Plain, and the brand prefix covers it. Internals go `@internal` in audit step 9 |
+| `HarborController` | unchanged | | Plain, and the brand prefix covers it. After 0.9.1 its public surface is `hideBar`, `attachBar` / `updateAttachedBar` / `detachBar`, `addPageCover` / `addPageCoverEdge`, `room` / `roomInGlobal`, `registry`, `debugLabel` and `isPage`; the rest is `@internal` (`parent`, `route`, `isRouteLevel`, `withBarOn`, `edgesWithBars`, `claimedStateOf`, `attachedBarsOn`, `pageCoverage`, `pageCoverChanges`, `pageCoverTopsInGlobal`, `toasts`, the leave listeners, and `HarborController.of` / `maybeOf`, for which `HarborFrame.of` / `maybeOf` stand). Their 0.8 names lose their rename fixes, which would have traded a deprecation for `invalid_use_of_internal_member` |
 | `HarborController.fleet` | `registry` | rename | |
 | `HarborController.makeWay` | `hideBar` | rename | Q2 |
 | `HarborController.addPontoon` / `updatePontoon` / `removePontoon` / `pontoonsOn` | `attachBar` / `updateAttachedBar` / `detachBar` / `attachedBarsOn` | rename | |
@@ -299,7 +305,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborController.lastLayout`, `renderBox` | — | — | Already deprecated |
 | `HarborScaleModel` | `HarborScaledScreen` | T | Departure: the RFC's `HarborScaledFrame` reads as a kind of `HarborFrame`, which it is not. It lays out a whole screen at a reference size |
 | `HarborScaleModel.letterbox`, `referenceSize`, `devicePixelRatio` | unchanged | | `coast` → `systemEdges` as above |
-| `HarborSizing` | unchanged | | Becomes a class in audit step 8 |
+| `HarborSizing` | unchanged: a class | rename (`hugBody`) | After 0.9.1 a class: `HarborSizing.fill` (a constant, as before) and `HarborSizing.hug({maxFraction})`. `hugBody` is a deprecated constant equal to `hug()`, renamed to `hug()` by the fix; `values`, `name` and `index` are kept, deprecated |
 
 ## 4. The table: `package:harbor_test`
 

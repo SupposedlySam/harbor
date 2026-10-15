@@ -79,7 +79,7 @@ MIT licensed.
 | `HarborFlareSlot`, `HarborFlareEntry`, `HarborFlareTarget.sea` | `HarborToastSlot`, `HarborToastEntry`, `HarborToastTarget.root` |
 | `showHarborSheet(breakwater:, keepsTopCoast:)` | `showHarborSheet(coversPage:, reachesTop:)` |
 | `showHarborDialog(inheritClearWater:)` | `showHarborDialog(inheritRoom:)` |
-| `HarborBeacon`, `HarborLighthouse`, `HarborLighthouseRegion` | `HarborKeepInSight`, `HarborKeepInSightRegion` |
+| `HarborBeacon`, `HarborLighthouse`, `HarborLighthouseRegion` | `HarborKeepInSight` and `HarborKeepInSightRegion` in 0.9.0, since split into `HarborCoverageListener`, `HarborKeepVisible` and `HarborLift`, in a `HarborKeepVisibleRegion` ([Keeping in sight](#keeping-in-sight)) |
 | `HarborChart`, `HarborChartOverlay` | `HarborInspector`, `HarborInspectorOverlay` |
 | `HarborFleet`, `HarborFleetObserver`, `controller.fleet` | `HarborFrameRegistry`, `HarborFrameObserver`, `controller.registry` |
 | `HarborScaleModel` | `HarborScaledScreen` |
@@ -124,7 +124,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 |---|---|---|
 | `HarborRoot` | `MaterialApp.builder`: one per app, above the `Navigator`, inside the `ScaffoldMessenger` that `MaterialApp` wraps around the builder's output | It holds the system edges, the keyboard reading and the toasts every route shares. It moves nothing out of the keyboard's way itself |
 | `HarborFrame` | `Scaffold` | Any number of bars on all four edges, each measured. A `Scaffold` has one app bar, capped at its `preferredSize`, and one bottom bar |
-| `HarborFrame.page` | A route, which reads the `MediaQuery` from above the `Navigator` | A frame that does not start a page takes the bars of the frame around it as part of its system edges |
+| `HarborFrame.page` | A route, which reads the `MediaQuery` from above the `Navigator` | A frame that does not start a page takes the bars of the frame around it as part of its system edges. A route under `HarborRoot` needs no `.page`: the root has no bars, so it lays out the same either way. Write it for a frame inside another frame that should ignore that frame's bars |
 | `HarborSystemEdges` | `MediaQuery.padding` and `viewPadding` | The same insets, read from `MediaQuery`, plus a TV's title-safe band (`HarborSystemEdges.titleSafe`) or fixed edges (`HarborSystemEdges.fixed`, and `HarborSystemEdges.none` for goldens) |
 | `HarborKeyboard` | `MediaQuery.viewInsets.bottom`; `Scaffold.resizeToAvoidBottomInset` | It adds a phase, a settled height, and how much of it still reaches this point (`remaining`). A resizing `Scaffold` moves the whole body; here each bar decides. The keyboard stays in `viewInsets`, never in `padding` |
 | `HarborBar.solid` | `Scaffold.appBar` and `bottomNavigationBar`: the body starts where they end | Measured rather than declared, and on any edge: a start bar holds a `NavigationRail` as a `Row` would. Several stack |
@@ -138,7 +138,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborHandled` | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; `HarborHandled` zeroes it, and with `clearsKeyboard:` the keyboard, and zeroes harbor's own room data, so harbor widgets beneath read zero too. `clearsBars: false` handles the system edges alone and leaves the bars, which `removePadding` cannot tell apart |
 | `HarborKeyboardStance.rides` / `.stays` | Rides: the bottom of a resizing `Scaffold`'s body. Stays: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per bar, so a composer can ride the keyboard while the tab bar under it stays |
 | `HarborKeyboardStance.reserves` | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
-| `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the space back |
+| `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `state: HarborBarState.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborBarState.withdrawn`, the default, slides it out and gives the space back |
 | `HarborAttachedBar` | `ScaffoldState.showBottomSheet`, which puts a widget into an ancestor's frame from deep in the tree | An attached bar is a bar: it takes its space (or the body runs under it), and leaves with the widget that added it |
 | `HarborFloat` | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the room, so it clears the system edges, every bar and the keyboard. A float with a `barrier:` is modal, as a `ModalBarrier` makes a page, but it is not a route |
 | `HarborPopover` | `OverlayPortal` (it is one), as `MenuAnchor` and `RawMenuAnchor` use | Placement only: it keeps the popover in the room and flips it when its side has no room. It brings no menu semantics, keyboard navigation or tap-outside dismissal; your `controller` opens and closes it |
@@ -146,7 +146,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `showHarborSheet` | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborBarrier.none` is `showBottomSheet` | Its header and footer are bars, so the body runs under the header and the footer rides the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
 | `HarborBarrier` | `ModalRoute.barrierColor`, `barrierDismissible`, `barrierLabel`; `ModalBottomSheetRoute.barrierOnTapHint` | One value for all four, taken by sheets, dialogs and floats alike: `.dimmed`, `.clear` or `.none` |
 | `showHarborSheet(coversPage: true)` | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A sheet that covers the page tells the page that opened it how far it covers, and the page's content keeps clear |
-| `HarborKeepInSight` | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the bars and the keyboard of every `HarborScrollView` it passes through. `HarborKeepInSight(onObscured:)`, how much of a widget the header covers, and `HarborKeepInSightRegion`, lifting content that does not scroll, have no Flutter equivalent |
+| `HarborKeepVisible` | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the bars and the keyboard of every `HarborScrollView` it passes through. `HarborCoverageListener`, how much of a widget the header covers, and `HarborLift` in a `HarborKeepVisibleRegion`, lifting content that does not scroll, have no Flutter equivalent |
 | `HarborScaledScreen` | A `FittedBox` around a `MediaQuery` with a fixed `size` | The real screen's insets are re-based into the reference screen's coordinates. Under a bare `FittedBox`, content still reads the real screen's `MediaQuery` |
 | `HarborInspector` | `debugPaintSizeEnabled` | It draws who holds each edge, at which layer, and the room, and serves the same as data (`HarborInspector.snapshot`) |
 | `pumpHarborTrial` | `tester.view.padding`, `viewPadding` and `viewInsets`, set with `FakeViewPadding` | Devices come with their status bar, home indicator, keyboard height and folds already set, and assertions are about the room, not numbers |
@@ -249,9 +249,9 @@ edge, system edge included, or 80 past the bars outside it, paints nothing and t
 no taps. It is an overlay bar by default (`kind: HarborBarKind.solid` stops the body
 at it) and takes a `keyboard:` like any bar.
 
-A `HarborFrame` fills the space it is given, as a page does. `sizing: HarborSizing.hugBody`
-makes it as tall as its body and bars, as a content-sized sheet is, and
-`maxExtentFraction:` caps that at a share of the space above the keyboard (of the
+A `HarborFrame` fills the space it is given, as a page does (`HarborSizing.fill`). `sizing:
+HarborSizing.hug()` makes it as tall as its body and bars, as a content-sized sheet is, and
+`HarborSizing.hug(maxFraction: 0.9)` caps that at a share of the space above the keyboard (of the
 whole height when `bodyClearsKeyboard` is false). `systemEdges:` replaces the system edges a frame
 reads from `MediaQuery` (`HarborSystemEdges.fixed(...)`, `HarborSystemEdges.none` for goldens,
 `HarborSystemEdges.titleSafe(...)` on a TV), on a `HarborRoot` or any `HarborFrame`, and
@@ -276,8 +276,8 @@ focus (`restingExtent:`) holds the header at its resting width.
 | `state: HarborBarState.dark` | Not drawn and not tappable, but it keeps its space |
 | `state: HarborBarState.withdrawn` | Slides out and gives its space back |
 | `extentPolicy:` | How a withdrawing bar gives its space back: `hold` (once it's gone, the default), `follow`, `release` |
-| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
-| `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip. Its name is unchanged in 0.9 |
+| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. Left unset, 250 ms along `Curves.easeInOutCubic`. It replaces `duration:` and `curve:`, deprecated |
+| `keyboard: HarborKeyboardStance.withdraws` | Leaves while the keyboard is up and comes back once it is down: a tool strip that would otherwise park mid-screen. It lays out as a bar that stays, so the keyboard covers it as it slides out. It replaces `withdrawsAtHighTide: true`, deprecated |
 | `restingExtent:` | The size to hold at rest for a bar that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, system edge or not, for the bar outermost on its edge (the one that takes the system edge) |
 | `systemEdges: HarborSystemEdgeStance.live` / `.steady` / `.none` | How it takes the system edge on its side: as it is now (gone at the bottom while the keyboard is up; the default for a bar that rides the keyboard), as it is with the keyboard down (the default for one that stays), or not at all (the default for one that reserves) |
@@ -483,9 +483,9 @@ instead of covered, and `bodyClearsKeyboard: false` has nothing to run under. Le
 ## Talking to the frame
 
 ```dart
-HarborHideBar(edge: HarborEdge.bottom, mode: HarborYield.withdraw, child: panel)
+HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.withdrawn, child: panel)
 HarborAttachedBar(edge: HarborEdge.bottom, bar: HarborBar.overlay(child: unsavedBar), child: form)
-HarborFrame.of(context).hideBar(HarborEdge.top, mode: HarborYield.dark) // returns a claim; release() it
+HarborFrame.of(context).hideBar(HarborEdge.top, state: HarborBarState.dark) // returns a claim; release() it
 ```
 
 `HarborFrame.of(context)` is the nearest frame's handle, as `Scaffold.of` is the
@@ -1074,20 +1074,27 @@ reduced motion still wins.
 ## Keeping in sight
 
 ```dart
-HarborKeepInSight(onObscured: (covered) => titleOpacity.value = covered, child: heroTitle); // covered: 0 to 1
-HarborKeepInSight(keepInSight: true, child: field);       // re-reveals as the keyboard opens or focus moves in
-HarborKeepInSightRegion(child: canvas)                    // + HarborKeepInSight(lift: true, clearance: 80)
-HarborKeepInSight.reveal(context, clearance: 24);
+HarborCoverageListener(onCoverage: (covered) => titleOpacity.value = covered, child: heroTitle); // 0 to 1
+HarborKeepVisible(child: field);                 // re-reveals as the keyboard opens or focus moves in
+HarborKeepVisibleRegion(child: canvas)           // + HarborLift(clearance: 80, child: boat) inside it
+HarborKeepVisible.reveal(context, clearance: 24);
 ```
 
-A focused field reveals its own caret, as `EditableText` does. A `HarborKeepInSight` with
-`keepInSight: true` reveals all of itself: when the keyboard opens, and when focus moves into
+Three widgets, one job each. A focused field reveals its own caret, as `EditableText` does. A
+`HarborKeepVisible` reveals all of itself: when the keyboard opens, and when focus moves into
 it from outside, by a tap or the keyboard's next action. So a field and the
 button under it come up together, `clearance` clear of the keyboard.
-`onlyWhileFocused: true` keeps the rest of a form's widgets still.
+`onlyWhileFocused: true` keeps the rest of a form's widgets still. A `HarborCoverageListener`
+reports how much of it the bars on its `edge` cover, and a `HarborLift` asks its region to lift it
+clear of what covers the bottom. `active: false` on `HarborKeepVisible` or `HarborLift` turns the job
+off without rebuilding the child as a different widget, as `HarborHideBar(active:)` does.
 
-A region lifts over 280 ms and settles back the same way. Give it an
-`animationStyle:` to change that: its `duration` and `curve` are for the lift,
+`HarborKeepInSight`, which did all three, is deprecated: `HarborKeepInSight(onObscured:)` is
+`HarborCoverageListener(onCoverage:)`, `keepInSight:` is `HarborKeepVisible`, and `lift:` is
+`HarborLift`, and `dart fix` rewrites a call that does one of them.
+
+A region lifts over 280 ms along `Curves.easeOutCubic` and settles back the same way. Give it an
+`animationStyle:` to change that (it replaces `duration:` and `curve:`, deprecated): its `duration` and `curve` are for the lift,
 its `reverseDuration` and `reverseCurve` for settling back, and
 `AnimationStyle.noAnimation` moves the content at once.
 
@@ -1177,11 +1184,11 @@ defaults: a `HarborFrame` lists its bars and floats, and a bar reads as
 `HarborFloat`, `HarborEdgeEffect`, `HarborSystemEdges`, `HarborTitleSafe`, `HarborSheetExtent`)
 are `Diagnosticable`, so they print the same way in a test failure or a log.
 
-Two fields are reserved and not yet read: `HarborSystemEdgeFeature.hinge` (sheets,
-dialogs, toasts and floats keep off a hinge through `MediaQuery.displayFeatures`,
-not through the system edges) and `HarborController.isPage`, which records whether the
-controller's frame was built as a page (`HarborFrame.page`, or `isPage: true`); toasts find their
-page by route instead.
+Two fields are for information only. `HarborSystemEdgeFeature.hinge` is reserved and never
+reported: a hinge is not a system edge, and bars, sheets, dialogs, toasts, floats and popovers keep
+off it through `MediaQuery.displayFeatures`, by the `HarborHinge` policy. `HarborController.isPage`
+records whether the controller's frame was built as a page (`HarborFrame.page`, or `isPage: true`)
+or has no frame above it; nothing in harbor reads it, and toasts find their page by route.
 
 ## Trials
 

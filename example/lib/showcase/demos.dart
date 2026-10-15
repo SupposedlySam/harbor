@@ -671,19 +671,19 @@ class _MakeWayDemo extends StatelessWidget {
     final double t = ShowcaseClock.of(context);
     final double dark = _cue('makeway', 'dark') - 0.2;
     final double withdraw = _cue('makeway', 'withdraw') - 0.2;
-    final HarborYield? mode = t >= withdraw && t < _end('makeway') - 0.9
-        ? HarborYield.withdraw
+    final HarborBarState? state = t >= withdraw && t < _end('makeway') - 0.9
+        ? HarborBarState.withdrawn
         : t >= dark && t < withdraw
-        ? HarborYield.dark
+        ? HarborBarState.dark
         : null;
     return HarborFrame(
       top: <HarborBar>[_header('Harbor Master')],
       bottom: <HarborBar>[_tabBar()],
       body: HarborHideBar(
-        key: ValueKey<HarborYield?>(mode),
+        key: ValueKey<HarborBarState?>(state),
         edge: HarborEdge.bottom,
-        mode: mode ?? HarborYield.dark,
-        active: mode != null,
+        state: state ?? HarborBarState.dark,
+        active: state != null,
         child: HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
       ),
     );
@@ -1224,8 +1224,7 @@ class _LighthouseDemo extends StatelessWidget {
               const HarborClear.rowInsets(child: _Field('Speed', '6 knots')),
               const HarborClear.rowInsets(child: _Field('Flag', 'Red ensign')),
               const HarborClear.rowInsets(child: _Field('Crew', '3')),
-              HarborKeepInSight(
-                keepInSight: true,
+              HarborKeepVisible(
                 clearance: 16,
                 child: HarborClear.rowInsets(
                   child: _Field('Remarks', focused ? 'Under full sail|' : '', focused: focused),

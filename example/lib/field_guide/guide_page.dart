@@ -106,7 +106,6 @@ class _GuidePageState extends State<GuidePage> {
     // keeps clear of the header.
     return HarborPage(
       child: HarborFrame(
-        isPage: true,
         debugLabel: 'field guide page',
         top: <HarborBar>[
           HarborBar.overlay(

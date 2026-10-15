@@ -30,8 +30,7 @@ class OpenSeaTab extends StatelessWidget {
     debugLabel: 'open sea',
     title: 'Open Sea',
     boats: Fleet.boats,
-    hideMode: HarborYield.withdraw,
-    isPage: false,
+    hideState: HarborBarState.withdrawn,
   );
 }
 
@@ -50,8 +49,7 @@ class VoyagePage extends StatelessWidget {
       debugLabel: 'voyage ${boat.name}',
       title: boat.name,
       boats: <Boat>[boat],
-      hideMode: HarborYield.dark,
-      isPage: true,
+      hideState: HarborBarState.dark,
       showBack: true,
     ),
   );
@@ -92,8 +90,7 @@ class _VoyageHarbor extends StatefulWidget {
     required this.debugLabel,
     required this.title,
     required this.boats,
-    required this.hideMode,
-    required this.isPage,
+    required this.hideState,
     this.showBack = false,
   });
 
@@ -102,8 +99,7 @@ class _VoyageHarbor extends StatefulWidget {
   final List<Boat> boats;
 
   /// How the header hides while the shanty drawer is open.
-  final HarborYield hideMode;
-  final bool isPage;
+  final HarborBarState hideState;
   final bool showBack;
 
   @override
@@ -169,7 +165,6 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
   Widget build(final BuildContext context) {
     final bool following = widget.boats.length == 1;
     return HarborFrame(
-      isPage: widget.isPage,
       debugLabel: widget.debugLabel,
       top: <HarborBar>[
         HarborBar.overlay(
@@ -216,7 +211,7 @@ class _VoyageHarborState extends State<_VoyageHarbor> {
               bands: HarborRoom.of(context).fadeBands,
               child: HarborHideBar(
                 edge: HarborEdge.top,
-                mode: widget.hideMode,
+                state: widget.hideState,
                 active: _singing,
                 child: PageView.builder(
                   controller: _pages,

@@ -60,11 +60,11 @@ final List<GuideEntry> tideEntries = <GuideEntry>[
   ),
   GuideEntry(
     id: 'tide-withdraws',
-    className: 'HarborBar.withdrawsAtHighTide',
+    className: 'HarborKeyboardStance.withdraws',
     group: GuideGroup.tide,
     realWorld: 'Like a boat hauled up a slipway: the bar leaves while the keyboard is up',
     art: (final BuildContext context) => const SlipwayArt(),
-    page: (final BuildContext context) => const WithdrawsAtHighTideEntry(),
+    page: (final BuildContext context) => const WithdrawsEntry(),
   ),
   GuideEntry(
     id: 'tide-body-clears',
@@ -846,22 +846,22 @@ class _HatchPainter extends CustomPainter {
   bool shouldRepaint(final _HatchPainter oldDelegate) => false;
 }
 
-// 7. HarborBar.withdrawsAtHighTide --------------------------------------------
+// 7. HarborKeyboardStance.withdraws -------------------------------------------
 
-/// `HarborBar.withdrawsAtHighTide`: a tool strip that leaves while the keyboard is up.
-class WithdrawsAtHighTideEntry extends StatefulWidget {
-  const WithdrawsAtHighTideEntry({super.key});
+/// `HarborKeyboardStance.withdraws`: a tool strip that leaves while the keyboard is up.
+class WithdrawsEntry extends StatefulWidget {
+  const WithdrawsEntry({super.key});
 
   @override
-  State<WithdrawsAtHighTideEntry> createState() => _WithdrawsAtHighTideEntryState();
+  State<WithdrawsEntry> createState() => _WithdrawsEntryState();
 }
 
-class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
+class _WithdrawsEntryState extends State<WithdrawsEntry> {
   bool _withdraws = true;
 
   @override
   Widget build(final BuildContext context) => GuidePage(
-    className: 'HarborBar.withdrawsAtHighTide',
+    className: 'HarborKeyboardStance.withdraws',
     tryThis: const <TryStep>[
       TryStep(
         'Tap the keyboard button',
@@ -876,7 +876,7 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
         'The strip is already gone: it withdraws as soon as any keyboard is up, not only at full height.',
       ),
       TryStep(
-        'Switch withdrawsAtHighTide off, keyboard still up',
+        'Switch withdraws off (rides), keyboard still up',
         'The strip comes back and rides the keyboard on top of the composer, taking its room from the list.',
       ),
     ],
@@ -889,18 +889,13 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
         'otherwise park mid-screen on top of a composer that rides the keyboard. It gives its ground back, so the body grows into it.',
     art: const SlipwayArt(),
     controls: <Widget>[
-      ToggleControl(
-        label: 'withdrawsAtHighTide',
-        value: _withdraws,
-        onChanged: (final bool v) => setState(() => _withdraws = v),
-      ),
+      ToggleControl(label: 'withdraws', value: _withdraws, onChanged: (final bool v) => setState(() => _withdraws = v)),
     ],
     code:
         'HarborFrame(\n'
         '  bottom: [\n'
         '    HarborBar.solid(\n'
-        '      keyboard: HarborKeyboardStance.rides,\n'
-        '      withdrawsAtHighTide: $_withdraws,\n'
+        '      keyboard: HarborKeyboardStance.${_withdraws ? 'withdraws' : 'rides'},\n'
         '      child: ToolStrip(),\n'
         '    ),\n'
         '    HarborBar.solid(keyboard: HarborKeyboardStance.rides, child: Composer()),\n'
@@ -908,11 +903,10 @@ class _WithdrawsAtHighTideEntryState extends State<WithdrawsAtHighTideEntry> {
         '  body: notes,\n'
         ')',
     stage: (final BuildContext context) => HarborFrame(
-      top: <HarborBar>[_header('withdrawsAtHighTide')],
+      top: <HarborBar>[_header('HarborKeyboardStance.withdraws')],
       bottom: <HarborBar>[
         HarborBar.solid(
-          keyboard: HarborKeyboardStance.rides,
-          withdrawsAtHighTide: _withdraws,
+          keyboard: _withdraws ? HarborKeyboardStance.withdraws : HarborKeyboardStance.rides,
           backdrop: ColoredBox(color: _tabBarColor),
           debugLabel: 'tool strip',
           child: _ToolStrip(withdraws: _withdraws),
@@ -944,7 +938,7 @@ class _ToolStrip extends StatelessWidget {
           ]) ...<Widget>[Icon(icon, color: Palette.sail, size: 22), const SizedBox(width: 14)],
           Expanded(
             child: Text(
-              'withdrawsAtHighTide: $withdraws',
+              'tool strip: ${withdraws ? 'withdraws' : 'rides'}',
               textAlign: TextAlign.end,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

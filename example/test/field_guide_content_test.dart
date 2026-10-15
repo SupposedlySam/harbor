@@ -749,7 +749,10 @@ void main() {
       await pump(tester);
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_rect(tester, 'solid bar').top));
       await press(tester, 'bottom');
-      expect(_code(tester), contains('HarborHideBar(edge: HarborEdge.bottom, mode: HarborYield.withdraw, child: ...)'));
+      expect(
+        _code(tester),
+        contains('HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.withdrawn, child: ...)'),
+      );
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_frameBottom(tester)));
       expect(_rect(tester, 'solid bar').top, greaterThanOrEqualTo(_frameBottom(tester) - 0.6));
     });
@@ -770,7 +773,10 @@ void main() {
       final double rowTop = _rect(tester, 'stage row 0').top;
       final double headerBottom = _rect(tester, 'overlay header').bottom;
       await press(tester, 'top');
-      expect(_code(tester), contains('HarborHideBar(edge: HarborEdge.top, mode: HarborYield.withdraw, child: ...)'));
+      expect(
+        _code(tester),
+        contains('HarborHideBar(edge: HarborEdge.top, state: HarborBarState.withdrawn, child: ...)'),
+      );
       expect(_rect(tester, 'overlay header').bottom, lessThanOrEqualTo(_frameTop(tester) + 0.6));
       // The rows move up by the header's ground: down to the status bar.
       expect(
@@ -783,11 +789,11 @@ void main() {
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'mode: dark');
+      await _tap(tester, 'state: dark');
       final double rowGap = _rect(tester, 'stage row 0').top - _rect(tester, 'overlay header').bottom;
       expect(_key('overlay header').hitTestable(), findsOneWidget);
       await press(tester, 'top');
-      expect(_code(tester), contains('HarborHideBar(edge: HarborEdge.top, mode: HarborYield.dark, child: ...)'));
+      expect(_code(tester), contains('HarborHideBar(edge: HarborEdge.top, state: HarborBarState.dark, child: ...)'));
       expect(_rect(tester, 'stage row 0').top - _rect(tester, 'overlay header').bottom, _near(rowGap));
       expect(_opacityOf(tester, 'overlay header'), 0);
       expect(_key('overlay header').hitTestable(), findsNothing);
@@ -797,28 +803,28 @@ void main() {
       final WidgetTester tester,
     ) async {
       await pump(tester);
-      await _tap(tester, 'mode: dark');
+      await _tap(tester, 'state: dark');
       await press(tester, 'bottom');
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_rect(tester, 'solid bar').top));
       expect(_opacityOf(tester, 'solid bar'), 0);
     });
 
-    testWidgets('withdraw, picked again, gives the ground back again', (final WidgetTester tester) async {
+    testWidgets('withdrawn, picked again, gives the ground back again', (final WidgetTester tester) async {
       await pump(tester);
-      await _tap(tester, 'mode: dark');
-      await _tap(tester, 'mode: withdraw');
-      expect(_code(tester), contains('.hideBar(HarborEdge.bottom, mode: HarborYield.withdraw);'));
+      await _tap(tester, 'state: dark');
+      await _tap(tester, 'state: withdrawn');
+      expect(_code(tester), contains('.hideBar(HarborEdge.bottom, state: HarborBarState.withdrawn);'));
       await press(tester, 'bottom');
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_frameBottom(tester)));
     });
 
-    testWidgets('changing the mode while a claim is held moves the claim to the new mode', (
+    testWidgets('changing the state while a claim is held moves the claim to the new state', (
       final WidgetTester tester,
     ) async {
       await pump(tester);
       await press(tester, 'bottom');
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_frameBottom(tester)));
-      await _tap(tester, 'mode: dark');
+      await _tap(tester, 'state: dark');
       await tester.pump(_step);
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_rect(tester, 'solid bar').top));
       expect(_opacityOf(tester, 'solid bar'), 0);
