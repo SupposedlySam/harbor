@@ -140,6 +140,11 @@ Order of work:
   that "how long" has one spelling at the call and in the defaults. The barrier step had given
   dialogs and floats an `onTapHint` too; the default stays `sheet…`, since the hint a Material app
   passes names the bottom sheet.
+- **Nearest wins per frame** (2026-10-15, owner review): a frame's bars follow
+  `own.barHinge ?? own.hinge ?? inherited.barHinge ?? inherited.hinge`, the order 0.9.1 had for a
+  frame's own settings, so a frame's own `hinge` always beats a `barHinge` inherited from outside.
+  `HarborDefaults.merge` carries it (a nearer `hinge` replaces an inherited `barHinge`), so frames
+  and scopes beneath follow it too. No other field has a bar-specific twin.
 - **Behaviour the CHANGELOG records:** `barHinge` is now inherited by nested frames, as `hinge` was,
   and a page's defaults cross into the sheets, dialogs and toasts it opens (they ride the themes
   those capture).

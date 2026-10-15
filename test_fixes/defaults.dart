@@ -34,3 +34,10 @@ void policies(HarborToastQueue q) {
 // Left alone, and must not stop dart fix: with HarborFlarePolicy deprecated as a class, a static
 // call through it crashed the analysis server under `dart fix --apply`, so only its constructor is.
 HarborToastQueue queue(BuildContext context) => HarborFlarePolicy.queueOf(context);
+
+// Owner review's shape: an outer barHinge over a nested frame's own hinge. test/defaults_test.dart
+// measures the migrated form keeping the inner tabs at 540.
+Widget nested(Widget tabs) => HarborFrame(
+  barHinge: HarborHinge.never,
+  body: HarborFrame(hinge: HarborHinge.avoidSeparating, bottom: <HarborBar>[HarborBar.solid(child: tabs)], body: const SizedBox()),
+);

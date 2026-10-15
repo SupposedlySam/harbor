@@ -51,7 +51,27 @@ void main() {
       const HarborDefaults page = HarborDefaults(toastQueue: HarborToastQueue.replace, hinge: HarborHinge.never);
       expect(
         app.merge(page),
-        const HarborDefaults(barrierLabel: 'Fermer', toastQueue: HarborToastQueue.replace, hinge: HarborHinge.never),
+        const HarborDefaults(
+          barrierLabel: 'Fermer',
+          toastQueue: HarborToastQueue.replace,
+          hinge: HarborHinge.never,
+          // A nearer hinge replaces an inherited barHinge, so it is written out.
+          barHinge: HarborHinge.never,
+        ),
+      );
+      expect(
+        const HarborDefaults(
+          barHinge: HarborHinge.never,
+        ).merge(const HarborDefaults(hinge: HarborHinge.always)).barHinge,
+        HarborHinge.always,
+        reason: 'the nearer hinge, not the inherited barHinge',
+      );
+      expect(
+        const HarborDefaults(
+          barHinge: HarborHinge.never,
+        ).merge(const HarborDefaults(toastQueue: HarborToastQueue.replace)).barHinge,
+        HarborHinge.never,
+        reason: 'a nearer scope that says nothing of the hinge keeps it',
       );
       expect(app.merge(null), app);
       expect(app.merge(const HarborDefaults()), app);
@@ -441,6 +461,97 @@ void main() {
     testWidgets('positive control: without it the nested frame’s bars keep to the left screen', (final tester) async {
       await nested(tester);
       expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 540);
+    });
+
+    // Owner review: a frame's own hinge beats a barHinge inherited from the frame around it. The
+    // order per frame is its own barHinge, its own hinge, then the inherited barHinge and hinge, as
+    // on main, where the inner frame's tabs ended at 540.
+    Future<void> ownHinge(
+      final WidgetTester tester, {
+      required final bool deprecated,
+      final bool deeper = false,
+      final bool innerHinge = true,
+    }) {
+      // Deeper, the inner frame holds no bars, so the frame in its body is still as big as the
+      // screen: only a frame that size reads the hinge.
+      final Widget body = deeper
+          ? const HarborFrame(
+              bottom: <HarborBar>[
+                HarborBar.solid(
+                  child: SizedBox(key: ValueKey<String>('deeper tabs'), height: 40, width: double.infinity),
+                ),
+              ],
+              body: SizedBox.expand(),
+            )
+          : const SizedBox.expand();
+      final List<HarborBar> bottom = deeper
+          ? const <HarborBar>[]
+          : const <HarborBar>[
+              HarborBar.solid(
+                child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity),
+              ),
+            ];
+      final HarborHinge? own = innerHinge ? HarborHinge.avoidSeparating : null;
+      return tester.pumpHarborTrial(
+        MaterialApp(
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: deprecated
+              ? HarborFrame(
+                  // ignore: deprecated_member_use_from_same_package
+                  barHinge: HarborHinge.never,
+                  // ignore: deprecated_member_use_from_same_package
+                  body: HarborFrame(hinge: own, bottom: bottom, body: body),
+                )
+              : HarborFrame(
+                  defaults: const HarborDefaults(barHinge: HarborHinge.never),
+                  body: HarborFrame(
+                    defaults: HarborDefaults(hinge: own),
+                    bottom: bottom,
+                    body: body,
+                  ),
+                ),
+        ),
+        device: dual,
+      );
+    }
+
+    for (final bool deprecated in <bool>[true, false]) {
+      final String how = deprecated ? 'hinge:/barHinge:' : 'defaults:';
+      testWidgets('a nested frame’s own hinge beats an inherited barHinge ($how)', (final tester) async {
+        await ownHinge(tester, deprecated: deprecated);
+        expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 540);
+      });
+
+      testWidgets('and a frame beneath that one follows the nearer hinge too ($how)', (final tester) async {
+        await ownHinge(tester, deprecated: deprecated, deeper: true);
+        expect(tester.getRect(find.byKey(const ValueKey<String>('deeper tabs'))).right, 540);
+      });
+
+      testWidgets('positive control: without the inner hinge, the outer barHinge reaches it ($how)', (
+        final tester,
+      ) async {
+        await ownHinge(tester, deprecated: deprecated, deeper: true, innerHinge: false);
+        expect(tester.getRect(find.byKey(const ValueKey<String>('deeper tabs'))).right, 1114);
+      });
+    }
+
+    testWidgets('a frame’s own barHinge still beats its own hinge', (final tester) async {
+      await tester.pumpHarborTrial(
+        MaterialApp(
+          builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
+          home: const HarborFrame(
+            defaults: HarborDefaults(hinge: HarborHinge.avoidSeparating, barHinge: HarborHinge.never),
+            bottom: <HarborBar>[
+              HarborBar.solid(
+                child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity),
+              ),
+            ],
+            body: SizedBox.expand(),
+          ),
+        ),
+        device: dual,
+      );
+      expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 1114);
     });
   });
 
