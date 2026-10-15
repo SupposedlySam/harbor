@@ -1628,56 +1628,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'isPage'
-  # HarborController.dockedEdges
-  - title: "Rename to 'edgesWithBars'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      getter: 'dockedEdges'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'edgesWithBars'
-  # HarborController.breakwaterTopsInGlobal
-  - title: "Rename to 'pageCoverTopsInGlobal'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      getter: 'breakwaterTopsInGlobal'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'pageCoverTopsInGlobal'
-  # HarborController.breakwaterCoverage
-  - title: "Rename to 'pageCoverage'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      getter: 'breakwaterCoverage'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'pageCoverage'
-  # HarborController.breakwaterChanges
-  - title: "Rename to 'pageCoverChanges'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      getter: 'breakwaterChanges'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'pageCoverChanges'
-  # HarborController.flares
-  - title: "Rename to 'toasts'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      getter: 'flares'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'toasts'
   # HarborController.clearWaterInGlobal
   - title: "Rename to 'roomInGlobal'"
     date: 2026-10-14
@@ -1688,16 +1638,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'roomInGlobal'
-  # HarborController.withDockOn
-  - title: "Rename to 'withBarOn'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      method: 'withDockOn'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'withBarOn'
   # HarborController.makeWay
   - title: "Rename to 'hideBar'"
     date: 2026-10-14
@@ -1738,16 +1678,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'detachBar'
-  # HarborController.pontoonsOn
-  - title: "Rename to 'attachedBarsOn'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      method: 'pontoonsOn'
-      inClass: 'HarborController'
-    changes:
-      - kind: 'rename'
-        newName: 'attachedBarsOn'
   # HarborController.addBreakwater
   - title: "Rename to 'addPageCover'"
     date: 2026-10-14

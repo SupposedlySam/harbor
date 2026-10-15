@@ -687,12 +687,17 @@ class HarborFrameRegistry {
   HarborController? get sea => root;
 }
 
-/// A frame's handle on itself, for its bars, its content and its neighbors.
+/// A frame's handle on itself, for what content asks of it.
 ///
 /// Get it with `HarborFrame.of`, as a `Scaffold`'s is got with `Scaffold.of`. The
 /// frame makes it; claims, attached bars and page covers registered here change
 /// what the frame builds, and are applied on the next frame drawn when they
 /// arrive during one.
+///
+/// What it offers: hiding bars ([hideBar]), attaching them ([attachBar], [updateAttachedBar],
+/// [detachBar]), page covers ([addPageCover], [addPageCoverEdge]), the [room] and [roomInGlobal],
+/// and the frame's [registry], [debugLabel] and [isPage]. The rest is harbor's own plumbing, marked
+/// `@internal`; to read where a frame's bars are, use `HarborInspector.nearest`.
 class HarborController {
   /// Made by the frame it belongs to.
   @internal
@@ -705,6 +710,7 @@ class HarborController {
   });
 
   /// The frame this one sits in, if any.
+  @internal
   final HarborController? parent;
 
   /// Every frame under the same root as this one.
@@ -738,16 +744,20 @@ class HarborController {
   VoidCallback? onChanged;
 
   /// The edges this frame has bars on.
+  @internal
   Set<HarborEdge> get edgesWithBars => Set<HarborEdge>.unmodifiable(_dockedEdges);
   @internal
   set edgesWithBars(final Set<HarborEdge> value) => _dockedEdges = value;
   Set<HarborEdge> _dockedEdges = <HarborEdge>{};
 
   /// The old name of [edgesWithBars].
-  @Deprecated('Renamed edgesWithBars. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   Set<HarborEdge> get dockedEdges => edgesWithBars;
 
   /// The route this frame is in, if any.
+  @internal
   ModalRoute<Object?>? get route => _route;
   @internal
   set route(final ModalRoute<Object?>? value) => _route = value;
@@ -759,6 +769,7 @@ class HarborController {
   /// Only a `HarborRoot` makes the frames right inside it pages. With no root, the outermost frame
   /// is the route's page and the ones inside it are not: counting them too sent a toast shown
   /// from a header band's own frame into that band, 100 high, instead of the page (#86).
+  @internal
   bool get isRouteLevel {
     final HarborController? parent = this.parent;
     if (parent == null || !identical(route, parent.route)) {
@@ -799,15 +810,18 @@ class HarborController {
   final _BreakwaterNotifier _breakwaterChanges = _BreakwaterNotifier();
 
   /// The nearest frame above [context].
+  @internal
   static HarborController? maybeOf(final BuildContext context) =>
       context.getInheritedWidgetOfExactType<HarborScope>()?.controller;
 
   /// The nearest frame above [context]. Throws a [FlutterError], in release
   /// builds too, when there is none; [maybeOf] returns null instead.
+  @internal
   static HarborController of(final BuildContext context) =>
       maybeOf(context) ?? (throw harborNotFound(context, 'HarborController'));
 
   /// The nearest frame, from this one outward, that has a bar on [edge].
+  @internal
   HarborController? withBarOn(final HarborEdge edge) {
     HarborController? candidate = this;
     while (candidate != null) {
@@ -820,7 +834,9 @@ class HarborController {
   }
 
   /// The old name of [withBarOn].
-  @Deprecated('Renamed withBarOn. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   HarborController? withDockOn(final HarborEdge edge) => withBarOn(edge);
 
   // Claims.
@@ -861,6 +877,7 @@ class HarborController {
   }
 
   /// The state claims impose on [edge], or null when nothing has asked.
+  @internal
   HarborBarState? claimedStateOf(final HarborEdge edge) {
     bool dark = false;
     for (final HarborClaim claim in _claims) {
@@ -918,13 +935,16 @@ class HarborController {
   void removePontoon(final HarborAttachedBarHandle handle) => detachBar(handle);
 
   /// Bars attached here from deeper in the tree, by edge, in arrival order.
+  @internal
   List<HarborBar> attachedBarsOn(final HarborEdge edge) => <HarborBar>[
     for (final HarborAttachedBarHandle p in _pontoons)
       if (p._edge == edge) p._dock,
   ];
 
   /// The old name of [attachedBarsOn].
-  @Deprecated('Renamed attachedBarsOn. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   List<HarborBar> pontoonsOn(final HarborEdge edge) => attachedBarsOn(edge);
 
   // Page covers.
@@ -967,10 +987,13 @@ class HarborController {
   HarborPageCover addBreakwaterEdge(final ValueListenable<double> topInGlobal) => addPageCoverEdge(topInGlobal);
 
   /// The old name of [pageCoverTopsInGlobal].
-  @Deprecated('Renamed pageCoverTopsInGlobal. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   Iterable<double> get breakwaterTopsInGlobal => pageCoverTopsInGlobal;
 
   /// The top edges, in global coordinates, of page covers that measure one.
+  @internal
   Iterable<double> get pageCoverTopsInGlobal sync* {
     for (final HarborPageCover coversPage in _breakwaters) {
       final double? top = coversPage.topInGlobal;
@@ -981,6 +1004,7 @@ class HarborController {
   }
 
   /// How far page covers cover the bottom of the screen, the largest of them.
+  @internal
   double get pageCoverage {
     double largest = 0.0;
     for (final HarborPageCover coversPage in _breakwaters) {
@@ -992,27 +1016,35 @@ class HarborController {
   }
 
   /// Fires when a page cover moves, so the frame can lay out again without rebuilding.
+  @internal
   Listenable get pageCoverChanges => _breakwaterChanges;
 
   /// The old name of [pageCoverage].
-  @Deprecated('Renamed pageCoverage. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   double get breakwaterCoverage => pageCoverage;
 
   /// The old name of [pageCoverChanges].
-  @Deprecated('Renamed pageCoverChanges. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   Listenable get breakwaterChanges => pageCoverChanges;
 
   // Toasts.
 
   /// The toasts shown on this frame, in the order they were shown.
+  @internal
   List<HarborToastEntry> get toasts => List<HarborToastEntry>.unmodifiable(_flares);
 
   /// The old name of [toasts].
-  @Deprecated('Renamed toasts. `dart fix` applies it.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   List<HarborToastEntry> get flares => toasts;
 
   /// The flares raised on this harbor: the old name of [toasts].
-  @Deprecated('Use toasts. Signals were renamed toasts before 1.0, so they are not mistaken for the signals package.')
+  @Deprecated('Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.')
   List<HarborToastEntry> get signals => toasts;
 
   void _raiseFlare(final HarborToastEntry flare) {
@@ -1088,8 +1120,10 @@ class HarborController {
   final List<VoidCallback> _leaveListeners = <VoidCallback>[];
 
   /// Calls [listener] once when this frame leaves the tree.
+  @internal
   void addLeaveListener(final VoidCallback listener) => _leaveListeners.add(listener);
 
+  @internal
   void removeLeaveListener(final VoidCallback listener) => _leaveListeners.remove(listener);
 
   /// Called by the frame as it leaves the tree.

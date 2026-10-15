@@ -292,7 +292,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborFleet` | `HarborFrameRegistry` | T | Every frame under one root |
 | `HarborFleet.harbors` / `sea` | `frames` / `root` | rename | `topmost`, `addObserver`, `removeObserver` unchanged |
 | `HarborFleetObserver` | `HarborFrameObserver` | T | As `NavigatorObserver`. `didJoin`, `didLeave` unchanged |
-| `HarborController` | unchanged | | Plain, and the brand prefix covers it. Internals go `@internal` in audit step 9 |
+| `HarborController` | unchanged | | Plain, and the brand prefix covers it. After 0.9.1 its public surface is `hideBar`, `attachBar` / `updateAttachedBar` / `detachBar`, `addPageCover` / `addPageCoverEdge`, `room` / `roomInGlobal`, `registry`, `debugLabel` and `isPage`; the rest is `@internal` (`parent`, `route`, `isRouteLevel`, `withBarOn`, `edgesWithBars`, `claimedStateOf`, `attachedBarsOn`, `pageCoverage`, `pageCoverChanges`, `pageCoverTopsInGlobal`, `toasts`, the leave listeners, and `HarborController.of` / `maybeOf`, for which `HarborFrame.of` / `maybeOf` stand). Their 0.8 names lose their rename fixes, which would have traded a deprecation for `invalid_use_of_internal_member` |
 | `HarborController.fleet` | `registry` | rename | |
 | `HarborController.makeWay` | `hideBar` | rename | Q2 |
 | `HarborController.addPontoon` / `updatePontoon` / `removePontoon` / `pontoonsOn` | `attachBar` / `updateAttachedBar` / `detachBar` / `attachedBarsOn` | rename | |
