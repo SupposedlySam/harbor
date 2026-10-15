@@ -145,6 +145,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborToasts.show` | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Toasts at one slot take turns, as snack bars do, and a toast's time counts only while it is in sight; toasts at different slots show together. It builds any widget, at one of four heights (`HarborToastSlot`), clear of the bars of the page that showed it. Both are live regions |
 | `showHarborSheet` | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborBarrier.none` is `showBottomSheet` | Its header and footer are bars, so the body runs under the header and the footer rides the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
 | `HarborBarrier` | `ModalRoute.barrierColor`, `barrierDismissible`, `barrierLabel`; `ModalBottomSheetRoute.barrierOnTapHint` | One value for all four, taken by sheets, dialogs and floats alike: `.dimmed`, `.clear` or `.none` |
+| `HarborDefaults` | `DefaultTextStyle.merge`; the parts of a `ThemeData` that are policy, not look | Set once on the root, a frame or a `HarborDefaultsScope`, merged field by field, and carried into the sheets, dialogs and toasts a page opens. No widget-valued fields: a sheet's surface stays in your own wrapper |
 | `showHarborSheet(coversPage: true)` | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A sheet that covers the page tells the page that opened it how far it covers, and the page's content keeps clear |
 | `HarborKeepVisible` | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the bars and the keyboard of every `HarborScrollView` it passes through. `HarborCoverageListener`, how much of a widget the header covers, and `HarborLift` in a `HarborKeepVisibleRegion`, lifting content that does not scroll, have no Flutter equivalent |
 | `HarborScaledScreen` | A `FittedBox` around a `MediaQuery` with a fixed `size` | The real screen's insets are re-based into the reference screen's coordinates. Under a bare `FittedBox`, content still reads the real screen's `MediaQuery` |
@@ -564,8 +565,9 @@ its bars while leaving them in view (`HarborBarrier.dimmed()` tints them too), a
 screen readers to leave them alone; a tap beside the float, back or Escape calls its
 `onDismiss`, and the floats listed before it are hidden while it is up. A barrier that is
 not `dismissible` ignores the tap, and back and Escape still call `onDismiss`. The
-barrier's `label` ('Dismiss' when none is given) is what a screen reader announces for
-it; a Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+barrier's `label` is what a screen reader announces for it ('Dismiss', unless
+`HarborDefaults.barrierLabel` above it says otherwise); a Material app sets
+`MaterialLocalizations.of(context).modalBarrierDismissLabel` there once ([Defaults](#defaults)).
 A float's `modal` getter reads whether it has one. A modal float holds
 keyboard focus as a dialog does: it takes focus when it opens, Tab goes round
 inside it and the arrow keys (a TV remote's D-pad) stop at its edges, and focus
@@ -605,9 +607,11 @@ reader dismisses a toast, so a toast's own close button, or a toast in a
 `Dismissible`, counts as dismissed in analytics rather than hidden by the app. Toasts at different slots show together.
 `queue: HarborToastQueue.replace` takes the turn at once instead: the toast goes
 first and the one up leaves, closed with `HarborToastClosedReason.replaced`, for
-an Undo whose window is tied to a pending action. `HarborFlarePolicy(queue:,
-child:)` (its 0.8 name, kept until it folds into `HarborDefaultsScope`) sets that for a subtree, such as a remote-driven TV screen where a newer
-"Saved" should replace the one up rather than arrive late. `closed`
+an Undo whose window is tied to a pending action.
+`HarborDefaultsScope(defaults: HarborDefaults(toastQueue: HarborToastQueue.replace), child:)` sets that
+for a subtree, such as a remote-driven TV screen where a newer "Saved" should replace the one up
+rather than arrive late (`HarborFlarePolicy(queue:, child:)`, its 0.8 spelling, still works,
+deprecated). `closed`
 completes once a toast has left, with why. `entry.phase` (`waiting`, `shown`,
 `closed`) and `entry.wasShown` say where it is synchronously, before `closed`
 completes: a toast hidden while it waits is `closed` by the time `hide()`
@@ -813,10 +817,11 @@ Material 3's `HingePolicy`:
 | `always` | Every hinge and fold, a flat one too |
 | `never` | Nothing: the inner screen is one wide, unbroken screen, for a canvas or a map |
 
-Set the app's default on `HarborRoot(hinge:)`, a page's on `HarborFrame(hinge:)`, and
-one overlay's on `showHarborSheet(hinge:)`, `showHarborDialog(hinge:)`,
-`HarborToasts.show(hinge:)` or `HarborFloat(hinge:)`; the nearest wins, and a toast
-takes the policy of the page that showed it. A popover (a row's menu) keeps to
+Set the app's default with `HarborRoot(defaults: HarborDefaults(hinge:))`, a page's with
+`HarborFrame(defaults: HarborDefaults(hinge:))`, and one overlay's on `showHarborSheet(hinge:)`,
+`showHarborDialog(hinge:)`, `HarborToasts.show(hinge:)` or `HarborFloat(hinge:)`; the nearest
+wins. A page's policy goes with what it opens: a sheet opened from the page keeps it, and so does
+a toast shown from that sheet. A popover (a row's menu) keeps to
 the screen that holds its anchor, as a Material menu keeps to its button's, and
 flips within it; `HarborPopover(hinge:)` sets its own. A sheet a hinge keeps to
 one screen can fill that screen, top to bottom, with
@@ -831,9 +836,11 @@ ask: a header or a tab bar across a vertical hinge keeps to the screen where
 reading starts (the left one, or the right one right to left), and a rail down a
 horizontal hinge keeps to the top screen. The body still runs across, so a page
 is one canvas; split it into panes for two. Only a frame as big as the screen
-reads the hinge. `HarborFrame(hinge: HarborHinge.never)` lays bars across it, and the
-page's overlays too; `HarborFrame(barHinge: HarborHinge.never)` lays only the bars
-across it, so its sheets, dialogs, toasts and menus still keep off.
+reads the hinge. `HarborDefaults(hinge: HarborHinge.never)` on a frame lays bars across it,
+and the page's overlays too; `HarborDefaults(barHinge: HarborHinge.never)` lays only the bars
+across it, so its sheets, dialogs, toasts and menus still keep off. Both reach the frames nested
+in the page as well. Through 0.9 these were `HarborFrame(hinge:, barHinge:)` and
+`HarborRoot(hinge:)`; they still work, deprecated, and `dart fix` moves them into `defaults:`.
 
 `HarborPanes(start:, end:)` is two panes, modelled on Windows' `TwoPaneView`:
 either side of a hinge the policy keeps off (side by side for a vertical one,
@@ -960,7 +967,7 @@ sheet is a semantics scope of its own, and screen readers announce its
 `semanticLabel:` as it opens. The barrier's semantics end at the sheet's top, as
 a modal bottom sheet's do, and follow it as it slides or is dragged, so touch
 exploration over the sheet finds its content rather than the barrier. It spans
-the screen unless you give it a `maxWidth`.
+the screen unless you give it a `maxWidth`, or `HarborDefaults.sheetMaxWidth` above it sets one.
 
 A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
 into it, an observer of page routes does not count it as a screen, a draggable sheet
@@ -996,25 +1003,21 @@ theme: sheet and dialog barriers are `showGeneralDialog`'s half-black
 (`HarborBarrier.defaultColor`, `0x80000000`), and a hairline edge effect is a translucent black (`0x1F000000`), a
 shade of whatever bar it is on, as `BorderSide`'s default is black; a dark bar
 passes its own `color:`. Every barrier harbor puts up is announced with the
-label it is given and otherwise with 'Dismiss', the English that Material and
-Cupertino fall back to, since `WidgetsLocalizations` has none to offer.
+label it is given, then `HarborDefaults.barrierLabel`, and otherwise with 'Dismiss', the
+English that Material and Cupertino fall back to, since `WidgetsLocalizations` has none to offer.
 
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
 passes Material's pieces in, the lines that `showModalBottomSheet` would have
-filled in for it:
+filled in for it. The barrier's label and tap hint and the sheet's width are the
+same on every call, so they go on the root once ([Defaults](#defaults)); the rest
+is per sheet:
 
 ```dart
-final MaterialLocalizations localizations = MaterialLocalizations.of(context);
 showHarborSheet(
   context,
   routeSettings: const RouteSettings(name: 'reply'),
-  barrier: HarborBarrier.dimmed(
-    label: localizations.modalBarrierDismissLabel,
-    onTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
-  ),
-  semanticLabel: localizations.dialogLabel,          // on iOS Material leaves it unnamed: pass null there
-  maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
+  semanticLabel: MaterialLocalizations.of(context).dialogLabel, // on iOS Material leaves it unnamed: pass null there
   builder: (_) => HarborSheet(
     contentBuilder: (context, content) => Material( // text fields and ink work in it
       type: MaterialType.transparency,
@@ -1070,6 +1073,55 @@ does: its `duration` and `curve` set how the sheet opens, `reverseDuration` and
 `reverseCurve` how it closes, and `AnimationStyle.noAnimation` opens and closes
 it at once. A dragged sheet stays under the finger whatever the curve, and
 reduced motion still wins.
+
+## Defaults
+
+```dart
+MaterialApp(
+  builder: (context, child) {
+    final MaterialLocalizations l = MaterialLocalizations.of(context);
+    return HarborRoot(
+      defaults: HarborDefaults(
+        barrierLabel: l.modalBarrierDismissLabel,
+        sheetBarrierOnTapHint: l.scrimOnTapHint(l.bottomSheetLabel),
+        sheetMaxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
+      ),
+      child: child!,
+    );
+  },
+);
+HarborFrame(defaults: const HarborDefaults(toastQueue: HarborToastQueue.replace), ...) // one page
+HarborDefaultsScope(defaults: const HarborDefaults(hinge: HarborHinge.never), child: canvas)
+```
+
+`HarborDefaults` holds what an app or a page decides once for everything beneath it, so no call
+has to repeat it:
+
+| Field | For | harbor's own |
+|---|---|---|
+| `hinge`, `barHinge` | Which hinges overlays and bars keep off; `barHinge` for the bars alone | `avoidSeparating`; `barHinge` follows `hinge` |
+| `barrierLabel` | What a screen reader announces for a sheet's, dialog's or modal float's barrier | 'Dismiss' |
+| `sheetBarrierOnTapHint` | What tapping a sheet's barrier does, for a screen reader | none |
+| `sheetMaxWidth` | The widest a sheet is drawn, centred | none: it spans the screen |
+| `toastQueue` | Whether a toast waits its turn or replaces the one up | `wait` |
+| `toastTiming` | How long a toast stays | 4 s |
+| `toastAnimationStyle` | How a toast comes in and leaves | a fade and a scale, 220 ms |
+| `toastMargin` | How far a toast at a slot keeps in from the room's edges | 16 |
+
+`HarborRoot(defaults:)` sets them for the app, `HarborFrame(defaults:)` for a page, and
+`HarborDefaultsScope` for any other subtree. Every field is optional, and the nearest that sets a
+field wins, field by field: a page that sets `toastQueue` under a root that sets `barrierLabel`
+keeps the root's label. An argument given to one call (`showHarborSheet(maxWidth:)`, a barrier's
+own `label`, `HarborToasts.show(timing:)`) wins over all of them. A page's defaults go with what it
+opens, as its themes do: the sheets, dialogs and toasts it opens, and what those open in turn.
+`HarborDefaults.of(context)` reads them in a build method; `HarborDefaults.read(context)` once,
+from a handler.
+
+`toastMargin` is for a toast shown at a `slot:` or at none: a toast given a `placement:` keeps the
+placement's own margin. A root does not take the defaults of a frame it is mounted in: a phone
+drawn inside a page starts from harbor's own. The defaults are policy, not look: a sheet's
+`surface`, `clip` or `dragToClose` belong in your own `showAppSheet` wrapper, and there are no
+widget-valued fields.
 
 ## Keeping in sight
 

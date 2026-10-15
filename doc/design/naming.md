@@ -91,7 +91,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborSea.observers` | unchanged | | Now `List<HarborFrameObserver>` |
 | `Harbor` | `HarborFrame` | T | `Harbor.of` / `maybeOf` keep their names |
 | `Harbor.newPort` | `isPage` | RP | Plus the decided `HarborFrame.page(...)` constructor, which sets it. `fix_data` cannot choose a constructor by a `bool`'s value, so the fix writes `isPage: true`, and `.page` is the documented spelling. Not inferred at route boundaries (DECISIONS.md, measured): a route under the root needs none, and a nested `Navigator` would move under the outer bars |
-| `Harbor.dockHinge` | `barHinge` | RP | |
+| `Harbor.dockHinge` | `barHinge` | RP | Since moved, with `hinge`, into `HarborFrame(defaults: HarborDefaults(...))`; `defaults.yaml` takes `dockHinge:` straight there |
 | `Harbor.buoys` | `floats` | RP | `List<HarborFloat>` |
 | `Harbor.bodyClearsTide` | `bodyClearsKeyboard` | RP | And on `HarborSheet` |
 | `Harbor.wakePainter` | `edgeEffectPainter` | RP | See Q4 |
@@ -251,7 +251,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborFlareQueue` | `HarborToastQueue` | T | Values unchanged |
 | `HarborFlareHold` | `HarborToastHold` | T | |
 | `HarborFlareTransitionBuilder` | `HarborToastTransitionBuilder` | T | |
-| `HarborFlarePolicy` | *later* | — | Deprecated into `HarborDefaultsScope` (Q19); not renamed (principle 5). Its `queue` is typed `HarborToastQueue` through the typedef |
+| `HarborFlarePolicy` | `HarborDefaultsScope(defaults: HarborDefaults(toastQueue:))` | replacedBy | Deprecated into `HarborDefaultsScope` (Q19), never renamed (principle 5). Only its constructor is deprecated: deprecating the class made `dart fix` crash on `HarborFlarePolicy.queueOf` |
 | `HarborSignals`, `HarborSignalSlot`, `HarborSignalTarget`, `HarborSignalEntry`, `HarborSignalTransitionBuilder`, `HarborSignalClosedReason` | — | — | Already deprecated aliases. They now alias aliases, which compiles; their existing messages must name the new types, not the flare ones |
 | `HarborController.flares` / `raiseFlare` | `toasts` / `showToast` | rename | Going `@internal` (audit step 9) |
 | `HarborController.signals` | — | — | Already deprecated |
