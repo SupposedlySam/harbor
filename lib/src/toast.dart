@@ -250,7 +250,7 @@ abstract final class HarborToasts {
         margin: anchored.margin.resolve(textDirection),
       ),
     };
-    final HarborFrameRegistry? registry = HarborFleetScope.maybeOf(context);
+    final HarborFrameRegistry? registry = HarborFrameRegistryScope.maybeOf(context);
     // A toast is built in its frame's float layer, not where it was shown from, so it takes the
     // themes and text style of the place that showed it, as a sheet does. Without this a page
     // that wraps itself in its own Theme showed a toast in the app's theme.
@@ -291,7 +291,7 @@ abstract final class HarborToasts {
       queue: queue ?? defaults.toastQueue ?? HarborToastQueue.wait,
     );
     final HarborController? controller = placed is HarborAnchored
-        ? _portOf(HarborController.maybeOf(context))
+        ? _pageOf(HarborController.maybeOf(context))
         : switch (target) {
                 HarborToastTarget.topmost => registry?.topmost,
                 HarborToastTarget.root => registry?.root,
@@ -303,7 +303,7 @@ abstract final class HarborToasts {
       (_overlayQueues[overlay] ??= _OverlayQueue(overlay)).raise(entry);
     } else {
       entry.hideAs(HarborToastClosedReason.remove);
-      flareLeft(entry);
+      toastLeft(entry);
       FlutterError.reportError(
         FlutterErrorDetails(
           exception: FlutterError.fromParts(<DiagnosticsNode>[
@@ -408,13 +408,13 @@ abstract final class HarborToasts {
     queue: queue,
   );
 
-  /// The page frame [harbor] is in: the first frame of its route, or of its sheet over the root.
-  static HarborController? _portOf(final HarborController? harbor) {
-    HarborController? port = harbor;
-    while (port != null && !port.isRouteLevel) {
-      port = port.parent;
+  /// The page frame [frame] is in: the first frame of its route, or of its sheet over the root.
+  static HarborController? _pageOf(final HarborController? frame) {
+    HarborController? page = frame;
+    while (page != null && !page.isRouteLevel) {
+      page = page.parent;
     }
-    return port ?? harbor;
+    return page ?? frame;
   }
 
   static final Expando<_OverlayQueue> _overlayQueues = Expando<_OverlayQueue>();
@@ -426,14 +426,14 @@ class _OverlayQueue {
   _OverlayQueue(this.overlay);
 
   final OverlayState overlay;
-  final List<ShownToast> _flares = <ShownToast>[];
+  final List<ShownToast> _toasts = <ShownToast>[];
   final Map<ShownToast, OverlayEntry> _hosts = <ShownToast, OverlayEntry>{};
 
   /// The toasts whose host has been built: those run their exit before they leave.
   final Set<ShownToast> _built = <ShownToast>{};
 
   void raise(final ShownToast entry) {
-    queueFlare(_flares, entry);
+    queueToast(_toasts, entry);
     void lowered() {
       if (entry.showing.value) {
         return;
@@ -442,8 +442,8 @@ class _OverlayQueue {
       if (host == null) {
         // Hidden while it waited its turn: it has no exit to run.
         entry.showing.removeListener(lowered);
-        _flares.remove(entry);
-        flareLeft(entry);
+        _toasts.remove(entry);
+        toastLeft(entry);
       } else if (!_built.contains(entry) &&
           SchedulerBinding.instance.schedulerPhase != SchedulerPhase.persistentCallbacks) {
         // Hidden before its host was ever built (shown and dismissed in one callback): there is
@@ -464,11 +464,11 @@ class _OverlayQueue {
   }
 
   void _insertInSight() {
-    for (final ShownToast entry in flaresInSight(_flares)) {
+    for (final ShownToast entry in toastsInSight(_toasts)) {
       if (!_hosts.containsKey(entry)) {
         late final OverlayEntry host;
         host = OverlayEntry(
-          builder: (final BuildContext _) => _OverlayFlare(entry: entry, host: host, queue: this),
+          builder: (final BuildContext _) => _OverlayToast(entry: entry, host: host, queue: this),
         );
         _hosts[entry] = host;
         overlay.insert(host);
@@ -486,7 +486,7 @@ class _OverlayQueue {
   /// nothing left to show them either.
   void gone(final ShownToast entry) {
     _forget(entry);
-    for (final ShownToast waiting in List<ShownToast>.of(_flares)) {
+    for (final ShownToast waiting in List<ShownToast>.of(_toasts)) {
       if (!_hosts.containsKey(waiting)) {
         waiting.hideAs(HarborToastClosedReason.remove);
       }
@@ -494,27 +494,27 @@ class _OverlayQueue {
   }
 
   void _forget(final ShownToast entry) {
-    _flares.remove(entry);
+    _toasts.remove(entry);
     _hosts.remove(entry);
     _built.remove(entry);
-    flareLeft(entry);
+    toastLeft(entry);
   }
 }
 
 /// A toast shown where there is no frame: in an overlay, at its slot in the
 /// room the overlay's padding and keyboard leave.
-class _OverlayFlare extends StatefulWidget {
-  const _OverlayFlare({required this.entry, required this.host, required this.queue});
+class _OverlayToast extends StatefulWidget {
+  const _OverlayToast({required this.entry, required this.host, required this.queue});
 
   final ShownToast entry;
   final OverlayEntry host;
   final _OverlayQueue queue;
 
   @override
-  State<_OverlayFlare> createState() => _OverlayFlareState();
+  State<_OverlayToast> createState() => _OverlayToastState();
 }
 
-class _OverlayFlareState extends State<_OverlayFlare> {
+class _OverlayToastState extends State<_OverlayToast> {
   Timer? _removal;
   bool _removed = false;
 
@@ -576,21 +576,21 @@ class _OverlayFlareState extends State<_OverlayFlare> {
       placement: placement,
       anchor: entry.anchor,
       textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
-      child: _Flare(entry: entry),
+      child: _Toast(entry: entry),
     );
   }
 }
 
-class _Flare extends StatefulWidget {
-  const _Flare({required this.entry});
+class _Toast extends StatefulWidget {
+  const _Toast({required this.entry});
 
   final ShownToast entry;
 
   @override
-  State<_Flare> createState() => _FlareState();
+  State<_Toast> createState() => _ToastState();
 }
 
-class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
+class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(vsync: this);
   late final CurvedAnimation _animation = CurvedAnimation(
     parent: _controller,
@@ -632,7 +632,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    flareShown(widget.entry);
+    toastShown(widget.entry);
     widget.entry.showing.addListener(_changed);
     widget.entry.held.addListener(_syncTimeout);
     widget.entry.restarts.addListener(_restartTimeout);
@@ -724,7 +724,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     }
     final Rect whole = Offset.zero & media.size;
     final Rect screen = HarborPlacementEngine.screen(
-      water: whole,
+      area: whole,
       placement: entry.placement,
       textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
       hinges: hinges,
@@ -741,7 +741,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
     // the constraints that layer hands it, and given to the content as its padding.
     return LayoutBuilder(
       builder: (final BuildContext context, final BoxConstraints constraints) {
-        if (constraints is! _CoastConstraints) {
+        if (constraints is! _SystemEdgeConstraints) {
           return _build(context);
         }
         return MediaQuery(
@@ -754,7 +754,7 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 
   // The toast's entry is in scope for its builder and its transition, so either can read where
   // it hangs (HarborToastEntry.maybeOf) or take a hold on it.
-  Widget _build(final BuildContext context) => HarborFlareScope(
+  Widget _build(final BuildContext context) => HarborToastScope(
     entry: widget.entry,
     child: Builder(builder: _buildInScope),
   );
@@ -788,13 +788,13 @@ class _FlareState extends State<_Flare> with SingleTickerProviderStateMixin {
 /// Puts a toast's [HarborToastEntry] in scope for its builder and transition: read it with
 /// [HarborToastEntry.maybeOf].
 @internal
-class HarborFlareScope extends InheritedWidget {
-  const HarborFlareScope({super.key, required this.entry, required super.child});
+class HarborToastScope extends InheritedWidget {
+  const HarborToastScope({super.key, required this.entry, required super.child});
 
   final ShownToast entry;
 
   @override
-  bool updateShouldNotify(final HarborFlareScope oldWidget) => !identical(entry, oldWidget.entry);
+  bool updateShouldNotify(final HarborToastScope oldWidget) => !identical(entry, oldWidget.entry);
 }
 
 /// Sets what toasts shown beneath it do when one is already up at their place, for a subtree:

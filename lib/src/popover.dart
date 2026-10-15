@@ -220,10 +220,10 @@ class HarborPopover extends StatefulWidget {
 
   /// [sideOf], or null outside a popover.
   static HarborAnchorSide? maybeSideOf(final BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_PortalBuoySide>()?.side;
+      context.dependOnInheritedWidgetOfExactType<_PopoverSide>()?.side;
 
   @override
-  State<HarborPopover> createState() => _HarborPortalBuoyState();
+  State<HarborPopover> createState() => _HarborPopoverState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -244,10 +244,10 @@ class HarborPopover extends StatefulWidget {
   }
 }
 
-class _HarborPortalBuoyState extends State<HarborPopover> {
+class _HarborPopoverState extends State<HarborPopover> {
   HarborAnchor? _own;
   late final ValueNotifier<HarborAnchorSide> _landed = ValueNotifier<HarborAnchorSide>(widget.placement.side);
-  late final _DismissPortalBuoyAction _dismissAction = _DismissPortalBuoyAction(this);
+  late final _DismissPopoverAction _dismissAction = _DismissPopoverAction(this);
   bool _shown = false;
 
   HarborAnchor get _anchor => widget.placement.anchor ?? (_own ??= HarborAnchor(debugLabel: 'HarborPopover'));
@@ -290,7 +290,7 @@ class _HarborPortalBuoyState extends State<HarborPopover> {
 
   // The controller is the caller's and tells no one when it shows or hides, so the popover reports
   // it as it comes and goes. After the frame: it comes and goes while the overlay builds.
-  void _buoyCameOrWent() => WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
+  void _popoverCameOrWent() => WidgetsBinding.instance.addPostFrameCallback((final Duration _) {
     if (mounted && _shown != widget.controller.isShowing) {
       setState(() => _shown = widget.controller.isShowing);
     }
@@ -312,31 +312,31 @@ class _HarborPortalBuoyState extends State<HarborPopover> {
     final Widget portal = OverlayPortal(
       controller: widget.controller,
       overlayChildBuilder: (final BuildContext context) {
-        Widget buoy = ValueListenableBuilder<HarborAnchorSide>(
+        Widget float = ValueListenableBuilder<HarborAnchorSide>(
           valueListenable: _landed,
           builder: (final BuildContext context, final HarborAnchorSide side, final Widget? child) =>
-              _PortalBuoySide(side: side, child: child!),
+              _PopoverSide(side: side, child: child!),
           // A Builder, so the builder's own context is below the side it reads.
           child: Builder(builder: widget.popoverBuilder),
         );
         if (widget.requestFocus) {
-          buoy = _PortalBuoyFocus(
+          float = _PopoverFocus(
             scope: _focusWhileShown(),
             onLeft: _focusLeft,
             onCameBack: _focusCameBack,
-            child: buoy,
+            child: float,
           );
         }
-        buoy = _PortalBuoyDismissal(
+        float = _PopoverDismissal(
           controller: widget.controller,
           groupId: this,
           consumeOutsideTaps: widget.consumeOutsideTaps,
           onDismiss: dismissible ? _dismiss : null,
-          onCameOrWent: _buoyCameOrWent,
-          child: buoy,
+          onCameOrWent: _popoverCameOrWent,
+          child: float,
         );
         return _PlacedLayout(
-          harbor: HarborController.maybeOf(context),
+          frame: HarborController.maybeOf(context),
           hinges: HarborPlacementEngine.hingeBounds(
             widget.hinge ?? HarborHinge.of(this.context),
             MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[],
@@ -346,7 +346,7 @@ class _HarborPortalBuoyState extends State<HarborPopover> {
           flips: widget.placement.flips ?? true,
           textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
           landed: _landed,
-          child: buoy,
+          child: float,
         );
       },
       // The anchor is in the popover's tap region group, as a MenuAnchor's button is in its menu's, so
@@ -368,8 +368,8 @@ class _HarborPortalBuoyState extends State<HarborPopover> {
 /// its scope becomes the first focus of the scope around the popover. As the popover goes, it tells
 /// the popover before its descendants leave, so focus is handed back while the popover's controls
 /// still hold it.
-class _PortalBuoyFocus extends StatefulWidget {
-  const _PortalBuoyFocus({required this.scope, required this.onLeft, required this.onCameBack, required this.child});
+class _PopoverFocus extends StatefulWidget {
+  const _PopoverFocus({required this.scope, required this.onLeft, required this.onCameBack, required this.child});
 
   final FocusScopeNode scope;
   final ValueChanged<FocusScopeNode> onLeft;
@@ -377,10 +377,10 @@ class _PortalBuoyFocus extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_PortalBuoyFocus> createState() => _PortalBuoyFocusState();
+  State<_PopoverFocus> createState() => _PopoverFocusState();
 }
 
-class _PortalBuoyFocusState extends State<_PortalBuoyFocus> {
+class _PopoverFocusState extends State<_PopoverFocus> {
   bool _opened = false;
 
   @override
@@ -411,32 +411,33 @@ class _PortalBuoyFocusState extends State<_PortalBuoyFocus> {
 
 /// Escape (a [DismissIntent]) dismisses the popover while it is shown, as `RawMenuAnchor`'s
 /// `DismissMenuAction` does.
-class _DismissPortalBuoyAction extends DismissAction {
-  _DismissPortalBuoyAction(this._buoy);
+class _DismissPopoverAction extends DismissAction {
+  _DismissPopoverAction(this._popover);
 
-  final _HarborPortalBuoyState _buoy;
-
-  @override
-  bool isEnabled(final DismissIntent intent) => _buoy.widget.onDismiss != null && _buoy.widget.controller.isShowing;
+  final _HarborPopoverState _popover;
 
   @override
-  void invoke(final DismissIntent intent) => _buoy._dismiss();
+  bool isEnabled(final DismissIntent intent) =>
+      _popover.widget.onDismiss != null && _popover.widget.controller.isShowing;
+
+  @override
+  void invoke(final DismissIntent intent) => _popover._dismiss();
 }
 
-class _PortalBuoySide extends InheritedWidget {
-  const _PortalBuoySide({required this.side, required super.child});
+class _PopoverSide extends InheritedWidget {
+  const _PopoverSide({required this.side, required super.child});
 
   final HarborAnchorSide side;
 
   @override
-  bool updateShouldNotify(final _PortalBuoySide oldWidget) => side != oldWidget.side;
+  bool updateShouldNotify(final _PopoverSide oldWidget) => side != oldWidget.side;
 }
 
 /// While a popover is shown: its tap region, which calls [onDismiss] on a tap outside the
 /// group, and the page's history entry, so back dismisses the popover first, as it does a modal
 /// [HarborFloat]. Both are off without [onDismiss]; the region stays, so the popover keeps its state.
-class _PortalBuoyDismissal extends StatefulWidget {
-  const _PortalBuoyDismissal({
+class _PopoverDismissal extends StatefulWidget {
+  const _PopoverDismissal({
     required this.controller,
     required this.groupId,
     required this.consumeOutsideTaps,
@@ -453,10 +454,10 @@ class _PortalBuoyDismissal extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_PortalBuoyDismissal> createState() => _PortalBuoyDismissalState();
+  State<_PopoverDismissal> createState() => _PopoverDismissalState();
 }
 
-class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
+class _PopoverDismissalState extends State<_PopoverDismissal> {
   ModalRoute<Object?>? _route;
   ModalRoute<Object?>? _historyRoute;
   LocalHistoryEntry? _history;
@@ -476,7 +477,7 @@ class _PortalBuoyDismissalState extends State<_PortalBuoyDismissal> {
   }
 
   @override
-  void didUpdateWidget(final _PortalBuoyDismissal oldWidget) {
+  void didUpdateWidget(final _PopoverDismissal oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.onDismiss == null) {
       _giveHistoryBack();

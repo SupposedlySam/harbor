@@ -31,19 +31,19 @@ class HarborSticky extends SingleChildRenderObjectWidget {
   @override
   void updateRenderObject(final BuildContext context, final RenderObject renderObject) {
     (renderObject as _RenderHarborSticky)
-      ..harbor = HarborController.maybeOf(context)
+      ..frame = HarborController.maybeOf(context)
       ..gap = gap;
   }
 }
 
 class _RenderHarborSticky extends RenderProxyBox {
-  _RenderHarborSticky(this._harbor, this._gap);
+  _RenderHarborSticky(this._frame, this._gap);
 
-  HarborController? _harbor;
-  HarborController? get harbor => _harbor;
-  set harbor(final HarborController? value) {
-    if (value != _harbor) {
-      _harbor = value;
+  HarborController? _frame;
+  HarborController? get frame => _frame;
+  set frame(final HarborController? value) {
+    if (value != _frame) {
+      _frame = value;
       markNeedsPaint();
     }
   }
@@ -83,7 +83,7 @@ class _RenderHarborSticky extends RenderProxyBox {
   /// Where the top of the room is, in global coordinates: below the
   /// frame's bars and below any sliver bars pinned in the scroll view.
   double? _stickLine() {
-    double? line = harbor?.roomInGlobal()?.top;
+    double? line = frame?.roomInGlobal()?.top;
     RenderObject? node = parent;
     while (node != null && node is! RenderSliver) {
       node = node.parent;

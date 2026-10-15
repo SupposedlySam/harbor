@@ -399,7 +399,7 @@ class HarborScrollView extends StatelessWidget {
     final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     // The bars carry the edge effects; the system edges and the margin are read only where
     // they are used, so a carousel does not rebuild as the keyboard moves.
-    final HarborRoomData waters = HarborRoom.of(context, aspect: HarborRoomAspect.bars);
+    final HarborRoomData room = HarborRoom.of(context, aspect: HarborRoomAspect.bars);
     EdgeInsetsDirectional systemEdges() => HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
     final bool vertical = scrollDirection == Axis.vertical;
     final HarborEdge leadingEdge = vertical
@@ -424,9 +424,9 @@ class HarborScrollView extends StatelessWidget {
 
     // A sliver bar first in the scroll view takes the system edge on the leading edge
     // itself, so its surface runs under the status bar.
-    final bool leadsWithDock = slivers.isNotEmpty && slivers.first is HarborSliverBar && leadingEdge == HarborEdge.top;
+    final bool leadsWithBar = slivers.isNotEmpty && slivers.first is HarborSliverBar && leadingEdge == HarborEdge.top;
     double absorbed = 0.0;
-    if (leadsWithDock && HarborEdges.of(waters.bars, HarborEdge.top) <= 0) {
+    if (leadsWithBar && HarborEdges.of(room.bars, HarborEdge.top) <= 0) {
       absorbed = math.min(leading, HarborEdges.of(systemEdges(), HarborEdge.top));
       leading -= absorbed;
       leadingAll -= absorbed;
@@ -434,7 +434,7 @@ class HarborScrollView extends StatelessWidget {
 
     // How far pinned slivers stay from the leading edge: the bars' face,
     // not the end of their fade.
-    final HarborFadeBand? band = waters.fadeBands[leadingEdge];
+    final HarborFadeBand? band = room.fadeBands[leadingEdge];
     double cover = band == null
         ? leadingAll
         : math.max(
@@ -450,19 +450,19 @@ class HarborScrollView extends StatelessWidget {
 
     // A pinned sliver bar takes over the leading edge, so the scroll view's edge effect
     // there would only fade the bar.
-    final bool hasSliverDock = slivers.any((final Widget s) => s is HarborSliverBar);
+    final bool hasSliverBar = slivers.any((final Widget s) => s is HarborSliverBar);
     final Map<HarborEdge, HarborFadeBand> bands = !edgeEffects
         ? const <HarborEdge, HarborFadeBand>{}
         : <HarborEdge, HarborFadeBand>{
             for (final HarborEdge e in handled)
-              if (waters.fadeBands.containsKey(e) &&
-                  !waters.fadeBandsPainted.contains(e) &&
-                  !(hasSliverDock && e == leadingEdge))
-                e: waters.fadeBands[e]!,
+              if (room.fadeBands.containsKey(e) &&
+                  !room.fadeBandsPainted.contains(e) &&
+                  !(hasSliverBar && e == leadingEdge))
+                e: room.fadeBands[e]!,
           };
-    final Widget fairway = HarborFadeMask(
+    final Widget scrollView = HarborFadeMask(
       bands: bands,
-      child: _fairway(
+      child: _scrollView(
         context,
         leadingEdge,
         vertical,
@@ -478,22 +478,22 @@ class HarborScrollView extends StatelessWidget {
           trailing: revealMargin + trailingAll,
         ),
         absorbed,
-        leadsWithDock,
+        leadsWithBar,
         crossPadding,
         direction,
       ),
     );
     if (!_hugsChild) {
-      return fairway;
+      return scrollView;
     }
     return _HarborCrossAxisHug(
       scrollDirection: scrollDirection,
       crossPadding: vertical ? crossPadding.horizontal : crossPadding.vertical,
-      child: fairway,
+      child: scrollView,
     );
   }
 
-  Widget _fairway(
+  Widget _scrollView(
     final BuildContext context,
     final HarborEdge leadingEdge,
     final bool vertical,
@@ -503,7 +503,7 @@ class HarborScrollView extends StatelessWidget {
     final double trailing,
     final ({double leading, double reverseLeading, double trailing}) reveals,
     final double absorbed,
-    final bool leadsWithDock,
+    final bool leadsWithBar,
     final EdgeInsetsDirectional crossPadding,
     final TextDirection direction,
   ) {
@@ -523,10 +523,10 @@ class HarborScrollView extends StatelessWidget {
       AxisDirection.left => EdgeInsets.only(left: trailExtra, right: leadExtra),
     };
     Widget first(final Widget sliver) {
-      final Widget result = leadsWithDock ? _SliverDockAbsorb(systemEdges: absorbed, child: sliver) : sliver;
+      final Widget result = leadsWithBar ? _SliverBarAbsorb(systemEdges: absorbed, child: sliver) : sliver;
       // Content that starts under the bars keeps the system edges and bars it starts under, on the
       // leading end alone: the trailing end and the keyboard are still handled.
-      return startsUnderBars ? _HarborOpenWaterSliver(sliver: result) : result;
+      return startsUnderBars ? _HarborUnderBarsSliver(sliver: result) : result;
     }
 
     // With a center, the cover leads the slivers that grow forward from it,
@@ -545,7 +545,7 @@ class HarborScrollView extends StatelessWidget {
       clearsKeyboard: vertical && clearsKeyboard,
       margin: margin,
       clearsBars: clearsBars,
-      child: _HarborOpenWaterView(
+      child: _HarborUnderBarsView(
         enabled: startsUnderBars,
         child: HarborHandled(
           edges: <HarborEdge>{leadingEdge},
@@ -606,49 +606,48 @@ class HarborScrollView extends StatelessWidget {
 ///
 /// It is in the tree either way, so turning [enabled] on or off keeps the scroll view's state;
 /// only while it is on does it depend on what it publishes.
-class _HarborOpenWaterView extends StatelessWidget {
-  const _HarborOpenWaterView({required this.enabled, required this.child});
+class _HarborUnderBarsView extends StatelessWidget {
+  const _HarborUnderBarsView({required this.enabled, required this.child});
 
   final bool enabled;
   final Widget child;
 
   @override
-  Widget build(final BuildContext context) => _HarborOpenWaterScope(
+  Widget build(final BuildContext context) => _HarborUnderBarsScope(
     media: enabled ? MediaQuery.of(context) : null,
-    waters: enabled ? HarborRoom.maybeRawOf(context) : null,
+    room: enabled ? HarborRoom.maybeRawOf(context) : null,
     child: child,
   );
 }
 
-class _HarborOpenWaterScope extends InheritedWidget {
-  const _HarborOpenWaterScope({required this.media, required this.waters, required super.child});
+class _HarborUnderBarsScope extends InheritedWidget {
+  const _HarborUnderBarsScope({required this.media, required this.room, required super.child});
 
   final MediaQueryData? media;
-  final HarborRoomData? waters;
+  final HarborRoomData? room;
 
   @override
-  bool updateShouldNotify(final _HarborOpenWaterScope oldWidget) =>
-      media != oldWidget.media || waters != oldWidget.waters;
+  bool updateShouldNotify(final _HarborUnderBarsScope oldWidget) => media != oldWidget.media || room != oldWidget.room;
 }
 
-/// The first sliver of a scroll view that starts under the bars, in the view [_HarborOpenWaterView]
+/// The first sliver of a scroll view that starts under the bars, in the view [_HarborUnderBarsView]
 /// publishes.
-class _HarborOpenWaterSliver extends StatelessWidget {
-  const _HarborOpenWaterSliver({required this.sliver});
+class _HarborUnderBarsSliver extends StatelessWidget {
+  const _HarborUnderBarsSliver({required this.sliver});
 
   final Widget sliver;
 
   @override
   Widget build(final BuildContext context) {
-    final _HarborOpenWaterScope? scope = context.dependOnInheritedWidgetOfExactType<_HarborOpenWaterScope>();
+    final _HarborUnderBarsScope? scope = context.dependOnInheritedWidgetOfExactType<_HarborUnderBarsScope>();
     final MediaQueryData? media = scope?.media;
     if (media == null) {
       return sliver;
     }
-    final HarborRoomData? waters = scope!.waters;
+    final HarborRoomData? room = scope!.room;
     return MediaQuery(
       data: media,
-      child: waters == null ? sliver : HarborRoom(data: waters, child: sliver),
+      child: room == null ? sliver : HarborRoom(data: room, child: sliver),
     );
   }
 }
@@ -834,8 +833,8 @@ class _RenderHarborViewport extends RenderViewport {
     if (extent <= 0.0) {
       return super.anchor;
     }
-    final double water = math.max(0.0, extent - _anchorLeading - _anchorTrailing);
-    return ((_anchorLeading + super.anchor * water) / extent).clamp(0.0, 1.0);
+    final double room = math.max(0.0, extent - _anchorLeading - _anchorTrailing);
+    return ((_anchorLeading + super.anchor * room) / extent).clamp(0.0, 1.0);
   }
 
   @override
@@ -1339,7 +1338,7 @@ class HarborSliverBar extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    final double systemEdges = _SliverDockAbsorb.coastOf(context);
+    final double systemEdges = _SliverBarAbsorb.systemEdgesOf(context);
     return PinnedHeaderSliver(
       child: Listener(
         behavior: hitTestBehavior,
@@ -1357,16 +1356,16 @@ class HarborSliverBar extends StatelessWidget {
   }
 }
 
-class _SliverDockAbsorb extends InheritedWidget {
-  const _SliverDockAbsorb({required this.systemEdges, required super.child});
+class _SliverBarAbsorb extends InheritedWidget {
+  const _SliverBarAbsorb({required this.systemEdges, required super.child});
 
   final double systemEdges;
 
-  static double coastOf(final BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_SliverDockAbsorb>()?.systemEdges ?? 0.0;
+  static double systemEdgesOf(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_SliverBarAbsorb>()?.systemEdges ?? 0.0;
 
   @override
-  bool updateShouldNotify(final _SliverDockAbsorb oldWidget) => systemEdges != oldWidget.systemEdges;
+  bool updateShouldNotify(final _SliverBarAbsorb oldWidget) => systemEdges != oldWidget.systemEdges;
 }
 
 /// Widens every reveal that passes through it by what covers the scroll

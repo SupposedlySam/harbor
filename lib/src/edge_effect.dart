@@ -243,10 +243,10 @@ class HarborFadeMask extends SingleChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(final BuildContext context) =>
-      RenderHarborWakeMask(bands: bands, faceOpacity: faceOpacity, textDirection: Directionality.of(context));
+      RenderHarborFadeMask(bands: bands, faceOpacity: faceOpacity, textDirection: Directionality.of(context));
 
   @override
-  void updateRenderObject(final BuildContext context, final RenderHarborWakeMask renderObject) {
+  void updateRenderObject(final BuildContext context, final RenderHarborFadeMask renderObject) {
     renderObject
       ..bands = bands
       ..faceOpacity = faceOpacity
@@ -275,8 +275,8 @@ class HarborWakeMask extends HarborFadeMask {
       HarborFadeMask.alphaFade(context, wakes, body);
 }
 
-class RenderHarborWakeMask extends RenderProxyBox {
-  RenderHarborWakeMask({required this._bands, required this._faceOpacity, required this._textDirection});
+class RenderHarborFadeMask extends RenderProxyBox {
+  RenderHarborFadeMask({required this._bands, required this._faceOpacity, required this._textDirection});
 
   Map<HarborEdge, HarborFadeBand> _bands;
   set bands(final Map<HarborEdge, HarborFadeBand> value) {
@@ -396,10 +396,10 @@ class RenderHarborWakeMask extends RenderProxyBox {
       if (curve == Curves.linear) {
         return;
       }
-      final double dock = band.faceOpacity ?? _faceOpacity;
+      final double bar = band.faceOpacity ?? _faceOpacity;
       for (int i = 1; i < _rampSamples; i++) {
         final double t = i / _rampSamples;
-        yield (band.barFace + band.length * t, dock + (1.0 - dock) * curve.transform(t));
+        yield (band.barFace + band.length * t, bar + (1.0 - bar) * curve.transform(t));
       }
     }
 

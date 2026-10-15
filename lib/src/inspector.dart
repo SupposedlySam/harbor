@@ -147,14 +147,14 @@ class HarborChartEntry extends HarborInspectorEntry {
 abstract final class HarborInspector {
   /// Every frame in [context]'s view, outermost first, from its last layout.
   static List<HarborInspectorEntry> snapshot(final BuildContext context) {
-    final HarborFrameRegistry? registry = HarborFleetScope.maybeOf(context);
+    final HarborFrameRegistry? registry = HarborFrameRegistryScope.maybeOf(context);
     return registry == null ? const <HarborInspectorEntry>[] : snapshotOf(registry);
   }
 
   /// Every frame in [registry], outermost first, from its last layout.
   static List<HarborInspectorEntry> snapshotOf(final HarborFrameRegistry registry) => <HarborInspectorEntry>[
-    for (final HarborController harbor in registry.frames)
-      if (_entryOf(harbor) case final HarborInspectorEntry entry) entry,
+    for (final HarborController frame in registry.frames)
+      if (_entryOf(frame) case final HarborInspectorEntry entry) entry,
   ];
 
   /// Every frame of every live root, with no context: for tooling (a debug
@@ -166,7 +166,7 @@ abstract final class HarborInspector {
   /// its frames. A root that has been disposed is gone from the list, and a
   /// frame that has not laid out yet is not in it.
   static List<HarborInspectorEntry> snapshotAll() => <HarborInspectorEntry>[
-    for (final HarborFrameRegistry registry in _seas.keys) ...snapshotOf(registry),
+    for (final HarborFrameRegistry registry in _registries.keys) ...snapshotOf(registry),
   ];
 
   /// The frame nearest [context], as [snapshot] has it: in global
@@ -176,26 +176,26 @@ abstract final class HarborInspector {
   /// This is how a test or a tool reads a frame's rect, room and bars, as
   /// `flutter_test` reads a widget's place through its render object.
   static HarborInspectorEntry? nearest(final BuildContext context) {
-    final HarborController? harbor = HarborController.maybeOf(context);
-    return harbor == null ? null : _entryOf(harbor);
+    final HarborController? frame = HarborController.maybeOf(context);
+    return frame == null ? null : _entryOf(frame);
   }
 
-  static HarborInspectorEntry? _entryOf(final HarborController harbor) {
-    final RenderBox? box = harbor.layoutBox;
-    final HarborLayoutRecord? layout = harbor.layoutRecord;
+  static HarborInspectorEntry? _entryOf(final HarborController frame) {
+    final RenderBox? box = frame.layoutBox;
+    final HarborLayoutRecord? layout = frame.layoutRecord;
     if (box == null || layout == null || !box.attached || !box.hasSize) {
       return null;
     }
     final Matrix4 toGlobal = box.getTransformTo(null);
     Rect global(final Rect r) => MatrixUtils.transformRect(toGlobal, r);
     int depth = 0;
-    for (HarborController? p = harbor.parent; p != null; p = p.parent) {
+    for (HarborController? p = frame.parent; p != null; p = p.parent) {
       depth++;
     }
     return HarborInspectorEntry(
-      label: harbor.debugLabel ?? 'harbor',
+      label: frame.debugLabel ?? 'harbor',
       depth: depth,
-      isolated: _seas[harbor.registry] ?? false,
+      isolated: _registries[frame.registry] ?? false,
       frame: global(layout.frame),
       body: global(layout.body),
       room: global(layout.room),
@@ -219,20 +219,20 @@ abstract final class HarborInspector {
 
   /// The frame registries of the live roots, in the order they were mounted,
   /// and whether each is isolated.
-  static final Map<HarborFrameRegistry, bool> _seas = <HarborFrameRegistry, bool>{};
+  static final Map<HarborFrameRegistry, bool> _registries = <HarborFrameRegistry, bool>{};
   static bool _registered = false;
 
   /// Lists [registry] among the live roots while its root is mounted. Called
   /// by the frame that makes a registry; [unregister] it when that frame goes.
   @internal
   static void register(final HarborFrameRegistry registry, {required final bool isolated}) {
-    _seas[registry] = isolated;
+    _registries[registry] = isolated;
     _registerExtension();
   }
 
   /// Takes [registry] off the list of live roots.
   @internal
-  static void unregister(final HarborFrameRegistry registry) => _seas.remove(registry);
+  static void unregister(final HarborFrameRegistry registry) => _registries.remove(registry);
 
   /// Serves the inspector over the VM service as `ext.harbor.inspector` (and, until 1.0, its 0.8
   /// name `ext.harbor.chart`), so a tool
@@ -244,7 +244,7 @@ abstract final class HarborInspector {
   /// `{"frames": [...]}` for every root that is not isolated, and with the
   /// parameter `isolated=true` for isolated roots too (see [snapshotAll]).
   static void serve(final HarborFrameRegistry registry) {
-    _seas.putIfAbsent(registry, () => false);
+    _registries.putIfAbsent(registry, () => false);
     _registerExtension();
   }
 
@@ -293,7 +293,7 @@ class HarborInspectorOverlay extends StatefulWidget {
   final Widget child;
 
   @override
-  State<HarborInspectorOverlay> createState() => _HarborChartOverlayState();
+  State<HarborInspectorOverlay> createState() => _HarborInspectorOverlayState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -303,10 +303,10 @@ class HarborInspectorOverlay extends StatefulWidget {
   }
 }
 
-class _HarborChartOverlayState extends State<HarborInspectorOverlay> with SingleTickerProviderStateMixin {
+class _HarborInspectorOverlayState extends State<HarborInspectorOverlay> with SingleTickerProviderStateMixin {
   /// The registry the frames beneath join, when this overlay sits above the
   /// outermost frame (as it does in `MaterialApp.builder`).
-  HarborFrameRegistry? _ownFleet;
+  HarborFrameRegistry? _ownRegistry;
 
   late final Ticker _ticker = createTicker((final Duration _) => _repaint.value++);
   final ValueNotifier<int> _repaint = ValueNotifier<int>(0);
@@ -331,7 +331,7 @@ class _HarborChartOverlayState extends State<HarborInspectorOverlay> with Single
 
   @override
   void dispose() {
-    if (_ownFleet case final HarborFrameRegistry registry) {
+    if (_ownRegistry case final HarborFrameRegistry registry) {
       HarborInspector.unregister(registry);
     }
     _ticker.dispose();
@@ -341,26 +341,26 @@ class _HarborChartOverlayState extends State<HarborInspectorOverlay> with Single
 
   @override
   Widget build(final BuildContext context) {
-    HarborFrameRegistry? registry = HarborFleetScope.maybeOf(context);
+    HarborFrameRegistry? registry = HarborFrameRegistryScope.maybeOf(context);
     if (registry == null) {
-      if (_ownFleet == null) {
-        _ownFleet = HarborFrameRegistry();
-        HarborInspector.register(_ownFleet!, isolated: false);
+      if (_ownRegistry == null) {
+        _ownRegistry = HarborFrameRegistry();
+        HarborInspector.register(_ownRegistry!, isolated: false);
       }
-      registry = _ownFleet;
+      registry = _ownRegistry;
     }
     final Widget painted = CustomPaint(
       foregroundPainter: widget.enabled
-          ? _ChartPainter(context, registry!, _repaint, labelStyle: widget.labelStyle)
+          ? _InspectorPainter(context, registry!, _repaint, labelStyle: widget.labelStyle)
           : null,
       child: widget.child,
     );
-    return _ownFleet == null ? painted : HarborFleetScope(registry: _ownFleet!, child: painted);
+    return _ownRegistry == null ? painted : HarborFrameRegistryScope(registry: _ownRegistry!, child: painted);
   }
 }
 
-class _ChartPainter extends CustomPainter {
-  _ChartPainter(this.context, this.registry, final Listenable repaint, {final TextStyle? labelStyle})
+class _InspectorPainter extends CustomPainter {
+  _InspectorPainter(this.context, this.registry, final Listenable repaint, {final TextStyle? labelStyle})
     : labelStyle = _labelStyle.merge(labelStyle),
       super(repaint: repaint);
 
@@ -393,9 +393,9 @@ class _ChartPainter extends CustomPainter {
           ..strokeWidth = 1.5
           ..color = const Color(0xCCFFD54F),
       );
-      for (final HarborBarRecord dock in entry.bars) {
-        final Rect r = local(dock.rect);
-        final Color color = dock.kind == HarborBarKind.overlay ? const Color(0x5526C6DA) : const Color(0x55E0B070);
+      for (final HarborBarRecord bar in entry.bars) {
+        final Rect r = local(bar.rect);
+        final Color color = bar.kind == HarborBarKind.overlay ? const Color(0x5526C6DA) : const Color(0x55E0B070);
         canvas.drawRect(r, Paint()..color = color);
         canvas.drawRect(
           r.deflate(0.5),
@@ -404,7 +404,7 @@ class _ChartPainter extends CustomPainter {
             ..color = color.withValues(alpha: 1.0),
         );
         final TextPainter label = TextPainter(
-          text: TextSpan(text: '${dock.label ?? dock.kind.name} ${dock.extent.toStringAsFixed(0)}', style: labelStyle),
+          text: TextSpan(text: '${bar.label ?? bar.kind.name} ${bar.extent.toStringAsFixed(0)}', style: labelStyle),
           textDirection: TextDirection.ltr,
         )..layout();
         label.paint(canvas, r.topLeft + const Offset(2, 2));
@@ -420,5 +420,5 @@ class _ChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(final _ChartPainter oldDelegate) => true;
+  bool shouldRepaint(final _InspectorPainter oldDelegate) => true;
 }

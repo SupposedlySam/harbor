@@ -65,7 +65,7 @@ class HarborHideBar extends StatefulWidget {
   final Widget child;
 
   @override
-  State<HarborHideBar> createState() => _HarborMakeWayState();
+  State<HarborHideBar> createState() => _HarborHideBarState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -76,7 +76,7 @@ class HarborHideBar extends StatefulWidget {
   }
 }
 
-class _HarborMakeWayState extends State<HarborHideBar> {
+class _HarborHideBarState extends State<HarborHideBar> {
   HarborClaim? _claim;
 
   @override

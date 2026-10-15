@@ -111,7 +111,7 @@ class HarborFrame extends StatefulWidget {
        bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
        edgeEffectPainter = edgeEffectPainter ?? wakePainter,
        _barHinge = barHinge ?? dockHinge,
-       _isSea = false,
+       _isRoot = false,
        _observers = const <HarborFrameObserver>[];
 
   /// A frame that starts a page: a route, a sheet, a dialog. [isPage] is true, so the bars of the
@@ -146,11 +146,11 @@ class HarborFrame extends StatefulWidget {
     )
     this._barHinge,
   }) : isPage = true,
-       _isSea = false,
+       _isRoot = false,
        _observers = const <HarborFrameObserver>[];
 
   /// The outermost frame of a root: see [HarborRoot].
-  const HarborFrame._sea({
+  const HarborFrame._root({
     this.systemEdges,
     this.margin,
     required this.body,
@@ -170,7 +170,7 @@ class HarborFrame extends StatefulWidget {
        _maxExtentFraction = null,
        edgeEffectPainter = null,
        debugLabel = 'sea',
-       _isSea = true;
+       _isRoot = true;
 
   /// The choices this frame makes for its page and everything it opens, merged field by field
   /// over the defaults above it: which hinges its bars and overlays keep off, how its toasts
@@ -215,7 +215,7 @@ class HarborFrame extends StatefulWidget {
   }
 
   /// Whether this is the outermost frame of a [HarborRoot].
-  final bool _isSea;
+  final bool _isRoot;
 
   /// A root's [HarborRoot.observers].
   final List<HarborFrameObserver> _observers;
@@ -310,7 +310,7 @@ class HarborFrame extends StatefulWidget {
   static HarborController? maybeOf(final BuildContext context) => HarborController.maybeOf(context);
 
   @override
-  State<HarborFrame> createState() => _HarborState();
+  State<HarborFrame> createState() => _HarborFrameState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -359,10 +359,10 @@ class HarborFrame extends StatefulWidget {
   }
 }
 
-class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
+class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
   HarborController? _controller;
-  HarborTideGauge? _ownGauge;
-  HarborFrameRegistry? _ownFleet;
+  HarborKeyboardGauge? _ownGauge;
+  HarborFrameRegistry? _ownRegistry;
   final GlobalKey _statusBarKey = GlobalKey();
 
   @override
@@ -381,7 +381,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
   @override
   void handleStatusBarTap() {
     super.handleStatusBarTap();
-    if (widget._isSea || !_statusBarHitAtOrigin()) {
+    if (widget._isRoot || !_statusBarHitAtOrigin()) {
       return;
     }
     final ScrollController? primary = PrimaryScrollController.maybeOf(context);
@@ -414,15 +414,15 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     final HarborController? outer = HarborController.maybeOf(context);
     // A root inside another frame is a world of its own: no parent, its own
     // registry and its own keyboard gauge (a phone drawn inside a page, say).
-    final bool isolated = widget._isSea && outer != null;
+    final bool isolated = widget._isRoot && outer != null;
     final HarborController? parent = isolated ? null : outer;
-    HarborFrameRegistry? registry = isolated ? null : HarborFleetScope.maybeOf(context);
+    HarborFrameRegistry? registry = isolated ? null : HarborFrameRegistryScope.maybeOf(context);
     if (registry == null) {
-      if (_ownFleet == null) {
-        _ownFleet = HarborFrameRegistry();
-        HarborInspector.register(_ownFleet!, isolated: isolated);
+      if (_ownRegistry == null) {
+        _ownRegistry = HarborFrameRegistry();
+        HarborInspector.register(_ownRegistry!, isolated: isolated);
       }
-      registry = _ownFleet;
+      registry = _ownRegistry;
     }
     // Before the root joins, so its observers hear it join too.
     _observe(registry!);
@@ -432,29 +432,29 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         parent: parent,
         registry: registry,
         isPage: widget.isPage || parent == null,
-        isRoot: widget._isSea,
+        isRoot: widget._isRoot,
         debugLabel: widget.debugLabel,
       )..onChanged = _rebuild;
       _controller!.join();
     }
     _controller!.route = ModalRoute.of(context);
-    if (isolated || HarborTideScope.maybeGaugeOf(context, listen: false) == null) {
-      _ownGauge ??= HarborTideGauge();
+    if (isolated || HarborKeyboardScope.maybeGaugeOf(context, listen: false) == null) {
+      _ownGauge ??= HarborKeyboardGauge();
     }
   }
 
   /// The registry this root's observers are registered with, and which.
-  HarborFrameRegistry? _observedFleet;
+  HarborFrameRegistry? _observedRegistry;
   List<HarborFrameObserver> _observing = const <HarborFrameObserver>[];
 
   void _observe(final HarborFrameRegistry registry) {
-    if (identical(registry, _observedFleet) && listEquals(_observing, widget._observers)) {
+    if (identical(registry, _observedRegistry) && listEquals(_observing, widget._observers)) {
       return;
     }
-    if (_observedFleet case final HarborFrameRegistry old) {
+    if (_observedRegistry case final HarborFrameRegistry old) {
       _observing.forEach(old.removeObserver);
     }
-    _observedFleet = registry;
+    _observedRegistry = registry;
     _observing = List<HarborFrameObserver>.of(widget._observers);
     _observing.forEach(registry.addObserver);
   }
@@ -462,7 +462,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(final HarborFrame oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_observedFleet case final HarborFrameRegistry registry) {
+    if (_observedRegistry case final HarborFrameRegistry registry) {
       _observe(registry);
     }
   }
@@ -487,12 +487,12 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller?.leave();
-    if (_ownFleet case final HarborFrameRegistry registry) {
+    if (_ownRegistry case final HarborFrameRegistry registry) {
       HarborInspector.unregister(registry);
     }
     // After the frame drawn, once the leaves in it (the root's own and its
     // pages', which go first) have been delivered to them.
-    if (_observedFleet case final HarborFrameRegistry registry when _observing.isNotEmpty) {
+    if (_observedRegistry case final HarborFrameRegistry registry when _observing.isNotEmpty) {
       final List<HarborFrameObserver> observing = _observing;
       SchedulerBinding.instance.addPostFrameCallback((final Duration _) => observing.forEach(registry.removeObserver));
     }
@@ -507,13 +507,13 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     // A root starts from harbor's own defaults, as it starts a world of its own; any other frame
     // from the defaults above it.
     final HarborDefaults? own = widget._ownDefaults;
-    final HarborDefaults resolved = (widget._isSea ? HarborDefaults.fallback : HarborDefaults.of(context)).merge(own);
+    final HarborDefaults resolved = (widget._isRoot ? HarborDefaults.fallback : HarborDefaults.of(context)).merge(own);
     final TextDirection direction = Directionality.of(context);
     final MediaQueryData ambient = (widget.systemEdges ?? HarborSystemEdges.ambient).apply(
       MediaQuery.of(context),
       direction,
     );
-    final HarborRoomData? outer = widget._isSea ? null : HarborRoom.maybeRawOf(context);
+    final HarborRoomData? outer = widget._isRoot ? null : HarborRoom.maybeRawOf(context);
 
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
     final EdgeInsetsDirectional steadyPadding = HarborEdges.directional(ambient.viewPadding, direction);
@@ -527,7 +527,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     // the root's, and is split by the outer room as always. Padding that is the root's because
     // something covers the root too (a sheet that covers the page) is in the outer room's bars, so
     // it stays a bar.
-    final EdgeInsetsDirectional? rootPadding = switch (widget._isSea ? null : _HarborRootPadding.maybeOf(context)) {
+    final EdgeInsetsDirectional? rootPadding = switch (widget._isRoot ? null : _HarborRootPadding.maybeOf(context)) {
       final EdgeInsets root => HarborEdges.directional(root, direction),
       null => null,
     };
@@ -543,21 +543,21 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     };
     EdgeInsetsDirectional unlessRebased(final EdgeInsetsDirectional value, final EdgeInsetsDirectional ambient) =>
         HarborEdges.build((final HarborEdge e) => HarborEdges.of(rebased.contains(e) ? ambient : value, e));
-    final EdgeInsetsDirectional coastOnly = widget.systemEdges != null || outer == null
+    final EdgeInsetsDirectional systemEdgesOnly = widget.systemEdges != null || outer == null
         ? padding
         : unlessRebased(HarborEdges.min(outer.systemEdges, padding), padding);
-    final EdgeInsetsDirectional coastOnlySteady = widget.systemEdges != null || outer == null
+    final EdgeInsetsDirectional systemEdgesOnlySteady = widget.systemEdges != null || outer == null
         ? steadyPadding
         : unlessRebased(outer.systemEdgesSteady, steadyPadding);
-    final EdgeInsetsDirectional inheritedDocks = widget.isPage || outer == null || widget.systemEdges != null
+    final EdgeInsetsDirectional inheritedBars = widget.isPage || outer == null || widget.systemEdges != null
         ? EdgeInsetsDirectional.zero
         : unlessRebased(HarborEdges.min(outer.bars, padding), EdgeInsetsDirectional.zero);
-    final EdgeInsetsDirectional systemEdges = widget.isPage ? coastOnly : padding;
+    final EdgeInsetsDirectional systemEdges = widget.isPage ? systemEdgesOnly : padding;
     // A page's steady system edges are the outer steady padding without the outer bars in it.
     final EdgeInsetsDirectional systemEdgesSteady = widget.isPage && outer != null && widget.systemEdges == null
         ? unlessRebased(
             HarborEdges.max(
-              coastOnly,
+              systemEdgesOnly,
               HarborEdges.build(
                 (final HarborEdge e) =>
                     (HarborEdges.of(steadyPadding, e) - HarborEdges.of(outer.bars, e)).clamp(0.0, double.infinity),
@@ -584,20 +584,20 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
 
     // The sides a side bar holds. A top or bottom bar runs between the side bars, which take
     // the system edges on those sides, so it is not handed those system edges again.
-    HarborBarState stateOf(final HarborBar dock, final HarborEdge edge) {
+    HarborBarState stateOf(final HarborBar bar, final HarborEdge edge) {
       final HarborBarState? claimed = controller.claimedStateOf(edge);
-      if (claimed == HarborBarState.withdrawn || (dock.withdrawsWithKeyboard && keyboard > 0)) {
+      if (claimed == HarborBarState.withdrawn || (bar.withdrawsWithKeyboard && keyboard > 0)) {
         return HarborBarState.withdrawn;
       }
-      if (claimed == HarborBarState.dark && dock.state == HarborBarState.open) {
+      if (claimed == HarborBarState.dark && bar.state == HarborBarState.open) {
         return HarborBarState.dark;
       }
-      return dock.state;
+      return bar.state;
     }
 
     final Set<HarborEdge> sidesHeld = <HarborEdge>{
       for (final HarborEdge side in HarborEdge.horizontal)
-        if (bars[side]!.any((final HarborBar dock) => stateOf(dock, side) != HarborBarState.withdrawn)) side,
+        if (bars[side]!.any((final HarborBar bar) => stateOf(bar, side) != HarborBarState.withdrawn)) side,
     };
 
     final List<Widget> children = <Widget>[];
@@ -614,17 +614,17 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
                 viewInsets: bodyBase.viewInsets.copyWith(bottom: payload.viewInsetsBottom),
               ),
               child: _HarborRootPadding.wrap(
-                widget._isSea ? payload.padding : null,
+                widget._isRoot ? payload.padding : null,
                 HarborRoom(
-                  data: payload.waters.copyWith(
+                  data: payload.room.copyWith(
                     fadeBandsPainted: <HarborEdge>{
-                      if (widget.edgeEffectPainter != null) ...payload.ownWakes.keys,
+                      if (widget.edgeEffectPainter != null) ...payload.ownFadeBands.keys,
                       if (outer != null)
                         for (final HarborEdge e in outer.fadeBandsPainted)
-                          if (payload.waters.fadeBands.containsKey(e) && !payload.ownWakes.containsKey(e)) e,
+                          if (payload.room.fadeBands.containsKey(e) && !payload.ownFadeBands.containsKey(e)) e,
                     },
                   ),
-                  child: widget.edgeEffectPainter?.call(context, payload.ownWakes, widget.body) ?? widget.body,
+                  child: widget.edgeEffectPainter?.call(context, payload.ownFadeBands, widget.body) ?? widget.body,
                 ),
               ),
             );
@@ -642,8 +642,8 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
       int innermost = -1;
       final List<HarborBarState> states = <HarborBarState>[];
       for (int i = 0; i < fromEdge.length; i++) {
-        final HarborBar dock = fromEdge[i];
-        final HarborBarState state = stateOf(dock, edge);
+        final HarborBar bar = fromEdge[i];
+        final HarborBarState state = stateOf(bar, edge);
         states.add(state);
         if (state != HarborBarState.withdrawn) {
           if (absorbing < 0) {
@@ -657,23 +657,23 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         innermost = fromEdge.length - 1;
       }
       for (int i = 0; i < fromEdge.length; i++) {
-        final HarborBar dock = fromEdge[i];
-        final double coastHere = i == absorbing
-            ? _coastFor(dock, edge, systemEdges, systemEdgesSteady, keyboard, minimum)
+        final HarborBar bar = fromEdge[i];
+        final double systemEdgeHere = i == absorbing
+            ? _systemEdgeFor(bar, edge, systemEdges, systemEdgesSteady, keyboard, minimum)
             : 0.0;
         children.add(
-          HarborSlot.dock(
-            key: dock.key != null ? ValueKey<Object>((edge, dock.key!)) : ValueKey<Object>((edge, i, dock.kind)),
+          HarborSlot.bar(
+            key: bar.key != null ? ValueKey<Object>((edge, bar.key!)) : ValueKey<Object>((edge, i, bar.kind)),
             edge: edge,
             fromEdge: i,
-            dock: dock,
+            bar: bar,
             state: states[i],
             child: HarborDockSlot(
-              dock: dock,
+              dock: bar,
               edge: edge,
               state: states[i],
-              coastPadding: HarborEdges.only(edge, coastHere),
-              mediaQuery: _dockMediaQuery(
+              coastPadding: HarborEdges.only(edge, systemEdgeHere),
+              mediaQuery: _barMediaQuery(
                 ambient,
                 edge,
                 direction,
@@ -687,7 +687,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
       }
     }
 
-    if (!widget._isSea &&
+    if (!widget._isRoot &&
         (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS)) {
       children.add(
         HarborSlot.statusBar(
@@ -701,7 +701,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
 
     children.add(
       HarborSlot.floats(
-        child: HarborBuoyLayer(floats: widget.floats, toasts: controller.shownToasts),
+        child: HarborFloatLayer(floats: widget.floats, toasts: controller.shownToasts),
       ),
     );
 
@@ -711,10 +711,10 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         textDirection: direction,
         systemEdges: systemEdges,
         systemEdgesSteady: systemEdgesSteady,
-        coastOnly: coastOnly,
-        coastOnlySteady: coastOnlySteady,
-        inheritedDocks: inheritedDocks,
-        inheritedWakes: widget.isPage || outer == null ? const <HarborEdge, HarborFadeBand>{} : outer.fadeBands,
+        systemEdgesOnly: systemEdgesOnly,
+        systemEdgesOnlySteady: systemEdgesOnlySteady,
+        inheritedBars: inheritedBars,
+        inheritedFadeBands: widget.isPage || outer == null ? const <HarborEdge, HarborFadeBand>{} : outer.fadeBands,
         keyboard: keyboard,
         bodyClearsKeyboard: widget.bodyClearsKeyboard,
         minimum: minimum,
@@ -726,7 +726,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
         viewHeight: ambient.size.height,
         frameSize: widget.isPage || outer == null || outer.frameSize.isEmpty ? null : outer.frameSize,
         maxExtentFraction: widget.sizing.maxFraction ?? widget._maxExtentFraction,
-        clearWaterFloor: HarborClearWaterFloor.of(context),
+        roomFloor: HarborRoomFloor.of(context),
         hinges: <Rect>[
           for (final DisplayFeature feature
               // own.barHinge ?? own.hinge ?? inherited.barHinge ?? inherited.hinge: merge puts it so.
@@ -739,31 +739,31 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
       ),
       children: children,
     );
-    result = HarborModalBuoyActions(floats: widget.floats, child: result);
+    result = HarborModalFloatActions(floats: widget.floats, child: result);
     result = HarborNonModalSheetActions(route: controller.route, child: result);
     result = HarborScope(controller: controller, child: result);
-    if (_ownFleet != null) {
-      result = HarborFleetScope(registry: _ownFleet!, child: result);
+    if (_ownRegistry != null) {
+      result = HarborFrameRegistryScope(registry: _ownRegistry!, child: result);
     }
     if (_ownGauge != null) {
-      result = HarborTideScope(gauge: _ownGauge!, child: result);
+      result = HarborKeyboardScope(gauge: _ownGauge!, child: result);
     }
     if (widget.systemEdges != null) {
       result = MediaQuery(data: ambient, child: result);
     }
-    if (own != null || widget._isSea) {
+    if (own != null || widget._isRoot) {
       result = HarborDefaultsInherited(defaults: resolved, child: result);
     }
     // The page's first frame draws the sheets with no barrier that the page opens, outermost, so
     // they see what this frame sees from above.
-    if (controller.route case final ModalRoute<Object?> route when controller.isRouteLevel && !widget._isSea) {
+    if (controller.route case final ModalRoute<Object?> route when controller.isRouteLevel && !widget._isRoot) {
       result = HarborPageSheetHost(route: route, child: result);
     }
     return result;
   }
 
-  double _coastFor(
-    final HarborBar dock,
+  double _systemEdgeFor(
+    final HarborBar bar,
     final HarborEdge edge,
     final EdgeInsetsDirectional systemEdges,
     final EdgeInsetsDirectional systemEdgesSteady,
@@ -771,10 +771,10 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     final EdgeInsetsDirectional minimum,
   ) {
     // What a reserving bar holds runs to the screen's edge: no system edge, no minimum.
-    if (dock.effectiveSystemEdges == HarborSystemEdgeStance.none) {
+    if (bar.effectiveSystemEdges == HarborSystemEdgeStance.none) {
       return 0.0;
     }
-    final double value = switch (dock.effectiveSystemEdges) {
+    final double value = switch (bar.effectiveSystemEdges) {
       // The platform drops the bottom system edge as soon as a keyboard is up; the
       // keyboard only covers it as it opens.
       HarborSystemEdgeStance.live when edge == HarborEdge.bottom => math.max(
@@ -788,11 +788,11 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
             : HarborEdges.of(systemEdges, edge),
       HarborSystemEdgeStance.none => 0.0,
     };
-    final double floor = HarborEdges.of(minimum, edge) > dock.minimum ? HarborEdges.of(minimum, edge) : dock.minimum;
+    final double floor = HarborEdges.of(minimum, edge) > bar.minimum ? HarborEdges.of(minimum, edge) : bar.minimum;
     return value > floor ? value : floor;
   }
 
-  static MediaQueryData _dockMediaQuery(
+  static MediaQueryData _barMediaQuery(
     final MediaQueryData ambient,
     final HarborEdge edge,
     final TextDirection direction, {
@@ -880,7 +880,7 @@ class HarborRoot extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(final BuildContext context) => HarborFrame._sea(
+  Widget build(final BuildContext context) => HarborFrame._root(
     systemEdges: systemEdges,
     margin: margin,
     observers: observers,

@@ -154,7 +154,7 @@ Map<HarborEdge, HarborFadeBand> _fadesOver(final WidgetTester tester, final Stri
 /// something in the bar.
 RenderBox _barFrameOf(final WidgetTester tester, final Finder inBar) {
   RenderObject? node = tester.renderObject(inBar);
-  while (node != null && node.runtimeType.toString() != 'RenderHarborDockFrame') {
+  while (node != null && node.runtimeType.toString() != 'RenderHarborBarFrame') {
     node = node.parent;
   }
   expect(node, isNotNull, reason: 'a bar frame above the bar\'s child');

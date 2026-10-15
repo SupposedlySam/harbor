@@ -149,22 +149,22 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
 
   @override
   Widget build(final BuildContext context) {
-    final HarborBar dock = widget.dock;
-    final HarborEdgeEffect wake = widget.leavesWake ? dock.edgeEffect : HarborEdgeEffect.none;
-    final double? reserved = dock.reserved;
+    final HarborBar bar = widget.dock;
+    final HarborEdgeEffect edgeEffect = widget.leavesWake ? bar.edgeEffect : HarborEdgeEffect.none;
+    final double? reserved = bar.reserved;
     final Widget content = Padding(
       padding: widget.coastPadding,
       child: reserved == null
-          ? MediaQuery(data: widget.mediaQuery, child: _preferredHeight(dock.child))
+          ? MediaQuery(data: widget.mediaQuery, child: _preferredHeight(bar.child))
           // Whatever system edge it took counts toward its extent, so it reaches the larger of the two.
           : SizedBox.square(dimension: math.max(0.0, reserved - HarborEdges.of(widget.coastPadding, widget.edge))),
     );
-    final Widget dockBody = Stack(
+    final Widget barBody = Stack(
       children: <Widget>[
-        Positioned.fill(child: _Frosting(sigma: wake.blurSigma)),
+        Positioned.fill(child: _Frosting(sigma: edgeEffect.blurSigma)),
         // A backdrop is the bar's surface, never a tap target: the bar's
         // hitTestBehavior alone decides whether taps stop here.
-        Positioned.fill(child: IgnorePointer(child: dock.backdrop ?? const SizedBox.shrink())),
+        Positioned.fill(child: IgnorePointer(child: bar.backdrop ?? const SizedBox.shrink())),
         content,
       ],
     );
@@ -174,13 +174,13 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
         final double presence = _presenceCurve.value;
         final double light = _lightCurve.value;
         final bool hidden = widget.state != HarborBarState.open;
-        return _DockFrame(
+        return _BarFrame(
           edge: widget.edge,
-          kind: dock.kind,
+          kind: bar.kind,
           visualFactor: presence,
           extentFactor: _extentFactor(presence),
-          restingExtent: dock.restingExtent,
-          hairline: wake.kind == HarborEdgeEffectKind.hairline ? wake : null,
+          restingExtent: bar.restingExtent,
+          hairline: edgeEffect.kind == HarborEdgeEffectKind.hairline ? edgeEffect : null,
           // A bar that is dark or leaving is out of reach in every way, not only for taps:
           // keyboard focus and screen readers skip it too. Opacity alone hid a dark bar from
           // screen readers but not from Tab, and a withdrawn one was still read out and focused.
@@ -196,9 +196,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
           ),
         );
       },
-      child: reserved != null
-          ? IgnorePointer(child: dockBody)
-          : Listener(behavior: dock.hitTestBehavior, child: dockBody),
+      child: reserved != null ? IgnorePointer(child: barBody) : Listener(behavior: bar.hitTestBehavior, child: barBody),
     );
   }
 
@@ -241,8 +239,8 @@ class _Frosting extends StatelessWidget {
 
 /// The render side of a bar: lays its child out at full size, sizes itself to
 /// the visible share of it, and reports how much space it takes.
-class _DockFrame extends SingleChildRenderObjectWidget {
-  const _DockFrame({
+class _BarFrame extends SingleChildRenderObjectWidget {
+  const _BarFrame({
     required this.edge,
     required this.kind,
     required this.visualFactor,
@@ -260,7 +258,7 @@ class _DockFrame extends SingleChildRenderObjectWidget {
   final HarborEdgeEffect? hairline;
 
   @override
-  RenderHarborDockFrame createRenderObject(final BuildContext context) => RenderHarborDockFrame(
+  RenderHarborBarFrame createRenderObject(final BuildContext context) => RenderHarborBarFrame(
     edge: edge,
     kind: kind,
     visualFactor: visualFactor,
@@ -271,7 +269,7 @@ class _DockFrame extends SingleChildRenderObjectWidget {
   );
 
   @override
-  void updateRenderObject(final BuildContext context, final RenderHarborDockFrame renderObject) {
+  void updateRenderObject(final BuildContext context, final RenderHarborBarFrame renderObject) {
     renderObject
       ..edge = edge
       ..kind = kind
@@ -283,8 +281,8 @@ class _DockFrame extends SingleChildRenderObjectWidget {
   }
 }
 
-class RenderHarborDockFrame extends RenderProxyBox {
-  RenderHarborDockFrame({
+class RenderHarborBarFrame extends RenderProxyBox {
+  RenderHarborBarFrame({
     required this._edge,
     required this._kind,
     required this._visualFactor,

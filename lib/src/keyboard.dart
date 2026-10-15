@@ -151,8 +151,8 @@ class HarborTideState extends HarborKeyboardState {
 
 /// Keeps the keyboard's phase and its settled heights for one view. Owned by
 /// the outermost frame ([HarborRoot], or the first [HarborFrame]).
-class HarborTideGauge extends ChangeNotifier {
-  HarborTideGauge({this.estimateFraction = 0.4});
+class HarborKeyboardGauge extends ChangeNotifier {
+  HarborKeyboardGauge({this.estimateFraction = 0.4});
 
   /// The share of the screen's height a reserving bar holds before any keyboard
   /// has settled in that orientation.
@@ -160,9 +160,9 @@ class HarborTideGauge extends ChangeNotifier {
 
   double _height = 0.0;
   HarborKeyboardPhase _phase = HarborKeyboardPhase.hidden;
-  final Map<Orientation, double> _highWater = <Orientation, double>{};
+  final Map<Orientation, double> _settledHeights = <Orientation, double>{};
 
-  /// Counts changes to [_highWater], so a scope can tell a new settled height from a moving keyboard.
+  /// Counts changes to [_settledHeights], so a scope can tell a new settled height from a moving keyboard.
   int _marks = 0;
   Size _size = Size.zero;
   int _observation = 0;
@@ -171,9 +171,9 @@ class HarborTideGauge extends ChangeNotifier {
   double get height => _height;
   HarborKeyboardPhase get phase => _phase;
 
-  double highWaterFor(final Size size) => _highWater[_orientationOf(size)] ?? (size.height * estimateFraction);
+  double settledHeightFor(final Size size) => _settledHeights[_orientationOf(size)] ?? (size.height * estimateFraction);
 
-  bool highWaterIsEstimateFor(final Size size) => !_highWater.containsKey(_orientationOf(size));
+  bool settledHeightIsEstimateFor(final Size size) => !_settledHeights.containsKey(_orientationOf(size));
 
   /// Records the keyboard's [height] on a screen of [size]. Called from build,
   /// so listeners hear about it after the frame drawn.
@@ -211,8 +211,8 @@ class HarborTideGauge extends ChangeNotifier {
     bool markChanged = false;
     if (_height > 0.0) {
       final Orientation orientation = _orientationOf(_size);
-      if (_highWater[orientation] != _height) {
-        _highWater[orientation] = _height;
+      if (_settledHeights[orientation] != _height) {
+        _settledHeights[orientation] = _height;
         _marks++;
         markChanged = true;
       }
@@ -233,7 +233,7 @@ class HarborTideGauge extends ChangeNotifier {
 }
 
 /// The part of the keyboard a reader depends on, so it is not rebuilt for the rest.
-enum _HarborTideAspect {
+enum _HarborKeyboardAspect {
   /// Whether the keyboard is shown: changes when the keyboard comes or goes.
   isShown,
 
@@ -241,40 +241,41 @@ enum _HarborTideAspect {
   settledHeight,
 }
 
-/// Carries the [HarborTideGauge] down from the outermost frame.
-class HarborTideScope extends InheritedNotifier<HarborTideGauge> {
-  const HarborTideScope({super.key, required HarborTideGauge gauge, required super.child}) : super(notifier: gauge);
+/// Carries the [HarborKeyboardGauge] down from the outermost frame.
+class HarborKeyboardScope extends InheritedNotifier<HarborKeyboardGauge> {
+  const HarborKeyboardScope({super.key, required HarborKeyboardGauge gauge, required super.child})
+    : super(notifier: gauge);
 
-  static HarborTideGauge? maybeGaugeOf(final BuildContext context, {final bool listen = true}) => listen
-      ? context.dependOnInheritedWidgetOfExactType<HarborTideScope>()?.notifier
-      : context.getInheritedWidgetOfExactType<HarborTideScope>()?.notifier;
+  static HarborKeyboardGauge? maybeGaugeOf(final BuildContext context, {final bool listen = true}) => listen
+      ? context.dependOnInheritedWidgetOfExactType<HarborKeyboardScope>()?.notifier
+      : context.getInheritedWidgetOfExactType<HarborKeyboardScope>()?.notifier;
 
-  static HarborTideGauge? _gaugeOf(final BuildContext context, final _HarborTideAspect aspect) =>
-      context.dependOnInheritedWidgetOfExactType<HarborTideScope>(aspect: aspect)?.notifier;
+  static HarborKeyboardGauge? _gaugeOf(final BuildContext context, final _HarborKeyboardAspect aspect) =>
+      context.dependOnInheritedWidgetOfExactType<HarborKeyboardScope>(aspect: aspect)?.notifier;
 
   @override
-  InheritedElement createElement() => _HarborTideScopeElement(this);
+  InheritedElement createElement() => _HarborKeyboardScopeElement(this);
 }
 
 /// What a keyboard gauge's readers were told, aspect by aspect.
-typedef _TideReading = ({bool isShown, int marks});
+typedef _KeyboardReading = ({bool isShown, int marks});
 
-_TideReading? _readingOf(final HarborTideGauge? gauge) =>
+_KeyboardReading? _readingOf(final HarborKeyboardGauge? gauge) =>
     gauge == null ? null : (isShown: gauge.height > 0.0, marks: gauge._marks);
 
 /// Hears the gauge as `InheritedNotifier` does, but tells a reader that
 /// depends on one aspect only when that aspect changed. The gauge notifies on
 /// every drawn frame the keyboard moves, and most readers care only whether it is shown.
-class _HarborTideScopeElement extends InheritedElement {
-  _HarborTideScopeElement(final HarborTideScope widget) : _told = _readingOf(widget.notifier), super(widget) {
+class _HarborKeyboardScopeElement extends InheritedElement {
+  _HarborKeyboardScopeElement(final HarborKeyboardScope widget) : _told = _readingOf(widget.notifier), super(widget) {
     widget.notifier?.addListener(_gaugeChanged);
   }
 
   bool _dirty = false;
-  _TideReading? _told;
-  _TideReading? _now;
+  _KeyboardReading? _told;
+  _KeyboardReading? _now;
 
-  HarborTideGauge? get _gauge => (widget as HarborTideScope).notifier;
+  HarborKeyboardGauge? get _gauge => (widget as HarborKeyboardScope).notifier;
 
   void _gaugeChanged() {
     _dirty = true;
@@ -282,8 +283,8 @@ class _HarborTideScopeElement extends InheritedElement {
   }
 
   @override
-  void update(final HarborTideScope newWidget) {
-    final HarborTideGauge? oldGauge = _gauge;
+  void update(final HarborKeyboardScope newWidget) {
+    final HarborKeyboardGauge? oldGauge = _gauge;
     if (oldGauge != newWidget.notifier) {
       oldGauge?.removeListener(_gaugeChanged);
       newWidget.notifier?.addListener(_gaugeChanged);
@@ -294,7 +295,7 @@ class _HarborTideScopeElement extends InheritedElement {
   @override
   Widget build() {
     if (_dirty) {
-      notifyClients(widget as HarborTideScope);
+      notifyClients(widget as HarborKeyboardScope);
     }
     return super.build();
   }
@@ -302,19 +303,22 @@ class _HarborTideScopeElement extends InheritedElement {
   // As `InheritedModelElement` keeps them: an empty set depends on everything.
   @override
   void updateDependencies(final Element dependent, final Object? aspect) {
-    final Set<_HarborTideAspect>? dependencies = getDependencies(dependent) as Set<_HarborTideAspect>?;
+    final Set<_HarborKeyboardAspect>? dependencies = getDependencies(dependent) as Set<_HarborKeyboardAspect>?;
     if (dependencies != null && dependencies.isEmpty) {
       return;
     }
     if (aspect == null) {
-      setDependencies(dependent, HashSet<_HarborTideAspect>());
+      setDependencies(dependent, HashSet<_HarborKeyboardAspect>());
     } else {
-      setDependencies(dependent, (dependencies ?? HashSet<_HarborTideAspect>())..add(aspect as _HarborTideAspect));
+      setDependencies(
+        dependent,
+        (dependencies ?? HashSet<_HarborKeyboardAspect>())..add(aspect as _HarborKeyboardAspect),
+      );
     }
   }
 
   @override
-  void notifyClients(final HarborTideScope oldWidget) {
+  void notifyClients(final HarborKeyboardScope oldWidget) {
     _now = _readingOf(_gauge);
     super.notifyClients(oldWidget);
     _told = _now;
@@ -322,8 +326,8 @@ class _HarborTideScopeElement extends InheritedElement {
   }
 
   @override
-  void notifyDependent(final HarborTideScope oldWidget, final Element dependent) {
-    final Set<_HarborTideAspect>? dependencies = getDependencies(dependent) as Set<_HarborTideAspect>?;
+  void notifyDependent(final HarborKeyboardScope oldWidget, final Element dependent) {
+    final Set<_HarborKeyboardAspect>? dependencies = getDependencies(dependent) as Set<_HarborKeyboardAspect>?;
     if (dependencies == null) {
       return;
     }
@@ -331,9 +335,9 @@ class _HarborTideScopeElement extends InheritedElement {
         dependencies.isEmpty ||
         !identical(oldWidget.notifier, _gauge) ||
         dependencies.any(
-          (final _HarborTideAspect aspect) => switch (aspect) {
-            _HarborTideAspect.isShown => _told?.isShown != _now?.isShown,
-            _HarborTideAspect.settledHeight => _told?.marks != _now?.marks,
+          (final _HarborKeyboardAspect aspect) => switch (aspect) {
+            _HarborKeyboardAspect.isShown => _told?.isShown != _now?.isShown,
+            _HarborKeyboardAspect.settledHeight => _told?.marks != _now?.marks,
           },
         );
     if (changed) {
@@ -358,7 +362,7 @@ abstract final class HarborKeyboard {
   /// area, its settled height and its phase.
   static HarborKeyboardState of(final BuildContext context) {
     final double remaining = MediaQuery.viewInsetsOf(context).bottom;
-    final HarborTideGauge? gauge = HarborTideScope.maybeGaugeOf(context);
+    final HarborKeyboardGauge? gauge = HarborKeyboardScope.maybeGaugeOf(context);
     final Size size = MediaQuery.sizeOf(context);
     if (gauge == null) {
       return HarborKeyboardState(
@@ -372,15 +376,15 @@ abstract final class HarborKeyboard {
     return HarborKeyboardState(
       height: gauge.height < remaining ? remaining : gauge.height,
       remaining: remaining,
-      settledHeight: gauge.highWaterFor(size),
-      settledHeightIsEstimate: gauge.highWaterIsEstimateFor(size),
+      settledHeight: gauge.settledHeightFor(size),
+      settledHeightIsEstimate: gauge.settledHeightIsEstimateFor(size),
       phase: gauge.phase,
     );
   }
 
   /// Whether the keyboard is shown, rebuilding the caller only when that flips.
   static bool isShownOf(final BuildContext context) =>
-      (HarborTideScope._gaugeOf(context, _HarborTideAspect.isShown)?.height ??
+      (HarborKeyboardScope._gaugeOf(context, _HarborKeyboardAspect.isShown)?.height ??
           MediaQuery.viewInsetsOf(context).bottom) >
       0.0;
 
@@ -390,10 +394,10 @@ abstract final class HarborKeyboard {
 
   /// The keyboard's settled height at [context], rebuilding the caller only when
   /// a new height settles or the screen turns.
-  static double _highWaterOf(final BuildContext context) {
-    final HarborTideGauge? gauge = HarborTideScope._gaugeOf(context, _HarborTideAspect.settledHeight);
+  static double _settledHeightOf(final BuildContext context) {
+    final HarborKeyboardGauge? gauge = HarborKeyboardScope._gaugeOf(context, _HarborKeyboardAspect.settledHeight);
     final Size size = MediaQuery.sizeOf(context);
-    return gauge == null ? size.height * 0.4 : gauge.highWaterFor(size);
+    return gauge == null ? size.height * 0.4 : gauge.settledHeightFor(size);
   }
 }
 
@@ -439,7 +443,7 @@ class HarborKeyboardSpace extends StatelessWidget {
     final bool isShown = HarborKeyboard.isShownOf(context) || MediaQuery.viewInsetsOf(context).bottom > 0.0;
     final bool show = showsChildWithKeyboard || !isShown;
     return SizedBox(
-      height: HarborKeyboard._highWaterOf(context),
+      height: HarborKeyboard._settledHeightOf(context),
       width: double.infinity,
       child: Visibility(visible: show, maintainState: true, child: child ?? const SizedBox.shrink()),
     );

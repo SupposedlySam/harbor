@@ -5,7 +5,7 @@ part of 'float.dart';
 /// keyboard leave.
 class _PlacedLayout extends SingleChildRenderObjectWidget {
   const _PlacedLayout({
-    this.harbor,
+    this.frame,
     this.covered = EdgeInsets.zero,
     this.keyboard,
     this.hinges = const <Rect>[],
@@ -17,15 +17,15 @@ class _PlacedLayout extends SingleChildRenderObjectWidget {
     super.child,
   }) : assert(keyboard == null || placement is HarborAligned, 'Only an aligned overlay reaches over the system edges.'),
        assert(
-         harbor == null || placement is HarborAnchored,
+         frame == null || placement is HarborAnchored,
          'An aligned overlay in a frame is placed by its float layer.',
        ),
        assert(placement is HarborAligned || anchor != null, 'An anchored overlay needs its anchor.');
 
   /// The frame whose room the overlay keeps to; with none, the box less [covered].
-  final HarborController? harbor;
+  final HarborController? frame;
 
-  /// What covers each edge of the box when there is no [harbor]: the larger of the padding and
+  /// What covers each edge of the box when there is no [frame]: the larger of the padding and
   /// the keyboard.
   final EdgeInsets covered;
 
@@ -75,11 +75,11 @@ class _RenderPlaced extends RenderShiftedBox {
   bool _placed = false;
 
   void _listen(final _PlacedLayout c) {
-    c.harbor?.room.addListener(markNeedsLayout);
+    c.frame?.room.addListener(markNeedsLayout);
   }
 
   void _unlisten(final _PlacedLayout c) {
-    c.harbor?.room.removeListener(markNeedsLayout);
+    c.frame?.room.removeListener(markNeedsLayout);
   }
 
   // Its own layer, since an anchored one is painted again every frame drawn.
@@ -103,10 +103,10 @@ class _RenderPlaced extends RenderShiftedBox {
 
   /// The frame's room in this box's coordinates, or the box less what covers it when there
   /// is no frame.
-  Rect _clearWater() {
-    final HarborController? harbor = _config.harbor;
-    final RenderBox? box = harbor?.layoutBox;
-    final HarborLayoutRecord? layout = harbor?.layoutRecord;
+  Rect _room() {
+    final HarborController? frame = _config.frame;
+    final RenderBox? box = frame?.layoutBox;
+    final HarborLayoutRecord? layout = frame?.layoutRecord;
     return box == null || layout == null || !box.attached || !box.hasSize
         ? _config.covered.deflateRect(Offset.zero & size)
         : MatrixUtils.transformRect(box.getTransformTo(this), layout.room);
@@ -125,22 +125,22 @@ class _RenderPlaced extends RenderShiftedBox {
     // Only the size of the frame's room is known while laying out: its last one. A change to it lays
     // the overlay out again.
     final EdgeInsets? keyboard = _config.keyboard;
-    final HarborWater water = HarborPlacementEngine.water(
-      clear: _config.harbor?.layoutRecord?.room ?? _config.covered.deflateRect(Offset.zero & size),
+    final HarborPlacementArea area = HarborPlacementEngine.area(
+      clear: _config.frame?.layoutRecord?.room ?? _config.covered.deflateRect(Offset.zero & size),
       open: keyboard?.deflateRect(Offset.zero & size),
       placement: _config.placement,
       textDirection: _config.textDirection,
       hinges: _config.hinges,
     );
-    final Size room = Size(math.max(0.0, water.rect.width), math.max(0.0, water.rect.height));
+    final Size room = Size(math.max(0.0, area.rect.width), math.max(0.0, area.rect.height));
     child.layout(
-      keyboard != null ? _CoastConstraints(room, water.coastCovered) : BoxConstraints.loose(room),
+      keyboard != null ? _SystemEdgeConstraints(room, area.systemEdgesCovered) : BoxConstraints.loose(room),
       parentUsesSize: true,
     );
     if (_config.placement is HarborAligned) {
       (child.parentData! as BoxParentData).offset = HarborPlacementEngine.place(
         placement: _config.placement,
-        water: water.rect,
+        area: area.rect,
         size: child.size,
         textDirection: _config.textDirection,
       ).offset;
@@ -169,8 +169,8 @@ class _RenderPlaced extends RenderShiftedBox {
     final Rect at = MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size);
     final HarborLanding landed = HarborPlacementEngine.place(
       placement: placement,
-      water: HarborPlacementEngine.water(
-        clear: _clearWater(),
+      area: HarborPlacementEngine.area(
+        clear: _room(),
         placement: placement,
         textDirection: _config.textDirection,
         hinges: _config.hinges,
@@ -261,14 +261,14 @@ class _FollowEveryFrame {
 
 /// A toast's constraints when it reaches the system edges: loose, carrying the system edges it
 /// covers, which the toast hands its content as `MediaQuery.padding`.
-class _CoastConstraints extends BoxConstraints {
-  _CoastConstraints(final Size room, this.systemEdges) : super(maxWidth: room.width, maxHeight: room.height);
+class _SystemEdgeConstraints extends BoxConstraints {
+  _SystemEdgeConstraints(final Size room, this.systemEdges) : super(maxWidth: room.width, maxHeight: room.height);
 
   final EdgeInsets systemEdges;
 
   @override
   bool operator ==(final Object other) =>
-      super == other && other is _CoastConstraints && other.systemEdges == systemEdges;
+      super == other && other is _SystemEdgeConstraints && other.systemEdges == systemEdges;
 
   @override
   int get hashCode => Object.hash(super.hashCode, systemEdges);

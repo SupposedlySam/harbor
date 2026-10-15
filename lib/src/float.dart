@@ -402,26 +402,26 @@ class HarborBuoy extends HarborFloat {
 }
 
 /// The layer a frame places its floats in.
-class HarborBuoyLayer extends StatefulWidget {
-  const HarborBuoyLayer({super.key, required this.floats, required this.toasts});
+class HarborFloatLayer extends StatefulWidget {
+  const HarborFloatLayer({super.key, required this.floats, required this.toasts});
 
   final List<HarborFloat> floats;
   final List<ShownToast> toasts;
 
   @override
-  State<HarborBuoyLayer> createState() => _HarborBuoyLayerState();
+  State<HarborFloatLayer> createState() => _HarborFloatLayerState();
 }
 
-class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
+class _HarborFloatLayerState extends State<HarborFloatLayer> {
   /// The page's history entry while a modal float is up, so back dismisses the float first (and the
   /// iOS back swipe stands aside), as it does a sheet with no barrier.
   LocalHistoryEntry? _history;
   bool _removingQuietly = false;
 
   HarborFloat? get _modal {
-    for (final HarborFloat buoy in widget.floats.reversed) {
-      if (buoy.modal) {
-        return buoy;
+    for (final HarborFloat float in widget.floats.reversed) {
+      if (float.modal) {
+        return float;
       }
     }
     return null;
@@ -434,7 +434,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
   }
 
   @override
-  void didUpdateWidget(final HarborBuoyLayer oldWidget) {
+  void didUpdateWidget(final HarborFloatLayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncHistory();
   }
@@ -486,9 +486,9 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     // A toast keeps inside the room of the frame that showed it, so it is placed again
     // whenever that frame's room moves (a turn, a foldable opening): read only at build,
     // it stayed boxed into the shape the screen had when the toast was shown.
-    final List<Listenable> raisers = <Listenable>[
-      for (final ShownToast flare in toasts)
-        if (flare.shownFrom case final HarborController harbor) harbor.room,
+    final List<Listenable> shownFromRooms = <Listenable>[
+      for (final ShownToast toast in toasts)
+        if (toast.shownFrom case final HarborController frame) frame.room,
     ];
     final HarborFloat? modal = _modal;
     // One shape whether or not a toast or a modal float is up, so neither coming or going
@@ -512,7 +512,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             ),
           ),
         ListenableBuilder(
-          listenable: Listenable.merge(raisers),
+          listenable: Listenable.merge(shownFromRooms),
           builder: (final BuildContext context, final Widget? _) => _build(context),
         ),
       ],
@@ -529,23 +529,23 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
     );
     final List<HarborFloat> all = <HarborFloat>[
       ...floats,
-      for (final ShownToast flare in flaresInSight(toasts))
+      for (final ShownToast toast in toastsInSight(toasts))
         HarborFloat(
-          key: ObjectKey(flare),
-          placement: flare.placement,
-          hinge: flare.hinge,
+          key: ObjectKey(toast),
+          placement: toast.placement,
+          hinge: toast.hinge,
           // An anchored toast goes to the page frame of the page that holds its anchor, so only an
           // aligned one is kept inside the room of the frame that showed it.
-          within: flare.placement is HarborAligned ? _local(context, flare.avoidInGlobal) : null,
-          child: _Flare(entry: flare),
+          within: toast.placement is HarborAligned ? _local(context, toast.avoidInGlobal) : null,
+          child: _Toast(entry: toast),
         ),
     ];
-    return _BuoyLayout(
+    return _FloatLayout(
       floats: all,
       // An anchored toast sits by its anchor in the room, so it covers no system edge to reach.
       reaching: <int>{
         for (int i = 0; i < all.length; i++)
-          if (all[i].child case _Flare(
+          if (all[i].child case _Toast(
             entry: final ShownToast entry,
           ) when entry.reachesSystemEdges && entry.placement is HarborAligned)
             i,
@@ -557,7 +557,7 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
             child: Visibility(
               visible: lastModal < 0 || i >= lastModal,
               maintainState: true,
-              child: _ModalBuoyFocus(modal: all[i].modal, requestFocus: all[i].requestFocus, child: all[i].child),
+              child: _ModalFloatFocus(modal: all[i].modal, requestFocus: all[i].requestFocus, child: all[i].child),
             ),
           ),
       ],
@@ -571,18 +571,18 @@ class _HarborBuoyLayerState extends State<HarborBuoyLayer> {
 ///
 /// Every float has one, so a float that turns modal or back keeps its child: the scope comes and goes
 /// around the child, which moves under a [GlobalKey] instead of being built again.
-class _ModalBuoyFocus extends StatefulWidget {
-  const _ModalBuoyFocus({required this.modal, required this.requestFocus, required this.child});
+class _ModalFloatFocus extends StatefulWidget {
+  const _ModalFloatFocus({required this.modal, required this.requestFocus, required this.child});
 
   final bool modal;
   final bool requestFocus;
   final Widget child;
 
   @override
-  State<_ModalBuoyFocus> createState() => _ModalBuoyFocusState();
+  State<_ModalFloatFocus> createState() => _ModalFloatFocusState();
 }
 
-class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
+class _ModalFloatFocusState extends State<_ModalFloatFocus> {
   final FocusScopeNode _scope = FocusScopeNode(debugLabel: 'HarborFloat (modal)');
   final GlobalKey _child = GlobalKey(debugLabel: 'HarborFloat child');
   bool _opened = false;
@@ -597,7 +597,7 @@ class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
   }
 
   @override
-  void didUpdateWidget(final _ModalBuoyFocus oldWidget) {
+  void didUpdateWidget(final _ModalFloatFocus oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.modal) {
       _open();
@@ -631,8 +631,8 @@ class _ModalBuoyFocusState extends State<_ModalBuoyFocus> {
 /// route answers Escape with an action that is disabled, which would stop the search there. For
 /// the same reason, a page of a navigator nested in the frame's body keeps Escape from reaching
 /// this.
-class HarborModalBuoyActions extends StatelessWidget {
-  const HarborModalBuoyActions({super.key, required this.floats, required this.child});
+class HarborModalFloatActions extends StatelessWidget {
+  const HarborModalFloatActions({super.key, required this.floats, required this.child});
 
   final List<HarborFloat> floats;
   final Widget child;
@@ -641,14 +641,14 @@ class HarborModalBuoyActions extends StatelessWidget {
   Widget build(final BuildContext context) {
     final int top = floats.lastIndexWhere((final HarborFloat b) => b.modal);
     return Actions(
-      actions: <Type, Action<Intent>>{if (top >= 0) DismissIntent: _DismissModalBuoyAction(floats[top].onDismiss!)},
+      actions: <Type, Action<Intent>>{if (top >= 0) DismissIntent: _DismissModalFloatAction(floats[top].onDismiss!)},
       child: child,
     );
   }
 }
 
-class _DismissModalBuoyAction extends DismissAction {
-  _DismissModalBuoyAction(this._onDismiss);
+class _DismissModalFloatAction extends DismissAction {
+  _DismissModalFloatAction(this._onDismiss);
 
   final VoidCallback _onDismiss;
 
@@ -667,8 +667,8 @@ Rect? _local(final BuildContext context, final Rect? global) {
   return Rect.fromPoints(box.globalToLocal(global.topLeft), box.globalToLocal(global.bottomRight));
 }
 
-class _BuoyLayout extends MultiChildRenderObjectWidget {
-  const _BuoyLayout({required this.floats, this.reaching = const <int>{}, required super.children});
+class _FloatLayout extends MultiChildRenderObjectWidget {
+  const _FloatLayout({required this.floats, this.reaching = const <int>{}, required super.children});
 
   final List<HarborFloat> floats;
 
@@ -677,13 +677,13 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(final BuildContext context) =>
-      _RenderBuoyLayer(floats, Directionality.maybeOf(context) ?? TextDirection.ltr)
+      _RenderFloatLayer(floats, Directionality.maybeOf(context) ?? TextDirection.ltr)
         .._features = MediaQuery.maybeDisplayFeaturesOf(context) ?? const <DisplayFeature>[]
         .._hinge = HarborHinge.of(context)
         .._reaching = reaching;
 
   @override
-  void updateRenderObject(final BuildContext context, final _RenderBuoyLayer renderObject) {
+  void updateRenderObject(final BuildContext context, final _RenderFloatLayer renderObject) {
     renderObject
       ..floats = floats
       ..reaching = reaching
@@ -695,19 +695,19 @@ class _BuoyLayout extends MultiChildRenderObjectWidget {
   }
 }
 
-class _BuoyParentData extends ContainerBoxParentData<RenderBox> {
+class _FloatParentData extends ContainerBoxParentData<RenderBox> {
   /// Whether the last paint painted this float. An anchored float is not painted while its anchor
   /// has no box, and its offset is then stale, so it takes no taps and is not read out either.
   bool painted = false;
 }
 
-class _RenderBuoyLayer extends RenderBox
+class _RenderFloatLayer extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, _BuoyParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, _BuoyParentData> {
-  _RenderBuoyLayer(this._buoys, this._textDirection);
+        ContainerRenderObjectMixin<RenderBox, _FloatParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _FloatParentData> {
+  _RenderFloatLayer(this._floats, this._textDirection);
 
-  List<HarborFloat> _buoys;
+  List<HarborFloat> _floats;
 
   Set<int> _reaching = const <int>{};
   set reaching(final Set<int> value) {
@@ -737,8 +737,8 @@ class _RenderBuoyLayer extends RenderBox
     }
   }
 
-  /// The bounds of the hinges and folds [buoy] keeps off: its own policy's, or the frame's.
-  List<Rect> _hingesFor(final HarborFloat buoy) => HarborPlacementEngine.hingeBounds(buoy.hinge ?? _hinge, _features);
+  /// The bounds of the hinges and folds [float] keeps off: its own policy's, or the frame's.
+  List<Rect> _hingesFor(final HarborFloat float) => HarborPlacementEngine.hingeBounds(float.hinge ?? _hinge, _features);
 
   TextDirection _textDirection;
   set textDirection(final TextDirection value) {
@@ -750,7 +750,7 @@ class _RenderBuoyLayer extends RenderBox
   }
 
   set floats(final List<HarborFloat> value) {
-    _buoys = value;
+    _floats = value;
     markNeedsLayout();
   }
 
@@ -768,8 +768,8 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   void setupParentData(final RenderObject child) {
-    if (child.parentData is! _BuoyParentData) {
-      child.parentData = _BuoyParentData();
+    if (child.parentData is! _FloatParentData) {
+      child.parentData = _FloatParentData();
     }
   }
 
@@ -781,35 +781,37 @@ class _RenderBuoyLayer extends RenderBox
   @override
   void performLayout() {
     size = constraints.biggest;
-    _clear = constraints is HarborBuoyConstraints ? (constraints as HarborBuoyConstraints).room : Offset.zero & size;
-    final Rect open = constraints is HarborBuoyConstraints ? (constraints as HarborBuoyConstraints).openWater : _clear;
+    _clear = constraints is HarborFloatConstraints ? (constraints as HarborFloatConstraints).room : Offset.zero & size;
+    final Rect open = constraints is HarborFloatConstraints
+        ? (constraints as HarborFloatConstraints).roomWithSystemEdges
+        : _clear;
     RenderBox? child = firstChild;
     int i = 0;
     while (child != null) {
-      final _BuoyParentData data = child.parentData! as _BuoyParentData;
-      final HarborFloat buoy = _buoys[i];
-      final HarborPlacement placement = buoy.placement;
+      final _FloatParentData data = child.parentData! as _FloatParentData;
+      final HarborFloat float = _floats[i];
+      final HarborPlacement placement = float.placement;
       final bool reaches = _reaching.contains(i);
       // An anchored float is laid out in the largest screen of its room, since which screen holds
       // its anchor is only known when it paints.
-      final HarborWater water = HarborPlacementEngine.water(
+      final HarborPlacementArea area = HarborPlacementEngine.area(
         clear: _clear,
         open: reaches ? open : null,
-        within: buoy.within,
+        within: float.within,
         placement: placement,
         textDirection: _textDirection,
-        hinges: _hingesFor(buoy),
+        hinges: _hingesFor(float),
       );
-      final Size room = Size(math.max(0.0, water.rect.width), math.max(0.0, water.rect.height));
+      final Size room = Size(math.max(0.0, area.rect.width), math.max(0.0, area.rect.height));
       child.layout(
-        reaches ? _CoastConstraints(room, water.coastCovered) : BoxConstraints.loose(room),
+        reaches ? _SystemEdgeConstraints(room, area.systemEdgesCovered) : BoxConstraints.loose(room),
         parentUsesSize: true,
       );
       // Anchored floats are placed when they paint, once their anchors have a size.
       if (placement is HarborAligned) {
         data.offset = HarborPlacementEngine.place(
           placement: placement,
-          water: water.rect,
+          area: area.rect,
           size: child.size,
           textDirection: _textDirection,
         ).offset;
@@ -821,15 +823,15 @@ class _RenderBuoyLayer extends RenderBox
 
   @override
   void paint(final PaintingContext context, final Offset offset) {
-    if (_buoys.any((final HarborFloat b) => b.placement is HarborAnchored)) {
+    if (_floats.any((final HarborFloat b) => b.placement is HarborAnchored)) {
       _follow.next(markNeedsPaint);
     }
     RenderBox? child = firstChild;
     int i = 0;
     while (child != null) {
-      final _BuoyParentData data = child.parentData! as _BuoyParentData;
-      final HarborFloat buoy = _buoys[i];
-      final HarborPlacement placement = buoy.placement;
+      final _FloatParentData data = child.parentData! as _FloatParentData;
+      final HarborFloat float = _floats[i];
+      final HarborPlacement placement = float.placement;
       final RenderBox? anchorBox = placement is HarborAnchored ? placement.anchor?.box : null;
       final bool painted = placement is HarborAligned || anchorBox != null;
       if (painted != data.painted) {
@@ -845,19 +847,19 @@ class _RenderBuoyLayer extends RenderBox
         final Rect at = MatrixUtils.transformRect(anchorBox!.getTransformTo(this), Offset.zero & anchorBox.size);
         data.offset = HarborPlacementEngine.place(
           placement: placement,
-          water: HarborPlacementEngine.water(
+          area: HarborPlacementEngine.area(
             clear: _clear,
-            within: buoy.within,
+            within: float.within,
             placement: placement,
             textDirection: _textDirection,
-            hinges: _hingesFor(buoy),
+            hinges: _hingesFor(float),
             holding: at.center,
           ).rect,
           size: child.size,
           textDirection: _textDirection,
           anchorRect: at,
           // A toast never flips, so its transition knows its side (HarborToastEntry.side).
-          flips: buoy.child is! _Flare && (placement.flips ?? false),
+          flips: float.child is! _Toast && (placement.flips ?? false),
         ).offset;
       }
       context.paintChild(child, data.offset + offset);
@@ -867,13 +869,13 @@ class _RenderBuoyLayer extends RenderBox
   }
 
   @override
-  bool paintsChild(final RenderBox child) => (child.parentData! as _BuoyParentData).painted;
+  bool paintsChild(final RenderBox child) => (child.parentData! as _FloatParentData).painted;
 
   @override
   void visitChildrenForSemantics(final RenderObjectVisitor visitor) {
     RenderBox? child = firstChild;
     while (child != null) {
-      final _BuoyParentData data = child.parentData! as _BuoyParentData;
+      final _FloatParentData data = child.parentData! as _FloatParentData;
       if (data.painted) {
         visitor(child);
       }
@@ -885,7 +887,7 @@ class _RenderBuoyLayer extends RenderBox
   bool hitTestChildren(final BoxHitTestResult result, {required final Offset position}) {
     RenderBox? child = lastChild;
     while (child != null) {
-      final _BuoyParentData data = child.parentData! as _BuoyParentData;
+      final _FloatParentData data = child.parentData! as _FloatParentData;
       final RenderBox shown = child;
       if (data.painted &&
           result.addWithPaintOffset(

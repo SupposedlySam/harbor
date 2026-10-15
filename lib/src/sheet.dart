@@ -589,10 +589,10 @@ class HarborSheet extends StatelessWidget {
     Navigator.maybePop<T>(context, result);
   }
 
-  Widget _harbor(final Widget body, {required final bool hug, final HarborBar? header}) {
+  Widget _frame(final Widget body, {required final bool hug, final HarborBar? header}) {
     final HarborBar? top = header ?? _header;
     final HarborBar? bottom = _footer;
-    Widget port = HarborFrame(
+    Widget page = HarborFrame(
       isPage: true,
       bodyClearsKeyboard: bodyClearsKeyboard,
       sizing: hug ? HarborSizing.hug(maxFraction: maxExtentFraction) : HarborSizing.fill,
@@ -605,9 +605,9 @@ class HarborSheet extends StatelessWidget {
       // The system edges alone: the sheet keeps the height reachesTop gave it, and its new page frame
       // is handed no status bar to clear. The margin stays. The sheet still reaches under the
       // status bar, so its page frame keeps it out of its room, where toasts and floats go.
-      final Widget content = port;
-      port = Builder(
-        builder: (final BuildContext context) => HarborClearWaterFloor(
+      final Widget content = page;
+      page = Builder(
+        builder: (final BuildContext context) => HarborRoomFloor(
           floor: EdgeInsetsDirectional.only(top: MediaQuery.paddingOf(context).top),
           child: HarborHandled(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: content),
         ),
@@ -616,9 +616,9 @@ class HarborSheet extends StatelessWidget {
     if (clearsSides) {
       // Clear of the side system edges alone, inside the surface, so the surface still runs edge to
       // edge and the new page frame beneath is handed no side system edges. The margin stays.
-      port = HarborClear(edges: HarborEdge.horizontal, clearsBars: false, clearsKeyboard: false, child: port);
+      page = HarborClear(edges: HarborEdge.horizontal, clearsBars: false, clearsKeyboard: false, child: page);
     }
-    return port;
+    return page;
   }
 
   @override
@@ -629,7 +629,7 @@ class HarborSheet extends StatelessWidget {
       // sheet is dragged, not as tall as the space the sheet can be dragged in.
       return _DraggableSheetBody(sheet: this, extent: extent);
     }
-    final Widget sheet = _surfaced(context, _harbor(body!, hug: true));
+    final Widget sheet = _surfaced(context, _frame(body!, hug: true));
     if (!dragToClose) {
       return sheet;
     }
@@ -839,7 +839,7 @@ class _DraggableSheetBodyState extends State<_DraggableSheetBody> {
           onTop: (final double top) => host?.host.reportTop(top, fromSheet: true),
           child: sheet._surfaced(
             context,
-            sheet._harbor(
+            sheet._frame(
               Builder(builder: (final BuildContext context) => sheet.builder!(context, controller)),
               hug: false,
               header: header,
@@ -1145,7 +1145,7 @@ class _SheetHost {
   final bool scopesRoute;
   final String? semanticLabel;
 
-  HarborPageCover? _breakwater;
+  HarborPageCover? _pageCover;
   double _height = 0.0;
   double? _dragExtent;
   double _available = 0.0;
@@ -1256,7 +1256,7 @@ class _SheetHost {
   }
 
   void attach() {
-    _breakwater ??= presenter?.addPageCoverEdge(topInGlobal);
+    _pageCover ??= presenter?.addPageCoverEdge(topInGlobal);
     controller?._attach(this);
   }
 
@@ -1286,8 +1286,8 @@ class _SheetHost {
   }
 
   void detach() {
-    _breakwater?.remove();
-    _breakwater = null;
+    _pageCover?.remove();
+    _pageCover = null;
   }
 
   bool get hasDragExtent => _dragExtent != null;

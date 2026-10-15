@@ -327,7 +327,7 @@ class HarborRoomData {
   // This room with the system edges on [edges] handled and the bars kept, beneath a layer that kept
   // clear of [cleared] there: the bars and their edge effects are measured from that layer's edge,
   // which is [cleared] in from this area's.
-  HarborRoomData _castOffCoast(
+  HarborRoomData _handledSystemEdges(
     final Set<HarborEdge> edges, {
     required final EdgeInsetsDirectional cleared,
     required final bool margin,
@@ -465,7 +465,7 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
       // read without subscribing, and hold still while the keyboard moves. `steadySystemEdgeOf` is
       // the reader that follows it.
       systemEdgesSteady: HarborEdges.build(
-        (final HarborEdge edge) => _steadyCoast(context, raw, edge, listen: aspect == null),
+        (final HarborEdge edge) => _steadySystemEdge(context, raw, edge, listen: aspect == null),
       ),
       bars: HarborEdges.min(raw.bars, padding),
       barsResting: HarborEdges.min(raw.barsResting, padding),
@@ -495,7 +495,7 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
         edge,
       );
     }
-    return _steadyCoast(context, raw, edge);
+    return _steadySystemEdge(context, raw, edge);
   }
 
   /// The old name of [steadySystemEdgeOf].
@@ -513,7 +513,7 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
   // and the result hold still; following the gauge would rebuild a listening
   // reader on every frame drawn for a value that does not move. It still hears the
   // keyboard come and go.
-  static double _steadyCoast(
+  static double _steadySystemEdge(
     final BuildContext context,
     final HarborRoomData raw,
     final HarborEdge edge, {
@@ -528,7 +528,7 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
         HarborKeyboard.isShownOf(context);
       }
       final double remaining = quiet?.viewInsets.bottom ?? MediaQuery.viewInsetsOf(context).bottom;
-      final double height = HarborTideScope.maybeGaugeOf(context, listen: false)?.height ?? remaining;
+      final double height = HarborKeyboardScope.maybeGaugeOf(context, listen: false)?.height ?? remaining;
       bound += math.max(height, remaining) - remaining;
     }
     return math.min(value, bound);
@@ -547,9 +547,9 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
   /// It depends on the [HarborRoomAspect.bars] aspect alone, so its reader
   /// holds still while the keyboard moves.
   static double barFaceOf(final BuildContext context, final HarborEdge edge) {
-    final HarborRoomData waters = of(context, aspect: HarborRoomAspect.bars);
-    final HarborFadeBand? band = waters.fadeBands[edge];
-    return band != null ? band.barFace : HarborEdges.of(waters.bars, edge);
+    final HarborRoomData room = of(context, aspect: HarborRoomAspect.bars);
+    final HarborFadeBand? band = room.fadeBands[edge];
+    return band != null ? band.barFace : HarborEdges.of(room.bars, edge);
   }
 
   /// The old name of [barFaceOf].
@@ -651,7 +651,7 @@ class HarborHandled extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     if (!clearsBars) {
-      return _castOffCoast(context);
+      return _handledSystemEdges(context);
     }
     final TextDirection direction = Directionality.of(context);
     final ({bool left, bool top, bool right, bool bottom}) sides = HarborEdges.physical(edges, direction);
@@ -670,19 +670,19 @@ class HarborHandled extends StatelessWidget {
     // Outside any frame, the room data a reader here would see: all of MediaQuery's padding as system
     // edges. Empty room data zeroed every edge beneath, not just these: a sheet with clearsSides opened
     // with no HarborRoot read a bottom inset of 0 instead of the home indicator (#98).
-    final HarborRoomData waters = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context)).handled(
+    final HarborRoomData room = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context)).handled(
       edges,
       margin: margin,
     );
     return MediaQuery(
       data: data,
-      child: HarborRoom(data: waters, child: child),
+      child: HarborRoom(data: room, child: child),
     );
   }
 
   // The system edges alone: what is still in the way beneath is the bars past the system edges the
   // layer kept clear of, in `MediaQuery` and in the room data alike.
-  Widget _castOffCoast(final BuildContext context) {
+  Widget _handledSystemEdges(final BuildContext context) {
     final TextDirection direction = Directionality.of(context);
     final MediaQueryData ambient = MediaQuery.of(context);
     // The system edges as a reader here sees them, clamped to `MediaQuery`: outside a frame, all of it.
@@ -711,14 +711,14 @@ class HarborHandled extends StatelessWidget {
     if (clearsKeyboard) {
       data = data.removeViewInsets(removeBottom: true);
     }
-    final HarborRoomData waters = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context))._castOffCoast(
+    final HarborRoomData room = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context))._handledSystemEdges(
       edges,
       cleared: cleared,
       margin: margin,
     );
     return MediaQuery(
       data: data,
-      child: HarborRoom(data: waters, child: child),
+      child: HarborRoom(data: room, child: child),
     );
   }
 }
@@ -728,14 +728,14 @@ class HarborHandled extends StatelessWidget {
 /// `clearsTopSystemEdge: false` handles the status bar for its header and body, yet the sheet still
 /// reaches under it, so toasts, floats and the inspector must keep clear of it (#97).
 @internal
-class HarborClearWaterFloor extends InheritedWidget {
-  const HarborClearWaterFloor({super.key, required this.floor, required super.child});
+class HarborRoomFloor extends InheritedWidget {
+  const HarborRoomFloor({super.key, required this.floor, required super.child});
 
   final EdgeInsetsDirectional floor;
 
   static EdgeInsetsDirectional of(final BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<HarborClearWaterFloor>()?.floor ?? EdgeInsetsDirectional.zero;
+      context.dependOnInheritedWidgetOfExactType<HarborRoomFloor>()?.floor ?? EdgeInsetsDirectional.zero;
 
   @override
-  bool updateShouldNotify(final HarborClearWaterFloor oldWidget) => floor != oldWidget.floor;
+  bool updateShouldNotify(final HarborRoomFloor oldWidget) => floor != oldWidget.floor;
 }

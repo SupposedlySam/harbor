@@ -274,15 +274,15 @@ class _KeepInSight extends StatefulWidget {
   final Widget child;
 
   @override
-  State<_KeepInSight> createState() => _HarborBeaconState();
+  State<_KeepInSight> createState() => _KeepInSightState();
 }
 
-class _HarborBeaconState extends State<_KeepInSight> {
+class _KeepInSightState extends State<_KeepInSight> {
   ScrollPosition? _position;
   double _lastObscured = -1.0;
-  double _lastWaterline = -1.0;
+  double _lastKeyboardTop = -1.0;
   bool _checkPending = false;
-  _LighthouseRegionState? _region;
+  _KeepVisibleRegionState? _region;
 
   // Neither focusable nor traversable: it only tells the widget whether focus is inside it.
   final FocusNode _focus = FocusNode(debugLabel: 'HarborKeepInSight', canRequestFocus: false, skipTraversal: true);
@@ -310,11 +310,11 @@ class _HarborBeaconState extends State<_KeepInSight> {
     // number shrinks (336 to 200) while the room above it falls from 538 to 202, leaving the widget
     // under the keyboard.
     final double keyboardTop = MediaQuery.sizeOf(context).height - bottom;
-    if (widget.keepInSight && _lastWaterline >= 0 && keyboardTop < _lastWaterline - 0.5) {
+    if (widget.keepInSight && _lastKeyboardTop >= 0 && keyboardTop < _lastKeyboardTop - 0.5) {
       _scheduleReveal();
     }
-    _lastWaterline = keyboardTop;
-    final _LighthouseRegionState? region = _LighthouseRegionScope.maybeOf(context);
+    _lastKeyboardTop = keyboardTop;
+    final _KeepVisibleRegionState? region = _KeepVisibleRegionScope.maybeOf(context);
     if (!identical(region, _region)) {
       _region?._unregister(this);
       _region = region;
@@ -362,11 +362,11 @@ class _HarborBeaconState extends State<_KeepInSight> {
         return;
       }
       final RenderObject? box = context.findRenderObject();
-      final HarborController? harbor = HarborController.maybeOf(context);
-      if (box is! RenderBox || harbor == null) {
+      final HarborController? frame = HarborController.maybeOf(context);
+      if (box is! RenderBox || frame == null) {
         return;
       }
-      final double obscured = HarborKeepVisible.coverageOf(box, harbor, widget.edge);
+      final double obscured = HarborKeepVisible.coverageOf(box, frame, widget.edge);
       if ((obscured - _lastObscured).abs() > 0.001) {
         _lastObscured = obscured;
         widget.onObscured?.call(obscured);
@@ -419,7 +419,7 @@ class HarborKeepVisibleRegion extends StatefulWidget {
   final Widget child;
 
   @override
-  State<HarborKeepVisibleRegion> createState() => _LighthouseRegionState();
+  State<HarborKeepVisibleRegion> createState() => _KeepVisibleRegionState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -432,8 +432,8 @@ class HarborKeepVisibleRegion extends StatefulWidget {
   }
 }
 
-class _LighthouseRegionState extends State<HarborKeepVisibleRegion> with SingleTickerProviderStateMixin {
-  final Set<_HarborBeaconState> _beacons = <_HarborBeaconState>{};
+class _KeepVisibleRegionState extends State<HarborKeepVisibleRegion> with SingleTickerProviderStateMixin {
+  final Set<_KeepInSightState> _keepers = <_KeepInSightState>{};
   late final AnimationController _lift = AnimationController(vsync: this, duration: widget.duration);
   double _from = 0.0;
   double _to = 0.0;
@@ -443,13 +443,13 @@ class _LighthouseRegionState extends State<HarborKeepVisibleRegion> with SingleT
 
   double get _offset => _from + (_to - _from) * _moveCurve.transform(_lift.value);
 
-  void _register(final _HarborBeaconState beacon) {
-    _beacons.add(beacon);
+  void _register(final _KeepInSightState keeper) {
+    _keepers.add(keeper);
     _schedule();
   }
 
-  void _unregister(final _HarborBeaconState beacon) {
-    _beacons.remove(beacon);
+  void _unregister(final _KeepInSightState keeper) {
+    _keepers.remove(keeper);
     _schedule();
   }
 
@@ -484,18 +484,18 @@ class _LighthouseRegionState extends State<HarborKeepVisibleRegion> with SingleT
     final double cover = HarborRoom.clearanceOf(context, HarborEdge.bottom);
     double needed = 0.0;
     bool hold = false;
-    for (final _HarborBeaconState beacon in _beacons) {
-      if (!beacon.widget.lift || !beacon.mounted) {
+    for (final _KeepInSightState keeper in _keepers) {
+      if (!keeper.widget.lift || !keeper.mounted) {
         continue;
       }
-      hold = hold || beacon.widget.holdPosition;
-      final RenderObject? box = beacon.context.findRenderObject();
+      hold = hold || keeper.widget.holdPosition;
+      final RenderObject? box = keeper.context.findRenderObject();
       if (box is! RenderBox || !box.hasSize) {
         continue;
       }
       // Measured where it would be with no lift applied.
       final Rect rect = MatrixUtils.transformRect(box.getTransformTo(content), Offset.zero & box.size);
-      final double visibleBottom = region.size.height - cover - beacon.widget.clearance;
+      final double visibleBottom = region.size.height - cover - keeper.widget.clearance;
       needed = math.max(needed, rect.bottom - visibleBottom);
     }
     if (hold) {
@@ -529,7 +529,7 @@ class _LighthouseRegionState extends State<HarborKeepVisibleRegion> with SingleT
   }
 
   @override
-  Widget build(final BuildContext context) => _LighthouseRegionScope(
+  Widget build(final BuildContext context) => _KeepVisibleRegionScope(
     state: this,
     child: AnimatedBuilder(
       animation: _lift,
@@ -540,16 +540,16 @@ class _LighthouseRegionState extends State<HarborKeepVisibleRegion> with SingleT
   );
 }
 
-class _LighthouseRegionScope extends InheritedWidget {
-  const _LighthouseRegionScope({required this.state, required super.child});
+class _KeepVisibleRegionScope extends InheritedWidget {
+  const _KeepVisibleRegionScope({required this.state, required super.child});
 
-  final _LighthouseRegionState state;
+  final _KeepVisibleRegionState state;
 
-  static _LighthouseRegionState? maybeOf(final BuildContext context) =>
-      context.getInheritedWidgetOfExactType<_LighthouseRegionScope>()?.state;
+  static _KeepVisibleRegionState? maybeOf(final BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_KeepVisibleRegionScope>()?.state;
 
   @override
-  bool updateShouldNotify(final _LighthouseRegionScope oldWidget) => false;
+  bool updateShouldNotify(final _KeepVisibleRegionScope oldWidget) => false;
 }
 
 /// The old name of [HarborKeepVisibleRegion], which lifts the content of a [HarborLift].

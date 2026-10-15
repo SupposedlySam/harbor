@@ -36,7 +36,7 @@ class HarborAttachedBar extends StatefulWidget {
   final Widget child;
 
   @override
-  State<HarborAttachedBar> createState() => _HarborPontoonState();
+  State<HarborAttachedBar> createState() => _HarborAttachedBarState();
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -47,7 +47,7 @@ class HarborAttachedBar extends StatefulWidget {
   }
 }
 
-class _HarborPontoonState extends State<HarborAttachedBar> {
+class _HarborAttachedBarState extends State<HarborAttachedBar> {
   HarborController? _controller;
   HarborAttachedBarHandle? _handle;
 
