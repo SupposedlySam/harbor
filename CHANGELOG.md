@@ -1,3 +1,7 @@
+## 0.10.1
+
+* **A frame in an `OverlayPortal`'s child reads the overlay's system edges** (#142). Flutter hands an overlay child the padding of the overlay it paints in, but a frame there split that padding by the room of the frame where the portal was declared: under a tab host whose bar holds the home indicator, a `HarborFrame.page` shown on the root overlay read no bottom system edge, and its body ran into the home indicator. The root now publishes the padding it hands its body, and a frame whose padding on an edge is exactly the root's, where neither the outer room's system edge nor its bars reach that far, takes it all as system edge. Padding an app raises with its own `MediaQuery` is split as before, and frames outside an overlay are unchanged. The recipe, a full-screen page over everything, is in the README.
+
 ## 0.10.0
 
 * **Behaviour change: `showHarborDialog` and `HarborDialogRoute` keep clear of the system edges by default**, as `showDialog` does with `useSafeArea: true`. A tall Material `Dialog` stopped short of the keyboard but ran under the status bar and the home indicator: on an iPhone 17 its top sat at 24, under a 62 status bar. The dialog is now inside a `HarborClear` that clears the system edges (not the keyboard, which a Material `Dialog` already keeps off) and marks them handled, so a `HarborClear` inside it does not clear them a second time. `clearsSystemEdges: false`, on both, leaves the dialog as it was. Measured in `test/dialog_system_edges_test.dart`, on an iPhone 17 and an iPhone SE.
