@@ -81,8 +81,7 @@ void main() {
         MaterialApp(
           builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
           home: HarborFrame(
-            hinge: hinge,
-            barHinge: dockHinge,
+            defaults: HarborDefaults(hinge: hinge, barHinge: dockHinge),
             bottom: const <HarborBar>[
               HarborBar.solid(
                 child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity),
