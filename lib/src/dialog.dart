@@ -6,6 +6,7 @@ import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
 import 'hinge.dart';
+import 'moored.dart';
 import 'renamed.dart';
 
 /// Opens [builder]'s dialog over [context].
@@ -19,6 +20,12 @@ import 'renamed.dart';
 /// [inheritRoom], it sees the opening frame's bars as system edges too, so a
 /// contextual menu opened from a message stays between that page's header and
 /// its composer rather than only clear of the status bar.
+///
+/// The dialog keeps clear of those system edges (the status bar, the home indicator, a cutout), as
+/// one from `showDialog` does with its `useSafeArea`, so a tall Material `Dialog` stops short of
+/// them as it stops short of the keyboard. They are marked handled, so a [HarborClear] inside does
+/// not clear them again. With [clearsSystemEdges] false the dialog runs under them and reads them
+/// in `MediaQuery.padding`, for a dialog that lays out against the whole screen.
 ///
 /// The dialog is a [RawDialogRoute], as one from `showGeneralDialog` is: a
 /// popup route, so a `Hero` does not fly into it and a `RouteObserver` of
@@ -70,6 +77,7 @@ Future<T?> showHarborDialog<T>(
   final AnimationStyle? animationStyle,
   final RouteTransitionsBuilder? transitionBuilder,
   final HarborHinge? hinge,
+  final bool clearsSystemEdges = true,
 }) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   return navigator.push<T>(
@@ -87,6 +95,7 @@ Future<T?> showHarborDialog<T>(
       animationStyle: animationStyle,
       transitionBuilder: transitionBuilder,
       hinge: hinge,
+      clearsSystemEdges: clearsSystemEdges,
     ),
   );
 }
@@ -141,6 +150,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final AnimationStyle? animationStyle,
     final RouteTransitionsBuilder? transitionBuilder,
     final HarborHinge? hinge,
+    final bool clearsSystemEdges = true,
   }) : this._(
          builder: builder,
          inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
@@ -153,6 +163,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
          animationStyle: animationStyle,
          transitionBuilder: transitionBuilder,
          hinge: hinge ?? HarborHinge.of(context),
+         clearsSystemEdges: clearsSystemEdges,
          page: _HarborDialogPage(context, themes),
        );
 
@@ -168,6 +179,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required final AnimationStyle? animationStyle,
     required this.transitionBuilder,
     required this.hinge,
+    required this.clearsSystemEdges,
     required final _HarborDialogPage page,
   }) : assert(barrier.blocks, 'A dialog is a route with a barrier: give it HarborBarrier.dimmed or .clear, not none.'),
        _barrier = barrier,
@@ -179,7 +191,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
          barrierLabel: barrier.label ?? harborBarrierDismissLabel,
          transitionDuration: animationStyle?.duration ?? _duration,
          pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) =>
-             page.build(context, builder, semanticLabel),
+             page.build(context, builder, semanticLabel, clearsSystemEdges: clearsSystemEdges),
        );
 
   static const Duration _duration = Duration(milliseconds: 180);
@@ -225,6 +237,11 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     data: hinge.splitting(MediaQuery.of(context)),
     child: super.buildPage(context, animation, secondaryAnimation),
   );
+
+  /// Whether the dialog keeps clear of the system edges (the status bar, the home indicator, a
+  /// cutout) and marks them handled, as [showHarborDialog]'s `clearsSystemEdges` does. True by
+  /// default. With [inheritRoom] those include the opening frame's bars.
+  final bool clearsSystemEdges;
 
   /// Whether the dialog sees the opening frame's bars as system edges, as
   /// [showHarborDialog]'s `inheritRoom` does. Measured when the route is
@@ -358,7 +375,12 @@ class _HarborDialogPage {
   CapturedThemes? themes;
   EdgeInsets? inherited;
 
-  Widget build(final BuildContext context, final WidgetBuilder builder, final String? semanticLabel) {
+  Widget build(
+    final BuildContext context,
+    final WidgetBuilder builder,
+    final String? semanticLabel, {
+    required final bool clearsSystemEdges,
+  }) {
     // A Builder, so the builder's own context sees the captured themes (as for sheets and toasts).
     final Widget content = Builder(builder: builder);
     Widget dialog = themes?.wrap(content) ?? content;
@@ -370,6 +392,12 @@ class _HarborDialogPage {
         label: semanticLabel,
         child: dialog,
       );
+    }
+    if (clearsSystemEdges) {
+      // As showDialog's SafeArea, but marked handled, so a HarborClear inside does not clear them
+      // again. Inside the inherited room below, so the opener's bars are cleared in their place.
+      // The keyboard is left in `viewInsets`, where a Material Dialog already keeps off it.
+      dialog = HarborClear(clearsKeyboard: false, child: dialog);
     }
     final EdgeInsets? insets = inherited;
     if (insets != null) {
