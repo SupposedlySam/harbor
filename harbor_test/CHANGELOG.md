@@ -1,3 +1,7 @@
+## 0.4.1
+
+Needs harbor 0.10.0. Nothing in harbor_test's API changes. Its `dart fix` data now migrates a bare `pumpSeaTrial(...)` (and every other renamed extension member) called through implicit `this` inside an extension on `WidgetTester`, which 0.4.0's fix turned into a call that did not compile (#143).
+
 ## 0.4.0
 
 Needs harbor 0.9.0, which renamed its API (#120); harbor_test's names follow it. Sea trials are trials.

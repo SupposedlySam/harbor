@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 * **Behaviour change: `showHarborDialog` and `HarborDialogRoute` keep clear of the system edges by default**, as `showDialog` does with `useSafeArea: true`. A tall Material `Dialog` stopped short of the keyboard but ran under the status bar and the home indicator: on an iPhone 17 its top sat at 24, under a 62 status bar. The dialog is now inside a `HarborClear` that clears the system edges (not the keyboard, which a Material `Dialog` already keeps off) and marks them handled, so a `HarborClear` inside it does not clear them a second time. `clearsSystemEdges: false`, on both, leaves the dialog as it was. Measured in `test/dialog_system_edges_test.dart`, on an iPhone 17 and an iPhone SE.
 * **Migrating:** a dialog that already kept clear of the system edges with a `HarborClear` or a `SafeArea` is where it was: they now read zero there. What moves:
