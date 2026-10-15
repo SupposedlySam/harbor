@@ -1,8 +1,10 @@
 # Defaults: one place for app- and page-level policy
 
-Status: proposal, 2026-10-13. Nothing here is implemented. Line numbers are against `987db9c`.
-It builds on `placement.md` (`HarborPlacement`, `HarborAligned`, `HarborAnchored`) and assumes
-that lands first.
+Status: implemented, 2026-10-15, as `DECISIONS.md` (Defaults) settles it, in the 0.9 names: `HarborSea`
+is `HarborRoot`, `Harbor` is `HarborFrame`, `dockHinge` is `barHinge`, and the `flare…` fields are
+`toast…`, with `flareDuration` folded into `toastTiming`. Where this proposal and `DECISIONS.md`
+disagree, `DECISIONS.md` wins. Line numbers below are against `987db9c`.
+It builds on `placement.md` (`HarborPlacement`, `HarborAligned`, `HarborAnchored`).
 
 ## The problem, measured
 

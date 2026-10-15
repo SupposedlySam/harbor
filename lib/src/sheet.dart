@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
+import 'defaults.dart';
 import 'dock.dart';
 import 'edge.dart';
 import 'harbor.dart';
@@ -984,9 +985,13 @@ class HarborSheetController extends ChangeNotifier {
 ///   casts the status bar off for content that pads for it itself. It changes nothing on a sheet
 ///   that stops short of the status bar.
 ///
-/// [maxWidth] caps a sheet on a wide screen. A Material app that wants the
-/// bottom sheet theme's cap passes
-/// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640`.
+/// [maxWidth] caps a sheet on a wide screen; [HarborDefaults.sheetMaxWidth] when null. A Material
+/// app that wants the bottom sheet theme's cap sets
+/// `Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640` there once.
+///
+/// A [barrier] with no label is announced with [HarborDefaults.barrierLabel], and one with no tap
+/// hint takes [HarborDefaults.sheetBarrierOnTapHint]. [hinge] null takes [HarborDefaults.hinge].
+/// The defaults are read from [context] as the sheet opens.
 ///
 /// [sheetAnimationStyle] sets how the sheet slides in and out, as it does for
 /// `showModalBottomSheet`: by default it opens over 280 ms and closes over 220 ms
@@ -1051,6 +1056,8 @@ Future<T?> showHarborSheet<T>(
   );
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
+  // Read once, from the page that opens the sheet: what that page and the root above it chose.
+  final HarborDefaults defaults = HarborDefaults.read(context);
   // The sheet is built in the navigator's overlay, so it takes the themes and
   // text style of the page that opened it, as a modal bottom sheet does.
   final CapturedThemes themes = InheritedTheme.capture(from: context, to: navigator.context);
@@ -1058,7 +1065,7 @@ Future<T?> showHarborSheet<T>(
     // A Builder, so the builder's own context sees the captured themes, not only what it returns:
     // `Theme.of(context)` in a sheet's builder read the navigator's theme, not the page's.
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
-    maxWidth: maxWidth,
+    maxWidth: maxWidth ?? defaults.sheetMaxWidth,
     reachesTop: renamed(keepsTopCoast, reachesTop, false, 'reachesTop', 'keepsTopCoast'),
     anchorPoint: anchorPoint,
     presenter: renamed(breakwater, coversPage, false, 'coversPage', 'breakwater') ? presenter : null,
@@ -1066,7 +1073,7 @@ Future<T?> showHarborSheet<T>(
     controller: controller,
     scopesRoute: effective.blocks,
     semanticLabel: semanticLabel,
-    hinge: hinge ?? HarborHinge.of(context),
+    hinge: hinge ?? defaults.hinge ?? HarborHinge.avoidSeparating,
     fillsScreenAtHinge: fillsScreenAtHinge,
   );
   if (!effective.blocks) {
@@ -1091,8 +1098,8 @@ Future<T?> showHarborSheet<T>(
       host: host,
       barrierColor: effective.color,
       barrierDismissible: effective.isDismissible,
-      barrierLabel: effective.label ?? harborBarrierDismissLabel,
-      barrierOnTapHint: effective.onTapHint,
+      barrierLabel: effective.label ?? defaults.barrierLabel ?? harborBarrierDismissLabel,
+      barrierOnTapHint: effective.onTapHint ?? defaults.sheetBarrierOnTapHint,
       settings: routeSettings,
       animationStyle: sheetAnimationStyle,
       transitionAnimationController: transitionAnimationController,

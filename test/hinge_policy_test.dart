@@ -34,9 +34,12 @@ Future<BuildContext> _pump(
   late BuildContext inside;
   await tester.pumpHarborTrial(
     MaterialApp(
-      builder: (final BuildContext context, final Widget? child) => HarborRoot(hinge: sea, child: child!),
+      builder: (final BuildContext context, final Widget? child) => HarborRoot(
+        defaults: HarborDefaults(hinge: sea),
+        child: child!,
+      ),
       home: HarborFrame(
-        hinge: page,
+        defaults: HarborDefaults(hinge: page),
         floats: buoys,
         body: Builder(
           builder: (final BuildContext context) {
@@ -226,7 +229,7 @@ void main() {
           // The page keeps the default; a harbor inside it, which is not a port, spans the hinge.
           home: HarborFrame(
             body: HarborFrame(
-              hinge: HarborHinge.never,
+              defaults: const HarborDefaults(hinge: HarborHinge.never),
               body: Builder(
                 builder: (final BuildContext context) {
                   raiser = context;

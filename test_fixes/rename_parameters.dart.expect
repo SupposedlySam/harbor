@@ -7,12 +7,11 @@ import 'package:harbor/harbor.dart';
 void frames(BuildContext context, HarborEdgeEffectPainter painter) {
   const HarborFrame(isPage: true, body: SizedBox());
   HarborFrame(
-    floats: const <HarborFloat>[],
+    defaults: const HarborDefaults(barHinge: HarborHinge.never), floats: const <HarborFloat>[],
     systemEdges: HarborSystemEdges.none,
     isPage: false,
     bodyClearsKeyboard: false,
     edgeEffectPainter: painter,
-    barHinge: HarborHinge.never,
     body: const SizedBox(),
   );
   const HarborRoot(systemEdges: HarborSystemEdges.none, child: SizedBox());

@@ -1,15 +1,17 @@
 import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+
+import 'defaults.dart';
 
 /// Which hinges and folds across a foldable's screen harbor keeps things off: a sheet or dialog
 /// opens on one side of them, and a toast or float keeps to the side that holds it. Modelled on
 /// Material 3's `HingePolicy`.
 ///
-/// Set the app's default on `HarborRoot(hinge:)`, a page's on `HarborFrame(hinge:)`, and one overlay's
-/// on `showHarborSheet(hinge:)`, `showHarborDialog(hinge:)`, `HarborToasts.show(hinge:)` or
-/// `HarborFloat(hinge:)`. The nearest wins. It is a policy, not a change to the screen:
+/// Set the app's default with `HarborRoot(defaults: HarborDefaults(hinge:))`, a page's with
+/// `HarborFrame(defaults: HarborDefaults(hinge:))`, and one overlay's on `showHarborSheet(hinge:)`,
+/// `showHarborDialog(hinge:)`, `HarborToasts.show(hinge:)` or `HarborFloat(hinge:)`. The nearest
+/// wins. It is a policy, not a change to the screen:
 /// `MediaQuery.displayFeatures` is left as the platform reports it for everything else, so a
 /// two-pane layout or a video player beneath still sees the hinge.
 enum HarborHinge {
@@ -31,10 +33,10 @@ enum HarborHinge {
   /// toasts and floats run across the crease. Use it for an extended canvas, a map or a drawing.
   never;
 
-  /// The policy at [context]: the nearest `HarborFrame(hinge:)` or `HarborRoot(hinge:)` above it, or
-  /// [avoidSeparating] with neither.
-  static HarborHinge of(final BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<HarborHingeScope>()?.hinge ?? HarborHinge.avoidSeparating;
+  /// The policy at [context]: [HarborDefaults.hinge] there, which is [avoidSeparating] unless a
+  /// root, a frame or a [HarborDefaultsScope] above it sets one. Makes [context] rebuild when it
+  /// changes.
+  static HarborHinge of(final BuildContext context) => HarborDefaults.of(context).hinge ?? HarborHinge.avoidSeparating;
 
   /// The hinges and folds in [features] this policy keeps off, each reported so that
   /// `DisplayFeatureSubScreen` splits the screen at it: a flat fold kept off by [always] is
@@ -90,15 +92,4 @@ enum HarborPosture {
     }
     return HarborPosture.flat;
   }
-}
-
-/// Hands a [HarborHinge] to everything beneath, read with [HarborHinge.of].
-@internal
-class HarborHingeScope extends InheritedWidget {
-  const HarborHingeScope({super.key, required this.hinge, required super.child});
-
-  final HarborHinge hinge;
-
-  @override
-  bool updateShouldNotify(final HarborHingeScope oldWidget) => hinge != oldWidget.hinge;
 }

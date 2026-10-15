@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'barrier.dart';
 import 'barrier_label.dart';
 import 'controller.dart';
+import 'defaults.dart';
 import 'hinge.dart';
 import 'moored.dart';
 import 'renamed.dart';
@@ -162,7 +163,8 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
          requestFocus: requestFocus,
          animationStyle: animationStyle,
          transitionBuilder: transitionBuilder,
-         hinge: hinge ?? HarborHinge.of(context),
+         defaults: HarborDefaults.read(context),
+         hinge: hinge,
          clearsSystemEdges: clearsSystemEdges,
          page: _HarborDialogPage(context, themes),
        );
@@ -178,17 +180,19 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required super.requestFocus,
     required final AnimationStyle? animationStyle,
     required this.transitionBuilder,
-    required this.hinge,
+    required final HarborDefaults defaults,
+    required final HarborHinge? hinge,
     required this.clearsSystemEdges,
     required final _HarborDialogPage page,
-  }) : assert(barrier.blocks, 'A dialog is a route with a barrier: give it HarborBarrier.dimmed or .clear, not none.'),
+  }) : hinge = hinge ?? defaults.hinge ?? HarborHinge.avoidSeparating,
+       assert(barrier.blocks, 'A dialog is a route with a barrier: give it HarborBarrier.dimmed or .clear, not none.'),
        _barrier = barrier,
        _animationStyle = animationStyle,
        _page = page,
        super(
          barrierColor: barrier.color,
          barrierDismissible: barrier.isDismissible,
-         barrierLabel: barrier.label ?? harborBarrierDismissLabel,
+         barrierLabel: barrier.label ?? defaults.barrierLabel ?? harborBarrierDismissLabel,
          transitionDuration: animationStyle?.duration ?? _duration,
          pageBuilder: (final BuildContext context, final Animation<double> _, final Animation<double> _) =>
              page.build(context, builder, semanticLabel, clearsSystemEdges: clearsSystemEdges),
@@ -223,7 +227,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   final HarborBarrier _barrier;
 
   /// Which hinges and folds the dialog keeps off: the one given, or the opening page's
-  /// [HarborHinge.of], read as the route is made. [anchorPoint] picks the side.
+  /// [HarborDefaults.hinge], read as the route is made. [anchorPoint] picks the side.
   final HarborHinge hinge;
 
   // The side of the screen is chosen by the DisplayFeatureSubScreen RawDialogRoute puts around
