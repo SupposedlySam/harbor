@@ -5,6 +5,48 @@
 # doc/design/naming.md is the table. Each family is checked by a golden in test_fixes/.
 version: 1
 transforms:
+  # HarborSeaTrials.pumpSeaTrial
+  - title: "Rename to 'pumpHarborTrial'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor_test.dart' ]
+      method: 'pumpSeaTrial'
+      inExtension: 'HarborSeaTrials'
+    changes:
+      - kind: 'rename'
+        newName: 'pumpHarborTrial'
+  # HarborSeaTrials.pumpSeaTrial
+  - title: "Rename to 'keyboardShown'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor_test.dart' ]
+      method: 'pumpSeaTrial'
+      inExtension: 'HarborSeaTrials'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'tideIn'
+        newName: 'keyboardShown'
+  # WidgetTester.pumpSeaTrial
+  - title: "Rename to 'pumpHarborTrial'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor_test.dart' ]
+      method: 'pumpSeaTrial'
+      inClass: 'WidgetTester'
+    changes:
+      - kind: 'rename'
+        newName: 'pumpHarborTrial'
+  # WidgetTester.pumpSeaTrial
+  - title: "Rename to 'keyboardShown'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor_test.dart' ]
+      method: 'pumpSeaTrial'
+      inClass: 'WidgetTester'
+    changes:
+      - kind: 'renameParameter'
+        oldName: 'tideIn'
+        newName: 'keyboardShown'
   # HarborSeaTrials
   - title: "Rename to 'HarborTrials'"
     date: 2026-10-14
@@ -14,48 +56,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborTrials'
-  # HarborSeaTrials.pumpSeaTrial
-  - title: "Rename to 'pumpHarborTrial'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor_test.dart' ]
-      method: 'pumpSeaTrial'
-      inExtension: 'HarborSeaTrials'
-    changes:
-      - kind: 'rename'
-        newName: 'pumpHarborTrial'
-  # HarborSeaTrials.pumpSeaTrial
-  - title: "Rename to 'keyboardShown'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor_test.dart' ]
-      method: 'pumpSeaTrial'
-      inExtension: 'HarborSeaTrials'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'tideIn'
-        newName: 'keyboardShown'
-  # WidgetTester.pumpSeaTrial
-  - title: "Rename to 'pumpHarborTrial'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor_test.dart' ]
-      method: 'pumpSeaTrial'
-      inClass: 'WidgetTester'
-    changes:
-      - kind: 'rename'
-        newName: 'pumpHarborTrial'
-  # WidgetTester.pumpSeaTrial
-  - title: "Rename to 'keyboardShown'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor_test.dart' ]
-      method: 'pumpSeaTrial'
-      inClass: 'WidgetTester'
-    changes:
-      - kind: 'renameParameter'
-        oldName: 'tideIn'
-        newName: 'keyboardShown'
   # HarborSeaTrial
   - title: "Rename to 'HarborTrial'"
     date: 2026-10-14

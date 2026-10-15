@@ -75,3 +75,101 @@ void tearOffs(BuildContext context) {
       (final HarborToastEntry e) => e.hide;
   <Object?>[isIn, show, lower];
 }
+
+// The same reads through implicit `this`, inside an extension on each type (#143): a member read with no
+// target is matched by its declaring type rather than by a target's type.
+extension Implicit on HarborFrame {
+  List<Object?> get reads => <Object?>[floats, systemEdges, isPage, bodyClearsKeyboard, edgeEffectPainter, barHinge];
+}
+extension ImplicitSea on HarborRoot {
+  List<Object?> get reads => <Object?>[systemEdges];
+}
+extension ImplicitDock on HarborBar {
+  List<Object?> get reads => <Object?>[edgeEffect, keyboard, systemEdges, effectiveSystemEdges];
+}
+extension ImplicitDockRecord on HarborBarRecord {
+  List<Object?> get reads => <Object?>[keyboard];
+}
+extension ImplicitPontoon on HarborAttachedBar {
+  List<Object?> get reads => <Object?>[bar];
+}
+extension ImplicitPontoonHandle on HarborAttachedBarHandle {
+  List<Object?> get reads => <Object?>[bar];
+}
+extension ImplicitCoast on HarborSystemEdges {
+  List<Object?> get reads => <Object?>[ignoresKeyboard];
+}
+extension ImplicitTideState on HarborKeyboardState {
+  List<Object?> get reads => <Object?>[settledHeight, settledHeightIsEstimate, isShown];
+}
+extension ImplicitDryDock on HarborKeyboardSpace {
+  List<Object?> get reads => <Object?>[showsChildWithKeyboard];
+}
+extension ImplicitWatersData on HarborRoomData {
+  List<Object?> get reads => <Object?>[systemEdges, systemEdgesSteady, bars, barsResting, fadeBands, hasBars, fadeBandsPainted, handled(HarborEdge.vertical), fadeBandOf(HarborEdge.top)];
+}
+extension ImplicitCastOff on HarborHandled {
+  List<Object?> get reads => <Object?>[clearsKeyboard, clearsBars];
+}
+extension ImplicitLayoutRecord on HarborLayoutRecord {
+  List<Object?> get reads => <Object?>[room, bars, keyboard];
+}
+extension ImplicitController on HarborController {
+  List<Object?> get reads => <Object?>[room, roomInGlobal(), registry, isPage, dockedEdges, breakwaterTopsInGlobal, breakwaterCoverage, breakwaterChanges, flares];
+
+  void calls() {
+    withDockOn(HarborEdge.top);
+    final HarborClaim claim = hideBar(HarborEdge.bottom, state: HarborBarState.dark);
+    final HarborAttachedBarHandle handle = attachBar(HarborEdge.bottom, const HarborBar.reserve(extent: 0));
+    updateAttachedBar(handle, HarborEdge.top, const HarborBar.reserve(extent: 0));
+    pontoonsOn(HarborEdge.top);
+    detachBar(handle);
+    addPageCover(ValueNotifier<double>(0)).remove();
+    addPageCoverEdge(ValueNotifier<double>(0)).remove();
+    claim.release();
+  }
+}
+extension ImplicitMoored on HarborClear {
+  List<Object?> get reads => <Object?>[clearsKeyboard, rowInsets, padding];
+}
+extension ImplicitFairway on HarborScrollView {
+  List<Object?> get reads => <Object?>[rowInsets, clearsKeyboard, edgeEffects, startsUnderBars];
+}
+extension ImplicitFairwaySliver on HarborSliverClear {
+  List<Object?> get reads => <Object?>[clearsKeyboard];
+}
+extension ImplicitWake on HarborEdgeEffect {
+  List<Object?> get reads => <Object?>[faceOpacity];
+}
+extension ImplicitWakeBand on HarborFadeBand {
+  List<Object?> get reads => <Object?>[barFace, fadeEnd, faceOpacity];
+}
+extension ImplicitWakeMask on HarborFadeMask {
+  List<Object?> get reads => <Object?>[bands, faceOpacity];
+}
+extension ImplicitPortalBuoy on HarborPopover {
+  List<Object?> get reads => <Object?>[popoverBuilder];
+}
+extension ImplicitFlareEntry on HarborToastEntry {
+  List<Object?> get reads => <Object?>[shownFrom, reachesSystemEdges];
+
+  void calls() {
+    hide();
+    hide(reason: HarborToastClosedReason.dismiss);
+  }
+}
+extension ImplicitFleet on HarborFrameRegistry {
+  List<Object?> get reads => <Object?>[frames, root];
+}
+extension ImplicitSheet on HarborSheet {
+  List<Object?> get reads => <Object?>[headerEdgeEffect, footerEdgeEffect, footerKeyboard, clearsTopSystemEdge, bodyClearsKeyboard];
+}
+extension ImplicitDialogRoute on HarborDialogRoute<void> {
+  List<Object?> get reads => <Object?>[inheritRoom];
+}
+extension ImplicitChartEntry on HarborInspectorEntry {
+  List<Object?> get reads => <Object?>[room, bars, keyboard];
+}
+extension ImplicitScaleModel on HarborScaledScreen {
+  List<Object?> get reads => <Object?>[systemEdges];
+}

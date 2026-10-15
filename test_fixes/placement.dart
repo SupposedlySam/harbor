@@ -108,3 +108,23 @@ void flares(BuildContext context, HarborAnchor anchor) {
     builder: (_) => const SizedBox(),
   );
 }
+
+void flaresNotLiteral(BuildContext context, HarborAnchor anchor, HarborAnchor? maybeAnchor, AlignmentGeometry where, double gap) {
+  // An anchor alone is moved whatever its argument is: a variable, a field, a call.
+  HarborFlares.raise(context, anchor: anchor, gap: gap, margin: EdgeInsets.zero, builder: (_) => const SizedBox());
+  HarborFlares.raise(context, alignment: where, margin: EdgeInsets.zero, builder: (_) => const SizedBox());
+  // Both an anchor and an alignment (#143): which one applies depends on the values, which a fix
+  // cannot see, so it is left alone, deprecated, and the CHANGELOG says what to write.
+  HarborFlares.raise(
+    context,
+    builder: (_) => const SizedBox(),
+    anchor: maybeAnchor,
+    gap: 8,
+    alignment: maybeAnchor != null ? null : Alignment.topCenter,
+    margin: EdgeInsets.zero,
+  );
+  HarborFlares.raise(context, anchor: maybeAnchor, alignment: where, builder: (_) => const SizedBox());
+  // side, gap and crossAlignment did nothing without an anchor, and assert beside a placement.
+  HarborFlares.raise(context, alignment: where, gap: gap, builder: (_) => const SizedBox());
+  HarborFlares.raise(context, margin: EdgeInsets.zero, side: HarborBuoySide.above, crossAlignment: HarborBuoyCrossAlignment.end, builder: (_) => const SizedBox());
+}

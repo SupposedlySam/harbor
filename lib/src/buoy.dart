@@ -1991,8 +1991,8 @@ abstract final class HarborToasts {
     final HarborToastSlot? slot,
     final HarborPlacement? placement,
     @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it, except to a call that gives both '
+      'anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final AlignmentGeometry? alignment,
     final HarborToastTiming? timing,
@@ -2011,28 +2011,28 @@ abstract final class HarborToasts {
     final HarborToastTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final double? gap,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
-      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it, '
+      'except to a call that gives both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
     @Deprecated('Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.')
@@ -2184,8 +2184,8 @@ abstract final class HarborToasts {
     final HarborToastSlot? slot,
     final HarborPlacement? placement,
     @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it, except to a call that gives both '
+      'anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final AlignmentGeometry? alignment,
     final HarborToastTiming? timing,
@@ -2204,28 +2204,28 @@ abstract final class HarborToasts {
     final HarborToastTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final double? gap,
     @Deprecated(
-      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it, except to a call that gives '
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
-      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it, '
+      'except to a call that gives both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
     )
     final EdgeInsetsGeometry? margin,
     @Deprecated('Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.')
