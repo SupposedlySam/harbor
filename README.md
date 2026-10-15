@@ -839,7 +839,8 @@ is one canvas; split it into panes for two. Only a frame as big as the screen
 reads the hinge. `HarborDefaults(hinge: HarborHinge.never)` on a frame lays bars across it,
 and the page's overlays too; `HarborDefaults(barHinge: HarborHinge.never)` lays only the bars
 across it, so its sheets, dialogs, toasts and menus still keep off. Both reach the frames nested
-in the page as well. Through 0.9 these were `HarborFrame(hinge:, barHinge:)` and
+in the page as well, unless a nested frame sets its own: a frame's bars follow its own `barHinge`,
+then its own `hinge`, and only then what a frame around it set. Through 0.9 these were `HarborFrame(hinge:, barHinge:)` and
 `HarborRoot(hinge:)`; they still work, deprecated, and `dart fix` moves them into `defaults:`.
 
 `HarborPanes(start:, end:)` is two panes, modelled on Windows' `TwoPaneView`:
