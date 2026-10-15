@@ -32,7 +32,7 @@ for dir in "$root" "$root/harbor_test" "$root/example"; do
   if [[ "$dir" == "$root" ]]; then
     # The dart fix transforms (lib/fix_data/), each one checked against its golden in test_fixes/:
     # `--compare-to-golden` runs every test_fixes/*.dart against its .expect. placement.yaml,
-    # rename.yaml (with harbor_test/lib/fix_data.yaml) and toasts.yaml are generated from
+    # rename.yaml (with harbor_test/lib/fix_data.yaml), toasts.yaml and sheets.yaml are generated from
     # tool/fix_data/, so they are also checked against their generators; signals.yaml and bars.yaml
     # are hand-written, and their goldens are their only check.
     echo "== dart fix"
@@ -41,6 +41,7 @@ for dir in "$root" "$root/harbor_test" "$root/example"; do
       "${dart[@]}" run tool/fix_data/placement.dart --check
       "${dart[@]}" run tool/fix_data/rename.dart --check
       "${dart[@]}" run tool/fix_data/toasts.dart --check
+      "${dart[@]}" run tool/fix_data/sheets.dart --check
       cd test_fixes
       "${dart[@]}" fix --compare-to-golden
     )

@@ -42,7 +42,7 @@ Future<BuildContext> _pushPage(final WidgetTester tester, {final bool cupertino 
 void _openSheet(final BuildContext context) => unawaited(
   showHarborSheet<void>(
     context,
-    barrier: HarborSheetBarrier.none,
+    barrier: HarborBarrier.none,
     builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 200, child: Text('sheet'))),
   ),
 );
@@ -90,7 +90,7 @@ class _CounterState extends State<_Counter> {
 void _openButtonSheet(final BuildContext context, {final bool? requestFocus}) => unawaited(
   showHarborSheet<void>(
     context,
-    barrier: HarborSheetBarrier.none,
+    barrier: HarborBarrier.none,
     requestFocus: requestFocus,
     builder: (final BuildContext _) => HarborSheet(
       body: Column(

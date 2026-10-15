@@ -749,8 +749,10 @@ void showChandlery(final BuildContext context) => unawaited(
         debugLabel: 'chandlery',
         surface: Sailcloth(),
         // A hairline rather than a fade, so the shop's own header sits flush below.
-        headerEdgeEffect: HarborEdgeEffect.hairline(),
-        header: SheetHeader(key: ValueKey<String>('chandlery sheet header'), title: 'Chandlery'),
+        headerBar: HarborBar.overlay(
+          edgeEffect: HarborEdgeEffect.hairline(),
+          child: SheetHeader(key: ValueKey<String>('chandlery sheet header'), title: 'Chandlery'),
+        ),
         body: SizedBox(height: 420, child: _Chandlery()),
       ),
     ),

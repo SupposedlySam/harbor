@@ -315,7 +315,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
       showHarborSheet<void>(
         context,
         coversPage: true,
-        barrier: HarborSheetBarrier.none,
+        barrier: HarborBarrier.none,
         builder: (final BuildContext context) => PaintShop(yard: _yard),
       ).then((final void _) {
         _sheetOpen = false;
@@ -710,26 +710,29 @@ class _PaintShopState extends State<PaintShop> {
         key: const ValueKey<String>('paint panel'),
         debugLabel: 'paint shop',
         surface: const Sailcloth(),
-        headerEdgeEffect: HarborEdgeEffect.none,
-        header: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SheetHeader(
-              title: boat == null ? 'Paint shop' : 'Paint shop · ${boat.name.isEmpty ? 'Unnamed' : boat.name}',
-            ),
-            _TabRow(current: _tab, onPick: _pick),
-          ],
+        // No fade under the tabs: a bar's own default.
+        headerBar: HarborBar.overlay(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SheetHeader(
+                title: boat == null ? 'Paint shop' : 'Paint shop · ${boat.name.isEmpty ? 'Unnamed' : boat.name}',
+              ),
+              _TabRow(current: _tab, onPick: _pick),
+            ],
+          ),
         ),
         body: HarborClear(
           edges: const <HarborEdge>{HarborEdge.top},
           clearsKeyboard: false,
           child: SizedBox(height: 64, child: HarborClear.rowInsets(child: _deck(boat))),
         ),
-        // A keyboard space: the keyboard's ground, kept at its settled height either way.
-        footerKeyboard: HarborKeyboardStance.reserves,
-        footerMinimum: 0,
-        footerEdgeEffect: HarborEdgeEffect.none,
-        footer: HarborKeyboardSpace(key: const ValueKey<String>('dry dock'), child: boat == null ? null : _tray(boat)),
+        // A keyboard space: the keyboard's ground, kept at its settled height either way. A bar's own
+        // defaults are no edge effect and no minimum.
+        footerBar: HarborBar.solid(
+          keyboard: HarborKeyboardStance.reserves,
+          child: HarborKeyboardSpace(key: const ValueKey<String>('dry dock'), child: boat == null ? null : _tray(boat)),
+        ),
       ),
     );
   }

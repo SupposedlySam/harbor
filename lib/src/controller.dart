@@ -45,20 +45,30 @@ class HarborClaim {
 /// Flutter has no equivalent: a `Scaffold` lifts its floating action button over a bottom sheet but
 /// leaves the body under it.
 class HarborPageCover {
-  HarborPageCover._(this._controller, this._coverage, {this.measuresTop = false});
+  HarborPageCover._(this._controller, this._coverage, {this._measuresTop = false});
 
   HarborController? _controller;
   final ValueListenable<double> _coverage;
+  final bool _measuresTop;
 
   /// Whether the listenable holds the cover's top edge in global coordinates
   /// rather than how far it reaches up from the bottom of the screen.
-  final bool measuresTop;
+  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
+  bool get measuresTop => _measuresTop;
 
-  double get coverage => _controller == null || measuresTop ? 0.0 : _coverage.value;
+  double get _reach => _controller == null || _measuresTop ? 0.0 : _coverage.value;
+
+  double? get _top => _controller == null || !_measuresTop ? null : _coverage.value;
+
+  /// How far the cover reaches up from the bottom of the screen.
+  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
+  double get coverage => _reach;
 
   /// The cover's top edge in global coordinates, for a page cover that measures it.
-  double? get topInGlobal => _controller == null || !measuresTop ? null : _coverage.value;
+  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
+  double? get topInGlobal => _top;
 
+  /// Takes the cover away: call it when the cover leaves.
   void remove() {
     final HarborController? controller = _controller;
     _controller = null;
@@ -1129,7 +1139,7 @@ class HarborController {
   /// The top edges, in global coordinates, of page covers that measure one.
   Iterable<double> get pageCoverTopsInGlobal sync* {
     for (final HarborPageCover coversPage in _breakwaters) {
-      final double? top = coversPage.topInGlobal;
+      final double? top = coversPage._top;
       if (top != null && top.isFinite) {
         yield top;
       }
@@ -1140,8 +1150,8 @@ class HarborController {
   double get pageCoverage {
     double largest = 0.0;
     for (final HarborPageCover coversPage in _breakwaters) {
-      if (coversPage.coverage > largest) {
-        largest = coversPage.coverage;
+      if (coversPage._reach > largest) {
+        largest = coversPage._reach;
       }
     }
     return largest;

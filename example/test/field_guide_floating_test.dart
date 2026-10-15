@@ -225,7 +225,7 @@ void main() {
     expect(names(GuideGroup.floating), <String>[
       'HarborFloat',
       'HarborFloat + HarborAnchored',
-      'HarborFloat(modal: true)',
+      'HarborFloat(barrier:)',
       'HarborPopover',
       'HarborToasts.show',
     ]);
@@ -596,9 +596,9 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // HarborFloat(modal: true)
+  // HarborFloat(barrier:)
 
-  testWidgets('HarborFloat(modal: true): hides the float listed before it and is centered in the room', (
+  testWidgets('HarborFloat(barrier:): hides the float listed before it and is centered in the room', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
@@ -612,14 +612,16 @@ void main() {
     );
     expect(_rect(tester, 'modal float').center.dy, _near(room.center.dy));
     expect(_rect(tester, 'modal float').center.dx, _near(room.center.dx));
-    expect(find.text('HarborFloat(modal: true)'), findsWidgets);
+    expect(find.text('HarborFloat(barrier: clear)'), findsWidgets);
     expect(
       _code(tester),
-      contains('HarborFloat(modal: true, onDismiss: close, child: QuickActions()), // a barrier; hides the tooltip'),
+      contains(
+        'HarborFloat(barrier: HarborBarrier.clear(), onDismiss: close, child: QuickActions()), // hides the tooltip',
+      ),
     );
   });
 
-  testWidgets('HarborFloat(modal: true): not modal, both floats stay up, the first at the bottom center', (
+  testWidgets('HarborFloat(barrier:): not modal, both floats stay up, the first at the bottom center', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
@@ -636,7 +638,7 @@ void main() {
     expect(_key('listed first'), findsNothing);
   });
 
-  testWidgets('HarborFloat(modal: true): taking the launch down brings the first float back', (
+  testWidgets('HarborFloat(barrier:): taking the launch down brings the first float back', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
@@ -651,7 +653,7 @@ void main() {
     expect(_code(tester), contains('QuickActions'));
   });
 
-  testWidgets('HarborFloat(modal: true): Stand down and Call the launch take it down and up again', (
+  testWidgets('HarborFloat(barrier:): Stand down and Call the launch take it down and up again', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('buoy-modal'));
@@ -847,14 +849,14 @@ void main() {
     await _popStage(tester, 'sheet footer');
   });
 
-  testWidgets('HarborSheet: footerKeyboard: rides follows the keyboard, footerMinimum above it', (
+  testWidgets('HarborSheet: footer keyboard: rides follows the keyboard, 16 above it', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet'));
     final double s = _scale(tester);
     await _tapStage(tester, 'open sheet');
     await tester.pump(_step);
-    expect(_selected(tester, 'footerKeyboard: rides'), isTrue);
+    expect(_selected(tester, 'footer keyboard: rides'), isTrue);
     await _setKeyboard(tester, shown: true);
     await tester.pump(_step);
     expect(_rect(tester, 'sheet footer').bottom, _near(_keyboardTop(tester) - 16 * s));
@@ -864,14 +866,14 @@ void main() {
     await _popStage(tester, 'sheet footer');
   });
 
-  testWidgets('HarborSheet: footerKeyboard: stays holds still and the keyboard covers it; the body stays above', (
+  testWidgets('HarborSheet: footer keyboard: stays holds still and the keyboard covers it; the body stays above', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet'));
     await _tapStage(tester, 'open sheet');
     await tester.pump(_step);
-    await _tap(tester, 'footerKeyboard: stays');
-    expect(_code(tester), contains('footerKeyboard: HarborKeyboardStance.stays,'));
+    await _tap(tester, 'footer keyboard: stays');
+    expect(_code(tester), contains('.copyWith(keyboard: HarborKeyboardStance.stays),'));
     final Rect hidden = _rect(tester, 'sheet footer');
     await _setKeyboard(tester, shown: true);
     await tester.pump(_step);
@@ -884,13 +886,13 @@ void main() {
   });
 
   testWidgets(
-    'HarborSheet: footerKeyboard: reserves holds the keyboard\'s ground with a tray the keyboard takes over',
+    'HarborSheet: footer keyboard: reserves holds the keyboard\'s ground with a tray the keyboard takes over',
     (final WidgetTester tester) async {
       await _pumpEntry(tester, _page('sheet'));
       await _tapStage(tester, 'open sheet');
       await tester.pump(_step);
-      await _tap(tester, 'footerKeyboard: reserves');
-      expect(_code(tester), contains('footerKeyboard: HarborKeyboardStance.reserves,'));
+      await _tap(tester, 'footer keyboard: reserves');
+      expect(_code(tester), contains('.copyWith(keyboard: HarborKeyboardStance.reserves),'));
       expect(_code(tester), contains('HarborKeyboardSpace(child: FlagTray())'));
       expect(tester.widget<Text>(_key('hint')).data!, startsWith('reserves:'));
       // The tray runs to the screen's edge: no system edge and no minimum under it.
@@ -917,15 +919,15 @@ void main() {
     },
   );
 
-  testWidgets('HarborSheet: the hint says what to look for at each footerKeyboard stance', (
+  testWidgets('HarborSheet: the hint says what to look for at each footer keyboard stance', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet'));
     expect(tester.widget<Text>(_key('hint')).data!, startsWith('rides:'));
-    await _tap(tester, 'footerKeyboard: stays');
+    await _tap(tester, 'footer keyboard: stays');
     expect(tester.widget<Text>(_key('hint')).data!, startsWith('stays:'));
     expect(_key('flag tray'), findsNothing);
-    await _tap(tester, 'footerKeyboard: reserves');
+    await _tap(tester, 'footer keyboard: reserves');
     expect(tester.widget<Text>(_key('hint')).data!, startsWith('reserves:'));
   });
 
@@ -1132,7 +1134,7 @@ void main() {
   ) async {
     await _pumpEntry(tester, _page('sheet-breakwater'));
     expect(_selected(tester, 'barrier: none'), isTrue);
-    expect(_code(tester), contains('barrier: HarborSheetBarrier.none,'));
+    expect(_code(tester), contains('barrier: HarborBarrier.none,'));
     await _openCoversPage(tester);
     expect(_dimmed(), findsNothing);
     await tester.drag(_key('stage row 1'), const Offset(0, -80));
@@ -1143,12 +1145,12 @@ void main() {
     await _popStage(tester, 'coversPage sheet header');
   });
 
-  testWidgets('showHarborSheet(barrier: dismissible): dims the page, and a tap on it closes the sheet', (
+  testWidgets('showHarborSheet(barrier: dimmed): dims the page, and a tap on it closes the sheet', (
     final WidgetTester tester,
   ) async {
     await _pumpEntry(tester, _page('sheet-breakwater'));
-    await _tap(tester, 'barrier: dismissible');
-    expect(_code(tester), contains('barrier: HarborSheetBarrier.dismissible,'));
+    await _tap(tester, 'barrier: dimmed');
+    expect(_code(tester), contains('barrier: const HarborBarrier.dimmed(),'));
     await _openCoversPage(tester);
     expect(_dimmed(), findsOneWidget);
     // The barrier takes the tap, not the row under it.
@@ -1165,7 +1167,7 @@ void main() {
   ) async {
     await _pumpEntry(tester, _page('sheet-breakwater'));
     await _tap(tester, 'barrier: clear');
-    expect(_code(tester), contains('barrier: HarborSheetBarrier.clear,'));
+    expect(_code(tester), contains('barrier: const HarborBarrier.clear(),'));
     await _openCoversPage(tester);
     expect(_dimmed(), findsNothing);
     // The barrier takes the tap, not the row under it.

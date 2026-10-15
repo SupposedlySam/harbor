@@ -6,6 +6,7 @@
 /// does not ride it.
 library;
 
+export 'src/barrier.dart' show HarborBarrier, HarborSheetBarrier;
 export 'src/buoy.dart'
     show
         HarborAnchor,

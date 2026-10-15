@@ -92,8 +92,8 @@ Future<BuildContext> _open(
   unawaited(
     showHarborDialog<void>(
       page,
+      barrier: HarborBarrier.dimmed(label: barrierLabel),
       routeSettings: routeSettings,
-      barrierLabel: barrierLabel,
       semanticLabel: semanticLabel,
       traversalEdgeBehavior: traversalEdgeBehavior,
       requestFocus: requestFocus,

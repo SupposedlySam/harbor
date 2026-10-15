@@ -39,7 +39,7 @@ void main() {
         unawaited(
           showHarborSheet<String>(
             page,
-            barrier: HarborSheetBarrier.none,
+            barrier: HarborBarrier.none,
             builder: (final BuildContext _) => const HarborSheet(body: SizedBox(height: 100)),
           ).then((final String? r) => result = r ?? 'null'),
         );

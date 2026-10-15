@@ -224,7 +224,7 @@ void main() {
         floats: <HarborFloat>[
           if (!events.contains('modal'))
             HarborFloat(
-              modal: true,
+              barrier: const HarborBarrier.clear(),
               onDismiss: () => setState(() => events.add('modal')),
               child: Material(
                 child: _row(menu: menu, events: events, opener: opener),

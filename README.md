@@ -140,10 +140,11 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborKeyboardStance.reserves` | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
 | `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the space back |
 | `HarborAttachedBar` | `ScaffoldState.showBottomSheet`, which puts a widget into an ancestor's frame from deep in the tree | An attached bar is a bar: it takes its space (or the body runs under it), and leaves with the widget that added it |
-| `HarborFloat` | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the room, so it clears the system edges, every bar and the keyboard. A `modal` float has a barrier, as `ModalBarrier` does, but it is not a route, so keyboard focus is not trapped |
+| `HarborFloat` | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the room, so it clears the system edges, every bar and the keyboard. A float with a `barrier:` is modal, as a `ModalBarrier` makes a page, but it is not a route |
 | `HarborPopover` | `OverlayPortal` (it is one), as `MenuAnchor` and `RawMenuAnchor` use | Placement only: it keeps the popover in the room and flips it when its side has no room. It brings no menu semantics, keyboard navigation or tap-outside dismissal; your `controller` opens and closes it |
 | `HarborToasts.show` | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Toasts at one slot take turns, as snack bars do, and a toast's time counts only while it is in sight; toasts at different slots show together. It builds any widget, at one of four heights (`HarborToastSlot`), clear of the bars of the page that showed it. Both are live regions |
-| `showHarborSheet` | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborSheetBarrier.none` is `showBottomSheet` | Its header and footer are bars, so the body runs under the header and the footer rides the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
+| `showHarborSheet` | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborBarrier.none` is `showBottomSheet` | Its header and footer are bars, so the body runs under the header and the footer rides the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
+| `HarborBarrier` | `ModalRoute.barrierColor`, `barrierDismissible`, `barrierLabel`; `ModalBottomSheetRoute.barrierOnTapHint` | One value for all four, taken by sheets, dialogs and floats alike: `.dimmed`, `.clear` or `.none` |
 | `showHarborSheet(coversPage: true)` | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A sheet that covers the page tells the page that opened it how far it covers, and the page's content keeps clear |
 | `HarborKeepInSight` | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the bars and the keyboard of every `HarborScrollView` it passes through. `HarborKeepInSight(onObscured:)`, how much of a widget the header covers, and `HarborKeepInSightRegion`, lifting content that does not scroll, have no Flutter equivalent |
 | `HarborScaledScreen` | A `FittedBox` around a `MediaQuery` with a fixed `size` | The real screen's insets are re-based into the reference screen's coordinates. Under a bare `FittedBox`, content still reads the real screen's `MediaQuery` |
@@ -508,7 +509,7 @@ HarborFrame(
   floats: [
     HarborFloat(placement: const HarborAligned(alignment: AlignmentDirectional.bottomEnd), child: fab),
     HarborFloat(placement: HarborAnchored(launchAnchor, side: HarborAnchorSide.above, overlap: 6), child: bubble),
-    HarborFloat(modal: true, onDismiss: closeQuickActions, child: quickActions), // a barrier over the page
+    HarborFloat(barrier: const HarborBarrier.clear(), onDismiss: closeQuickActions, child: quickActions), // modal
   ],
   bottom: [HarborBar.solid(child: InboxTabs(launch: HarborAnchorPoint(anchor: launchAnchor, child: launchButton)))],
   body: ...,
@@ -558,12 +559,14 @@ A placement's `alignment` and `margin` take directional values, so
 `AlignmentDirectional.bottomEnd` puts a button where a right-to-left reader expects it.
 On a dual-screen device a float keeps to one screen and keeps its margin off the
 hinge, as it does off the room's edges.
-A `modal` float is modal: a barrier (clear unless you give it a `barrierColor`)
-keeps taps off the page and its bars and tells screen readers to leave them
-alone, a tap beside the float, back or Escape calls its `onDismiss`, and the floats
-listed before it are hidden while it is up. Its `barrierLabel` ('Dismiss' when
-none is given) is what a screen reader announces for the barrier; a Material app
-passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`. It holds
+A float with a `barrier:` is modal: `HarborBarrier.clear()` keeps taps off the page and
+its bars while leaving them in view (`HarborBarrier.dimmed()` tints them too), and tells
+screen readers to leave them alone; a tap beside the float, back or Escape calls its
+`onDismiss`, and the floats listed before it are hidden while it is up. A barrier that is
+not `dismissible` ignores the tap, and back and Escape still call `onDismiss`. The
+barrier's `label` ('Dismiss' when none is given) is what a screen reader announces for
+it; a Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
+A float's `modal` getter reads whether it has one. A modal float holds
 keyboard focus as a dialog does: it takes focus when it opens, Tab goes round
 inside it and the arrow keys (a TV remote's D-pad) stop at its edges, and focus
 goes back to where it was when it closes. `requestFocus: false` leaves focus on
@@ -734,7 +737,7 @@ showHarborSheet(context, builder: (_) => HarborSheet.draggable(
   extent: const HarborSheetExtent(rest: 0.5, max: 0.88, min: 0.25), // the defaults
   builder: (context, controller) => HarborScrollView(controller: controller, slivers: [...]),
 ));
-showHarborSheet(context, coversPage: true, barrier: HarborSheetBarrier.none, builder: ...);
+showHarborSheet(context, coversPage: true, barrier: HarborBarrier.none, builder: ...);
 showHarborDialog(context, inheritRoom: true, builder: ...);
 ```
 
@@ -742,7 +745,22 @@ A sheet starts a page of its own. It takes the themes and text style of the page
 opened it, and stops short of the status bar. Its header is an overlay bar with a fade
 (on a draggable sheet, dragging the header drags the sheet), and its footer is a solid bar that
 rides the keyboard and keeps 16 off the edge. It keeps the home
-indicator in its system edges, so its footer clears it exactly once. A draggable
+indicator in its system edges, so its footer clears it exactly once.
+
+`header:` and `footer:` take a widget and put it in those bars,
+`HarborSheet.defaultHeaderBar` and `HarborSheet.defaultFooterBar`. To choose anything
+else about either bar, give the whole bar instead, as `headerBar:` or `footerBar:`, and
+every bar option is open (on `HarborSheet.draggable` too, where any header bar is still
+the handle):
+
+```dart
+HarborSheet(
+  headerBar: HarborBar.overlay(child: tabs),                          // no fade
+  footerBar: HarborBar.solid(withdrawsAtHighTide: true, child: tools), // leaves while the keyboard is up
+  body: deck,
+)
+HarborSheet(footerBar: HarborSheet.defaultFooterBar(actions).copyWith(keyboard: HarborKeyboardStance.stays), body: form)
+``` A draggable
 sheet's heights are fractions of the space between the status bar and the
 keyboard. A sheet opened with **`coversPage: true`**
 reports how far it covers the page that opened it, and that page's
@@ -757,7 +775,10 @@ pad twice, so it passes `HarborSheet(clearsTopSystemEdge: false)` (on
 it, and the top system edge is handled for its content, which reads zero there.
 Toasts and floats in the sheet still keep clear of the status bar. Without
 `reachesTop` it changes nothing: the sheet stops short of the status
-bar and is handed no top system edge to clear.
+bar and is handed no top system edge to clear. So the opener decides how high the
+sheet reaches, and the sheet decides whether its content pads for the status bar.
+`fillsScreenAtHinge` (below) reaches the top too, on a split screen only: there it
+implies `reachesTop`, and elsewhere `reachesTop` alone decides.
 
 On a phone on its side, or with a cutout on a side edge, `HarborSheet(clearsSides: true)`
 keeps the header, body and footer clear of the system edges on the left and right and
@@ -839,7 +860,7 @@ middle). On a table, a `HarborPanes` puts its start pane above the fold and its 
 pane below, so a video player sits above its controls, as Android's tabletop
 guidance has it; in a book, the two panes are its pages.
 
-A sheet with `barrier: HarborSheetBarrier.none` is not a route of its own, so
+A sheet with `barrier: HarborBarrier.none` is not a route of its own, so
 it is tied to the page that opened it: back (and a pop) closes it before the
 page, the iOS back swipe stands aside while it is up, it hides while another
 page is on top (from the first frame of that page's push until its pop has
@@ -887,7 +908,7 @@ all closed does it reach `tabs.back()`.
 ```dart
 final HarborSheetController nowPlaying = HarborSheetController();
 
-showHarborSheet(context, barrier: HarborSheetBarrier.none, controller: nowPlaying, builder: ...);
+showHarborSheet(context, barrier: HarborBarrier.none, controller: nowPlaying, builder: ...);
 nowPlaying.close();   // from a button on the page: it slides out
 nowPlaying.remove();  // it goes at once
 ```
@@ -920,10 +941,21 @@ sheet opened by `showModalBottomSheet` or `showGeneralDialog`, where it pops tha
 route. A sheet with no barrier is not a route, so back and `Navigator.pop` close
 it with no result: it returns its value only through `HarborSheet.close`.
 
+What a sheet, a dialog or a float puts over the page is one value, a `HarborBarrier`:
+`HarborBarrier.dimmed(color:, dismissible:, label:, onTapHint:)` tints the page
+(`showGeneralDialog`'s half-black by default, the default for sheets and dialogs),
+`HarborBarrier.clear(dismissible:, label:, onTapHint:)` leaves it in view, and
+`HarborBarrier.none` puts up nothing (the default for floats). A tap on a barrier closes
+what is over it unless it is not `dismissible`; back and Escape close it either way. Its
+`label` is what a screen reader announces for it ('Dismiss' when none is given), and its
+`onTapHint` says what tapping it does. A dialog is always a route with a barrier, so it
+cannot take `none` (an assert). Through 0.9 these were loose parameters on each
+(`isDismissible`, `barrierColor`, `barrierLabel`, `barrierOnTapHint` and the
+`HarborSheetBarrier` enum on a sheet, `barrierDismissible` on a dialog, `modal` on a
+float); they still work, deprecated, until 1.0.
+
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
-navigator observers and route-name analytics, and `barrierLabel:` is what a
-screen reader announces for the barrier ('Dismiss' when none is given), with
-`barrierOnTapHint:` saying what tapping it does. Like a modal bottom sheet, the
+navigator observers and route-name analytics. Like a modal bottom sheet, the
 sheet is a semantics scope of its own, and screen readers announce its
 `semanticLabel:` as it opens. The barrier's semantics end at the sheet's top, as
 a modal bottom sheet's do, and follow it as it slides or is dragged, so touch
@@ -933,8 +965,7 @@ the screen unless you give it a `maxWidth`.
 A dialog is a popup route, as one from `showDialog` is: a `Hero` does not fly
 into it, an observer of page routes does not count it as a screen, a draggable sheet
 inside it closes it, and its content is a route of its own for screen readers, named by `semanticLabel:`. It
-takes `showDialog`'s route options: `routeSettings:`, `barrierLabel:` ('Dismiss'
-when none is given), `anchorPoint:` (which screen of a dual-screen
+takes `showDialog`'s route options: `routeSettings:`, `barrier:`, `anchorPoint:` (which screen of a dual-screen
 device it opens on), `traversalEdgeBehavior:`, `requestFocus:` and
 `animationStyle:` (its fade, 180 ms by default). `transitionBuilder:` brings your own
 entrance and exit in place of the fade, as `showGeneralDialog`'s does: it is handed the
@@ -954,14 +985,15 @@ It takes the same options. The page at `context` lends it its themes and, with
 when it is made. Inheriting the room, the dialog treats the opening page's bars as
 system edges, so a menu stays between that page's header and its composer.
 
-Three more options are named and behave as `showModalBottomSheet`'s. `isDismissible: false`
-makes a sheet the user has to answer: a tap on the barrier does nothing, and
-back still closes it. `requestFocus: false` leaves focus in the page.
-`anchorPoint:` picks which screen of a dual-screen device it opens on.
+Two more options are named and behave as `showModalBottomSheet`'s. `requestFocus: false`
+leaves focus in the page. `anchorPoint:` picks which screen of a dual-screen device it
+opens on. `barrier: HarborBarrier.dimmed(dismissible: false)` is its `isDismissible: false`:
+a sheet the user has to answer, where a tap on the barrier does nothing and back still
+closes it.
 
 What harbor draws on its own is drawn as the widgets layer draws it, with no
 theme: sheet and dialog barriers are `showGeneralDialog`'s half-black
-(`0x80000000`), and a hairline edge effect is a translucent black (`0x1F000000`), a
+(`HarborBarrier.defaultColor`, `0x80000000`), and a hairline edge effect is a translucent black (`0x1F000000`), a
 shade of whatever bar it is on, as `BorderSide`'s default is black; a dark bar
 passes its own `color:`. Every barrier harbor puts up is announced with the
 label it is given and otherwise with 'Dismiss', the English that Material and
@@ -977,8 +1009,10 @@ final MaterialLocalizations localizations = MaterialLocalizations.of(context);
 showHarborSheet(
   context,
   routeSettings: const RouteSettings(name: 'reply'),
-  barrierLabel: localizations.modalBarrierDismissLabel,
-  barrierOnTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+  barrier: HarborBarrier.dimmed(
+    label: localizations.modalBarrierDismissLabel,
+    onTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
+  ),
   semanticLabel: localizations.dialogLabel,          // on iOS Material leaves it unnamed: pass null there
   maxWidth: Theme.of(context).bottomSheetTheme.constraints?.maxWidth ?? 640,
   builder: (_) => HarborSheet(
