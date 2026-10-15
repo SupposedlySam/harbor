@@ -728,6 +728,30 @@ closes, focus goes back to where it was, if focus is still in the popover. It ne
 `onDismiss`, so Escape from inside it can close it; that Escape closes the popover
 before a modal float it was opened from.
 
+### A full-screen page over everything
+
+To cover the whole screen from deep in a page, the tab bar included, without pushing a route,
+show it through an `OverlayPortal` on the root overlay and make its child a page:
+
+```dart
+OverlayPortal(
+  controller: viewer,
+  overlayLocation: OverlayChildLocation.rootOverlay,
+  overlayChildBuilder: (context) => HarborFrame.page(
+    top: [HarborBar.overlay(child: viewerHeader)],
+    body: const HarborClear(child: Viewer()),
+  ),
+  child: thumbnail,
+)
+```
+
+An overlay child takes its themes and frame from where the portal is declared, but its
+`MediaQuery` padding from the overlay it paints in, the root's. A page there reads its system
+edges from that padding, so it clears the home indicator that the tab host's bar held below the
+portal. Without the frame, `SafeArea` and `HarborClear` still clear it (they read the padding),
+but `HarborRoom.of` and `HarborClear(clearsBars: false)` read the declaring page's room, which
+has no bottom system edge under a tab bar.
+
 ## Sheets and dialogs
 
 ```dart

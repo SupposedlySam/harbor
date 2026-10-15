@@ -461,24 +461,39 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
 
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
     final EdgeInsetsDirectional steadyPadding = HarborEdges.directional(ambient.viewPadding, direction);
+    // The edges where the padding is more than the outer room's system edges and bars could make
+    // it: an overlay above the outer frame put its own back, as Flutter does for an OverlayPortal's
+    // child. The outer bars do not reach there, so the padding is all system edge.
+    final Set<HarborEdge> rebased = <HarborEdge>{
+      if (outer != null && widget.systemEdges == null)
+        for (final HarborEdge e in HarborEdge.values)
+          if (HarborEdges.of(padding, e) >
+              math.max(HarborEdges.of(outer.systemEdges, e), HarborEdges.of(outer.bars, e)))
+            e,
+    };
+    EdgeInsetsDirectional unlessRebased(final EdgeInsetsDirectional value, final EdgeInsetsDirectional ambient) =>
+        HarborEdges.build((final HarborEdge e) => HarborEdges.of(rebased.contains(e) ? ambient : value, e));
     final EdgeInsetsDirectional coastOnly = widget.systemEdges != null || outer == null
         ? padding
-        : HarborEdges.min(outer.systemEdges, padding);
+        : unlessRebased(HarborEdges.min(outer.systemEdges, padding), padding);
     final EdgeInsetsDirectional coastOnlySteady = widget.systemEdges != null || outer == null
         ? steadyPadding
-        : outer.systemEdgesSteady;
+        : unlessRebased(outer.systemEdgesSteady, steadyPadding);
     final EdgeInsetsDirectional inheritedDocks = widget.isPage || outer == null || widget.systemEdges != null
         ? EdgeInsetsDirectional.zero
-        : HarborEdges.min(outer.bars, padding);
+        : unlessRebased(HarborEdges.min(outer.bars, padding), EdgeInsetsDirectional.zero);
     final EdgeInsetsDirectional systemEdges = widget.isPage ? coastOnly : padding;
     // A page's steady system edges are the outer steady padding without the outer bars in it.
     final EdgeInsetsDirectional systemEdgesSteady = widget.isPage && outer != null && widget.systemEdges == null
-        ? HarborEdges.max(
-            coastOnly,
-            HarborEdges.build(
-              (final HarborEdge e) =>
-                  (HarborEdges.of(steadyPadding, e) - HarborEdges.of(outer.bars, e)).clamp(0.0, double.infinity),
+        ? unlessRebased(
+            HarborEdges.max(
+              coastOnly,
+              HarborEdges.build(
+                (final HarborEdge e) =>
+                    (HarborEdges.of(steadyPadding, e) - HarborEdges.of(outer.bars, e)).clamp(0.0, double.infinity),
+              ),
             ),
+            steadyPadding,
           )
         : steadyPadding;
     final double keyboard = ambient.viewInsets.bottom;
