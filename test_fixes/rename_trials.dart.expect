@@ -24,3 +24,31 @@ void devices() {
   final HarborTrialDevice copy = device.copyWith(systemEdges: EdgeInsets.zero, keyboardHeight: 100, reportsSystemEdgesUnderKeyboard: false);
   <Object?>[device.systemEdges, device.keyboardHeight, device.reportsSystemEdgesUnderKeyboard, copy.systemEdgesWhen(keyboardShown: true)];
 }
+
+// The same calls through implicit `this`, inside an extension on each type (#143). A bare
+// pumpSeaTrial() matches the HarborSeaTrials extension rename as well as its own, and once became
+// the extension override `HarborTrials(...)`, which does not compile.
+extension PumpOnDevice on WidgetTester {
+  Future<HarborTrial> pumpOnDevice(Widget child) async {
+    final HarborTrial trial = await pumpHarborTrial(child, keyboardShown: false);
+    await pumpHarborTrial(child, device: HarborTrialDevice.iPhoneSE);
+    return trial;
+  }
+}
+
+extension ImplicitTrial on HarborTrial {
+  Future<void> moves() async {
+    await showKeyboard(settle: true);
+    await hideKeyboard(pumpFor: Duration.zero);
+    await setKeyboard(shown: true);
+    final bool up = keyboardShown;
+    final double top = keyboardTop;
+    final Rect room = roomAround(find.byType(SizedBox));
+    final List<Object> bars = barsAround(find.byType(SizedBox));
+    <Object?>[up, top, room, bars];
+  }
+}
+
+extension ImplicitDevice on HarborTrialDevice {
+  List<Object?> get reads => <Object?>[systemEdges, keyboardHeight, reportsSystemEdgesUnderKeyboard, systemEdgesWhen(keyboardShown: true), copyWith(systemEdges: EdgeInsets.zero, keyboardHeight: 100, reportsSystemEdgesUnderKeyboard: false)];
+}

@@ -126,6 +126,28 @@ Order of work:
   or nothing).
 - **Q21 shape:** flat, prefixed fields (`sheet…`, `flare…`). Revisit past about fifteen fields.
 - **Q22 look and feel:** stays out of it. No widget-valued fields, ever.
+- **Where `hinge:` and `barHinge:` live** (2026-10-15, at implementation): in `HarborDefaults`.
+  `HarborRoot(hinge:)`, `HarborFrame(hinge:, barHinge:)` and `HarborFrame.page(hinge:, barHinge:)`
+  are deprecated, forwarding into the frame's defaults with `defaults:` winning, and `dart fix`
+  moves them (`defaults.yaml`). Keeping them as sugar was the other choice. Deprecating is the
+  simpler one: one place to set a policy, one rule for which wins, no pair of spellings to
+  document against each other, and the migration is mechanical. The overlay-level `hinge:`
+  (`showHarborSheet`, `showHarborDialog`, `HarborToasts.show`, `HarborFloat`, `HarborPopover`)
+  stays: it is the call-site override.
+- **The fields, in the 0.9 names:** `hinge`, `barHinge`, `barrierLabel`, `sheetBarrierOnTapHint`,
+  `sheetMaxWidth`, `toastQueue`, `toastTiming`, `toastAnimationStyle`, `toastMargin`. Nine.
+  `flareDuration` became `toastTiming`, the `HarborToastTiming` value the flares step shipped, so
+  that "how long" has one spelling at the call and in the defaults. The barrier step had given
+  dialogs and floats an `onTapHint` too; the default stays `sheet…`, since the hint a Material app
+  passes names the bottom sheet.
+- **Nearest wins per frame** (2026-10-15, owner review): a frame's bars follow
+  `own.barHinge ?? own.hinge ?? inherited.barHinge ?? inherited.hinge`, the order 0.9.1 had for a
+  frame's own settings, so a frame's own `hinge` always beats a `barHinge` inherited from outside.
+  `HarborDefaults.merge` carries it (a nearer `hinge` replaces an inherited `barHinge`), so frames
+  and scopes beneath follow it too. No other field has a bar-specific twin.
+- **Behaviour the CHANGELOG records:** `barHinge` is now inherited by nested frames, as `hinge` was,
+  and a page's defaults cross into the sheets, dialogs and toasts it opens (they ride the themes
+  those capture).
 
 ## The audit's smaller steps (`../../` issue #120 audit, steps 5–10)
 

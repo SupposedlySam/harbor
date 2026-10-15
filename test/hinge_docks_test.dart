@@ -41,7 +41,7 @@ Future<void> _page(
       child: HarborRoot(child: child!),
     ),
     home: HarborFrame(
-      hinge: hinge,
+      defaults: HarborDefaults(hinge: hinge),
       top: <HarborBar>[HarborBar.overlay(child: _bar('header', 56))],
       bottom: <HarborBar>[HarborBar.solid(child: _bar('tabs', 56))],
       start: start,

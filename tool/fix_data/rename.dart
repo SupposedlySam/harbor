@@ -18,6 +18,11 @@
 //    holding only the old method names, renamed with `extension:`. Its method matches `inExtension:`
 //    only where the extension is applied by name; an implicit `tester.pumpSeaTrial()` matches by
 //    the target's type, `inClass: 'WidgetTester'`, so it is keyed both ways.
+//  * A call with no receiver (a bare `pumpSeaTrial()` inside an extension, implicit `this`) is keyed
+//    on the type that declares the method, and also matches a one-name rename of that type: the
+//    analyzer reads `Name(...)` as a possible renamed constructor. Where two transforms rename the
+//    same name the one listed first is applied, so a type's own rename comes after its members'
+//    (#143). An old name kept as a typedef is safe: its members are declared on the new class.
 
 import 'dart:io';
 
@@ -455,7 +460,6 @@ List<_Transform> _harborTest() {
     'reportsCoastUnderTide': 'reportsSystemEdgesUnderKeyboard',
   };
   return <_Transform>[
-    const _Rename(_Element('extension', 'HarborSeaTrials'), 'HarborTrials'),
     // `tester.pumpSeaTrial(...)` matches by the target's type, WidgetTester; only the explicit
     // `HarborSeaTrials(tester).pumpSeaTrial(...)` matches by the extension. Both are needed, or the
     // explicit form is left calling a method HarborTrials does not have.
@@ -463,6 +467,10 @@ List<_Transform> _harborTest() {
       _Rename(_Element('method', 'pumpSeaTrial', container), 'pumpHarborTrial'),
       _Parameters(_Element('method', 'pumpSeaTrial', container), const <String, String>{'tideIn': 'keyboardShown'}),
     ],
+    // After the method renames, never before (#143): a bare `pumpSeaTrial(...)` inside an extension
+    // on WidgetTester matches this transform too, so both rename the same name and the first one
+    // listed is the one applied. Listed first, this turned it into `HarborTrials(...)`.
+    const _Rename(_Element('extension', 'HarborSeaTrials'), 'HarborTrials'),
     const _Rename(_Element('typedef', 'HarborSeaTrial'), 'HarborTrial'),
     ..._members(
       'HarborTrial',

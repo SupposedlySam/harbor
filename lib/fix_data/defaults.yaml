@@ -1,0 +1,249 @@
+# `dart fix` transforms for HarborDefaults (#120, doc/design/defaults.md, DECISIONS.md Q19-Q22).
+# Checked by test_fixes/defaults.dart.
+#
+# A frame's and a root's hinge policy moved into `defaults:`, and HarborFlarePolicy into
+# HarborDefaultsScope. A template cannot leave out an argument the call did not give, so every
+# combination of the old arguments is a branch of its own, and each branch needs `defaults:` to be
+# absent: a call that already gives `defaults:` beside an old argument is left as it is (it still
+# compiles, and `defaults:` wins), to be merged by hand.
+#
+# The 0.8 `dockHinge:` goes straight to `defaults: HarborDefaults(barHinge: ...)`, not through
+# `barHinge:`, so it is migrated in one pass. `barHinge:` with `dockHinge:` was already an assert,
+# so it has no branch.
+version: 1
+transforms:
+  # HarborFrame(hinge:, barHinge:), and the 0.8 dockHinge:, through the Harbor typedef too
+  - title: "Move into 'defaults'"
+    date: 2026-10-15
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborFrame'
+    oneOf:
+      - if: "hinge != '' && barHinge == '' && dockHinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'hinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(hinge: {% hinge %})"
+              requiredIf: "hinge != '' && barHinge == '' && dockHinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+      - if: "barHinge != '' && hinge == '' && dockHinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'barHinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(barHinge: {% barHinge %})"
+              requiredIf: "barHinge != '' && hinge == '' && dockHinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+      - if: "dockHinge != '' && hinge == '' && barHinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'dockHinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(barHinge: {% dockHinge %})"
+              requiredIf: "dockHinge != '' && hinge == '' && barHinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+      - if: "hinge != '' && barHinge != '' && dockHinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'hinge'
+          - kind: 'removeParameter'
+            name: 'barHinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(hinge: {% hinge %}, barHinge: {% barHinge %})"
+              requiredIf: "hinge != '' && barHinge != '' && dockHinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+      - if: "hinge != '' && dockHinge != '' && barHinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'hinge'
+          - kind: 'removeParameter'
+            name: 'dockHinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(hinge: {% hinge %}, barHinge: {% dockHinge %})"
+              requiredIf: "hinge != '' && dockHinge != '' && barHinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+    variables:
+      hinge:
+        kind: 'fragment'
+        value: 'arguments[hinge]'
+      barHinge:
+        kind: 'fragment'
+        value: 'arguments[barHinge]'
+      dockHinge:
+        kind: 'fragment'
+        value: 'arguments[dockHinge]'
+      defaults:
+        kind: 'fragment'
+        value: 'arguments[defaults]'
+  # HarborFrame.page(hinge:, barHinge:)
+  - title: "Move into 'defaults'"
+    date: 2026-10-15
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'page'
+      inClass: 'HarborFrame'
+    oneOf:
+      - if: "hinge != '' && barHinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'hinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(hinge: {% hinge %})"
+              requiredIf: "hinge != '' && barHinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+      - if: "barHinge != '' && hinge == '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'barHinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(barHinge: {% barHinge %})"
+              requiredIf: "barHinge != '' && hinge == '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+      - if: "hinge != '' && barHinge != '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'hinge'
+          - kind: 'removeParameter'
+            name: 'barHinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(hinge: {% hinge %}, barHinge: {% barHinge %})"
+              requiredIf: "hinge != '' && barHinge != '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+    variables:
+      hinge:
+        kind: 'fragment'
+        value: 'arguments[hinge]'
+      barHinge:
+        kind: 'fragment'
+        value: 'arguments[barHinge]'
+      defaults:
+        kind: 'fragment'
+        value: 'arguments[defaults]'
+  # HarborRoot(hinge:), through the HarborSea typedef too
+  - title: "Move into 'defaults'"
+    date: 2026-10-15
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborRoot'
+    oneOf:
+      - if: "hinge != '' && defaults == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'hinge'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: optional_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(hinge: {% hinge %})"
+              requiredIf: "hinge != '' && defaults == ''"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+    variables:
+      hinge:
+        kind: 'fragment'
+        value: 'arguments[hinge]'
+      defaults:
+        kind: 'fragment'
+        value: 'arguments[defaults]'
+  # HarborFlarePolicy(queue:, child:) builds a HarborDefaultsScope. Its queue: goes into the
+  # defaults first, so the replacement never carries a parameter HarborDefaultsScope lacks.
+  - title: "Replace with 'HarborDefaultsScope'"
+    date: 2026-10-15
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborFlarePolicy'
+    changes:
+      - kind: 'removeParameter'
+        name: 'queue'
+      - kind: 'addParameter'
+        index: 0
+        name: 'defaults'
+        style: required_named
+        argumentValue:
+          expression: "{% HarborDefaults %}(toastQueue: {% queue %})"
+          variables:
+            HarborDefaults:
+              kind: 'import'
+              uris: [ 'package:harbor/harbor.dart' ]
+              name: 'HarborDefaults'
+      - kind: 'replacedBy'
+        newElement:
+          uris: [ 'harbor.dart' ]
+          constructor: ''
+          inClass: 'HarborDefaultsScope'
+    variables:
+      queue:
+        kind: 'fragment'
+        value: 'arguments[queue]'

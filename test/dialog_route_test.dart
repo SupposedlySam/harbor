@@ -485,6 +485,8 @@ void main() {
       final HarborDialogRoute<void> route = HarborDialogRoute<void>(
         context: page,
         inheritRoom: true,
+        // What the dialog is handed, before it clears it.
+        clearsSystemEdges: false,
         builder: (final BuildContext context) {
           dialog = context;
           return const SizedBox.expand();

@@ -24,3 +24,31 @@ void devices() {
   final HarborTrialDevice copy = device.copyWith(coast: EdgeInsets.zero, tideHeight: 100, reportsCoastUnderTide: false);
   <Object?>[device.coast, device.tideHeight, device.reportsCoastUnderTide, copy.coastWhen(tideIn: true)];
 }
+
+// The same calls through implicit `this`, inside an extension on each type (#143). A bare
+// pumpSeaTrial() matches the HarborSeaTrials extension rename as well as its own, and once became
+// the extension override `HarborTrials(...)`, which does not compile.
+extension PumpOnDevice on WidgetTester {
+  Future<HarborSeaTrial> pumpOnDevice(Widget child) async {
+    final HarborSeaTrial trial = await pumpSeaTrial(child, tideIn: false);
+    await pumpSeaTrial(child, device: HarborTrialDevice.iPhoneSE);
+    return trial;
+  }
+}
+
+extension ImplicitTrial on HarborSeaTrial {
+  Future<void> moves() async {
+    await raiseTide(settle: true);
+    await lowerTide(pumpFor: Duration.zero);
+    await setTide(tideIn: true);
+    final bool up = tideIn;
+    final double top = waterline;
+    final Rect room = clearWaterAround(find.byType(SizedBox));
+    final List<Object> bars = docksAround(find.byType(SizedBox));
+    <Object?>[up, top, room, bars];
+  }
+}
+
+extension ImplicitDevice on HarborTrialDevice {
+  List<Object?> get reads => <Object?>[coast, tideHeight, reportsCoastUnderTide, coastWhen(tideIn: true), copyWith(coast: EdgeInsets.zero, tideHeight: 100, reportsCoastUnderTide: false)];
+}

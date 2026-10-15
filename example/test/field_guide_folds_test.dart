@@ -141,7 +141,7 @@ void main() {
       final Rect float = _onDevice(tester, _key('hinge buoy'));
       _near(float.center.dx, 270, 'the float is centred on the left screen');
       expect(_reading(tester, 'The page’s hinge'), contains('kept off          hinge x 540–574 flat'));
-      expect(_code(tester), contains('  hinge: HarborHinge.avoidSeparating,\n'));
+      expect(_code(tester), contains('  defaults: HarborDefaults(hinge: HarborHinge.avoidSeparating),\n'));
     });
 
     testWidgets('never: the bars and the float run across the hinge', (final tester) async {
@@ -187,10 +187,10 @@ void main() {
     testWidgets('barHinge sets the bars alone; a float\'s own hinge sets the float alone', (final tester) async {
       await _pumpEntry(tester, const HingeEntry());
       await _tap(tester, 'policy: never');
-      await _tap(tester, 'set on: HarborFrame(barHinge:)');
+      await _tap(tester, 'set on: HarborDefaults(barHinge:)');
       _near(_onDevice(tester, _key('hinge header')).right, 1114, 'the bars cross the hinge');
       _near(_onDevice(tester, _key('hinge buoy')).center.dx, 270, 'the float keeps the root\'s avoidSeparating');
-      expect(_code(tester), contains('  barHinge: HarborHinge.never,\n'));
+      expect(_code(tester), contains('  defaults: HarborDefaults(barHinge: HarborHinge.never),\n'));
 
       await _tap(tester, 'set on: HarborFloat(hinge:)');
       _near(_onDevice(tester, _key('hinge header')).right, 540, 'the bars are back on the left screen');

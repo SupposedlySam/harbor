@@ -86,8 +86,8 @@ Widget _rows({final int count = 24}) => HarborScrollView(
 
 /// Where the entry sets the policy.
 enum _HingeOn {
-  page('HarborFrame(hinge:)'),
-  bars('HarborFrame(barHinge:)'),
+  page('HarborDefaults(hinge:)'),
+  bars('HarborDefaults(barHinge:)'),
   float('HarborFloat(hinge:)');
 
   const _HingeOn(this.label);
@@ -133,7 +133,7 @@ class _HingeEntryState extends State<HingeEntry> {
         'Half open, avoidSeparating keeps off the fold too; avoidOccluding crosses it again, since only a hinge with width hides content.',
       ),
       TryStep(
-        'Pick Device: dual screen open, policy: never and set on: HarborFrame(barHinge:)',
+        'Pick Device: dual screen open, policy: never and set on: HarborDefaults(barHinge:)',
         'The bars cross the hinge but the float goes back to the left screen: barHinge sets the bars alone, and the '
             'overlays keep the root’s avoidSeparating.',
       ),
@@ -149,9 +149,9 @@ class _HingeEntryState extends State<HingeEntry> {
         'A dual-screen device has a hinge between its screens, and a foldable has a fold. HarborHinge says which of them '
         'harbor keeps things off: a header or tab bar keeps to the screen where reading starts, and a float, toast, '
         'sheet or dialog keeps to one screen. avoidSeparating (the default) keeps off a hinge with width and a half-open '
-        'fold, avoidOccluding only a hinge with width, always every fold, and never nothing. Set the app’s on '
-        'HarborRoot(hinge:), a page’s on HarborFrame(hinge:), only its bars’ on HarborFrame(barHinge:), and one '
-        'overlay’s on its own hinge:. The nearest wins.',
+        'fold, avoidOccluding only a hinge with width, always every fold, and never nothing. Set the app’s in '
+        'HarborRoot(defaults: HarborDefaults(hinge:)), a page’s in HarborFrame(defaults: HarborDefaults(hinge:)), '
+        'only its bars’ with HarborDefaults(barHinge:), and one overlay’s on its own hinge:. The nearest wins.',
     art: const LockGatesArt(),
     controls: <Widget>[
       ChoiceControl<HarborHinge>(
@@ -176,11 +176,11 @@ class _HingeEntryState extends State<HingeEntry> {
     ],
     code:
         '// The app’s default, for every page:\n'
-        'HarborRoot(hinge: HarborHinge.avoidSeparating, child: child!)\n'
+        'HarborRoot(defaults: HarborDefaults(hinge: HarborHinge.avoidSeparating), child: child!)\n'
         '\n'
         'HarborFrame(\n'
-        '${_on == _HingeOn.page ? '  hinge: $_policyCode,\n' : ''}'
-        '${_on == _HingeOn.bars ? '  barHinge: $_policyCode,\n' : ''}'
+        '${_on == _HingeOn.page ? '  defaults: HarborDefaults(hinge: $_policyCode),\n' : ''}'
+        '${_on == _HingeOn.bars ? '  defaults: HarborDefaults(barHinge: $_policyCode),\n' : ''}'
         '  top: [HarborBar.overlay(child: Header())],\n'
         '  bottom: [HarborBar.solid(child: TabBar())],\n'
         '  floats: [\n'
@@ -193,10 +193,12 @@ class _HingeEntryState extends State<HingeEntry> {
         '  body: HarborScrollView(slivers: [boats]),\n'
         ')',
     stage: (final BuildContext context) => HarborFrame(
+      defaults: HarborDefaults(
+        hinge: _on == _HingeOn.page ? _policy : null,
+        barHinge: _on == _HingeOn.bars ? _policy : null,
+      ),
       key: const ValueKey<String>('hinge harbor'),
       debugLabel: 'hinge page',
-      hinge: _on == _HingeOn.page ? _policy : null,
-      barHinge: _on == _HingeOn.bars ? _policy : null,
       top: <HarborBar>[
         HarborBar.overlay(
           debugLabel: 'header',

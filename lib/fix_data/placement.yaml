@@ -15921,6 +15921,12 @@ transforms:
                   name: 'HarborAligned'
           - kind: 'removeParameter'
             name: 'alignment'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "alignment != '' && margin != '' && anchor == ''"
         changes:
           - kind: 'addParameter'
@@ -15939,6 +15945,12 @@ transforms:
             name: 'alignment'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "slot != '' && margin != '' && anchor == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -15957,6 +15969,12 @@ transforms:
             name: 'slot'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "margin != '' && anchor == '' && alignment == '' && slot == ''"
         changes:
           - kind: 'addParameter'
@@ -15977,6 +15995,12 @@ transforms:
                   name: 'HarborToastSlot'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "anchor != '' && side == '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -16377,6 +16401,12 @@ transforms:
                   name: 'HarborAligned'
           - kind: 'removeParameter'
             name: 'alignment'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "alignment != '' && margin != '' && anchor == ''"
         changes:
           - kind: 'addParameter'
@@ -16395,6 +16425,12 @@ transforms:
             name: 'alignment'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "slot != '' && margin != '' && anchor == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
@@ -16413,6 +16449,12 @@ transforms:
             name: 'slot'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "margin != '' && anchor == '' && alignment == '' && slot == ''"
         changes:
           - kind: 'addParameter'
@@ -16433,6 +16475,12 @@ transforms:
                   name: 'HarborToastSlot'
           - kind: 'removeParameter'
             name: 'margin'
+          - kind: 'removeParameter'
+            name: 'side'
+          - kind: 'removeParameter'
+            name: 'gap'
+          - kind: 'removeParameter'
+            name: 'crossAlignment'
       - if: "anchor != '' && side == '' && gap == '' && crossAlignment == '' && margin == '' && slot == '' && alignment == ''"
         changes:
           - kind: 'addParameter'
