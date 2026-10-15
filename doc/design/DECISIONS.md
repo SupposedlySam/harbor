@@ -143,7 +143,11 @@ All of these land after the four areas above, each with fixes:
   - `HarborOpenWater` is retired.
 - Trim the surface:
   - `HarborController`'s internals go `@internal`;
-  - `HarborTitleSafe` folds into `HarborCoast`;
+  - ~~`HarborTitleSafe` folds into `HarborCoast`~~ **dropped** (2026-10-14): `HarborTitleSafe` is plain
+    already (TV vocabulary, not harbour, as `naming.md` says), and its value is niche. Folding it
+    into `HarborSystemEdges.titleSafe(fraction:)` would cost either compiling code (Dart cannot give
+    one constructor the old positional `HarborTitleSafe` and the new named parameters) or ugly
+    constructor names, for no gain in clarity. It keeps its name;
   - fix the stale `HarborCoastFeature.hinge` and `isPort` docs.
 - `HarborBeacon` splits into three widgets, one per job.
 - One internal page-overlay host for flares and non-modal sheets.

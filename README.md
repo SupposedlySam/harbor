@@ -1134,11 +1134,11 @@ defaults: a `HarborFrame` lists its bars and floats, and a bar reads as
 `HarborFloat`, `HarborEdgeEffect`, `HarborSystemEdges`, `HarborTitleSafe`, `HarborSheetExtent`)
 are `Diagnosticable`, so they print the same way in a test failure or a log.
 
-Two fields are reserved and not yet read: `HarborSystemEdgeFeature.hinge` (sheets,
-dialogs, toasts and floats keep off a hinge through `MediaQuery.displayFeatures`,
-not through the system edges) and `HarborController.isPage`, which records whether the
-controller's frame was built as a page (`HarborFrame.page`, or `isPage: true`); toasts find their
-page by route instead.
+Two fields are for information only. `HarborSystemEdgeFeature.hinge` is reserved and never
+reported: a hinge is not a system edge, and bars, sheets, dialogs, toasts, floats and popovers keep
+off it through `MediaQuery.displayFeatures`, by the `HarborHinge` policy. `HarborController.isPage`
+records whether the controller's frame was built as a page (`HarborFrame.page`, or `isPage: true`)
+or has no frame above it; nothing in harbor reads it, and toasts find their page by route.
 
 ## Trials
 

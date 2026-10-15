@@ -720,9 +720,10 @@ class HarborController {
   @Deprecated('Renamed registry. `dart fix` applies it.')
   HarborFrameRegistry get fleet => registry;
 
-  /// Whether this frame is a page (the root, a route or a sheet) rather than a
-  /// component inside one. Reserved and not yet read: toasts find their page
-  /// with [isRouteLevel] instead.
+  /// Whether this frame was built as a page (`HarborFrame.page` or `isPage: true`, as a root, a
+  /// sheet and a dialog build theirs) or has no frame above it. A frame built in a route without
+  /// either reads false, though it is that route's page. For information: nothing in harbor reads
+  /// it, and toasts find their page by route.
   final bool isPage;
 
   /// The old name of [isPage].

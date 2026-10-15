@@ -137,7 +137,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborCoast` | `HarborSystemEdges` | **SUB** | `.fixed`, `.titleSafe`, `.ambient`, `.none`, `apply`, `features` unchanged. SUB, not T, as shipped: `.fixed(calmTide:)` (§2) |
 | `HarborCoast.calmTide` | `ignoresKeyboard` | RP + rename | It is what `none` sets for goldens |
 | `HarborCoastFeature` | `HarborSystemEdgeFeature` | T | Values unchanged |
-| `HarborTitleSafe` | unchanged | — | TV vocabulary, not harbour. Folds into `HarborSystemEdges` in audit step 9 |
+| `HarborTitleSafe` | unchanged | — | TV vocabulary, not harbour. The fold into `HarborSystemEdges` was dropped (DECISIONS.md): plain already, and the churn is not worth it |
 | `HarborTide` | `HarborKeyboard` | T+S | The reader. Q3 |
 | `HarborTide.of` | `HarborKeyboard.of` | T | |
 | `HarborTide.isInOf` | `HarborKeyboard.isShownOf` | T+S | |
