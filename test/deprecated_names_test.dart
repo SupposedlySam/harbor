@@ -54,7 +54,7 @@ void main() {
         target: HarborSignalTarget.topmost,
         transitionBuilder: builder,
         builder: (final BuildContext context) => const Text('Copied'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       HarborSignalClosedReason? reason;
       unawaited(entry.closed.then((final HarborSignalClosedReason r) => reason = r));

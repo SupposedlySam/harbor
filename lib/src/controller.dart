@@ -75,7 +75,8 @@ enum HarborToastClosedReason {
   /// [HarborToastEntry.hide] was called.
   hide,
 
-  /// A screen reader's dismiss action hid it.
+  /// The user dismissed it: [HarborToastEntry.dismiss] was called, or a screen reader's dismiss
+  /// action hid it.
   dismiss,
 
   /// Its [HarborToastEntry.duration] ran out.
@@ -117,48 +118,94 @@ enum HarborToastQueue {
   replace,
 }
 
-/// A transient float shown by `HarborToasts.show`, which returns it.
+/// How long a toast stays up, and what counts toward that time: `HarborToasts.show(timing:)`.
+///
+/// ```dart
+/// HarborToasts.show(context, builder: (_) => const Toast('Saved'));                       // 4 s in sight
+/// HarborToasts.show(context, timing: HarborToastTiming.untilHidden, builder: undoToast); // until hidden
+/// HarborToasts.show(
+///   context,
+///   timing: const HarborToastTiming(countsWhileCovered: true), // gone when the user comes back
+///   builder: (_) => const Toast('Saved'),
+/// );
+/// ```
+@immutable
+final class HarborToastTiming with Diagnosticable {
+  /// A toast that stays [duration] in sight, counted from the end of its entrance unless
+  /// [countsEntrance], and not while another route covers its page unless [countsWhileCovered].
+  const HarborToastTiming({
+    this.duration = defaultDuration,
+    this.countsEntrance = false,
+    this.countsWhileCovered = false,
+  });
+
+  /// How long a toast stays by default: 4 s, a `SnackBar`'s.
+  static const Duration defaultDuration = Duration(seconds: 4);
+
+  /// Stays until it is hidden, as `SnackBar(persist: true)` does: for a toast with a button (an
+  /// Undo), so a screen-reader user has time to reach it.
+  static const HarborToastTiming untilHidden = HarborToastTiming(duration: null);
+
+  /// How long the toast stays in sight; null stays until it is hidden. Counted again from the
+  /// start each time it comes back into sight, or a [HarborToastEntry.hold] is released.
+  final Duration? duration;
+
+  /// Whether [duration] counts from the start of the toast's entrance rather than its end, so a
+  /// 4 s toast is on screen 4 s, entrance included. With reduced motion there is no entrance, and
+  /// the two are the same.
+  final bool countsEntrance;
+
+  /// Whether the toast's time keeps running while another route covers its page, so a toast
+  /// confirming an action goes on schedule even if a page is pushed over it. A hold still stops it.
+  /// Its time starts once its entrance has run, which it cannot while its page is covered.
+  final bool countsWhileCovered;
+
+  @override
+  bool operator ==(final Object other) =>
+      other is HarborToastTiming &&
+      other.duration == duration &&
+      other.countsEntrance == countsEntrance &&
+      other.countsWhileCovered == countsWhileCovered;
+
+  @override
+  int get hashCode => Object.hash(duration, countsEntrance, countsWhileCovered);
+
+  @override
+  String toStringShort() => objectRuntimeType(this, 'HarborToastTiming');
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<Duration>('duration', duration, ifNull: 'until hidden', defaultValue: defaultDuration))
+      ..add(FlagProperty('countsEntrance', value: countsEntrance, ifTrue: 'counts entrance'))
+      ..add(FlagProperty('countsWhileCovered', value: countsWhileCovered, ifTrue: 'counts while covered'));
+  }
+}
+
+/// A shown toast, returned by `HarborToasts.show`: what a caller may do with it.
+///
+/// Inside the toast's builder or transition, [maybeOf] finds it.
 ///
 /// Toasts shown at the same alignment in one frame take turns, as a
 /// `ScaffoldMessenger` shows its snack bars: each is shown once the one before
 /// it has been hidden and has run its exit. Toasts shown by an [anchor] take
 /// turns per anchor and [side].
-class HarborToastEntry {
-  /// Toasts are shown with `HarborToasts.show`.
-  @internal
-  HarborToastEntry({
-    required this.builder,
-    required this.placement,
-    required this._duration,
-    this.persist = false,
-    final Rect? avoidInGlobal,
-    this.shownFrom,
-    this.animationStyle,
-    this.transitionBuilder,
-    this.liveRegion = true,
-    this.countsEntrance = false,
-    this.reachesSystemEdges = false,
-    this.hinge,
-    this.countsWhileCovered = false,
-    this.queue = HarborToastQueue.wait,
-  }) : _avoidAtRaise = avoidInGlobal;
+///
+/// harbor makes every entry, so a test fake cannot implement this class; show a toast and read the
+/// entry it returns instead.
+abstract final class HarborToastEntry {
+  HarborToastEntry._({required this.placement, required this._duration});
 
-  static const Duration _defaultTransition = Duration(milliseconds: 220);
-  static const Duration _minimumLinger = Duration(milliseconds: 300);
-
-  final WidgetBuilder builder;
+  /// The toast whose builder or transition [context] is in, or null outside one: for a toast
+  /// that takes a [hold] on itself, or a transition that reads its [anchor] and [side].
+  static HarborToastEntry? maybeOf(final BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<HarborFlareScope>()?.entry;
 
   /// Where the toast sits: at a point of the room, or by an anchor. Its directional
-  /// values are resolved in the reading direction of the page that showed it.
+  /// values are resolved in the reading direction of the page that showed it. A slot is a
+  /// [HarborAligned] at the slot's point.
   final HarborPlacement placement;
-
-  /// Where an aligned toast sits in the room; [HarborToastSlot.high]'s point for an
-  /// anchored one.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  Alignment get alignment => switch (placement) {
-    HarborAligned(:final AlignmentGeometry alignment) => alignment as Alignment,
-    HarborAnchored() => HarborToastSlot.high.alignment,
-  };
 
   /// What an anchored toast sits by; null for one at a slot or an alignment. With [side], what a
   /// transition reads to clip at the anchor ([HarborAnchorClip]).
@@ -168,40 +215,16 @@ class HarborToastEntry {
   };
 
   /// Which side of its [anchor] the toast sits on; an anchored toast never flips, so this is the
-  /// side it hangs on.
+  /// side it hangs on. [HarborAnchorSide.below], the anchored default, for a toast with no anchor.
   HarborAnchorSide get side => switch (placement) {
     HarborAnchored(:final HarborAnchorSide side) => side,
     HarborAligned() => HarborAnchorSide.below,
   };
 
-  /// How far the toast sits from its [anchor].
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  double get gap => switch (placement) {
-    HarborAnchored(:final double gap) => gap,
-    HarborAligned() => HarborAnchored.defaultGap,
-  };
-
-  /// How the toast lines up with its [anchor] across its [side].
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  HarborCrossAlignment get crossAlignment => switch (placement) {
-    HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
-    HarborAligned() => HarborCrossAlignment.center,
-  };
-
-  /// How far the toast keeps in from the room's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
-  EdgeInsets? get margin => placement.margin as EdgeInsets;
-
-  /// Where the toast takes its turn: toasts at one place are shown one at a time.
-  Object get _place => switch (placement) {
-    HarborAligned(:final AlignmentGeometry alignment) => alignment,
-    HarborAnchored(:final HarborAnchor? anchor, :final HarborAnchorSide side) => (anchor, side),
-  };
-
   /// How long the toast stays once it is in sight: from the end of its
-  /// entrance (or its start, with [countsEntrance]), while no other route
+  /// entrance (or its start, with [HarborToastTiming.countsEntrance]), while no other route
   /// covers its frame. Counted again from the start each time it comes back
-  /// into sight. Null never times out, the same as [persist].
+  /// into sight. Null never times out: it stays until it is hidden.
   ///
   /// Setting it starts the time over with the new duration, as coming back
   /// into sight or releasing a [hold] does: give a toast longer once a screen
@@ -210,94 +233,15 @@ class HarborToastEntry {
   Duration? _duration;
   set duration(final Duration? value) {
     _duration = value;
-    _timing.value++;
+    _restarts.value++;
   }
 
-  /// Whether the toast may reach over the system edges (the home indicator, the status bar, a
-  /// side cutout) on the edges it is against, still off the bars and the keyboard. Its content is
-  /// handed the system edges it covers as `MediaQuery.padding`.
-  final bool reachesSystemEdges;
-
-  /// The old name of [reachesSystemEdges].
-  @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it.')
-  bool get reachesCoast => reachesSystemEdges;
-
-  /// Which hinges and folds the toast keeps to one side of; the showing page's when shown.
-  final HarborHinge? hinge;
-
-  /// Whether the toast's time keeps running while another route covers its page, so a toast
-  /// confirming an action goes on schedule even if a page is pushed over it. A [hold] still stops
-  /// it. Its time starts once its entrance has run, which it cannot while its page is covered.
-  final bool countsWhileCovered;
-
-  /// Whether it waits its turn at its place or takes it at once. See [HarborToastQueue].
-  final HarborToastQueue queue;
-
-  /// Whether [duration] counts from the start of the toast's entrance rather
-  /// than its end, so a 4 s toast is on screen 4 s, entrance included. With
-  /// reduced motion there is no entrance, and the two are the same.
-  final bool countsEntrance;
-
   /// Ticks when [duration] is set, so a showing toast starts its time over.
-  ValueListenable<int> get timing => _timing;
-  final ValueNotifier<int> _timing = ValueNotifier<int>(0);
-
-  /// Whether the toast stays up after [duration] until it is hidden, as a
-  /// `SnackBar` with `persist` does. Give it to a toast with a button (an
-  /// Undo), so a screen-reader user has time to reach it.
-  final bool persist;
-
-  /// The duration and curve of the entrance and exit, 220 ms each way by
-  /// default; [AnimationStyle.noAnimation] shows and removes the toast as it is.
-  final AnimationStyle? animationStyle;
-
-  /// Builds the entrance and exit; a fade and a slight scale when null.
-  final HarborToastTransitionBuilder? transitionBuilder;
-
-  /// Whether harbor makes the toast a live region with a dismiss action, as
-  /// a `SnackBar` makes itself. False leaves the semantics to [builder]'s widget.
-  final bool liveRegion;
-
-  /// How long the entrance takes.
-  Duration get transitionDuration => animationStyle?.duration ?? _defaultTransition;
-
-  /// How long the exit takes.
-  Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? transitionDuration;
-
-  /// How long a hidden toast stays in the tree: its exit, and never less
-  /// than 300 ms, so a child that runs an exit of its own has time to.
-  Duration get lingers => _reason == HarborToastClosedReason.replaced
-      // Replaced, it leaves at once, so it is never drawn under the toast that took its place.
-      ? Duration.zero
-      : reverseTransitionDuration > _minimumLinger
-      ? reverseTransitionDuration
-      : _minimumLinger;
-
-  /// The frame the toast was shown from, whose room it also keeps inside.
-  final HarborController? shownFrom;
-
-  /// The old name of [shownFrom].
-  @Deprecated('Renamed shownFrom. `dart fix` applies it.')
-  HarborController? get raisedIn => shownFrom;
-
-  final Rect? _avoidAtRaise;
-
-  /// The room of the frame the toast was shown from, in global
-  /// coordinates: the toast stays inside it too, so it clears that frame's
-  /// bars (a tab's own header) as well as its target's.
-  ///
-  /// Read from that frame's latest layout, not kept from the moment it was shown: a stored
-  /// rectangle boxed the toast into a foldable's cover screen after the device opened. The
-  /// rectangle from the show is the fallback once that frame has gone.
-  Rect? get avoidInGlobal => shownFrom?.roomInGlobal() ?? _avoidAtRaise;
+  final ValueNotifier<int> _restarts = ValueNotifier<int>(0);
 
   /// Whether the toast is still up: false from the moment it is hidden.
   ValueListenable<bool> get showing => _showing;
   final ValueNotifier<bool> _showing = ValueNotifier<bool>(true);
-
-  /// The frame showing the toast.
-  HarborController? get owner => _owner;
-  HarborController? _owner;
 
   final Completer<HarborToastClosedReason> _closed = Completer<HarborToastClosedReason>();
   HarborToastClosedReason? _reason;
@@ -305,11 +249,6 @@ class HarborToastEntry {
   /// Completes once the toast has left the screen, after its exit, with why
   /// it was hidden; at once for a toast hidden before its turn came.
   Future<HarborToastClosedReason> get closed => _closed.future;
-
-  /// The toast whose builder or transition [context] is in, or null outside one: for a toast
-  /// that takes a [hold] on itself, or a transition that reads its [anchor] and [side].
-  static HarborToastEntry? maybeOf(final BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<HarborFlareScope>()?.entry;
 
   /// Whether the toast's time is stopped by a [hold].
   ValueListenable<bool> get held => _held;
@@ -368,8 +307,24 @@ class HarborToastEntry {
     }
   }
 
-  /// Hides the toast. The first [reason] given is the one [closed] reports.
-  void hide({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) {
+  /// Hides the toast; [closed] reports [HarborToastClosedReason.hide]. Hiding it again does
+  /// nothing: the first reason is the one [closed] reports.
+  void hide({
+    @Deprecated(
+      'Leave it out: hide() reports HarborToastClosedReason.hide, and dismiss() reports dismiss. The other '
+      'reasons are what harbor reports for a toast it hid itself. Deprecated after 0.9.0.',
+    )
+    final HarborToastClosedReason reason = HarborToastClosedReason.hide,
+  }) => _hideAs(reason);
+
+  /// Hides the toast because the user dismissed it; [closed] reports
+  /// [HarborToastClosedReason.dismiss], as it does when a screen reader dismisses it.
+  ///
+  /// For a toast with its own close button, or one in a `Dismissible`, so analytics can tell a
+  /// toast the user dismissed from one the app hid with [hide]. Once hidden, it does nothing.
+  void dismiss() => _hideAs(HarborToastClosedReason.dismiss);
+
+  void _hideAs(final HarborToastClosedReason reason) {
     if (_showing.value) {
       _reason = reason;
       _showing.value = false;
@@ -378,7 +333,7 @@ class HarborToastEntry {
 
   /// The old name of [hide].
   @Deprecated('Renamed hide. `dart fix` applies it.')
-  void lower({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) => hide(reason: reason);
+  void lower({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) => _hideAs(reason);
 
   void _left() {
     _phase = HarborToastPhase.closed;
@@ -386,6 +341,233 @@ class HarborToastEntry {
       _closed.complete(_reason ?? HarborToastClosedReason.hide);
     }
   }
+
+  // What follows is how the toast was shown, and the record harbor runs it on: it is not the
+  // caller's to read, and goes at 1.0.
+
+  static const String _internal =
+      'How the toast was shown is harbor\'s to read: no replacement. Deprecated after 0.9.0.';
+
+  /// What builds the toast.
+  @Deprecated(_internal)
+  WidgetBuilder get builder;
+
+  /// Where an aligned toast sits in the room; [HarborToastSlot.high]'s point for an
+  /// anchored one.
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
+  Alignment get alignment => switch (placement) {
+    HarborAligned(:final AlignmentGeometry alignment) => alignment as Alignment,
+    HarborAnchored() => HarborToastSlot.high.alignment,
+  };
+
+  /// How far the toast sits from its [anchor].
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
+  double get gap => switch (placement) {
+    HarborAnchored(:final double gap) => gap,
+    HarborAligned() => HarborAnchored.defaultGap,
+  };
+
+  /// How the toast lines up with its [anchor] across its [side].
+  @Deprecated('Read placement. Deprecated after 0.7.0.')
+  HarborCrossAlignment get crossAlignment => switch (placement) {
+    HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
+    HarborAligned() => HarborCrossAlignment.center,
+  };
+
+  /// How far the toast keeps in from the room's edges.
+  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
+  EdgeInsets? get margin => placement.margin as EdgeInsets;
+
+  /// Whether the toast may reach over the system edges on the edges it is against.
+  @Deprecated(_internal)
+  bool get reachesSystemEdges;
+
+  /// The old name of [reachesSystemEdges].
+  @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it.')
+  bool get reachesCoast;
+
+  /// Which hinges and folds the toast keeps to one side of.
+  @Deprecated(_internal)
+  HarborHinge? get hinge;
+
+  /// Whether the toast's time keeps running while another route covers its page.
+  @Deprecated(_internal)
+  bool get countsWhileCovered;
+
+  /// Whether it waits its turn at its place or takes it at once.
+  @Deprecated(_internal)
+  HarborToastQueue get queue;
+
+  /// Whether [duration] counts from the start of the toast's entrance.
+  @Deprecated(_internal)
+  bool get countsEntrance;
+
+  /// Ticks when [duration] is set.
+  @Deprecated(
+    'A counter harbor runs a toast\'s time on, not its HarborToastTiming, which is not kept on the entry: '
+    'read duration, which is the timing\'s duration until it is set. No replacement. Deprecated after 0.9.0.',
+  )
+  ValueListenable<int> get timing => _restarts;
+
+  /// Whether the toast stays until it is hidden: now a null [duration].
+  @Deprecated('Read duration: null stays until hidden. Deprecated after 0.9.0.')
+  bool get persist => _duration == null;
+
+  /// The duration and curve of the entrance and exit.
+  @Deprecated(_internal)
+  AnimationStyle? get animationStyle;
+
+  /// Builds the entrance and exit.
+  @Deprecated(_internal)
+  HarborToastTransitionBuilder? get transitionBuilder;
+
+  /// Whether harbor makes the toast a live region.
+  @Deprecated(_internal)
+  bool get liveRegion;
+
+  /// How long the entrance takes.
+  @Deprecated(_internal)
+  Duration get transitionDuration;
+
+  /// How long the exit takes.
+  @Deprecated(_internal)
+  Duration get reverseTransitionDuration;
+
+  /// How long a hidden toast stays in the tree.
+  @Deprecated(_internal)
+  Duration get lingers;
+
+  /// The frame the toast was shown from.
+  @Deprecated(_internal)
+  HarborController? get shownFrom;
+
+  /// The old name of [shownFrom].
+  @Deprecated('Renamed shownFrom. `dart fix` applies it.')
+  HarborController? get raisedIn;
+
+  /// The room of the frame the toast was shown from, in global coordinates.
+  @Deprecated(_internal)
+  Rect? get avoidInGlobal;
+
+  /// The frame showing the toast.
+  @Deprecated(_internal)
+  HarborController? get owner;
+}
+
+/// A toast as harbor runs it: the [HarborToastEntry] a caller holds, with how it was shown.
+///
+/// Not exported: `HarborToasts.show` makes it, and harbor's frames and overlays run it.
+final class ShownToast extends HarborToastEntry {
+  ShownToast({
+    required this.builder,
+    required super.placement,
+    required final HarborToastTiming timing,
+    final Rect? avoidInGlobal,
+    this.shownFrom,
+    this.animationStyle,
+    this.transitionBuilder,
+    this.liveRegion = true,
+    this.reachesSystemEdges = false,
+    this.hinge,
+    this.queue = HarborToastQueue.wait,
+  }) : countsEntrance = timing.countsEntrance,
+       countsWhileCovered = timing.countsWhileCovered,
+       _avoidAtShow = avoidInGlobal,
+       super._(duration: timing.duration);
+
+  static const Duration _defaultTransition = Duration(milliseconds: 220);
+  static const Duration _minimumLinger = Duration(milliseconds: 300);
+
+  @override
+  final WidgetBuilder builder;
+
+  @override
+  final bool reachesSystemEdges;
+
+  @override
+  bool get reachesCoast => reachesSystemEdges;
+
+  /// Which hinges and folds the toast keeps to one side of; the showing page's when shown.
+  @override
+  final HarborHinge? hinge;
+
+  /// Whether the toast's time keeps running while another route covers its page.
+  @override
+  final bool countsWhileCovered;
+
+  /// Whether it waits its turn at its place or takes it at once. See [HarborToastQueue].
+  @override
+  final HarborToastQueue queue;
+
+  /// Whether [duration] counts from the start of the toast's entrance rather than its end.
+  @override
+  final bool countsEntrance;
+
+  /// Ticks when [duration] is set, so a showing toast starts its time over.
+  ValueListenable<int> get restarts => _restarts;
+
+  /// The duration and curve of the entrance and exit, 220 ms each way by
+  /// default; [AnimationStyle.noAnimation] shows and removes the toast as it is.
+  @override
+  final AnimationStyle? animationStyle;
+
+  /// Builds the entrance and exit; a fade and a slight scale when null.
+  @override
+  final HarborToastTransitionBuilder? transitionBuilder;
+
+  /// Whether harbor makes the toast a live region with a dismiss action, as
+  /// a `SnackBar` makes itself. False leaves the semantics to [builder]'s widget.
+  @override
+  final bool liveRegion;
+
+  @override
+  Duration get transitionDuration => animationStyle?.duration ?? _defaultTransition;
+
+  @override
+  Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? transitionDuration;
+
+  /// How long a hidden toast stays in the tree: its exit, and never less
+  /// than 300 ms, so a child that runs an exit of its own has time to.
+  @override
+  Duration get lingers => _reason == HarborToastClosedReason.replaced
+      // Replaced, it leaves at once, so it is never drawn under the toast that took its place.
+      ? Duration.zero
+      : reverseTransitionDuration > _minimumLinger
+      ? reverseTransitionDuration
+      : _minimumLinger;
+
+  /// The frame the toast was shown from, whose room it also keeps inside.
+  @override
+  final HarborController? shownFrom;
+
+  @override
+  HarborController? get raisedIn => shownFrom;
+
+  final Rect? _avoidAtShow;
+
+  /// The room of the frame the toast was shown from, in global
+  /// coordinates: the toast stays inside it too, so it clears that frame's
+  /// bars (a tab's own header) as well as its target's.
+  ///
+  /// Read from that frame's latest layout, not kept from the moment it was shown: a stored
+  /// rectangle boxed the toast into a foldable's cover screen after the device opened. The
+  /// rectangle from the show is the fallback once that frame has gone.
+  @override
+  Rect? get avoidInGlobal => shownFrom?.roomInGlobal() ?? _avoidAtShow;
+
+  /// The frame showing the toast.
+  @override
+  HarborController? get owner => _owner;
+  HarborController? _owner;
+
+  /// Where the toast takes its turn: toasts at one place are shown one at a time.
+  Object get _place => switch (placement) {
+    HarborAligned(:final AlignmentGeometry alignment) => alignment,
+    HarborAnchored(:final HarborAnchor? anchor, :final HarborAnchorSide side) => (anchor, side),
+  };
+
+  /// Hides the toast for [reason], which [closed] reports unless it was already hidden.
+  void hideAs(final HarborToastClosedReason reason) => _hideAs(reason);
 }
 
 /// A hold on a toast's time, returned by [HarborToastEntry.hold].
@@ -404,39 +586,39 @@ class HarborToastHold {
 }
 
 /// Marks the toast [flare] built on screen, for [HarborToastEntry.phase].
-void flareShown(final HarborToastEntry flare) => flare._shownNow();
+void flareShown(final ShownToast flare) => flare._shownNow();
 
 /// Completes the toast [flare]'s [HarborToastEntry.closed]: it has left the screen.
-void flareLeft(final HarborToastEntry flare) => flare._left();
+void flareLeft(final ShownToast flare) => flare._left();
 
-/// Adds [entry] to [toasts] by its [HarborToastEntry.queue]: at the end to wait its turn, or
+/// Adds [entry] to [toasts] by its [ShownToast.queue]: at the end to wait its turn, or
 /// ahead of every toast still showing at its place, which are hidden as replaced.
-void queueFlare(final List<HarborToastEntry> toasts, final HarborToastEntry entry) {
+void queueFlare(final List<ShownToast> toasts, final ShownToast entry) {
   if (entry.queue == HarborToastQueue.wait) {
     toasts.add(entry);
     return;
   }
-  final int first = toasts.indexWhere((final HarborToastEntry f) => f._place == entry._place && f.showing.value);
+  final int first = toasts.indexWhere((final ShownToast f) => f._place == entry._place && f.showing.value);
   if (first < 0) {
     toasts.add(entry);
     return;
   }
-  final List<HarborToastEntry> ahead = <HarborToastEntry>[
-    for (final HarborToastEntry f in toasts)
+  final List<ShownToast> ahead = <ShownToast>[
+    for (final ShownToast f in toasts)
       if (f._place == entry._place && f.showing.value) f,
   ];
   toasts.insert(first, entry);
-  for (final HarborToastEntry f in ahead) {
-    f.hide(reason: HarborToastClosedReason.replaced);
+  for (final ShownToast f in ahead) {
+    f.hideAs(HarborToastClosedReason.replaced);
   }
 }
 
 /// The toasts of [toasts] that are in sight: the first at each alignment, or at each anchor and
 /// side. The others wait their turn behind it.
-List<HarborToastEntry> flaresInSight(final Iterable<HarborToastEntry> toasts) {
+List<ShownToast> flaresInSight(final Iterable<ShownToast> toasts) {
   final Set<Object> taken = <Object>{};
-  return <HarborToastEntry>[
-    for (final HarborToastEntry flare in toasts)
+  return <ShownToast>[
+    for (final ShownToast flare in toasts)
       if (taken.add(flare._place)) flare,
   ];
 }
@@ -630,14 +812,14 @@ class HarborFrameRegistry {
     // Toasts on a frame that is leaving move to the one now on top. With no
     // frame left to show them, they are hidden, which stops their timers. An
     // anchored toast's anchor left with its page, so it is hidden too.
-    final List<HarborToastEntry> orphans = controller._releaseFlares();
+    final List<ShownToast> orphans = controller._releaseFlares();
     final HarborController? top = topmost;
-    for (final HarborToastEntry flare in orphans) {
+    for (final ShownToast flare in orphans) {
       if (top != null && flare.anchor == null) {
         top._raiseFlare(flare);
       } else {
         flare
-          ..hide(reason: HarborToastClosedReason.remove)
+          ..hideAs(HarborToastClosedReason.remove)
           .._left();
       }
     }
@@ -779,9 +961,9 @@ class HarborController {
   final List<HarborClaim> _claims = <HarborClaim>[];
   final List<HarborAttachedBarHandle> _pontoons = <HarborAttachedBarHandle>[];
   final List<HarborPageCover> _breakwaters = <HarborPageCover>[];
-  final List<HarborToastEntry> _flares = <HarborToastEntry>[];
-  final Map<HarborToastEntry, VoidCallback> _flareListeners = <HarborToastEntry, VoidCallback>{};
-  final Map<HarborToastEntry, Timer> _flareRemovals = <HarborToastEntry, Timer>{};
+  final List<ShownToast> _flares = <ShownToast>[];
+  final Map<ShownToast, VoidCallback> _flareListeners = <ShownToast, VoidCallback>{};
+  final Map<ShownToast, Timer> _flareRemovals = <ShownToast, Timer>{};
   final _BreakwaterNotifier _breakwaterChanges = _BreakwaterNotifier();
 
   /// The nearest frame above [context].
@@ -981,6 +1163,10 @@ class HarborController {
   /// The toasts shown on this frame, in the order they were shown.
   List<HarborToastEntry> get toasts => List<HarborToastEntry>.unmodifiable(_flares);
 
+  /// [toasts], as harbor runs them.
+  @internal
+  List<ShownToast> get shownToasts => List<ShownToast>.unmodifiable(_flares);
+
   /// The old name of [toasts].
   @Deprecated('Renamed toasts. `dart fix` applies it.')
   List<HarborToastEntry> get flares => toasts;
@@ -989,7 +1175,7 @@ class HarborController {
   @Deprecated('Use toasts. Signals were renamed toasts before 1.0, so they are not mistaken for the signals package.')
   List<HarborToastEntry> get signals => toasts;
 
-  void _raiseFlare(final HarborToastEntry flare) {
+  void _raiseFlare(final ShownToast flare) {
     flare._owner = this;
     queueFlare(_flares, flare);
     void lowered() {
@@ -1024,7 +1210,7 @@ class HarborController {
     _changed();
   }
 
-  void _forgetFlare(final HarborToastEntry flare) {
+  void _forgetFlare(final ShownToast flare) {
     _flares.remove(flare);
     final VoidCallback? listener = _flareListeners.remove(flare);
     if (listener != null) {
@@ -1034,13 +1220,13 @@ class HarborController {
 
   /// Lets go of every toast, cancelling pending removals, and returns those
   /// still showing, in the order they were shown.
-  List<HarborToastEntry> _releaseFlares() {
-    final List<HarborToastEntry> showing = _flares.where((final HarborToastEntry s) => s.showing.value).toList();
+  List<ShownToast> _releaseFlares() {
+    final List<ShownToast> showing = _flares.where((final ShownToast s) => s.showing.value).toList();
     for (final Timer removal in _flareRemovals.values) {
       removal.cancel();
     }
     _flareRemovals.clear();
-    for (final HarborToastEntry flare in List<HarborToastEntry>.of(_flares)) {
+    for (final ShownToast flare in List<ShownToast>.of(_flares)) {
       _forgetFlare(flare);
       if (!flare.showing.value) {
         flare._left();
@@ -1051,7 +1237,7 @@ class HarborController {
 
   /// Shows the toast [flare] on this frame.
   @internal
-  void showToast(final HarborToastEntry flare) => _raiseFlare(flare);
+  void showToast(final HarborToastEntry flare) => _raiseFlare(flare as ShownToast);
 
   // Lifecycle.
 

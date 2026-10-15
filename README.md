@@ -517,7 +517,7 @@ HarborFrame(
 HarborToasts.show(context, slot: HarborToastSlot.low, builder: (_) => Toast('Saved'));
 HarborToasts.show(context, placement: const HarborAligned(alignment: Alignment(0, -0.8)), builder: (_) => Toast('Saved'));
 HarborToasts.show(context, placement: HarborAnchored(copyAnchor, side: HarborAnchorSide.above), builder: (_) => Toast('Copied'));
-final undo = HarborToasts.show(context, persist: true, builder: (_) => UndoToast(onUndo: restore));
+final undo = HarborToasts.show(context, timing: HarborToastTiming.untilHidden, builder: (_) => UndoToast(onUndo: restore));
 final HarborToastClosedReason why = await undo.closed;    // hide, dismiss, timeout or remove
 HarborToasts.show(
   context,
@@ -596,7 +596,10 @@ Toasts shown at the same slot or alignment of one page take turns, as a
 `ScaffoldMessenger` shows its snack bars: the next comes in once the one before
 it has run its exit, so "Copied" tapped twice is never drawn over itself. To
 replace the toast that is up, `hide()` it; one hidden while it waits leaves
-without being shown. Toasts at different slots show together.
+without being shown. `dismiss()` closes it the same way but says the user did it:
+`closed` reports `HarborToastClosedReason.dismiss`, as it does when a screen
+reader dismisses a toast, so a toast's own close button, or a toast in a
+`Dismissible`, counts as dismissed in analytics rather than hidden by the app. Toasts at different slots show together.
 `queue: HarborToastQueue.replace` takes the turn at once instead: the toast goes
 first and the one up leaves, closed with `HarborToastClosedReason.replaced`, for
 an Undo whose window is tied to a pending action. `HarborFlarePolicy(queue:,
@@ -608,20 +611,26 @@ completes: a toast hidden while it waits is `closed` by the time `hide()`
 returns, and `wasShown` is false, so an analytics count or an `onDismiss` can
 answer on the spot.
 
-A toast stays 4 s, as a `SnackBar` does, and its `duration` counts only while it
+A toast stays 4 s, as a `SnackBar` does, and its duration counts only while it
 is in sight: from the end of its entrance, and not while another route covers
-its page (the time starts over when that route leaves). `persist: true` keeps it
-up until it is hidden, as `SnackBar(persist:)` does. Give it to a toast with a
+its page (the time starts over when that route leaves). Its `timing:`, a
+`HarborToastTiming`, says otherwise: `HarborToastTiming(duration: ...)` for another
+length, and `HarborToastTiming.untilHidden` keeps it up until it is hidden, as
+`SnackBar(persist: true)` does. Give that to a toast with a
 button, an Undo: a screen-reader user moving through the page needs longer than
 4 s to reach it. `entry.hold()` stops the time until you `release()` the
 `HarborToastHold` it returns: call it from the toast's own `Listener` when a
 finger goes down, or when focus moves in; `HarborToastEntry.maybeOf(context)`
 inside the toast's builder is its own entry. harbor never holds a toast by
 itself. Holds are counted, the time starts over at the last release, and
-`entry.held` says whether one is on. `countsEntrance: true` counts the duration
-from the start of the entrance, so a 4 s toast is on screen 4 s, and setting
+`entry.held` says whether one is on. `HarborToastTiming(countsEntrance: true)` counts the
+duration from the start of the entrance, so a 4 s toast is on screen 4 s, and setting
 `entry.duration` after it is shown starts the time over with the new one (longer
-once a screen reader turns on, say). `countsWhileCovered: true` keeps the time
+once a screen reader turns on, say; null keeps it until it is hidden). Leave an
+`untilHidden` toast's duration alone: its `duration` is null, and setting one gives
+it a time to run out, so a helper that stretches every toast's time checks
+`entry.duration != null` first.
+`HarborToastTiming(countsWhileCovered: true)` keeps the time
 running while another page covers the toast's, so a "Saved" toast is gone when
 the user comes back; a hold still stops it. A toast with neither a slot nor an alignment goes to
 `HarborToastSlot.high`, and `target: HarborToastTarget.root` sends it to the
@@ -1057,7 +1066,7 @@ regions, so screen readers announce them, with a dismiss action that hides
 them, as a `SnackBar` is. A toast whose widget is already its own live region
 (a `SnackBar`-like widget from your design library) is shown with
 `liveRegion: false`, so harbor adds no second, unlabelled one around it. A
-toast with a button is shown with `persist: true`, as a `SnackBar` with an
+toast with a button is shown with `timing: HarborToastTiming.untilHidden`, as a `SnackBar` with an
 action persists, so it is still there when a screen reader reaches it. Sheets and toasts keep the themes of
 the page they came from, and so do dialogs. With reduced motion
 (`MediaQuery.disableAnimations`) bars, toasts, sheets and dialogs appear and

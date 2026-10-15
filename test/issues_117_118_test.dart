@@ -86,7 +86,7 @@ void main() {
           inside,
           slot: HarborToastSlot.low,
           builder: (final BuildContext _) => text('saved'),
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
         );
         await _step(tester);
         HarborToastClosedReason? why;
@@ -96,7 +96,7 @@ void main() {
           slot: HarborToastSlot.low,
           queue: HarborToastQueue.replace,
           builder: (final BuildContext _) => text('undo'),
-          duration: null,
+          timing: HarborToastTiming.untilHidden,
         );
         await _step(tester);
         expect(find.text('undo'), findsOneWidget);
@@ -111,14 +111,14 @@ void main() {
         inside,
         slot: HarborToastSlot.low,
         builder: (final BuildContext _) => text('saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       HarborToasts.show(
         inside,
         slot: HarborToastSlot.low,
         builder: (final BuildContext _) => text('undo'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(find.text('saved'), findsOneWidget);
@@ -131,14 +131,14 @@ void main() {
         inside,
         slot: HarborToastSlot.low,
         builder: (final BuildContext _) => text('saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       HarborToasts.show(
         inside,
         slot: HarborToastSlot.low,
         builder: (final BuildContext _) => text('removed'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(find.text('removed'), findsOneWidget);
@@ -148,7 +148,7 @@ void main() {
         slot: HarborToastSlot.low,
         queue: HarborToastQueue.wait,
         builder: (final BuildContext _) => text('later'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(find.text('removed'), findsOneWidget);
@@ -161,13 +161,13 @@ void main() {
         inside,
         slot: HarborToastSlot.top,
         builder: (final BuildContext _) => text('top'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToasts.show(
         inside,
         slot: HarborToastSlot.low,
         builder: (final BuildContext _) => text('saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       HarborToasts.show(
@@ -175,7 +175,7 @@ void main() {
         slot: HarborToastSlot.low,
         queue: HarborToastQueue.replace,
         builder: (final BuildContext _) => text('undo'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(find.text('top'), findsOneWidget);

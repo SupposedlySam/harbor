@@ -42,12 +42,17 @@ void main() {
         slot: HarborToastSlot.low,
         builder: (final c) => const Text('first'),
       );
-      first.hide(reason: HarborToastClosedReason.dismiss);
+      first.dismiss();
       HarborToastClosedReason? why;
       unawaited(first.closed.then((final r) => why = r));
       await tester.pump();
       expect(find.text('first'), findsNothing, reason: 'never built');
-      HarborToasts.show(page, slot: HarborToastSlot.low, builder: (final c) => const Text('second'), duration: null);
+      HarborToasts.show(
+        page,
+        slot: HarborToastSlot.low,
+        builder: (final c) => const Text('second'),
+        timing: HarborToastTiming.untilHidden,
+      );
       await _step(tester);
       expect(find.text('second'), findsOneWidget);
       expect(why, HarborToastClosedReason.dismiss);
@@ -71,9 +76,14 @@ void main() {
         page,
         slot: HarborToastSlot.low,
         builder: (final c) => const Text('first'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
-      HarborToasts.show(page, slot: HarborToastSlot.low, builder: (final c) => const Text('second'), duration: null);
+      HarborToasts.show(
+        page,
+        slot: HarborToastSlot.low,
+        builder: (final c) => const Text('second'),
+        timing: HarborToastTiming.untilHidden,
+      );
       await _step(tester);
       expect(find.text('first'), findsOneWidget);
       expect(find.text('second'), findsNothing, reason: 'waiting its turn');
@@ -123,7 +133,7 @@ void main() {
         final tester,
       ) async {
         final BuildContext inner = await pumpBand(tester, sea: sea);
-        HarborToasts.show(inner, slot: HarborToastSlot.low, builder: flare, duration: null);
+        HarborToasts.show(inner, slot: HarborToastSlot.low, builder: flare, timing: HarborToastTiming.untilHidden);
         await _step(tester);
         // iPhone 17: 874 high, a 34 home indicator, a flare 16 in from the clear water.
         expect(_rect(tester, 'flare').bottom, 874 - 34 - 16);
@@ -170,7 +180,7 @@ void main() {
       inner,
       placement: HarborAnchored(anchor),
       builder: (final c) => const SizedBox(key: ValueKey<String>('flare'), height: 40, width: 120),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await _step(tester);
     // Shown by the page, it hangs 8 below the button, out over the page. Shown by the band's own
@@ -201,7 +211,12 @@ void main() {
 
     testWidgets('is 16 by default', (final tester) async {
       final BuildContext page = await pumpPage(tester);
-      HarborToasts.show(page, slot: HarborToastSlot.low, builder: (final c) => _bar('toast', 40), duration: null);
+      HarborToasts.show(
+        page,
+        slot: HarborToastSlot.low,
+        builder: (final c) => _bar('toast', 40),
+        timing: HarborToastTiming.untilHidden,
+      );
       await _step(tester);
       expect(_rect(tester, 'toast'), const Rect.fromLTRB(16, 874 - 34 - 56 - 16 - 40, 402 - 16, 874 - 34 - 56 - 16));
     });
@@ -212,7 +227,7 @@ void main() {
         page,
         placement: HarborAligned(alignment: HarborToastSlot.low.alignment, margin: EdgeInsets.zero),
         builder: (final c) => _bar('toast', 40),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       expect(_rect(tester, 'toast'), Rect.fromLTRB(0, 874 - 34 - 56 - 40, 402, _rect(tester, 'nav').top));
@@ -240,7 +255,7 @@ void main() {
           margin: const EdgeInsetsDirectional.only(start: 40, bottom: 4),
         ),
         builder: (final c) => _bar('toast', 40),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await _step(tester);
       // No harbor: the overlay keeps it off the home indicator, then the margin.
@@ -265,7 +280,7 @@ void main() {
       final HarborToastEntry entry = HarborToasts.show(
         page,
         builder: (final c) => const Text('toast'),
-        duration: const Duration(seconds: 1),
+        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
       );
       // The entrance, 220 ms: time counts from its end.
       await tester.pump();

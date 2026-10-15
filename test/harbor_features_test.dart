@@ -281,7 +281,7 @@ void main() {
       pageContext,
       slot: HarborToastSlot.low,
       builder: (final BuildContext c) => _bar('toast', 30),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'toast').bottom, lessThanOrEqualTo(_rect(tester, 'nav').top));
@@ -1813,7 +1813,7 @@ void main() {
       pageContext,
       slot: HarborToastSlot.middle,
       builder: (final BuildContext c) => _bar('flag', 20),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').center.dy, closeTo(874 / 2, 60));
@@ -2143,7 +2143,7 @@ void main() {
       tabContext,
       slot: HarborToastSlot.top,
       builder: (final BuildContext c) => _bar('flag', 20),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     expect(_rect(tester, 'flag').top, greaterThanOrEqualTo(_rect(tester, 'tab header').bottom));
@@ -2204,7 +2204,7 @@ void main() {
       inside,
       slot: HarborToastSlot.top,
       builder: (final BuildContext c) => _bar('inner flag', 20),
-      duration: null,
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     final Rect stage = tester.getRect(find.byType(HarborRoot).last);

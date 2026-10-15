@@ -106,7 +106,7 @@ void main() {
         inSheet,
         slot: HarborToastSlot.top,
         builder: (final c) => const SizedBox(key: ValueKey<String>('flare'), height: 20, width: 60),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       for (int i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));

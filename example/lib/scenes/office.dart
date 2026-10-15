@@ -710,9 +710,9 @@ class _SignalTowerPageState extends State<_SignalTowerPage> {
       HarborToasts.show(
         context,
         slot: HarborToastSlot.low,
-        duration: const Duration(seconds: 4),
         builder: (final BuildContext context) =>
             const SignalFlag(key: ValueKey<String>('tower signal'), message: 'Raised in the tower, still flying'),
+        timing: const HarborToastTiming(duration: Duration(seconds: 4)),
       );
       Navigator.of(context).pop();
     });

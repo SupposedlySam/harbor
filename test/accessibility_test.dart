@@ -146,7 +146,11 @@ void main() {
     testWidgets('is announced by screen readers as it appears', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
-      HarborToasts.show(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborToasts.show(
+        page,
+        builder: (final BuildContext _) => const Text('Saved'),
+        timing: HarborToastTiming.untilHidden,
+      );
       await tester.pumpAndSettle();
       SemanticsNode? node = tester.getSemantics(find.text('Saved'));
       bool live = false;
@@ -169,7 +173,7 @@ void main() {
           seen = Theme.of(context).colorScheme.primary;
           return const Text('Saved');
         },
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       expect(seen, red);
@@ -178,7 +182,11 @@ void main() {
     // Failed before: it faded and scaled in over 220 ms whatever the platform asked.
     testWidgets('appears at once when the platform asks for reduced motion', (final tester) async {
       final BuildContext page = await pumpPage(tester, disableAnimations: true);
-      HarborToasts.show(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborToasts.show(
+        page,
+        builder: (final BuildContext _) => const Text('Saved'),
+        timing: HarborToastTiming.untilHidden,
+      );
       await tester.pump();
       await tester.pump();
       final FadeTransition fade = tester.widget(
@@ -191,7 +199,11 @@ void main() {
     testWidgets('is one live region, labelled by its message', (final tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       final BuildContext page = await pumpPage(tester);
-      HarborToasts.show(page, builder: (final BuildContext _) => const Text('Saved'), duration: null);
+      HarborToasts.show(
+        page,
+        builder: (final BuildContext _) => const Text('Saved'),
+        timing: HarborToastTiming.untilHidden,
+      );
       await tester.pumpAndSettle();
       expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
       semantics.dispose();
@@ -204,7 +216,7 @@ void main() {
       final HarborToastEntry entry = HarborToasts.show(
         page,
         builder: (final BuildContext _) => const Text('Saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToastClosedReason? reason;
       unawaited(entry.closed.then((final HarborToastClosedReason r) => reason = r));
@@ -228,7 +240,7 @@ void main() {
         liveRegion: false,
         builder: (final BuildContext _) =>
             Semantics(container: true, liveRegion: true, label: 'Saved', child: const SizedBox(width: 200, height: 40)),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       expect(find.semantics.byFlag(SemanticsFlag.isLiveRegion).evaluate().single.label, 'Saved');
@@ -270,7 +282,7 @@ void main() {
         page,
         animationStyle: AnimationStyle.noAnimation,
         builder: (final BuildContext _) => const Text('Saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pump();
       expect(find.text('Saved'), findsOneWidget);
@@ -302,7 +314,7 @@ void main() {
           );
         },
         builder: (final BuildContext _) => const Text('Saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
@@ -327,7 +339,7 @@ void main() {
         page,
         animationStyle: const AnimationStyle(reverseDuration: Duration(milliseconds: 600)),
         builder: (final BuildContext _) => const Text('Saved'),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       entry.hide();

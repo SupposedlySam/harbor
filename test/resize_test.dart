@@ -91,8 +91,8 @@ void main() {
     HarborToasts.show(
       page,
       slot: HarborToastSlot.low,
-      duration: null,
       builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('toast'), width: 100, height: 30),
+      timing: HarborToastTiming.untilHidden,
     );
     await tester.pumpAndSettle();
     final double coverCenter = tester.getRect(find.byKey(const ValueKey<String>('toast'))).center.dx;

@@ -518,8 +518,8 @@ void main() {
       await _pumpSpeedDial(tester);
       HarborToasts.show(
         tester.element(find.text('n=1')),
-        persist: true,
         builder: (final BuildContext _) => const Text('Copied'),
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       expect(find.text('Copied'), findsOneWidget, reason: 'positive control: the flare is up');

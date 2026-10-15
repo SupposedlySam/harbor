@@ -348,7 +348,7 @@ void main() {
         page,
         placement: const HarborAligned(alignment: notch),
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       final Rect water = trial.roomAround(find.byType(_Probe)).deflate(16);
@@ -370,7 +370,7 @@ void main() {
         page,
         placement: const HarborAligned(alignment: AlignmentDirectional.centerEnd),
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       final Rect water = trial.roomAround(find.byType(_Probe)).deflate(16);
@@ -386,7 +386,7 @@ void main() {
         page,
         placement: const HarborAligned(alignment: notch),
         builder: (final BuildContext c) => const SizedBox(key: ValueKey<String>('toast'), width: 200, height: 40),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       final Rect water = const EdgeInsets.fromLTRB(
@@ -412,13 +412,13 @@ void main() {
         page,
         slot: HarborToastSlot.low,
         builder: (final BuildContext c) => _bar('low', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       final HarborToastEntry top = HarborToasts.show(
         page,
         slot: HarborToastSlot.top,
         builder: (final BuildContext c) => _bar('top', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       expect(_rect(tester, 'low').bottom, lessThanOrEqualTo(trial.keyboardTop));
@@ -504,8 +504,8 @@ void main() {
       final HarborToastEntry entry = HarborToasts.show(
         page,
         animationStyle: const AnimationStyle(duration: Duration(seconds: 1)),
-        duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('toast', 30),
+        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
       );
       // Frame by frame, as a device draws them, so the entrance ends when it would.
       for (int i = 0; i < 30; i++) {
@@ -524,8 +524,8 @@ void main() {
       final BuildContext page = await pumpPage(tester, navigator: navigator);
       final HarborToastEntry entry = HarborToasts.show(
         page,
-        duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('toast', 30),
+        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
       );
       await tester.pumpAndSettle();
       unawaited(
@@ -550,9 +550,8 @@ void main() {
       final BuildContext page = await pumpPage(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,
-        persist: true,
-        duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('undo', 30),
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToastClosedReason? reason;
       unawaited(entry.closed.then((final HarborToastClosedReason r) => reason = r));
@@ -571,8 +570,8 @@ void main() {
       final BuildContext page = await pumpPage(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,
-        duration: const Duration(seconds: 1),
         builder: (final BuildContext c) => _bar('toast', 30),
+        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
       );
       HarborToastClosedReason? reason;
       unawaited(entry.closed.then((final HarborToastClosedReason r) => reason = r));
@@ -601,13 +600,13 @@ void main() {
         page,
         slot: HarborToastSlot.low,
         builder: (final BuildContext c) => _bar('first', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       final HarborToastEntry two = HarborToasts.show(
         page,
         slot: HarborToastSlot.low,
         builder: (final BuildContext c) => _bar('second', 30),
-        duration: const Duration(seconds: 1),
+        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
       );
       await tester.pumpAndSettle();
       expect(first, findsOneWidget);
@@ -636,14 +635,18 @@ void main() {
       final HarborToastEntry one = HarborToasts.show(
         page,
         builder: (final BuildContext c) => _bar('first', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       final HarborToastEntry two = HarborToasts.show(
         page,
         builder: (final BuildContext c) => _bar('second', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
-      HarborToasts.show(page, builder: (final BuildContext c) => _bar('third', 30), duration: null);
+      HarborToasts.show(
+        page,
+        builder: (final BuildContext c) => _bar('third', 30),
+        timing: HarborToastTiming.untilHidden,
+      );
       HarborToastClosedReason? reason;
       unawaited(two.closed.then((final HarborToastClosedReason r) => reason = r));
       await tester.pumpAndSettle();
@@ -663,9 +666,13 @@ void main() {
       final HarborToastEntry one = HarborToasts.show(
         page,
         builder: (final BuildContext c) => _bar('first', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
-      HarborToasts.show(page, builder: (final BuildContext c) => _bar('second', 30), duration: null);
+      HarborToasts.show(
+        page,
+        builder: (final BuildContext c) => _bar('second', 30),
+        timing: HarborToastTiming.untilHidden,
+      );
       await tester.pumpAndSettle();
       expect(first, findsOneWidget);
       expect(second, findsNothing);
@@ -684,13 +691,13 @@ void main() {
         page,
         slot: HarborToastSlot.top,
         builder: (final BuildContext c) => _bar('first', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       HarborToasts.show(
         page,
         slot: HarborToastSlot.low,
         builder: (final BuildContext c) => _bar('second', 30),
-        duration: null,
+        timing: HarborToastTiming.untilHidden,
       );
       await tester.pumpAndSettle();
       expect(first, findsOneWidget);

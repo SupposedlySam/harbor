@@ -941,7 +941,6 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
   void open() => _flare = HarborToasts.show(
     _page!,
     slot: HarborToastSlot.low,
-    duration: null,
     builder: (final BuildContext _) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(color: Palette.night, borderRadius: BorderRadius.circular(24)),
@@ -954,6 +953,7 @@ class _FlareDemoState extends State<_FlareDemo> with _Cued<_FlareDemo> {
         ],
       ),
     ),
+    timing: HarborToastTiming.untilHidden,
   );
 
   @override
