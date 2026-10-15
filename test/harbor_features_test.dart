@@ -12,11 +12,11 @@ Widget _bar(final String label, final double height) =>
 
 Widget _app(
   final Widget home, {
-  final HarborSystemEdges coast = HarborSystemEdges.ambient,
+  final HarborSystemEdges systemEdges = HarborSystemEdges.ambient,
   final EdgeInsetsDirectional? margin,
 }) => MaterialApp(
   builder: (final BuildContext context, final Widget? child) =>
-      HarborRoot(systemEdges: coast, margin: margin, child: child!),
+      HarborRoot(systemEdges: systemEdges, margin: margin, child: child!),
   home: Material(child: home),
 );
 
@@ -26,7 +26,7 @@ Widget _box(final String label, final double width, final double height) =>
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
 void main() {
-  testWidgets('a sliver dock first in a fairway takes the status bar and pins there', (final tester) async {
+  testWidgets('a sliver bar first in a scroll view takes the status bar and pins there', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -53,7 +53,7 @@ void main() {
     expect(_rect(tester, 'tabs').top, 62 + 48);
   });
 
-  testWidgets('a sliver dock under a pier pins below the pier', (final tester) async {
+  testWidgets('a sliver bar under an overlay bar pins below it', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -76,7 +76,7 @@ void main() {
     expect(_rect(tester, 'tabs').top, _rect(tester, 'header').bottom);
   });
 
-  testWidgets('a horizontal fairway pads both ends by the mooring line and runs to the frame edge', (
+  testWidgets('a horizontal scroll view pads both ends by the row insets and runs to the frame edge', (
     final tester,
   ) async {
     await tester.pumpHarborTrial(
@@ -110,7 +110,7 @@ void main() {
     expect(_rect(tester, 'card19').right, 402 - 16);
   });
 
-  testWidgets('a horizontal fairway clears a side cutout plus the margin in landscape', (final tester) async {
+  testWidgets('a horizontal scroll view clears a side cutout plus the margin in landscape', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         Center(
@@ -135,7 +135,7 @@ void main() {
     expect(_rect(tester, 'card0').left, 62 + 16);
   });
 
-  testWidgets('a dark dock keeps its ground; a withdrawn one gives it back', (final tester) async {
+  testWidgets('a dark bar keeps its ground; a withdrawn one gives it back', (final tester) async {
     final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
     await tester.pumpHarborTrial(
       _app(
@@ -157,7 +157,7 @@ void main() {
     expect(_rect(tester, 'body').top, 62);
   });
 
-  testWidgets('a hold policy keeps the ground until the dock has gone', (final tester) async {
+  testWidgets('a hold policy keeps the ground until the bar has gone', (final tester) async {
     final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
     await tester.pumpHarborTrial(
       _app(
@@ -186,7 +186,7 @@ void main() {
     expect(_rect(tester, 'body').bottom, 874);
   });
 
-  group('A dock given an animation style', () {
+  group('A bar given an animation style', () {
     Future<(ValueNotifier<HarborBarState>, double)> pumpStrip(
       final WidgetTester tester,
       final AnimationStyle style,
@@ -244,7 +244,7 @@ void main() {
     });
   });
 
-  testWidgets('a dock that withdraws at high tide leaves while the keyboard is up', (final tester) async {
+  testWidgets('a bar set to withdrawsAtHighTide leaves while the keyboard is up', (final tester) async {
     final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -260,7 +260,7 @@ void main() {
     expect(frame.size.height, 0);
   });
 
-  testWidgets('a flare goes to the port on top and clears its footer', (final tester) async {
+  testWidgets('a toast goes to the page on top and clears its footer', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -287,7 +287,7 @@ void main() {
     expect(_rect(tester, 'toast').bottom, lessThanOrEqualTo(_rect(tester, 'nav').top));
   });
 
-  testWidgets('an anchored buoy sits above its anchor in a dock, overlapping it', (final tester) async {
+  testWidgets('an anchored float sits above its anchor in a bar, overlapping it', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
     await tester.pumpHarborTrial(
@@ -323,7 +323,7 @@ void main() {
     expect(bubble.center.dx, button.center.dx);
   });
 
-  testWidgets('an anchored buoy at the start of its anchor sits on the right under right-to-left', (
+  testWidgets('an anchored float at the start of its anchor sits on the right under right-to-left', (
     final tester,
   ) async {
     final HarborAnchor anchor = HarborAnchor();
@@ -350,7 +350,7 @@ void main() {
     expect(_rect(tester, 'start').left, _rect(tester, 'button').right + 8);
   });
 
-  test('a buoy side named before or after is the start or the end', () {
+  test('a float side named before or after is the start or the end', () {
     expect(
       <HarborAnchorSide>[HarborAnchorSide.start, HarborAnchorSide.end],
       <HarborAnchorSide>[HarborAnchorSide.start, HarborAnchorSide.end],
@@ -363,7 +363,7 @@ void main() {
     ]);
   });
 
-  testWidgets('an anchored buoy whose anchor is not in the tree takes no taps', (final tester) async {
+  testWidgets('an anchored float whose anchor is not in the tree takes no taps', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
     int pageTaps = 0;
@@ -395,7 +395,7 @@ void main() {
     expect(bubbleTaps, 0);
   });
 
-  testWidgets('an anchored buoy whose anchor leaves takes no taps where it last sat', (final tester) async {
+  testWidgets('an anchored float whose anchor leaves takes no taps where it last sat', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
     final ValueNotifier<bool> anchored = ValueNotifier<bool>(true);
@@ -442,7 +442,7 @@ void main() {
     expect(bubbleTaps, 1);
   });
 
-  testWidgets('an anchored buoy aligned to the end lines up with its anchor\'s right edge, moved by crossOffset', (
+  testWidgets('an anchored float aligned to the end lines up with its anchor\'s right edge, moved by crossOffset', (
     final tester,
   ) async {
     final HarborAnchor anchor = HarborAnchor();
@@ -472,7 +472,7 @@ void main() {
     expect(_rect(tester, 'menu').top, _rect(tester, 'button').bottom + 8);
   });
 
-  testWidgets('an anchored buoy follows its row as the list scrolls, in the same frame', (final tester) async {
+  testWidgets('an anchored float follows its row as the list scrolls, in the same frame', (final tester) async {
     final HarborAnchor anchor = HarborAnchor();
     addTearDown(anchor.dispose);
     final ScrollController scroll = ScrollController();
@@ -503,13 +503,13 @@ void main() {
     expect(_rect(tester, 'menu').top, _rect(tester, 'row').bottom + 8);
   });
 
-  group('A portal buoy', () {
+  group('A popover', () {
     Widget page({
       required final OverlayPortalController menu,
       required final Alignment rowAt,
       final TextDirection? direction,
     }) {
-      final Widget harbor = HarborFrame(
+      final Widget frame = HarborFrame(
         bottom: <HarborBar>[HarborBar.solid(child: _bar('nav', 56))],
         body: Align(
           alignment: rowAt,
@@ -521,7 +521,7 @@ void main() {
           ),
         ),
       );
-      return _app(direction == null ? harbor : Directionality(textDirection: direction, child: harbor));
+      return _app(direction == null ? frame : Directionality(textDirection: direction, child: frame));
     }
 
     testWidgets('opens below its row when the menu fits there', (final tester) async {
@@ -533,7 +533,7 @@ void main() {
       expect(_rect(tester, 'menu').center.dx, _rect(tester, 'row').center.dx);
     });
 
-    testWidgets('opened from a row near the bottom, flips above it, clear of the bottom dock', (final tester) async {
+    testWidgets('opened from a row near the bottom, flips above it, clear of the bottom bar', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       final HarborTrial trial = await tester.pumpHarborTrial(page(menu: menu, rowAt: Alignment.bottomCenter));
       menu.show();
@@ -638,7 +638,7 @@ void main() {
       expect((menuTaps, pageTaps), (1, 1));
     });
 
-    testWidgets('too tall for either side, is clamped into the clear water', (final tester) async {
+    testWidgets('too tall for either side, is clamped into the room', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
@@ -657,9 +657,9 @@ void main() {
       );
       menu.show();
       await tester.pump();
-      final Rect water = trial.roomAround(find.byKey(const ValueKey<String>('row')));
-      expect(_rect(tester, 'menu').bottom, water.bottom - 8);
-      expect(find.byKey(const ValueKey<String>('menu')), isInRoom(water));
+      final Rect room = trial.roomAround(find.byKey(const ValueKey<String>('row')));
+      expect(_rect(tester, 'menu').bottom, room.bottom - 8);
+      expect(find.byKey(const ValueKey<String>('menu')), isInRoom(room));
     });
 
     testWidgets('anchored to a HarborAnchor elsewhere, sits by that anchor rather than its own child', (
@@ -831,7 +831,7 @@ void main() {
         expect(_rect(tester, 'menu').right, _rect(tester, 'button').right - 12);
       });
 
-      testWidgets('to the start of an anchor at the water\'s right edge is still held inside the clear water', (
+      testWidgets('to the start of an anchor at the room\'s right edge is still held inside the room', (
         final tester,
       ) async {
         final OverlayPortalController menu = OverlayPortalController();
@@ -840,8 +840,8 @@ void main() {
         );
         menu.show();
         await tester.pump();
-        final Rect water = trial.roomAround(find.byKey(const ValueKey<String>('button')));
-        expect(_rect(tester, 'menu').left, water.right - 8 - 200);
+        final Rect room = trial.roomAround(find.byKey(const ValueKey<String>('button')));
+        expect(_rect(tester, 'menu').left, room.right - 8 - 200);
       });
 
       testWidgets('beside its anchor, to the start lines up with its top edge', (final tester) async {
@@ -988,7 +988,7 @@ void main() {
         ], reason: 'positive control: while the menu is up, Escape closes it and stops there');
       });
 
-      testWidgets('keeps the state of its child and its buoy when onDismiss is set or cleared', (final tester) async {
+      testWidgets('keeps the state of its child and its popover when onDismiss is set or cleared', (final tester) async {
         final OverlayPortalController menu = OverlayPortalController();
         final ValueNotifier<bool> closes = ValueNotifier<bool>(true);
         addTearDown(closes.dispose);
@@ -1127,7 +1127,7 @@ void main() {
       });
     });
 
-    testWidgets('tells its buoy which side it landed on, after a flip and back', (final tester) async {
+    testWidgets('tells its popover which side it landed on, after a flip and back', (final tester) async {
       final OverlayPortalController menu = OverlayPortalController();
       final ValueNotifier<Alignment> rowAt = ValueNotifier<Alignment>(Alignment.topCenter);
       addTearDown(rowAt.dispose);
@@ -1163,7 +1163,7 @@ void main() {
     });
   });
 
-  testWidgets('a lifted beacon rises clear of a breakwater sheet and settles back', (final tester) async {
+  testWidgets('a lifted keep-in-sight widget rises clear of a sheet that covers the page and settles back', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -1206,7 +1206,7 @@ void main() {
     expect(boat.bottom, lessThanOrEqualTo(sheet.top - 20 + 1));
   });
 
-  testWidgets('a lighthouse region lifts over its duration and settles back over its reverse duration', (
+  testWidgets('a keep-in-sight region lifts over its duration and settles back over its reverse duration', (
     final tester,
   ) async {
     final ValueNotifier<bool> boatIn = ValueNotifier<bool>(false);
@@ -1258,7 +1258,7 @@ void main() {
     expect(_rect(tester, 'mast').top, rest);
   });
 
-  testWidgets('a beacon reports how much of it the header covers', (final tester) async {
+  testWidgets('a keep-in-sight widget reports how much of it the header covers', (final tester) async {
     final List<double> reports = <double>[];
     await tester.pumpHarborTrial(
       _app(
@@ -1282,20 +1282,20 @@ void main() {
     expect(reports.last, closeTo(0.5, 0.05));
   });
 
-  testWidgets('a title-safe coast keeps a TV page inside its band', (final tester) async {
+  testWidgets('title-safe system edges keep a TV page inside their band', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         const HarborFrame(
           body: HarborClear(child: SizedBox.expand(key: ValueKey<String>('page'))),
         ),
-        coast: const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)),
+        systemEdges: const HarborSystemEdges.titleSafe(HarborTitleSafe.fraction(0.05)),
       ),
       device: HarborTrialDevice.television,
     );
     expect(_rect(tester, 'page'), const Rect.fromLTRB(96, 54, 1920 - 96, 1080 - 54));
   });
 
-  testWidgets('a scale model lays out at its reference size and re-bases the coast', (final tester) async {
+  testWidgets('a scaled screen lays out at its reference size and re-bases the system edges', (final tester) async {
     await tester.pumpHarborTrial(
       MaterialApp(
         builder: (final BuildContext context, final Widget? child) => HarborScaledScreen(
@@ -1351,7 +1351,7 @@ void main() {
     final Rect header = _rect(tester, 'sheetHeader');
     // Half of the space between the status bar and the bottom.
     expect(header.top, closeTo(874 - (874 - 62) * 0.5, 1));
-    // The first item rests below the header and its wake.
+    // The first item rests below the header and its fade.
     expect(_rect(tester, 'item0').top, header.bottom + 12);
   });
 
@@ -1384,7 +1384,7 @@ void main() {
     expect(_rect(tester, 'content').bottom, lessThanOrEqualTo(_rect(tester, 'footer').top + 0.5));
   });
 
-  testWidgets('a dry dock runs to the screen edge, whatever its minimum', (final tester) async {
+  testWidgets('a bar that reserves keyboard space runs to the screen edge, whatever its minimum', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -1399,7 +1399,7 @@ void main() {
     expect(_rect(tester, 'tray').bottom, 874);
   });
 
-  testWidgets('a floating dock never dips while a short keyboard comes in', (final tester) async {
+  testWidgets('a bar that rides the keyboard never dips while a short keyboard comes in', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -1449,8 +1449,8 @@ void main() {
         builder: (final BuildContext context) => HarborSheet(
           header: _bar('sheetHeader', 60),
           footer: _bar('footer', 48),
-          // The fairway runs under the header pier, so it shrink-wraps to the
-          // header, its wake and its rows: no more.
+          // The scroll view runs under the overlay header, so it shrink-wraps to the
+          // header, its fade and its rows: no more.
           body: HarborScrollView.box(
             shrinkWrap: true,
             child: Column(
@@ -1499,7 +1499,7 @@ void main() {
     expect(_rect(tester, 'pill').top, lessThan(headerBottom + 8));
   });
 
-  testWidgets('a centered control overlaps a breakwater by no more than its budget', (final tester) async {
+  testWidgets('a centered control overlaps a sheet that covers the page by no more than its budget', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -1530,7 +1530,7 @@ void main() {
     expect(_rect(tester, 'controls').bottom, lessThanOrEqualTo(sheet.top + 12 + 0.5));
   });
 
-  testWidgets('open water under a pier with a wake is not faded; only fairways are', (final tester) async {
+  testWidgets('room under an overlay bar with a fade is not faded; only scroll views are', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -1547,7 +1547,7 @@ void main() {
     expect(find.byType(HarborFadeMask), findsNothing);
   });
 
-  testWidgets('a component harbor reports its port\'s frame size, which the keyboard does not shrink', (
+  testWidgets('a component frame reports its page\'s frame size, which the keyboard does not shrink', (
     final tester,
   ) async {
     late BuildContext inner;
@@ -1603,7 +1603,7 @@ void main() {
     expect(find.byKey(const ValueKey<String>('page')), findsOneWidget);
   });
 
-  testWidgets('a fairway can start in open water under a translucent header', (final tester) async {
+  testWidgets('a scroll view can start under the bars, beneath a translucent header', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -1624,11 +1624,11 @@ void main() {
     expect(_rect(tester, 'hero').top, 0);
     await tester.drag(find.byType(Scrollable), const Offset(0, -600));
     await tester.pumpAndSettle();
-    // Pinned at the docks' face, not at the end of the wake.
+    // Pinned at the bars' face, not at the end of the fade.
     expect(_rect(tester, 'tabs').top, _rect(tester, 'header').bottom);
   });
 
-  testWidgets('a sticky pill sticks below sliver docks pinned in its fairway', (final tester) async {
+  testWidgets('a sticky pill sticks below sliver bars pinned in its scroll view', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -1657,7 +1657,7 @@ void main() {
     expect(_rect(tester, 'pill').top, _rect(tester, 'tabs').bottom + 8);
   });
 
-  testWidgets('ensureVisible on a scrolled horizontal fairway keeps the target clear of its end', (final tester) async {
+  testWidgets('ensureVisible on a scrolled horizontal scroll view keeps the target clear of its end', (final tester) async {
     final List<GlobalKey> keys = List<GlobalKey>.generate(20, (final int _) => GlobalKey());
     await tester.pumpHarborTrial(
       _app(
@@ -1689,7 +1689,7 @@ void main() {
     }
   });
 
-  testWidgets('a focused field in a scrolled fairway is revealed above the keyboard', (final tester) async {
+  testWidgets('a focused field in a scrolled scroll view is revealed above the keyboard', (final tester) async {
     final FocusNode focus = FocusNode();
     addTearDown(focus.dispose);
     final ScrollController controller = ScrollController();
@@ -1727,7 +1727,7 @@ void main() {
     expect(_rect(tester, 'field').bottom, lessThanOrEqualTo(trial.keyboardTop - 16 + 0.5));
   });
 
-  group('focus moving into a beacon kept in sight with the keyboard up', () {
+  group('focus moving into a widget kept in sight with the keyboard up', () {
     Future<HarborTrial> pumpForm(final WidgetTester tester, final FocusNode first, final FocusNode second) =>
         tester.pumpHarborTrial(
           _app(
@@ -1762,7 +1762,7 @@ void main() {
           ('a tap', (final FocusNode first, final FocusNode second) => second.requestFocus()),
           ('the next-field action', (final FocusNode first, final FocusNode second) => first.nextFocus()),
         ]) {
-      testWidgets('by $how reveals the whole beacon, not only the field\'s caret', (final tester) async {
+      testWidgets('by $how reveals the whole kept-in-sight widget, not only the field\'s caret', (final tester) async {
         final FocusNode first = FocusNode();
         final FocusNode second = FocusNode();
         addTearDown(first.dispose);
@@ -1787,7 +1787,7 @@ void main() {
     }
   });
 
-  testWidgets('a flare skips a new port embedded in a page', (final tester) async {
+  testWidgets('a toast skips a page embedded in a page', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -1819,7 +1819,7 @@ void main() {
     expect(_rect(tester, 'flag').center.dy, closeTo(874 / 2, 60));
   });
 
-  testWidgets('content that starts in open water keeps the coast it starts under', (final tester) async {
+  testWidgets('content that starts under the bars keeps the system edges it starts under', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -1845,7 +1845,7 @@ void main() {
 
   for (final HarborBarrier barrier in const <HarborBarrier>[HarborBarrier.none, HarborBarrier.dimmed()]) {
     testWidgets(
-      'the page lays out against a breakwater sheet where it is drawn, in every frame of its slide ($barrier)',
+      'the page lays out against a sheet that covers it where it is drawn, in every frame of its slide ($barrier)',
       (final tester) async {
         late BuildContext pageContext;
         await tester.pumpHarborTrial(
@@ -1896,7 +1896,7 @@ void main() {
   }
 
   testWidgets(
-    'the page lays out against a draggable breakwater sheet where it is drawn, as it slides in and is dragged',
+    'the page lays out against a draggable sheet that covers it where it is drawn, as it slides in and is dragged',
     (final tester) async {
       late BuildContext pageContext;
       await tester.pumpHarborTrial(
@@ -1954,7 +1954,7 @@ void main() {
     },
   );
 
-  testWidgets('a draggable breakwater sheet reports its resting height, not the screen', (final tester) async {
+  testWidgets('a draggable sheet that covers the page reports its resting height, not the screen', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -2117,7 +2117,7 @@ void main() {
     expect(_rect(tester, 'sheetHeader').top, greaterThanOrEqualTo(62 - 0.5));
   });
 
-  testWidgets('a flare raised in a nested harbor clears that harbor\'s header too', (final tester) async {
+  testWidgets('a toast shown in a nested frame clears that frame\'s header too', (final tester) async {
     late BuildContext tabContext;
     await tester.pumpHarborTrial(
       _app(
@@ -2146,7 +2146,7 @@ void main() {
     expect(_rect(tester, 'flag').top, greaterThanOrEqualTo(_rect(tester, 'tab header').bottom));
   });
 
-  testWidgets('a chart overlay above the sea charts the harbors beneath it', (final tester) async {
+  testWidgets('an inspector overlay above the root inspects the frames beneath it', (final tester) async {
     await tester.pumpHarborTrial(
       MaterialApp(
         builder: (final BuildContext context, final Widget? child) =>
@@ -2159,14 +2159,14 @@ void main() {
     );
     await tester.pump();
     final BuildContext overlay = tester.element(find.byType(HarborRoot));
-    final List<HarborInspectorEntry> chart = HarborInspector.snapshot(overlay);
+    final List<HarborInspectorEntry> entries = HarborInspector.snapshot(overlay);
     expect(
-      chart.expand((final HarborInspectorEntry e) => e.bars).any((final HarborBarRecord d) => d.label == 'header'),
+      entries.expand((final HarborInspectorEntry e) => e.bars).any((final HarborBarRecord d) => d.label == 'header'),
       isTrue,
     );
   });
 
-  testWidgets('a sea inside a harbor keeps its own tide and flares', (final tester) async {
+  testWidgets('a root inside a frame keeps its own keyboard and toasts', (final tester) async {
     late BuildContext inside;
     await tester.pumpHarborTrial(
       _app(
@@ -2208,7 +2208,7 @@ void main() {
     expect(stage.contains(_rect(tester, 'inner flag').center), isTrue);
   });
 
-  testWidgets('a translucent dock with a backdrop lets taps through its empty ground', (final tester) async {
+  testWidgets('a translucent bar with a backdrop lets taps through its empty ground', (final tester) async {
     int taps = 0;
     await tester.pumpHarborTrial(
       _app(
@@ -2228,7 +2228,7 @@ void main() {
     expect(taps, 1);
   });
 
-  testWidgets('a sticky pill sticks at the docks under a scale', (final tester) async {
+  testWidgets('a sticky pill sticks at the bars under a scale', (final tester) async {
     await tester.pumpHarborTrial(
       MaterialApp(
         home: Center(
@@ -2277,7 +2277,7 @@ void main() {
     expect(_rect(tester, 'pill').top, closeTo(_rect(tester, 'header').bottom, 0.6));
   });
 
-  testWidgets('a harbor that paints its own wake keeps its fairways from fading twice', (final tester) async {
+  testWidgets('a frame that paints its own fade keeps its scroll views from fading twice', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -2291,7 +2291,7 @@ void main() {
     expect(masks.where((final HarborFadeMask m) => m.bands.isNotEmpty), hasLength(1));
   });
 
-  testWidgets('a breakwater sheet covers the page under a scale', (final tester) async {
+  testWidgets('a sheet that covers the page covers it under a scale', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       MaterialApp(
@@ -2339,7 +2339,7 @@ void main() {
     expect(MediaQuery.paddingOf(pageContext).bottom, closeTo(300, 1));
   });
 
-  testWidgets('a horizontal box fairway in a column is as tall as its row and keeps its ends clear', (
+  testWidgets('a horizontal box scroll view in a column is as tall as its row and keeps its ends clear', (
     final tester,
   ) async {
     final ValueNotifier<double> chipHeight = ValueNotifier<double>(40);
@@ -2380,9 +2380,9 @@ void main() {
     expect(_rect(tester, 'after').top, _rect(tester, 'chips').bottom);
   });
 
-  testWidgets('the steady coast holds the home indicator while the keyboard is up', (final tester) async {
+  testWidgets('the steady system edge holds the home indicator while the keyboard is up', (final tester) async {
     late BuildContext footer;
-    late BuildContext underQuay;
+    late BuildContext underSolidBar;
     final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -2394,7 +2394,7 @@ void main() {
                   bottom: <HarborBar>[HarborBar.solid(child: _bar('tabs', 40))],
                   body: Builder(
                     builder: (final BuildContext context) {
-                      underQuay = context;
+                      underSolidBar = context;
                       return const SizedBox.expand();
                     },
                   ),
@@ -2413,14 +2413,14 @@ void main() {
     );
     expect(HarborRoom.steadySystemEdgeOf(footer, HarborEdge.bottom), 34);
     expect(HarborRoom.steadySystemEdgeOf(footer, HarborEdge.top), 62, reason: 'the coast alone, not the header');
-    expect(HarborRoom.steadySystemEdgeOf(underQuay, HarborEdge.bottom), 0, reason: 'the quay absorbed it');
+    expect(HarborRoom.steadySystemEdgeOf(underSolidBar, HarborEdge.bottom), 0, reason: 'the quay absorbed it');
     await trial.showKeyboard();
     expect(HarborRoom.of(footer).systemEdges.bottom, 0, reason: 'the live coast goes as the keyboard comes in');
     expect(HarborRoom.steadySystemEdgeOf(footer, HarborEdge.bottom), 34);
   });
 
-  testWidgets('the steady coast is cast off with its edge', (final tester) async {
-    late BuildContext castOff;
+  testWidgets('the steady system edge is marked handled with its edge', (final tester) async {
+    late BuildContext handled;
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -2428,7 +2428,7 @@ void main() {
             edges: const <HarborEdge>{HarborEdge.bottom},
             child: Builder(
               builder: (final BuildContext context) {
-                castOff = context;
+                handled = context;
                 return const SizedBox.expand();
               },
             ),
@@ -2436,11 +2436,11 @@ void main() {
         ),
       ),
     );
-    expect(HarborRoom.steadySystemEdgeOf(castOff, HarborEdge.top), 62, reason: 'positive control');
-    expect(HarborRoom.steadySystemEdgeOf(castOff, HarborEdge.bottom), 0);
+    expect(HarborRoom.steadySystemEdgeOf(handled, HarborEdge.top), 62, reason: 'positive control');
+    expect(HarborRoom.steadySystemEdgeOf(handled, HarborEdge.bottom), 0);
   });
 
-  testWidgets('a fairway keeps its minimum at an end nothing covers', (final tester) async {
+  testWidgets('a scroll view keeps its minimum at an end nothing covers', (final tester) async {
     Future<double> lastRowBottom(final HarborTrialDevice device) async {
       await tester.pumpHarborTrial(
         _app(
@@ -2466,7 +2466,7 @@ void main() {
     expect(await lastRowBottom(HarborTrialDevice.iPhone17), 874 - 34, reason: 'the larger of the two, not both');
   });
 
-  testWidgets('a fairway sliver keeps its minimum at an end nothing covers', (final tester) async {
+  testWidgets('a sliver clear keeps its minimum at an end nothing covers', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         CustomScrollView(
@@ -2489,7 +2489,7 @@ void main() {
     expect(_rect(tester, 'row29').bottom, 667 - 16);
   });
 
-  testWidgets('a footer moored on the bottom alone clears the coast and the keyboard, not the header', (
+  testWidgets('a footer kept clear on the bottom alone clears the system edges and the keyboard, not the header', (
     final tester,
   ) async {
     final HarborTrial trial = await tester.pumpHarborTrial(
@@ -2513,12 +2513,12 @@ void main() {
   group('insets take EdgeInsetsGeometry, resolved against the reading direction', () {
     Widget rtl(
       final Widget home, {
-      final HarborSystemEdges coast = HarborSystemEdges.ambient,
+      final HarborSystemEdges systemEdges = HarborSystemEdges.ambient,
       final EdgeInsetsGeometry? margin,
     }) => MaterialApp(
       builder: (final BuildContext context, final Widget? child) => Directionality(
         textDirection: TextDirection.rtl,
-        child: HarborRoot(systemEdges: coast, margin: margin, child: child!),
+        child: HarborRoot(systemEdges: systemEdges, margin: margin, child: child!),
       ),
       home: Material(child: home),
     );
@@ -2527,7 +2527,7 @@ void main() {
       itemBuilder: (final BuildContext c, final int i) => SizedBox(key: ValueKey<String>('row$i'), height: 50),
     );
 
-    testWidgets("the sea's mooring line keeps a physical left on the left", (final tester) async {
+    testWidgets("the root's row insets keep a physical left on the left", (final tester) async {
       await tester.pumpHarborTrial(
         rtl(HarborClear.rowInsets(child: _bar('row', 40)), margin: const EdgeInsets.only(left: 24)),
       );
@@ -2535,7 +2535,7 @@ void main() {
       expect(_rect(tester, 'row').right, 402);
     });
 
-    testWidgets("a harbor's margin and minimum keep a physical side where they say", (final tester) async {
+    testWidgets("a frame's margin and minimum keep a physical side where they say", (final tester) async {
       await tester.pumpHarborTrial(
         rtl(
           HarborFrame(
@@ -2549,7 +2549,7 @@ void main() {
       expect(_rect(tester, 'form').right, 402 - 12);
     });
 
-    testWidgets("a fairway's padding and minimum keep a physical side where they say", (final tester) async {
+    testWidgets("a scroll view's padding and minimum keep a physical side where they say", (final tester) async {
       await tester.pumpHarborTrial(
         rtl(
           HarborScrollView(
@@ -2567,7 +2567,7 @@ void main() {
       expect(_rect(tester, 'row29').bottom, 667 - 16);
     });
 
-    testWidgets('a fairway sliver takes the same', (final tester) async {
+    testWidgets('a sliver clear takes the same', (final tester) async {
       await tester.pumpHarborTrial(
         rtl(
           CustomScrollView(
@@ -2608,7 +2608,7 @@ void main() {
       expect(padding, const EdgeInsets.only(left: 5, top: 20, bottom: 20));
     });
 
-    testWidgets("a moored widget's minimum and extra, and clearanceOf, keep a physical side where they say", (
+    testWidgets("a clear widget's minimum and extra, and clearanceOf, keep a physical side where they say", (
       final tester,
     ) async {
       late EdgeInsetsDirectional clearance;
@@ -2635,8 +2635,8 @@ void main() {
       expect(clearance, const EdgeInsetsDirectional.fromSTEB(6, 62, 30, 34));
     });
 
-    testWidgets('a fixed coast and a fixed title-safe band keep a physical side where they say', (final tester) async {
-      Future<EdgeInsets> paddingUnder(final HarborSystemEdges coast) async {
+    testWidgets('fixed system edges and a fixed title-safe band keep a physical side where they say', (final tester) async {
+      Future<EdgeInsets> paddingUnder(final HarborSystemEdges systemEdges) async {
         late EdgeInsets padding;
         await tester.pumpHarborTrial(
           rtl(
@@ -2646,7 +2646,7 @@ void main() {
                 return const SizedBox.shrink();
               },
             ),
-            coast: coast,
+            systemEdges: systemEdges,
           ),
         );
         return padding;

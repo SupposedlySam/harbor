@@ -19,7 +19,7 @@ Widget _app() => MaterialApp(
   home: const HarborFrame(body: Center(child: Text('home'))),
 );
 
-/// Pushes a harbor page and returns a context inside it, as a button in its body would have.
+/// Pushes a page with a frame and returns a context inside it, as a button in its body would have.
 Future<BuildContext> _pushPage(final WidgetTester tester, {final bool cupertino = false}) async {
   late BuildContext inside;
   Widget page(final BuildContext _) => HarborFrame(
@@ -47,8 +47,8 @@ void _openSheet(final BuildContext context) => unawaited(
   ),
 );
 
-/// A page with two buttons in its harbor, as a settings page has, wrapped in [around] if given.
-/// Returns a context inside the harbor.
+/// A page with two buttons in its frame, as a settings page has, wrapped in [around] if given.
+/// Returns a context inside the frame.
 Future<BuildContext> _pushButtonPage(final WidgetTester tester, {final Widget Function(Widget page)? around}) async {
   late BuildContext inside;
   final Widget page = HarborFrame(
@@ -142,7 +142,7 @@ void main() {
     expect(find.text('page'), findsNothing, reason: 'positive control: back pops the page once the sheet is gone');
   });
 
-  // Failed before: opened from a context above the page's harbor, the sheet was tied to the sea,
+  // Failed before: opened from a context above the page's frame, the sheet was tied to the root,
   // which never leaves, so it outlived its page. A pop now closes the sheet first, as back does, so
   // the case left is the page being replaced or removed while its sheet is up.
   testWidgets('a sheet with no barrier leaves with the page that opened it', (final tester) async {
@@ -252,10 +252,10 @@ void main() {
     expect(find.text('sheet').hitTestable(), findsNothing);
   });
 
-  // #104: a page with no harbor has nothing to draw its sheet, so the sheet keeps an overlay entry
+  // #104: a page with no frame has nothing to draw its sheet, so the sheet keeps an overlay entry
   // of its own, which the navigator keeps above every route: it still hides while a dialog is up,
   // rather than being drawn over it.
-  testWidgets('in a page with no harbor, a sheet with no barrier still hides under a dialog, never over it', (
+  testWidgets('in a page with no frame, a sheet with no barrier still hides under a dialog, never over it', (
     final tester,
   ) async {
     await tester.pumpHarborTrial(_app(), device: HarborTrialDevice.androidGesture);

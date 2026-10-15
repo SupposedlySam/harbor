@@ -1,21 +1,21 @@
 // The names harbor used before 1.0, kept so code written against them still compiles. Each
 // goes at 1.0.
 
-import 'buoy.dart';
-import 'chart.dart';
-import 'coast.dart';
+import 'bar.dart';
+import 'clear.dart';
 import 'controller.dart';
-import 'dock.dart';
-import 'fairway.dart';
-import 'harbor.dart';
-import 'lighthouse.dart';
-import 'make_way.dart';
-import 'moored.dart';
+import 'edge_effect.dart';
+import 'float.dart';
+import 'frame.dart';
+import 'hide_bar.dart';
+import 'inspector.dart';
+import 'keep_in_sight.dart';
+import 'keyboard.dart';
 import 'placement.dart';
-import 'scale_model.dart';
-import 'tide.dart';
-import 'wake.dart';
-import 'waters.dart';
+import 'room.dart';
+import 'scaled_screen.dart';
+import 'scroll_view.dart';
+import 'system_edges.dart';
 
 /// The old name of [HarborToasts].
 @Deprecated(

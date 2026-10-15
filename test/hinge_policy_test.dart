@@ -1,4 +1,4 @@
-// HarborHinge: which hinges and folds harbor's overlays keep off, set on the sea, a page or one
+// HarborHinge: which hinges and folds harbor's overlays keep off, set on the root, a page or one
 // overlay, the nearest winning, with MediaQuery.displayFeatures left as the platform reports it.
 
 import 'dart:async';
@@ -27,20 +27,20 @@ Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.b
 Future<BuildContext> _pump(
   final WidgetTester tester, {
   required final HarborTrialDevice device,
-  final HarborHinge sea = HarborHinge.avoidSeparating,
+  final HarborHinge root = HarborHinge.avoidSeparating,
   final HarborHinge? page,
-  final List<HarborFloat> buoys = const <HarborFloat>[],
+  final List<HarborFloat> floats = const <HarborFloat>[],
 }) async {
   late BuildContext inside;
   await tester.pumpHarborTrial(
     MaterialApp(
       builder: (final BuildContext context, final Widget? child) => HarborRoot(
-        defaults: HarborDefaults(hinge: sea),
+        defaults: HarborDefaults(hinge: root),
         child: child!,
       ),
       home: HarborFrame(
         defaults: HarborDefaults(hinge: page),
-        floats: buoys,
+        floats: floats,
         body: Builder(
           builder: (final BuildContext context) {
             inside = context;
@@ -118,23 +118,23 @@ void main() {
       expect(sheet.right, lessThanOrEqualTo(540));
     });
 
-    testWidgets('the sea: never runs a sheet across the hinge, and leaves displayFeatures alone', (final tester) async {
-      final BuildContext page = await _pump(tester, device: _dual, sea: HarborHinge.never);
+    testWidgets('the root: never runs a sheet across the hinge, and leaves displayFeatures alone', (final tester) async {
+      final BuildContext page = await _pump(tester, device: _dual, root: HarborHinge.never);
       expect(MediaQuery.displayFeaturesOf(page), isNotEmpty, reason: 'a policy, not a change to the screen');
       final Rect sheet = await _sheet(tester, page);
       expect(sheet.left, 0);
       expect(sheet.right, 1114);
     });
 
-    testWidgets('a page overrides the sea', (final tester) async {
+    testWidgets('a page overrides the root', (final tester) async {
       final Rect sheet = await _sheet(tester, await _pump(tester, device: _dual, page: HarborHinge.never));
       expect(sheet.right, 1114);
     });
 
-    testWidgets('an overlay overrides its page and the sea', (final tester) async {
+    testWidgets('an overlay overrides its page and the root', (final tester) async {
       final Rect sheet = await _sheet(
         tester,
-        await _pump(tester, device: _dual, sea: HarborHinge.never),
+        await _pump(tester, device: _dual, root: HarborHinge.never),
         hinge: HarborHinge.avoidSeparating,
       );
       expect(sheet.right, lessThanOrEqualTo(540));
@@ -146,7 +146,7 @@ void main() {
       expect((await _sheet(tester, await _pump(tester, device: _flat))).width, 750);
       Navigator.of(tester.element(find.byKey(const ValueKey<String>('sheet')))).pop();
       await tester.pumpAndSettle();
-      expect((await _sheet(tester, await _pump(tester, device: _flat, sea: HarborHinge.always))).width, 375);
+      expect((await _sheet(tester, await _pump(tester, device: _flat, root: HarborHinge.always))).width, 375);
     });
 
     testWidgets('a half-open fold: kept off by default, spanned with avoidOccluding', (final tester) async {
@@ -154,13 +154,13 @@ void main() {
       Navigator.of(tester.element(find.byKey(const ValueKey<String>('sheet')))).pop();
       await tester.pumpAndSettle();
       expect(
-        (await _sheet(tester, await _pump(tester, device: _halfOpen, sea: HarborHinge.avoidOccluding))).width,
+        (await _sheet(tester, await _pump(tester, device: _halfOpen, root: HarborHinge.avoidOccluding))).width,
         750,
       );
     });
   });
 
-  group('dialogs, buoys and flares', () {
+  group('dialogs, floats and toasts', () {
     testWidgets('a dialog: one screen by default, centred across the hinge with never', (final tester) async {
       final BuildContext page = await _pump(tester, device: _dual);
       unawaited(
@@ -184,11 +184,11 @@ void main() {
       expect(_rect(tester, 'dialog').center.dx, 557);
     });
 
-    testWidgets('a buoy and a flare with never sit across the hinge; without, on one screen', (final tester) async {
+    testWidgets('a float and a toast with never sit across the hinge; without, on one screen', (final tester) async {
       final BuildContext page = await _pump(
         tester,
         device: _dual,
-        buoys: const <HarborFloat>[
+        floats: const <HarborFloat>[
           HarborFloat(
             placement: HarborAligned(alignment: Alignment.center),
             hinge: HarborHinge.never,
@@ -219,20 +219,20 @@ void main() {
       );
     });
 
-    testWidgets('a flare takes the policy of where it was raised, not of the harbor that shows it', (
+    testWidgets('a toast takes the policy of where it was shown, not of the frame that shows it', (
       final tester,
     ) async {
-      late BuildContext raiser;
+      late BuildContext origin;
       await tester.pumpHarborTrial(
         MaterialApp(
           builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
-          // The page keeps the default; a harbor inside it, which is not a port, spans the hinge.
+          // The page keeps the default; a frame inside it, which is not a page, spans the hinge.
           home: HarborFrame(
             body: HarborFrame(
               defaults: const HarborDefaults(hinge: HarborHinge.never),
               body: Builder(
                 builder: (final BuildContext context) {
-                  raiser = context;
+                  origin = context;
                   return const SizedBox.expand();
                 },
               ),
@@ -242,7 +242,7 @@ void main() {
         device: _dual,
       );
       HarborToasts.show(
-        raiser,
+        origin,
         slot: HarborToastSlot.middle,
         builder: (final BuildContext _) => const SizedBox(key: ValueKey<String>('flare'), width: 100, height: 20),
         timing: HarborToastTiming.untilHidden,

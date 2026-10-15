@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'buoy.dart' show HarborAnchor, HarborAnchorClip, HarborFloat, HarborToasts, HarborPopover;
+import 'float.dart' show HarborAnchor, HarborAnchorClip, HarborFloat, HarborToasts, HarborPopover;
 import 'hinge.dart';
 
 /// Which side of its anchor an anchored float or toast sits on. [start] and [end] are in reading
@@ -193,17 +193,17 @@ final class HarborAnchored extends HarborPlacement {
 }
 
 /// The area an overlay may occupy, and the system edges it covers there, from
-/// [HarborPlacementEngine.water].
+/// [HarborPlacementEngine.area].
 @internal
-final class HarborWater {
-  const HarborWater(this.rect, [this.coastCovered = EdgeInsets.zero]);
+final class HarborPlacementArea {
+  const HarborPlacementArea(this.rect, [this.systemEdgesCovered = EdgeInsets.zero]);
 
   /// Where the overlay may go, margin taken off.
   final Rect rect;
 
   /// For an overlay that reaches the system edges, how much of them [rect] covers on each edge:
   /// handed to its content as `MediaQuery.padding`.
-  final EdgeInsets coastCovered;
+  final EdgeInsets systemEdgesCovered;
 }
 
 /// Where an overlay landed, from [HarborPlacementEngine.place]: its top left, and for an anchored
@@ -235,7 +235,7 @@ abstract final class HarborPlacementEngine {
   /// where reading starts when the point is on a hinge. For an anchored one it is the screen that
   /// holds [holding], its anchor's centre, or the nearest when that is on a hinge; with no
   /// [holding] (laying out, before the anchor is known) the largest.
-  static HarborWater water({
+  static HarborPlacementArea area({
     required final Rect clear,
     final Rect? open,
     final Rect? within,
@@ -261,11 +261,11 @@ abstract final class HarborPlacementEngine {
         .resolve(textDirection)
         .deflateRect(_screen(bounded, hinges, placement, textDirection, holding));
     if (open == null) {
-      return HarborWater(rect);
+      return HarborPlacementArea(rect);
     }
     // The sides always; the top or bottom when it is placed against that edge.
     final Alignment alignment = (placement as HarborAligned).alignment.resolve(textDirection);
-    return HarborWater(
+    return HarborPlacementArea(
       rect,
       EdgeInsets.fromLTRB(
         math.max(0.0, clear.left - rect.left),
@@ -276,34 +276,34 @@ abstract final class HarborPlacementEngine {
     );
   }
 
-  /// The screen of [water] an overlay placed by [placement] keeps to when [hinges] split it, by
-  /// the rule [water] follows; [water] itself when they do not.
+  /// The screen of [area] an overlay placed by [placement] keeps to when [hinges] split it, by
+  /// the rule [area] follows; [area] itself when they do not.
   static Rect screen({
-    required final Rect water,
+    required final Rect area,
     required final HarborPlacement placement,
     required final TextDirection textDirection,
     final List<Rect> hinges = const <Rect>[],
     final Offset? holding,
-  }) => _screen(water, hinges, placement, textDirection, holding);
+  }) => _screen(area, hinges, placement, textDirection, holding);
 
-  /// The screen of [water] the overlay keeps to when [hinges] split it.
+  /// The screen of [area] the overlay keeps to when [hinges] split it.
   static Rect _screen(
-    final Rect water,
+    final Rect area,
     final List<Rect> hinges,
     final HarborPlacement placement,
     final TextDirection textDirection,
     final Offset? holding,
   ) {
     if (hinges.isEmpty) {
-      return water;
+      return area;
     }
-    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(water, hinges).toList();
+    final List<Rect> screens = DisplayFeatureSubScreen.subScreensInBounds(area, hinges).toList();
     if (screens.length < 2) {
-      return screens.isEmpty ? water : screens.single;
+      return screens.isEmpty ? area : screens.single;
     }
     switch (placement) {
       case HarborAligned(:final AlignmentGeometry alignment):
-        final Offset point = alignment.resolve(textDirection).withinRect(water);
+        final Offset point = alignment.resolve(textDirection).withinRect(area);
         for (final Rect screen in screens) {
           if (screen.contains(point)) {
             return screen;
@@ -332,30 +332,30 @@ abstract final class HarborPlacementEngine {
     }
   }
 
-  /// Where an overlay of [size] placed by [placement] sits in [water] (from [water]), and for an
+  /// Where an overlay of [size] placed by [placement] sits in [area] (from [area]), and for an
   /// anchored one the side it landed on.
   ///
-  /// Aligned, it sits at its alignment in [water]. Anchored, it sits by [anchorRect] on its side,
-  /// kept inside [water] across that side and never past its far edge along it. With [flips], it
+  /// Aligned, it sits at its alignment in [area]. Anchored, it sits by [anchorRect] on its side,
+  /// kept inside [area] across that side and never past its far edge along it. With [flips], it
   /// goes to the opposite side when its own has no room and that one has, and is never past the
   /// area's edge at the start or end of its anchor either.
   static HarborLanding place({
     required final HarborPlacement placement,
-    required final Rect water,
+    required final Rect area,
     required final Size size,
     required final TextDirection textDirection,
     final Rect? anchorRect,
     final bool flips = false,
   }) => switch (placement) {
     HarborAligned(:final AlignmentGeometry alignment) => HarborLanding(
-      alignment.resolve(textDirection).inscribe(size, water).topLeft,
+      alignment.resolve(textDirection).inscribe(size, area).topLeft,
     ),
-    final HarborAnchored anchored => _anchored(anchored, water, anchorRect!, size, textDirection, flips),
+    final HarborAnchored anchored => _anchored(anchored, area, anchorRect!, size, textDirection, flips),
   };
 
   static HarborLanding _anchored(
     final HarborAnchored placement,
-    final Rect water,
+    final Rect area,
     final Rect at,
     final Size size,
     final TextDirection textDirection,
@@ -379,10 +379,10 @@ abstract final class HarborPlacementEngine {
       AxisDirection.right => at.right + gap - overlap,
     };
     bool fits(final AxisDirection d) => switch (d) {
-      AxisDirection.up => along(d) >= water.top,
-      AxisDirection.down => along(d) + size.height <= water.bottom,
-      AxisDirection.left => along(d) >= water.left,
-      AxisDirection.right => along(d) + size.width <= water.right,
+      AxisDirection.up => along(d) >= area.top,
+      AxisDirection.down => along(d) + size.height <= area.bottom,
+      AxisDirection.left => along(d) >= area.left,
+      AxisDirection.right => along(d) + size.width <= area.right,
     };
     final AxisDirection opposite = flipAxisDirection(preferred);
     final AxisDirection direction = flips && !fits(preferred) && fits(opposite) ? opposite : preferred;
@@ -403,18 +403,18 @@ abstract final class HarborPlacementEngine {
     double top = vertical ? 0.0 : cross;
     switch (direction) {
       case AxisDirection.up:
-        top = math.max(along(direction), water.top);
+        top = math.max(along(direction), area.top);
       case AxisDirection.down:
-        top = math.min(along(direction), water.bottom - size.height);
+        top = math.min(along(direction), area.bottom - size.height);
       case AxisDirection.left:
-        left = flips ? math.max(along(direction), water.left) : along(direction);
+        left = flips ? math.max(along(direction), area.left) : along(direction);
       case AxisDirection.right:
-        left = flips ? math.min(along(direction), water.right - size.width) : along(direction);
+        left = flips ? math.min(along(direction), area.right - size.width) : along(direction);
     }
     if (vertical) {
-      left = left.clamp(water.left, math.max(water.left, water.right - size.width));
+      left = left.clamp(area.left, math.max(area.left, area.right - size.width));
     } else {
-      top = top.clamp(water.top, math.max(water.top, water.bottom - size.height));
+      top = top.clamp(area.top, math.max(area.top, area.bottom - size.height));
     }
     return HarborLanding(Offset(left, top), direction == preferred ? side : side._opposite);
   }

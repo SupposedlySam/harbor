@@ -476,11 +476,15 @@ What shipped differs from the tables above in these places, each measured by `te
 - An old parameter and its new name, both given, must agree, or it is an assert. Inside a `const`
   constructor the check compares with `identical`, since `==` on a type with its own equality is
   not a constant expression.
-- **Deferred to a mechanical follow-up before 1.0:** the source file names (`buoy.dart`,
-  `dock.dart`, `tide.dart`, `waters.dart`, `coast.dart`, `fairway.dart`, `moored.dart`,
-  `lighthouse.dart`, `chart.dart`, `wake.dart`, `make_way.dart`, `scale_model.dart`, ...), private and
-  internal names (`_HarborTideScope`, `HarborBuoyLayer`, ...), and test descriptions in the harbour
-  words. None is public API, so none needs a forwarder or a fix.
+- **Done in a mechanical follow-up after 0.10.1** (deferred from the release): the source files are
+  named after the types they hold (`bar.dart`, `keyboard.dart`, `room.dart`, `system_edges.dart`,
+  `scroll_view.dart`, `clear.dart`, `keep_in_sight.dart`, `inspector.dart`, `edge_effect.dart`,
+  `scaled_screen.dart`, `frame.dart`, `render_frame.dart`; `buoy.dart` split into `float.dart` and its
+  parts `anchor.dart`, `popover.dart`, `toast.dart` and `placement_engine.dart`; `make_way.dart` into
+  `hide_bar.dart` and `attached_bar.dart`), private and internal names are in the new words
+  (`HarborKeyboardScope`, `HarborFloatLayer`, ...), and so are the test files and their descriptions.
+  None is public API, so none needs a forwarder or a fix. `dock_slot.dart` keeps its name, after the
+  deprecated `HarborDockSlot` it holds, and every deprecated name keeps its spelling.
 - `HarborSeaTrials` is a deprecated extension of its own, and `pumpSeaTrial`'s fix is keyed on
   both the extension and `WidgetTester` (§4).
 - Harbour words the tables left out are renamed the same way, with forwarders and fixes:

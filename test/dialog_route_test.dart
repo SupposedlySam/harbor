@@ -49,7 +49,7 @@ class _PageAwareState extends State<_PageAware> with RouteAware {
   Widget build(final BuildContext context) => widget.child;
 }
 
-/// Pumps a page in a harbor and returns its context, to open dialogs from.
+/// Pumps a page in a frame and returns its context, to open dialogs from.
 Future<BuildContext> _page(
   final WidgetTester tester, {
   final List<NavigatorObserver> observers = const <NavigatorObserver>[],
@@ -458,9 +458,7 @@ void main() {
       expect(await result, 'blue');
     });
 
-    testWidgets('inheritClearWater measures the clear water when the route is pushed, not when it is made', (
-      final tester,
-    ) async {
+    testWidgets('inheritRoom measures the room when the route is pushed, not when it is made', (final tester) async {
       final ValueNotifier<double> header = ValueNotifier<double>(40);
       addTearDown(header.dispose);
       late BuildContext page;

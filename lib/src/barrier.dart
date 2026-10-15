@@ -34,12 +34,8 @@ sealed class HarborBarrier with Diagnosticable {
   /// A tinted barrier: [color] over the page, `showGeneralDialog`'s half-black by default. A tap on
   /// it closes the overlay unless [dismissible] is false. [label] is what a screen reader announces
   /// for it ('Dismiss' when null), and [onTapHint] what tapping it does, read as 'Double tap to …'.
-  const factory HarborBarrier.dimmed({
-    Color color,
-    bool dismissible,
-    String? label,
-    String? onTapHint,
-  }) = _DimmedBarrier;
+  const factory HarborBarrier.dimmed({Color color, bool dismissible, String? label, String? onTapHint}) =
+      _DimmedBarrier;
 
   /// A barrier you can see through: the page shows as it is, but takes no taps. A tap on it closes
   /// the overlay unless [dismissible] is false. [label] and [onTapHint] are as on
@@ -151,7 +147,10 @@ final class _ClearBarrier extends HarborBarrier {
 
   @override
   bool operator ==(final Object other) =>
-      other is _ClearBarrier && other.isDismissible == isDismissible && other.label == label && other.onTapHint == onTapHint;
+      other is _ClearBarrier &&
+      other.isDismissible == isDismissible &&
+      other.label == label &&
+      other.onTapHint == onTapHint;
 
   @override
   int get hashCode => Object.hash(_ClearBarrier, isDismissible, label, onTapHint);

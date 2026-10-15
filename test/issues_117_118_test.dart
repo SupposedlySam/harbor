@@ -1,4 +1,4 @@
-// #117: a flare that takes its place's turn at once, raise(queue: replace) or a HarborFlarePolicy.
+// #117: a toast that takes its place's turn at once, show(queue: replace) or a HarborFlarePolicy.
 // #118: a non-modal sheet's transition is stopped when its overlay goes with the sheet still open.
 
 import 'dart:async';
@@ -16,8 +16,8 @@ Future<void> _step(final WidgetTester tester) async {
 
 void main() {
   group('#118 a non-modal sheet torn down with its overlay', () {
-    for (final bool harbor in <bool>[true, false]) {
-      testWidgets('stops its transition and completes with null (page with harbor: $harbor)', (final tester) async {
+    for (final bool frame in <bool>[true, false]) {
+      testWidgets('stops its transition and completes with null (page with frame: $frame)', (final tester) async {
         late BuildContext page;
         await tester.pumpHarborTrial(
           MaterialApp(
@@ -30,7 +30,7 @@ void main() {
                     return const SizedBox.expand();
                   },
                 );
-                return harbor ? HarborFrame(body: body) : body;
+                return frame ? HarborFrame(body: body) : body;
               },
             ),
           ),
@@ -52,10 +52,10 @@ void main() {
     }
   });
 
-  group('#117 a flare that takes its turn at once', () {
+  group('#117 a toast that takes its turn at once', () {
     Future<BuildContext> page(
       final WidgetTester tester, {
-      final bool sea = true,
+      final bool root = true,
       final HarborToastQueue? policy,
     }) async {
       late BuildContext inside;
@@ -70,8 +70,8 @@ void main() {
       }
       await tester.pumpHarborTrial(
         MaterialApp(
-          builder: sea ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
-          home: sea ? HarborFrame(body: body) : body,
+          builder: root ? (final BuildContext context, final Widget? child) => HarborRoot(child: child!) : null,
+          home: root ? HarborFrame(body: body) : body,
         ),
       );
       return inside;
@@ -79,9 +79,9 @@ void main() {
 
     Widget text(final String label) => Text(label);
 
-    for (final bool sea in <bool>[true, false]) {
-      testWidgets('replace: shown at once, the one up lowered as replaced (sea: $sea)', (final tester) async {
-        final BuildContext inside = await page(tester, sea: sea);
+    for (final bool root in <bool>[true, false]) {
+      testWidgets('replace: shown at once, the one up hidden as replaced (root: $root)', (final tester) async {
+        final BuildContext inside = await page(tester, root: root);
         final HarborToastEntry first = HarborToasts.show(
           inside,
           slot: HarborToastSlot.low,
@@ -125,7 +125,7 @@ void main() {
       expect(find.text('undo'), findsNothing);
     });
 
-    testWidgets('a HarborFlarePolicy sets it for a subtree, and a raise can still wait under it', (final tester) async {
+    testWidgets('a HarborFlarePolicy sets it for a subtree, and a show can still wait under it', (final tester) async {
       final BuildContext inside = await page(tester, policy: HarborToastQueue.replace);
       HarborToasts.show(
         inside,
@@ -155,7 +155,7 @@ void main() {
       expect(find.text('later'), findsNothing);
     });
 
-    testWidgets('only its own place: a flare at another slot stays up', (final tester) async {
+    testWidgets('only its own place: a toast at another slot stays up', (final tester) async {
       final BuildContext inside = await page(tester);
       HarborToasts.show(
         inside,

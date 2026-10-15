@@ -20,7 +20,7 @@ Widget _app(final Widget home) => MaterialApp(
 Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
 void main() {
-  group('A pier header over a fairway, above a quay tab bar', () {
+  group('An overlay header over a scroll view, above a solid tab bar', () {
     Widget page() => HarborFrame(
       debugLabel: 'page',
       top: <HarborBar>[
@@ -39,7 +39,7 @@ void main() {
     );
 
     for (final HarborTrialDevice device in HarborTrialDevice.phones) {
-      testWidgets('rests the first row past the wake and absorbs the coast once on ${device.name}', (
+      testWidgets('rests the first row past the fade and absorbs the system edges once on ${device.name}', (
         final tester,
       ) async {
         await tester.pumpHarborTrial(_app(page()), device: device);
@@ -49,7 +49,7 @@ void main() {
         expect(header.top, device.systemEdges.top);
         // The tab bar sits above the home indicator, once.
         expect(nav.bottom, device.size.height - device.systemEdges.bottom);
-        // The first row rests below the header and its wake.
+        // The first row rests below the header and its fade.
         expect(_rect(tester, 'row0').top, header.bottom + 8);
       });
 
@@ -73,14 +73,14 @@ void main() {
         final Rect before = _rect(tester, 'nav');
         await trial.showKeyboard();
         final Rect after = _rect(tester, 'nav');
-        // Pilings: the bar holds its place and its height; the keyboard covers it.
+        // Stays: the bar holds its place and its height; the keyboard covers it.
         expect(after.top, before.top);
         expect(after.height, before.height);
       });
     }
   });
 
-  group('A composer that floats', () {
+  group('A composer that rides the keyboard', () {
     Widget page() => HarborFrame(
       bottom: <HarborBar>[
         HarborBar.solid(keyboard: HarborKeyboardStance.rides, child: _bar('composer', _composerHeight)),
@@ -89,7 +89,7 @@ void main() {
     );
 
     for (final HarborTrialDevice device in HarborTrialDevice.phones) {
-      testWidgets('rides the waterline and the body ends above it on ${device.name}', (final tester) async {
+      testWidgets('rides the keyboard top and the body ends above it on ${device.name}', (final tester) async {
         final HarborTrial trial = await tester.pumpHarborTrial(_app(page()), device: device);
         expect(_rect(tester, 'composer').bottom, device.size.height - device.systemEdges.bottom);
         await trial.showKeyboard();
@@ -98,7 +98,7 @@ void main() {
       });
     }
 
-    testWidgets('stacks above a tab bar on pilings, and rides past it when the keyboard is up', (final tester) async {
+    testWidgets('stacks above a tab bar that stays, and rides past it when the keyboard is up', (final tester) async {
       final HarborTrial trial = await tester.pumpHarborTrial(
         _app(
           HarborFrame(
@@ -118,7 +118,7 @@ void main() {
     });
   });
 
-  testWidgets('a moored button with no docks clears the coast and the keyboard', (final tester) async {
+  testWidgets('a clear button with no bars clears the system edges and the keyboard', (final tester) async {
     final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
         const HarborFrame(
@@ -152,7 +152,7 @@ void main() {
     expect(_rect(tester, 'footer').bottom, 667 - 16);
   });
 
-  testWidgets('a make-way claim withdraws the tab bar and the body takes its ground', (final tester) async {
+  testWidgets('a hide-bar claim withdraws the tab bar and the body takes its ground', (final tester) async {
     final ValueNotifier<bool> claim = ValueNotifier<bool>(false);
     await tester.pumpHarborTrial(
       _app(
@@ -180,7 +180,7 @@ void main() {
     expect(_rect(tester, 'body').bottom, withBar);
   });
 
-  testWidgets('a pontoon from deep in the body joins the bottom docks', (final tester) async {
+  testWidgets('an attached bar from deep in the body joins the bottom bars', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -200,7 +200,7 @@ void main() {
     expect(_rect(tester, 'body').bottom, pill.top);
   });
 
-  testWidgets('a new port sees only the coast, not the docks around it', (final tester) async {
+  testWidgets('a page sees only the system edges, not the bars around it', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -218,7 +218,7 @@ void main() {
     expect(find.text('top 62.0'), findsOneWidget);
   });
 
-  testWidgets('a component harbor sees the docks around it as coast', (final tester) async {
+  testWidgets('a component frame sees the bars around it as system edges', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         HarborFrame(
@@ -233,7 +233,7 @@ void main() {
     expect(_rect(tester, 'inner').top, _rect(tester, 'header').bottom);
   });
 
-  testWidgets('a start dock lands on the right under right-to-left', (final tester) async {
+  testWidgets('a start bar lands on the right under right-to-left', (final tester) async {
     await tester.pumpHarborTrial(
       _app(
         const Directionality(
@@ -279,7 +279,7 @@ void main() {
     expect(_rect(tester, 'field').bottom, lessThanOrEqualTo(trial.keyboardTop + 0.5));
   });
 
-  testWidgets('a breakwater sheet extends the opening page\'s fairway', (final tester) async {
+  testWidgets('a sheet that covers the page extends the opening page\'s scroll view', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -316,7 +316,7 @@ void main() {
     expect(after, greaterThan(before));
   });
 
-  testWidgets('a dry dock reserves the high-water mark once the keyboard has settled', (final tester) async {
+  testWidgets('keyboard space reserves the settled height once the keyboard has settled', (final tester) async {
     final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
         const HarborFrame(

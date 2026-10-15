@@ -1,5 +1,5 @@
-// #113: a flare that keeps counting while a route covers its page. #114: a hinge policy for a
-// harbor's docks alone, Harbor(dockHinge:), leaving its overlays the policy above.
+// #113: a toast that keeps counting while a route covers its page. #114: a hinge policy for a
+// frame's bars alone, HarborDefaults(barHinge:), leaving its overlays the policy above.
 
 import 'dart:async';
 
@@ -12,7 +12,7 @@ final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
 
 void main() {
   group('#113 countsWhileCovered', () {
-    Future<HarborToastEntry> raiseThenCover(
+    Future<HarborToastEntry> showThenCover(
       final WidgetTester tester, {
       required final bool counts,
       final bool hold = false,
@@ -53,35 +53,35 @@ void main() {
     }
 
     testWidgets('positive control: by default its time stops under the covering page', (final tester) async {
-      final HarborToastEntry entry = await raiseThenCover(tester, counts: false);
+      final HarborToastEntry entry = await showThenCover(tester, counts: false);
       expect(entry.showing.value, isTrue);
     });
 
-    testWidgets('with it, the time runs under the covering page and the flare is gone on return', (final tester) async {
-      final HarborToastEntry entry = await raiseThenCover(tester, counts: true);
+    testWidgets('with it, the time runs under the covering page and the toast is gone on return', (final tester) async {
+      final HarborToastEntry entry = await showThenCover(tester, counts: true);
       expect(entry.showing.value, isFalse);
     });
 
     testWidgets('a hold still stops it', (final tester) async {
-      final HarborToastEntry entry = await raiseThenCover(tester, counts: true, hold: true);
+      final HarborToastEntry entry = await showThenCover(tester, counts: true, hold: true);
       expect(entry.showing.value, isTrue);
     });
   });
 
-  group('#114 Harbor(dockHinge:)', () {
+  group('#114 HarborDefaults(barHinge:)', () {
     const HarborTrialDevice dual = HarborTrialDevice.dualScreenOpen; // 540 | 34 hinge | 540
 
     Future<BuildContext> page(
       final WidgetTester tester, {
       final HarborHinge? hinge,
-      final HarborHinge? dockHinge,
+      final HarborHinge? barHinge,
     }) async {
       late BuildContext inside;
       await tester.pumpHarborTrial(
         MaterialApp(
           builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
           home: HarborFrame(
-            defaults: HarborDefaults(hinge: hinge, barHinge: dockHinge),
+            defaults: HarborDefaults(hinge: hinge, barHinge: barHinge),
             bottom: const <HarborBar>[
               HarborBar.solid(
                 child: SizedBox(key: ValueKey<String>('tabs'), height: 56, width: double.infinity),
@@ -112,8 +112,8 @@ void main() {
       return tester.getRect(find.byKey(const ValueKey<String>('sheet')));
     }
 
-    testWidgets('it lays the docks across the hinge and leaves the overlays keeping off it', (final tester) async {
-      final BuildContext inside = await page(tester, dockHinge: HarborHinge.never);
+    testWidgets('it lays the bars across the hinge and leaves the overlays keeping off it', (final tester) async {
+      final BuildContext inside = await page(tester, barHinge: HarborHinge.never);
       expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).width, 1114);
       expect((await sheet(tester, inside)).right, lessThanOrEqualTo(540));
     });
@@ -124,7 +124,7 @@ void main() {
       expect((await sheet(tester, inside)).right, 1114);
     });
 
-    testWidgets('with neither, the docks keep off it', (final tester) async {
+    testWidgets('with neither, the bars keep off it', (final tester) async {
       await page(tester);
       expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 540);
     });
