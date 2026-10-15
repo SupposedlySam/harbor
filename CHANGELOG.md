@@ -78,6 +78,13 @@ The audit's smaller steps (#120), in the 0.9 names. Each old spelling still work
 * A nested frame that relied on `barHinge:` stopping at its own frame (above).
 * A line under `// ignore: deprecated_member_use`, which `dart fix` does not see.
 * **Dialogs that fill the screen** (with the change that keeps dialogs clear of the system edges by default, from `dialog-safe`): a full-screen dialog that paints its own background behind the status bar and the home indicator, as a Material `Dialog.fullscreen` or a photo viewer does, now has that background stop at the system edges, so the barrier shows in those bands instead. Pass `clearsSystemEdges: false` to `showHarborDialog` or `HarborDialogRoute` to keep it running edge to edge; its content is then handed the system edges in `MediaQuery.padding` to keep its own controls clear, as before.
+Two `dart fix` defects found migrating a real app from 0.6.3 to 0.9.1 (#143):
+
+* Fixed: a bare `pumpSeaTrial(...)` inside an extension on `WidgetTester` (no `tester.` in front) was rewritten into `HarborTrials(...)`, an extension override that does not compile. It now becomes `pumpHarborTrial(...)`, as `tester.pumpSeaTrial(...)` always did. The analyzer matches a call with no receiver against a rename of the extension that declares it, as well as against the method's own rename, and the one listed first wins; the method's now comes first. Every renamed harbor_test member, and harbor's renamed getters and methods, is now tested through implicit `this` too: none of the others was affected.
+* Fixed: `dart fix` gave an aligned toast `placement:` and kept a `side:`, `gap:` or `crossAlignment:` it was also given (`HarborFlares.raise(alignment: a, gap: 8)`), which asserts beside a placement. Without an anchor they did nothing, so the fix now removes them.
+* A toast's deprecated `anchor:`, `alignment:`, `side:`, `gap:`, `crossAlignment:` and `margin:` say that `dart fix` does not rewrite a call giving both `anchor:` and `alignment:`. Which of the two applies depends on their values, which a fix cannot see. **Migrating**, by hand: write the placement the call meant. For the usual shape, an anchor that can be null with an alignment for when it is, `anchor: a, gap: 8, alignment: a != null ? null : Alignment.topCenter, margin: EdgeInsets.zero` is
+  `placement: a == null ? const HarborAligned(alignment: Alignment.topCenter, margin: EdgeInsets.zero) : HarborAnchored(a, gap: 8, margin: EdgeInsets.zero)`.
+  `anchor:` alone is still rewritten, whatever it is given: to `HarborAnchored(a, ...)`, which needs an anchor, so where `a` can be null make the placement conditional the same way.
 
 ## 0.9.1
 
