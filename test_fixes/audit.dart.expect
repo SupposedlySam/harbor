@@ -1,0 +1,19 @@
+// The audit's transforms (lib/fix_data/audit.yaml): this file is written against the spellings
+// deprecated after 0.9.1. audit.dart.expect is what `dart fix --apply` makes of it.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void hideBar(BuildContext context, HarborController frame, HarborYield variable) {
+  // HarborYield merges into HarborBarState: a written-out mode becomes state, withdraw (the
+  // default) goes, and a variable is left on the deprecated mode, which still works.
+  const HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.dark, child: SizedBox());
+  const HarborHideBar(edge: HarborEdge.bottom, child: SizedBox());
+  HarborHideBar(edge: HarborEdge.top, mode: variable, child: const SizedBox());
+  const HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.dark, child: SizedBox());
+  frame.hideBar(HarborEdge.top, state: HarborBarState.dark);
+  frame.hideBar(HarborEdge.top);
+  frame.hideBar(HarborEdge.top, mode: variable);
+  frame.hideBar(HarborEdge.bottom, state: HarborBarState.dark);
+  HarborFrame.of(context).hideBar(HarborEdge.bottom, state: HarborBarState.dark);
+}

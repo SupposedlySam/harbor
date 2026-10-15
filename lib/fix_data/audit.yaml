@@ -1,0 +1,72 @@
+# `dart fix` transforms for the audit's smaller steps (#120, DECISIONS.md "The audit's smaller
+# steps"), deprecated after 0.9.1. Hand-written; checked by test_fixes/audit.dart.
+#
+# A condition reads a missing argument as '', and compares an argument's text, so each rewrite that
+# depends on a value fires only on the value written out. A variable is left as it is: the
+# deprecated spelling still compiles and works.
+version: 1
+transforms:
+  # HarborYield merges into HarborBarState: HarborHideBar(mode:) is state:.
+  - title: "Migrate to 'state'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborHideBar'
+    oneOf:
+      - if: "mode == 'HarborYield.dark'"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'state'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborBarState %}.dark'
+              requiredIf: "mode == 'HarborYield.dark'"
+              variables:
+                HarborBarState:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarState'
+          - kind: 'removeParameter'
+            name: 'mode'
+      - if: "mode == 'HarborYield.withdraw'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'mode'
+    variables:
+      mode:
+        kind: 'fragment'
+        value: 'arguments[mode]'
+  # HarborController.hideBar(edge, mode:) is state:.
+  - title: "Migrate to 'state'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      method: 'hideBar'
+      inClass: 'HarborController'
+    oneOf:
+      - if: "mode == 'HarborYield.dark'"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'state'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborBarState %}.dark'
+              requiredIf: "mode == 'HarborYield.dark'"
+              variables:
+                HarborBarState:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborBarState'
+          - kind: 'removeParameter'
+            name: 'mode'
+      - if: "mode == 'HarborYield.withdraw'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'mode'
+    variables:
+      mode:
+        kind: 'fragment'
+        value: 'arguments[mode]'

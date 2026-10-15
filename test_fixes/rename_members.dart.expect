@@ -54,7 +54,7 @@ void calls(BuildContext context, HarborController controller, HarborToastEntry t
   HarborRoom.barFaceOf(context, HarborEdge.top);
   HarborFadeMask.alphaFade(context, const <HarborEdge, HarborFadeBand>{}, const SizedBox());
   controller.withBarOn(HarborEdge.top);
-  final HarborClaim claim = controller.hideBar(HarborEdge.bottom, mode: HarborYield.dark);
+  final HarborClaim claim = controller.hideBar(HarborEdge.bottom, state: HarborBarState.dark);
   final HarborAttachedBarHandle handle = controller.attachBar(HarborEdge.bottom, const HarborBar.reserve(extent: 0));
   controller.updateAttachedBar(handle, HarborEdge.top, const HarborBar.reserve(extent: 0));
   controller.attachedBarsOn(HarborEdge.top);

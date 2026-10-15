@@ -11,7 +11,11 @@ import 'edge.dart';
 import 'hinge.dart';
 import 'tide.dart';
 
-/// How a bar hides when content asks it to.
+/// How a bar hides when content asks it to: the old spelling of the two hidden [HarborBarState]s.
+@Deprecated(
+  'Use HarborBarState: HarborYield.dark is HarborBarState.dark, and HarborYield.withdraw is '
+  'HarborBarState.withdrawn. `dart fix` applies it where the value is written out. Deprecated after 0.9.1.',
+)
 enum HarborYield {
   /// Lights out: the bar disappears but keeps its space.
   dark,
@@ -20,14 +24,24 @@ enum HarborYield {
   withdraw,
 }
 
+/// The [HarborBarState] a deprecated [HarborYield] stands for.
+HarborBarState hiddenStateOf(final HarborYield mode) =>
+    mode == HarborYield.dark ? HarborBarState.dark : HarborBarState.withdrawn;
+
 /// A request that a bar hide, returned by [HarborController.hideBar].
 /// Release it when the content no longer needs the edge.
 class HarborClaim {
-  HarborClaim._(this._controller, this.edge, this.mode);
+  HarborClaim._(this._controller, this.edge, this.state);
 
   HarborController? _controller;
   final HarborEdge edge;
-  final HarborYield mode;
+
+  /// How the bar hides: [HarborBarState.dark] or [HarborBarState.withdrawn].
+  final HarborBarState state;
+
+  /// The old spelling of [state].
+  @Deprecated('Read state. Deprecated after 0.9.1.')
+  HarborYield get mode => state == HarborBarState.dark ? HarborYield.dark : HarborYield.withdraw;
 
   bool get isActive => _controller != null;
 
@@ -811,13 +825,25 @@ class HarborController {
 
   // Claims.
 
-  /// Asks the bars on [edge] to hide: go [HarborYield.dark] or
-  /// [HarborYield.withdraw]. Claims are counted, so the bar comes back only
-  /// when every claim is released. The claim goes to the nearest frame, from
-  /// this one outward, that has a bar on [edge].
-  HarborClaim hideBar(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) {
+  /// Asks the bars on [edge] to hide: go [HarborBarState.dark] (keep their space) or
+  /// [HarborBarState.withdrawn] (give it back), the default. Claims are counted, so the bar comes
+  /// back only when every claim is released. The claim goes to the nearest frame, from this one
+  /// outward, that has a bar on [edge].
+  ///
+  /// [state] is never [HarborBarState.open]: releasing the claim is what opens the bar again.
+  HarborClaim hideBar(
+    final HarborEdge edge, {
+    final HarborBarState state = HarborBarState.withdrawn,
+    @Deprecated('Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.')
+    final HarborYield? mode,
+  }) {
+    assert(state != HarborBarState.open, 'hideBar hides a bar dark or withdrawn; release the claim to open it again.');
+    assert(
+      mode == null || state == HarborBarState.withdrawn || state == hiddenStateOf(mode),
+      'state and the deprecated mode disagree. Give state alone.',
+    );
     final HarborController target = withBarOn(edge) ?? this;
-    final HarborClaim claim = HarborClaim._(target, edge, mode);
+    final HarborClaim claim = HarborClaim._(target, edge, mode == null ? state : hiddenStateOf(mode));
     target._claims.add(claim);
     target._changed();
     return claim;
@@ -826,7 +852,7 @@ class HarborController {
   /// The old name of [hideBar].
   @Deprecated('Renamed hideBar. `dart fix` applies it.')
   HarborClaim makeWay(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) =>
-      hideBar(edge, mode: mode);
+      hideBar(edge, state: hiddenStateOf(mode));
 
   void _releaseClaim(final HarborClaim claim) {
     if (_claims.remove(claim)) {
@@ -841,7 +867,7 @@ class HarborController {
       if (claim.edge != edge) {
         continue;
       }
-      if (claim.mode == HarborYield.withdraw) {
+      if (claim.state == HarborBarState.withdrawn) {
         return HarborBarState.withdrawn;
       }
       dark = true;

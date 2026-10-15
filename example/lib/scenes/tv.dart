@@ -434,8 +434,7 @@ class _LongVoyage extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => HarborHideBar(
-    edge: HarborEdge.start,
-    mode: HarborYield.dark,
+    edge: HarborEdge.start, state: HarborBarState.dark,
     active: underway,
     child: Stack(
       children: <Widget>[

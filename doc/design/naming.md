@@ -124,8 +124,8 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborPontoon.dock` | `bar` | RP | |
 | `HarborPontoonHandle` | `HarborAttachedBarHandle` | T | `.dock` → `.bar` (rename) |
 | `HarborMakeWay` | `HarborHideBar` | T | Departure, Q2 |
-| `HarborMakeWay.mode` | unchanged | | Still `HarborYield` until the merge |
-| `HarborYield` | *later* | — | "Yield" is plain English, and it merges into `HarborBarState` in audit step 5 (`withdraw` → `withdrawn`, RB measured) |
+| `HarborMakeWay.mode` | `HarborHideBar.state` | M + conditional fix | After 0.9.1: a `HarborBarState`, `withdrawn` by default, never `open` (asserted). `audit.yaml` rewrites a written-out `mode: HarborYield.dark` / `.withdraw`; a variable is left on the deprecated `mode` |
+| `HarborYield` | `HarborBarState` | M + conditional fix | Merged after 0.9.1 (`dark` → `dark`, `withdraw` → `withdrawn`). Deprecated, not aliased: a typedef would change the type of `HarborClaim.mode`. `hideBar(edge, mode:)` is `hideBar(edge, state:)`, and `HarborClaim.mode` is `state` |
 | `HarborClaim` | unchanged | | |
 
 ### The edges: system edges and the keyboard

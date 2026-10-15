@@ -671,19 +671,19 @@ class _MakeWayDemo extends StatelessWidget {
     final double t = ShowcaseClock.of(context);
     final double dark = _cue('makeway', 'dark') - 0.2;
     final double withdraw = _cue('makeway', 'withdraw') - 0.2;
-    final HarborYield? mode = t >= withdraw && t < _end('makeway') - 0.9
-        ? HarborYield.withdraw
+    final HarborBarState? state = t >= withdraw && t < _end('makeway') - 0.9
+        ? HarborBarState.withdrawn
         : t >= dark && t < withdraw
-        ? HarborYield.dark
+        ? HarborBarState.dark
         : null;
     return HarborFrame(
       top: <HarborBar>[_header('Harbor Master')],
       bottom: <HarborBar>[_tabBar()],
       body: HarborHideBar(
-        key: ValueKey<HarborYield?>(mode),
+        key: ValueKey<HarborBarState?>(state),
         edge: HarborEdge.bottom,
-        mode: mode ?? HarborYield.dark,
-        active: mode != null,
+        state: state ?? HarborBarState.dark,
+        active: state != null,
         child: HarborScrollView(slivers: <Widget>[SliverList.list(children: _boatRows(0, 9))]),
       ),
     );

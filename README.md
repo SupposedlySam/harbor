@@ -138,7 +138,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborHandled` | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; `HarborHandled` zeroes it, and with `clearsKeyboard:` the keyboard, and zeroes harbor's own room data, so harbor widgets beneath read zero too. `clearsBars: false` handles the system edges alone and leaves the bars, which `removePadding` cannot tell apart |
 | `HarborKeyboardStance.rides` / `.stays` | Rides: the bottom of a resizing `Scaffold`'s body. Stays: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per bar, so a composer can ride the keyboard while the tab bar under it stays |
 | `HarborKeyboardStance.reserves` | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
-| `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `HarborYield.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborYield.withdraw` slides it out and gives the space back |
+| `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `state: HarborBarState.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborBarState.withdrawn`, the default, slides it out and gives the space back |
 | `HarborAttachedBar` | `ScaffoldState.showBottomSheet`, which puts a widget into an ancestor's frame from deep in the tree | An attached bar is a bar: it takes its space (or the body runs under it), and leaves with the widget that added it |
 | `HarborFloat` | `Scaffold.floatingActionButton`; a `Stack` with `Positioned` | It sits in the room, so it clears the system edges, every bar and the keyboard. A `modal` float has a barrier, as `ModalBarrier` does, but it is not a route, so keyboard focus is not trapped |
 | `HarborPopover` | `OverlayPortal` (it is one), as `MenuAnchor` and `RawMenuAnchor` use | Placement only: it keeps the popover in the room and flips it when its side has no room. It brings no menu semantics, keyboard navigation or tap-outside dismissal; your `controller` opens and closes it |
@@ -482,9 +482,9 @@ instead of covered, and `bodyClearsKeyboard: false` has nothing to run under. Le
 ## Talking to the frame
 
 ```dart
-HarborHideBar(edge: HarborEdge.bottom, mode: HarborYield.withdraw, child: panel)
+HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.withdrawn, child: panel)
 HarborAttachedBar(edge: HarborEdge.bottom, bar: HarborBar.overlay(child: unsavedBar), child: form)
-HarborFrame.of(context).hideBar(HarborEdge.top, mode: HarborYield.dark) // returns a claim; release() it
+HarborFrame.of(context).hideBar(HarborEdge.top, state: HarborBarState.dark) // returns a claim; release() it
 ```
 
 `HarborFrame.of(context)` is the nearest frame's handle, as `Scaffold.of` is the

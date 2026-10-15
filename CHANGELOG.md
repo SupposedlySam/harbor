@@ -1,3 +1,13 @@
+## Unreleased
+
+The audit's smaller steps (#120), in the 0.9 names. Each old spelling still works, deprecated, with the default it had, and goes at 1.0; `dart fix --apply` rewrites it where the change can be read from the call (`lib/fix_data/audit.yaml`).
+
+* `HarborYield` merges into `HarborBarState`: a bar hides `dark` or `withdrawn`, the two states it hides into. `HarborHideBar(state:)` and `HarborFrame.of(context).hideBar(edge, state:)` take a `HarborBarState`, `withdrawn` by default as `mode:` was, and `HarborClaim.state` reads it back. `HarborBarState.open` is an assert there: releasing the claim is what opens the bar. Deprecated: `HarborYield`, `mode:` on both, and `HarborClaim.mode` / `HarborHideBar.mode`. Nothing moves.
+
+**Migrating:** `dart fix --apply`, then `dart format` on what it changed. By hand:
+
+* A `mode:` given a variable, or a `HarborYield` used as a type: write `state:` with a `HarborBarState` (`HarborYield.withdraw` is `HarborBarState.withdrawn`). The fix rewrites only `mode: HarborYield.dark` and `mode: HarborYield.withdraw` written out, since a variable's type would change under it.
+
 ## 0.9.1
 
 * Fixed: an `AppBar` with a `bottom:` in a `top` bar threw "RenderFlex children have non-zero flex but incoming height constraints are unbounded", since a bar leaves its child's height unbounded and the `AppBar` lays its toolbar out in a `Column` with a `Flexible`. A `PreferredSizeWidget` in a `top` or `bottom` bar is now held to its own height, as `Scaffold` holds its `appBar`. Measured on an iPhone 17 (a 62 status bar), solid and overlay alike: an `AppBar` with a 4-high `bottom:` is 60 high and the bar reaches 122; with a `TabBar` it is 104 and reaches 166; on an iPhone SE (20) the same bars reach 80 and 124. A plain `AppBar` is unchanged at 56 below the status bar, and one whose toolbar height comes only from `AppBarTheme.toolbarHeight` (80) keeps it, with a `bottom:` too (84, 128). The height is the child's intrinsic height, since harbor imports no Material and an `AppBar`'s `preferredSize` leaves the theme out; where the child holds a `LayoutBuilder` or a sliver or two-dimensional viewport, which cannot be asked, it is the child's `preferredSize`. Side bars are unchanged: a preferred size is a height.
