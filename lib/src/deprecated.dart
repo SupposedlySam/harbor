@@ -207,13 +207,17 @@ typedef HarborBreakwater = HarborPageCover;
 /// [HarborKeepVisible] and [HarborLift].
 @Deprecated(
   'Split into HarborCoverageListener, HarborKeepVisible and HarborLift. `dart fix` applies it to a call that '
-  'does one job.',
+  'does one job.'
+  ' A file that imports harbor with `show` needs HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import widened.',
 )
 typedef HarborBeacon = HarborKeepInSight;
 
 /// The 0.8 name of [HarborKeepInSight], whose statics are [HarborKeepVisible.reveal] and
 /// [HarborKeepVisible.coverageOf] now.
-@Deprecated('Its statics moved to HarborKeepVisible. `dart fix` applies it.')
+@Deprecated(
+  'Its statics moved to HarborKeepVisible. `dart fix` applies it.'
+  ' A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the import widened.',
+)
 typedef HarborLighthouse = HarborKeepInSight;
 
 /// The 0.8 name of [HarborKeepVisibleRegion].

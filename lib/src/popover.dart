@@ -36,42 +36,50 @@ class HarborPopover extends StatefulWidget {
     final HarborAnchored? placement,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final double? gap,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final double? overlap,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final double? crossOffset,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final EdgeInsetsGeometry? margin,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     final bool? flips,
     this.onDismiss,
@@ -559,42 +567,50 @@ class HarborPortalBuoy extends HarborPopover {
     super.placement,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.anchor,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     super.side,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.gap,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.overlap,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.crossAlignment,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.crossOffset,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.margin,
     @Deprecated(
       'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it. '
-      'Deprecated after 0.7.0.',
+      'Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
     )
     super.flips,
     super.onDismiss,

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.2
 
 * Internal: `lib/src/sea_trial.dart` is `lib/src/trial.dart`, and the tests are named and described in the 0.9 vocabulary. No public name or behaviour changes.
 

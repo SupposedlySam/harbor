@@ -125,18 +125,21 @@ abstract final class HarborToasts {
     final HarborPlacement? placement,
     @Deprecated(
       'Use placement: HarborAligned(alignment: ...). `dart fix` applies it, except to a call that gives both '
-      'anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or the import widened.',
     )
     final AlignmentGeometry? alignment,
     final HarborToastTiming? timing,
     @Deprecated(
       'Use timing: HarborToastTiming(duration: ...), or HarborToastTiming.untilHidden for null. '
-      '`dart fix` applies it. Deprecated after 0.9.0.',
+      '`dart fix` applies it. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
     )
     final Duration? duration = _unsetDuration,
     @Deprecated(
       'Use timing: HarborToastTiming.untilHidden for true, and leave out false. `dart fix` applies it to '
-      'true and false. Deprecated after 0.9.0.',
+      'true and false. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
     )
     final bool? persist,
     final HarborToastTarget target = HarborToastTarget.topmost,
@@ -145,35 +148,44 @@ abstract final class HarborToasts {
     final bool liveRegion = true,
     @Deprecated(
       'Use placement: HarborAnchored(anchor). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final double? gap,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
       'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it, '
-      'except to a call that gives both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'except to a call that gives both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAligned and HarborAnchored added after `dart fix`, or the import widened.',
     )
     final EdgeInsetsGeometry? margin,
-    @Deprecated('Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated(
+      'Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
+    )
     final bool? countsEntrance,
     final bool reachesSystemEdges = false,
     final HarborHinge? hinge,
     @Deprecated(
-      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it. Deprecated after 0.9.0.',
+      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
     )
     final bool? countsWhileCovered,
     final HarborToastQueue? queue,
@@ -331,18 +343,21 @@ abstract final class HarborToasts {
     final HarborPlacement? placement,
     @Deprecated(
       'Use placement: HarborAligned(alignment: ...). `dart fix` applies it, except to a call that gives both '
-      'anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or the import widened.',
     )
     final AlignmentGeometry? alignment,
     final HarborToastTiming? timing,
     @Deprecated(
       'Use timing: HarborToastTiming(duration: ...), or HarborToastTiming.untilHidden for null. '
-      '`dart fix` applies it. Deprecated after 0.9.0.',
+      '`dart fix` applies it. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
     )
     final Duration? duration = _unsetDuration,
     @Deprecated(
       'Use timing: HarborToastTiming.untilHidden for true, and leave out false. `dart fix` applies it to '
-      'true and false. Deprecated after 0.9.0.',
+      'true and false. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
     )
     final bool? persist,
     final HarborToastTarget target = HarborToastTarget.topmost,
@@ -351,35 +366,44 @@ abstract final class HarborToasts {
     final bool liveRegion = true,
     @Deprecated(
       'Use placement: HarborAnchored(anchor). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborAnchor? anchor,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborAnchorSide? side,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final double? gap,
     @Deprecated(
       'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it, except to a call that gives '
-      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or the import widened.',
     )
     final HarborCrossAlignment? crossAlignment,
     @Deprecated(
       'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it, '
-      'except to a call that gives both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.',
+      'except to a call that gives both anchor and alignment: write placement: by hand. Deprecated after 0.7.0.'
+      ' A file that imports harbor with `show` needs HarborAligned and HarborAnchored added after `dart fix`, or the import widened.',
     )
     final EdgeInsetsGeometry? margin,
-    @Deprecated('Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.')
+    @Deprecated(
+      'Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
+    )
     final bool? countsEntrance,
     @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it.') final bool reachesCoast = false,
     final HarborHinge? hinge,
     @Deprecated(
-      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it. Deprecated after 0.9.0.',
+      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it. Deprecated after 0.9.0.'
+      ' A file that imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
     )
     final bool? countsWhileCovered,
     final HarborToastQueue? queue,
@@ -805,7 +829,8 @@ class HarborToastScope extends InheritedWidget {
 class HarborFlarePolicy extends StatelessWidget {
   @Deprecated(
     'Use HarborDefaultsScope(defaults: HarborDefaults(toastQueue: ...)). `dart fix` applies it. '
-    'Deprecated after 0.9.1.',
+    'Deprecated after 0.9.1.'
+    ' A file that imports harbor with `show` needs HarborDefaultsScope and HarborDefaults added after `dart fix`, or the import widened.',
   )
   const HarborFlarePolicy({super.key, required this.queue, required this.child});
 

@@ -112,7 +112,10 @@ class HarborBar with Diagnosticable {
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborKeyboardStance added after `dart fix`, or the import widened.',
+    )
     this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
@@ -136,7 +139,10 @@ class HarborBar with Diagnosticable {
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborKeyboardStance added after `dart fix`, or the import widened.',
+    )
     this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
@@ -174,7 +180,10 @@ class HarborBar with Diagnosticable {
     @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
-    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborKeyboardStance added after `dart fix`, or the import widened.',
+    )
     this._withdrawsAtHighTide = false,
     this.debugLabel,
   }) : assert(extent >= 0.0, 'A reserved extent cannot be negative.'),

@@ -14,7 +14,8 @@ import 'placement.dart';
 /// How a bar hides when content asks it to: the old spelling of the two hidden [HarborBarState]s.
 @Deprecated(
   'Use HarborBarState: HarborYield.dark is HarborBarState.dark, and HarborYield.withdraw is '
-  'HarborBarState.withdrawn. `dart fix` applies it where the value is written out. Deprecated after 0.9.1.',
+  'HarborBarState.withdrawn. `dart fix` applies it where the value is written out. Deprecated after 0.9.1.'
+  ' A file that imports harbor with `show` needs HarborBarState added after `dart fix`, or the import widened.',
 )
 enum HarborYield {
   /// Lights out: the bar disappears but keeps its space.
@@ -1043,7 +1044,10 @@ class HarborController {
   HarborClaim hideBar(
     final HarborEdge edge, {
     final HarborBarState state = HarborBarState.withdrawn,
-    @Deprecated('Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.')
+    @Deprecated(
+      'Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it. Deprecated after 0.9.1.'
+      ' A file that imports harbor with `show` needs HarborBarState added after `dart fix`, or the import widened.',
+    )
     final HarborYield? mode,
   }) {
     assert(state != HarborBarState.open, 'hideBar hides a bar dark or withdrawn; release the claim to open it again.');

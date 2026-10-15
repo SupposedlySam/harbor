@@ -94,6 +94,14 @@ with `find.byWidgetPredicate((w) => w is HarborClear && w.rowInsets)`. The compl
 member and parameter, is [`doc/design/naming.md`](doc/design/naming.md); the CHANGELOG lists the
 names not renamed yet.
 
+**A file that imports harbor with `show`** needs the new names added after `dart fix`, or the
+import widened to `import 'package:harbor/harbor.dart';` before it runs. A rename is renamed in
+the `show` list too, but a fix that brings in a name the call did not have (`HarborToastTiming`,
+`HarborAligned`, `HarborAnchored`, `HarborBarrier`, `HarborDefaults`, `HarborDefaultsScope`,
+`HarborBarState`, ...) writes it without touching the list, so the fixed file does not compile
+(`undefined_function`), and a second run does not repair it. That is the analyzer's data-driven
+fixes, which do not extend an import's combinators (#146).
+
 ## The one rule
 
 A frame has layers: the **body** (your content) at the bottom, **bars** above it, **floats,
