@@ -749,7 +749,10 @@ void main() {
       await pump(tester);
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_rect(tester, 'solid bar').top));
       await press(tester, 'bottom');
-      expect(_code(tester), contains('HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.withdrawn, child: ...)'));
+      expect(
+        _code(tester),
+        contains('HarborHideBar(edge: HarborEdge.bottom, state: HarborBarState.withdrawn, child: ...)'),
+      );
       expect(_rect(tester, 'hide bar scroll view').bottom, _near(_frameBottom(tester)));
       expect(_rect(tester, 'solid bar').top, greaterThanOrEqualTo(_frameBottom(tester) - 0.6));
     });
@@ -770,7 +773,10 @@ void main() {
       final double rowTop = _rect(tester, 'stage row 0').top;
       final double headerBottom = _rect(tester, 'overlay header').bottom;
       await press(tester, 'top');
-      expect(_code(tester), contains('HarborHideBar(edge: HarborEdge.top, state: HarborBarState.withdrawn, child: ...)'));
+      expect(
+        _code(tester),
+        contains('HarborHideBar(edge: HarborEdge.top, state: HarborBarState.withdrawn, child: ...)'),
+      );
       expect(_rect(tester, 'overlay header').bottom, lessThanOrEqualTo(_frameTop(tester) + 0.6));
       // The rows move up by the header's ground: down to the status bar.
       expect(

@@ -17,3 +17,17 @@ void hideBar(BuildContext context, HarborController frame, HarborYield variable)
   frame.hideBar(HarborEdge.bottom, state: HarborBarState.dark);
   HarborFrame.of(context).hideBar(HarborEdge.bottom, state: HarborBarState.dark);
 }
+
+void withdraws(bool b) {
+  // withdrawsAtHighTide becomes a keyboard stance, where the bar stays (the default). With rides or
+  // reserves, or a variable, it cannot be one stance, so it is left on the deprecated flag.
+  const HarborBar.overlay(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+  const HarborBar.solid(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+  const HarborBar.reserve(extent: 40, keyboard: HarborKeyboardStance.withdraws);
+  const HarborBar.solid(child: SizedBox());
+  const HarborBar.solid(keyboard: HarborKeyboardStance.rides, withdrawsAtHighTide: true, child: SizedBox());
+  HarborBar.overlay(withdrawsAtHighTide: b, child: const SizedBox());
+  // The 0.8 names chain through the rename.
+  const HarborBar.solid(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+  const HarborBar.overlay(keyboard: HarborKeyboardStance.withdraws, child: SizedBox());
+}

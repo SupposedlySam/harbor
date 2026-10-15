@@ -99,7 +99,7 @@ class HarborInspectorEntry {
           'state': d.state.name,
           'tide': switch (d.keyboard) {
             HarborKeyboardStance.rides => 'float',
-            HarborKeyboardStance.stays => 'pilings',
+            HarborKeyboardStance.stays || HarborKeyboardStance.withdraws => 'pilings',
             HarborKeyboardStance.reserves => 'dryDock',
           },
           'extent': d.extent,

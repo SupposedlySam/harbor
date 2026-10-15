@@ -287,7 +287,11 @@ class _MooredEntryState extends State<MooredEntry> {
         onChanged: (final _EdgeSet e) => setState(() => _edges = e),
       ),
       ToggleControl(label: 'clearsBars', value: _bars, onChanged: (final bool v) => setState(() => _bars = v)),
-      ToggleControl(label: 'clearsKeyboard', value: _keyboard, onChanged: (final bool v) => setState(() => _keyboard = v)),
+      ToggleControl(
+        label: 'clearsKeyboard',
+        value: _keyboard,
+        onChanged: (final bool v) => setState(() => _keyboard = v),
+      ),
       ToggleControl(label: 'rowInsets', value: _rowInsets, onChanged: (final bool v) => setState(() => _rowInsets = v)),
       SliderControl(
         label: 'minimum',

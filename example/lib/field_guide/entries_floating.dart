@@ -1211,6 +1211,8 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
     HarborKeyboardStance.reserves =>
       'reserves: the flag tray holds the keyboard\'s ground. Drag the keyboard up: it takes the tray\'s place '
           'and the button above it doesn\'t move.',
+    HarborKeyboardStance.withdraws =>
+      'withdraws: the button slides away while the keyboard is up and comes back once it is down.',
   };
 
   Widget _sheet(final BuildContext context) => HarborSheet(
@@ -1270,7 +1272,11 @@ class _HarborSheetEntryState extends State<HarborSheetEntry> {
       ToggleControl(label: 'footer', value: _hasFooter, onChanged: (final bool v) => _set(() => _hasFooter = v)),
       ChoiceControl<HarborKeyboardStance>(
         label: 'footerKeyboard',
-        values: HarborKeyboardStance.values,
+        values: const <HarborKeyboardStance>[
+          HarborKeyboardStance.rides,
+          HarborKeyboardStance.stays,
+          HarborKeyboardStance.reserves,
+        ],
         value: _footerKeyboard,
         labelOf: (final HarborKeyboardStance s) => s.name,
         onChanged: (final HarborKeyboardStance s) => _set(() => _footerKeyboard = s),

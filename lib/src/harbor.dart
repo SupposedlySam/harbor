@@ -492,7 +492,7 @@ class _HarborState extends State<HarborFrame> with WidgetsBindingObserver {
     // the system edges on those sides, so it is not handed those system edges again.
     HarborBarState stateOf(final HarborBar dock, final HarborEdge edge) {
       final HarborBarState? claimed = controller.claimedStateOf(edge);
-      if (claimed == HarborBarState.withdrawn || (dock.withdrawsAtHighTide && keyboard > 0)) {
+      if (claimed == HarborBarState.withdrawn || (dock.withdrawsWithKeyboard && keyboard > 0)) {
         return HarborBarState.withdrawn;
       }
       if (claimed == HarborBarState.dark && dock.state == HarborBarState.open) {

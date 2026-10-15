@@ -108,7 +108,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborDock.wake` | `edgeEffect` | RP | Q4 |
 | `HarborDock.tide` | `keyboard` | RP | `HarborKeyboardStance` (Q3) |
 | `HarborDock.coast` / `effectiveCoast` | `systemEdges` / `effectiveSystemEdges` | RP / rename | |
-| `HarborDock.withdrawsAtHighTide` | *later* | — | Becomes a `HarborKeyboardStance` value in audit step 6 (principle 5) |
+| `HarborDock.withdrawsAtHighTide` | `keyboard: HarborKeyboardStance.withdraws` | M + conditional fix | After 0.9.1. `withdraws` lays out as `stays` does. `audit.yaml` rewrites `withdrawsAtHighTide: true` on a bar that stays (the default) and drops `false`; with `rides`, `reserves` or a variable the deprecated flag is left, still working. `reserves` and withdrawing cannot both be said in one stance, which is the point: a bar that holds the keyboard's space has nothing to withdraw for |
 | `HarborDock.copyWith(tide:)` | `copyWith(keyboard:)` | RP | |
 | `HarborDock.kind`, `state`, `extentPolicy`, `duration`, `curve`, `animationStyle`, `backdrop`, `hitTestBehavior`, `restingExtent`, `minimum`, `reserved`, `key`, `debugLabel` | unchanged | | `duration`/`curve` go in a later step |
 | `HarborDockKind` | `HarborBarKind` | T+E | |

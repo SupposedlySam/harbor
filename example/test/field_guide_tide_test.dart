@@ -109,7 +109,7 @@ void main() {
       'HarborKeyboardStance.rides + .stays',
       'HarborKeyboardStance.reserves',
       'HarborSystemEdgeStance',
-      'HarborBar.withdrawsAtHighTide',
+      'HarborKeyboardStance.withdraws',
       'HarborFrame.bodyClearsKeyboard',
     ]);
   });
@@ -571,22 +571,22 @@ void main() {
     },
   );
 
-  testWidgets('withdrawsAtHighTide: the tool strip leaves while the keyboard is up', (final WidgetTester tester) async {
-    await _pumpEntry(tester, const WithdrawsAtHighTideEntry());
+  testWidgets('withdraws: the tool strip leaves while the keyboard is up', (final WidgetTester tester) async {
+    await _pumpEntry(tester, const WithdrawsEntry());
     _near(_rect(tester, 'tool strip').bottom, _rect(tester, 'composer').top);
     _near(_rect(tester, 'stage body').bottom, _rect(tester, 'tool strip').top);
     await _toggleKeyboard(tester);
     _near(_rect(tester, 'stage body').bottom, _rect(tester, 'composer').top, 'the strip gave its ground back');
 
-    await _tap(tester, 'toggle withdrawsAtHighTide');
+    await _tap(tester, 'toggle withdraws');
     await _step(tester);
     _near(_rect(tester, 'tool strip').bottom, _rect(tester, 'composer').top, 'off: it rides on the composer');
     _near(_rect(tester, 'stage body').bottom, _rect(tester, 'tool strip').top);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('withdrawsAtHighTide: the strip leaves as soon as any keyboard is in', (final WidgetTester tester) async {
-    await _pumpEntry(tester, const WithdrawsAtHighTideEntry());
+  testWidgets('withdraws: the strip leaves as soon as any keyboard is in', (final WidgetTester tester) async {
+    await _pumpEntry(tester, const WithdrawsEntry());
     final Finder strip = find.byKey(const ValueKey<String>('tool strip'));
     expect(strip.hitTestable(), findsOneWidget);
 
@@ -598,10 +598,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('withdrawsAtHighTide: the strip comes back when the keyboard goes down', (
-    final WidgetTester tester,
-  ) async {
-    await _pumpEntry(tester, const WithdrawsAtHighTideEntry());
+  testWidgets('withdraws: the strip comes back when the keyboard goes down', (final WidgetTester tester) async {
+    await _pumpEntry(tester, const WithdrawsEntry());
     final Rect low = _rect(tester, 'tool strip');
     await _toggleKeyboard(tester);
     await _toggleKeyboard(tester);
@@ -615,16 +613,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('withdrawsAtHighTide off: the strip rides the composer with the keyboard partway up', (
+  testWidgets('withdraws off (rides): the strip rides the composer with the keyboard partway up', (
     final WidgetTester tester,
   ) async {
-    await _pumpEntry(tester, const WithdrawsAtHighTideEntry());
-    expect(find.text('withdrawsAtHighTide: true'), findsOneWidget);
-    expect(_code(tester), contains('withdrawsAtHighTide: true,'));
+    await _pumpEntry(tester, const WithdrawsEntry());
+    expect(find.text('tool strip: withdraws'), findsOneWidget);
+    expect(_code(tester), contains('keyboard: HarborKeyboardStance.withdraws,'));
 
-    await _tap(tester, 'toggle withdrawsAtHighTide');
-    expect(find.text('withdrawsAtHighTide: false'), findsOneWidget, reason: 'the strip names the setting');
-    expect(_code(tester), contains('withdrawsAtHighTide: false,'));
+    await _tap(tester, 'toggle withdraws');
+    expect(find.text('tool strip: rides'), findsOneWidget, reason: 'the strip names the setting');
+    expect(_code(tester), contains('keyboard: HarborKeyboardStance.rides,'));
 
     await _setKeyboard(tester, 0.3);
     final Rect composer = _rect(tester, 'composer');

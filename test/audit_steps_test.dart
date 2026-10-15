@@ -105,4 +105,71 @@ void main() {
       );
     });
   });
+
+  group('withdrawsAtHighTide becomes HarborKeyboardStance.withdraws', () {
+    Future<HarborTrial> pumpStrip(final WidgetTester tester, final HarborBar strip) => tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          bottom: <HarborBar>[strip],
+          body: const SizedBox.expand(key: ValueKey<String>('body')),
+        ),
+      ),
+      device: HarborTrialDevice.iPhone17,
+    );
+
+    HarborBar strip({final HarborKeyboardStance keyboard = HarborKeyboardStance.withdraws, final bool flag = false}) =>
+        HarborBar.solid(
+          keyboard: keyboard,
+          withdrawsAtHighTide: flag,
+          child: const SizedBox(key: ValueKey<String>('strip'), height: 44),
+        );
+
+    testWidgets('a bar that withdraws leaves while the keyboard is up and comes back after', (final tester) async {
+      final HarborTrial trial = await pumpStrip(tester, strip());
+      expect(_rect(tester, 'body').bottom, 874 - 34 - 44);
+      await trial.showKeyboard(settle: true);
+      expect(_rect(tester, 'body').bottom, trial.keyboardTop, reason: 'it gave its space back');
+      expect(find.byKey(const ValueKey<String>('strip')).hitTestable(), findsNothing);
+      await trial.hideKeyboard(settle: true);
+      expect(_rect(tester, 'body').bottom, 874 - 34 - 44);
+    });
+
+    testWidgets('it takes the system edge as a bar that stays does', (final tester) async {
+      expect(strip().effectiveSystemEdges, HarborSystemEdgeStance.steady);
+      expect(strip().withdrawsAtHighTide, isTrue, reason: 'the deprecated getter reads the stance too');
+      expect(strip(keyboard: HarborKeyboardStance.stays).withdrawsAtHighTide, isFalse);
+    });
+
+    testWidgets('the deprecated flag still withdraws a bar of any stance, and survives copyWith', (final tester) async {
+      final HarborBar riding = strip(keyboard: HarborKeyboardStance.rides, flag: true);
+      expect(riding.keyboard, HarborKeyboardStance.rides);
+      expect(riding.withdrawsAtHighTide, isTrue);
+      expect(riding.copyWith(state: HarborBarState.dark).withdrawsAtHighTide, isTrue);
+      final HarborTrial trial = await pumpStrip(tester, riding);
+      await trial.showKeyboard(settle: true);
+      expect(_rect(tester, 'body').bottom, trial.keyboardTop);
+    });
+
+    testWidgets('the inspector reads it as withdraws, and as pilings under its 0.8 key', (final tester) async {
+      late BuildContext inside;
+      await tester.pumpHarborTrial(
+        _app(
+          HarborFrame(
+            bottom: <HarborBar>[strip()],
+            body: Builder(
+              builder: (final BuildContext context) {
+                inside = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      expect(HarborInspector.nearest(inside)!.bars.single.keyboard, HarborKeyboardStance.withdraws);
+      final Map<String, Object?> json = HarborInspector.nearest(inside)!.toJson();
+      expect(((json['bars']! as List<Object?>).single! as Map<String, Object?>)['keyboard'], 'withdraws');
+      expect(((json['docks']! as List<Object?>).single! as Map<String, Object?>)['tide'], 'pilings');
+      expect(strip().toDiagnosticsNode().toStringDeep(), contains('keyboard: withdraws'));
+    });
+  });
 }

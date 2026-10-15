@@ -110,7 +110,8 @@ class HarborBar with Diagnosticable {
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    this.withdrawsAtHighTide = false,
+    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
@@ -131,7 +132,8 @@ class HarborBar with Diagnosticable {
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    this.withdrawsAtHighTide = false,
+    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
@@ -166,7 +168,8 @@ class HarborBar with Diagnosticable {
     this.duration = const Duration(milliseconds: 250),
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
-    this.withdrawsAtHighTide = false,
+    @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
+    this._withdrawsAtHighTide = false,
     this.debugLabel,
   }) : assert(extent >= 0.0, 'A reserved extent cannot be negative.'),
        reserved = extent,
@@ -232,9 +235,17 @@ class HarborBar with Diagnosticable {
   /// a tap on a header never reaches a row scrolled under it.
   final HitTestBehavior hitTestBehavior;
 
-  /// Whether the bar withdraws while the keyboard is up (a tool strip that
-  /// would otherwise park mid-screen).
-  final bool withdrawsAtHighTide;
+  /// Whether the bar withdraws while the keyboard is up: [keyboard] is
+  /// [HarborKeyboardStance.withdraws], or the deprecated flag was given.
+  @Deprecated('Read keyboard == HarborKeyboardStance.withdraws. Deprecated after 0.9.1.')
+  bool get withdrawsAtHighTide => withdrawsWithKeyboard;
+
+  /// Whether the bar withdraws while the keyboard is up, by its [keyboard] or the deprecated flag.
+  @internal
+  bool get withdrawsWithKeyboard => keyboard == HarborKeyboardStance.withdraws || _withdrawsAtHighTide;
+
+  /// The deprecated `withdrawsAtHighTide:`, which a bar of any stance could be given.
+  final bool _withdrawsAtHighTide;
 
   /// How far the bar reaches at rest, for a bar whose child grows (a rail that
   /// opens on focus). Content that follows the bar at rest keeps this
@@ -254,7 +265,7 @@ class HarborBar with Diagnosticable {
       systemEdges ??
       switch (keyboard) {
         HarborKeyboardStance.rides => HarborSystemEdgeStance.live,
-        HarborKeyboardStance.stays => HarborSystemEdgeStance.steady,
+        HarborKeyboardStance.stays || HarborKeyboardStance.withdraws => HarborSystemEdgeStance.steady,
         HarborKeyboardStance.reserves => HarborSystemEdgeStance.none,
       };
 
@@ -286,7 +297,7 @@ class HarborBar with Diagnosticable {
           duration: duration,
           curve: curve,
           animationStyle: animationStyle,
-          withdrawsAtHighTide: withdrawsAtHighTide,
+          withdrawsAtHighTide: _withdrawsAtHighTide,
           debugLabel: debugLabel,
         )
       : kind == HarborBarKind.overlay
@@ -303,7 +314,7 @@ class HarborBar with Diagnosticable {
           animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
-          withdrawsAtHighTide: withdrawsAtHighTide,
+          withdrawsAtHighTide: _withdrawsAtHighTide,
           restingExtent: restingExtent,
           minimum: minimum,
           debugLabel: debugLabel,
@@ -321,7 +332,7 @@ class HarborBar with Diagnosticable {
           animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
-          withdrawsAtHighTide: withdrawsAtHighTide,
+          withdrawsAtHighTide: _withdrawsAtHighTide,
           restingExtent: restingExtent,
           minimum: minimum,
           debugLabel: debugLabel,
@@ -352,7 +363,7 @@ class HarborBar with Diagnosticable {
       EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
     );
     properties.add(
-      FlagProperty('withdrawsAtHighTide', value: withdrawsAtHighTide, ifTrue: 'withdraws while the keyboard is up'),
+      FlagProperty('withdrawsAtHighTide', value: _withdrawsAtHighTide, ifTrue: 'withdraws while the keyboard is up'),
     );
     properties.add(DoubleProperty('restingExtent', restingExtent, defaultValue: null));
     properties.add(DoubleProperty('minimum', minimum, defaultValue: 0.0));

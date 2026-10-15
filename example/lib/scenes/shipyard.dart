@@ -83,7 +83,7 @@ class _ShipyardPageState extends State<ShipyardPage> {
       bottom: <HarborBar>[
         HarborBar.overlay(
           debugLabel: 'tool strip',
-          withdrawsAtHighTide: true,
+          keyboard: HarborKeyboardStance.withdraws,
           extentPolicy: HarborExtentPolicy.hold,
           backdrop: const PierPlanks(postsToward: AxisDirection.up),
           child: ToolStrip(yard: _yard),
@@ -345,8 +345,8 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
         active: _yard.dirty,
         bar: HarborBar.overlay(
           key: const ValueKey<String>('unsaved'),
+          keyboard: HarborKeyboardStance.withdraws,
           debugLabel: 'unsaved changes',
-          withdrawsAtHighTide: true,
           backdrop: ColoredBox(color: Palette.night.withValues(alpha: 0.9)),
           child: UnsavedBar(onSave: _save),
         ),

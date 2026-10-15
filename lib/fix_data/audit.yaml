@@ -70,3 +70,165 @@ transforms:
       mode:
         kind: 'fragment'
         value: 'arguments[mode]'
+  # withdrawsAtHighTide becomes HarborKeyboardStance.withdraws, on HarborBar.overlay. Only a bar that
+  # stays (the default) can say it in one stance; with rides, reserves or a variable the flag is left.
+  - title: "Migrate to 'HarborKeyboardStance.withdraws'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'overlay'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "withdraws == 'true' && keyboard == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == ''"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keyboard'
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'false'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+    variables:
+      withdraws:
+        kind: 'fragment'
+        value: 'arguments[withdrawsAtHighTide]'
+      keyboard:
+        kind: 'fragment'
+        value: 'arguments[keyboard]'
+  # withdrawsAtHighTide becomes HarborKeyboardStance.withdraws, on HarborBar.solid. Only a bar that
+  # stays (the default) can say it in one stance; with rides, reserves or a variable the flag is left.
+  - title: "Migrate to 'HarborKeyboardStance.withdraws'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'solid'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "withdraws == 'true' && keyboard == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == ''"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keyboard'
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'false'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+    variables:
+      withdraws:
+        kind: 'fragment'
+        value: 'arguments[withdrawsAtHighTide]'
+      keyboard:
+        kind: 'fragment'
+        value: 'arguments[keyboard]'
+  # withdrawsAtHighTide becomes HarborKeyboardStance.withdraws, on HarborBar.reserve. Only a bar that
+  # stays (the default) can say it in one stance; with rides, reserves or a variable the flag is left.
+  - title: "Migrate to 'HarborKeyboardStance.withdraws'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'reserve'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "withdraws == 'true' && keyboard == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == ''"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'keyboard'
+          - kind: 'addParameter'
+            index: 1
+            name: 'keyboard'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborKeyboardStance %}.withdraws'
+              requiredIf: "withdraws == 'true' && keyboard == 'HarborKeyboardStance.stays'"
+              variables:
+                HarborKeyboardStance:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborKeyboardStance'
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+      - if: "withdraws == 'false'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'withdrawsAtHighTide'
+    variables:
+      withdraws:
+        kind: 'fragment'
+        value: 'arguments[withdrawsAtHighTide]'
+      keyboard:
+        kind: 'fragment'
+        value: 'arguments[keyboard]'

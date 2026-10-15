@@ -276,7 +276,7 @@ focus (`restingExtent:`) holds the header at its resting width.
 | `state: HarborBarState.withdrawn` | Slides out and gives its space back |
 | `extentPolicy:` | How a withdrawing bar gives its space back: `hold` (once it's gone, the default), `follow`, `release` |
 | `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
-| `withdrawsAtHighTide: true` | Leaves while the keyboard is up: a tool strip. Its name is unchanged in 0.9 |
+| `keyboard: HarborKeyboardStance.withdraws` | Leaves while the keyboard is up and comes back once it is down: a tool strip that would otherwise park mid-screen. It lays out as a bar that stays, so the keyboard covers it as it slides out. It replaces `withdrawsAtHighTide: true`, deprecated |
 | `restingExtent:` | The size to hold at rest for a bar that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, system edge or not, for the bar outermost on its edge (the one that takes the system edge) |
 | `systemEdges: HarborSystemEdgeStance.live` / `.steady` / `.none` | How it takes the system edge on its side: as it is now (gone at the bottom while the keyboard is up; the default for a bar that rides the keyboard), as it is with the keyboard down (the default for one that stays), or not at all (the default for one that reserves) |
