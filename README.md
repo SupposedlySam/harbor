@@ -275,7 +275,7 @@ focus (`restingExtent:`) holds the header at its resting width.
 | `state: HarborBarState.dark` | Not drawn and not tappable, but it keeps its space |
 | `state: HarborBarState.withdrawn` | Slides out and gives its space back |
 | `extentPolicy:` | How a withdrawing bar gives its space back: `hold` (once it's gone, the default), `follow`, `release` |
-| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. It overrides `duration:` and `curve:` |
+| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. Left unset, 250 ms along `Curves.easeInOutCubic`. It replaces `duration:` and `curve:`, deprecated |
 | `keyboard: HarborKeyboardStance.withdraws` | Leaves while the keyboard is up and comes back once it is down: a tool strip that would otherwise park mid-screen. It lays out as a bar that stays, so the keyboard covers it as it slides out. It replaces `withdrawsAtHighTide: true`, deprecated |
 | `restingExtent:` | The size to hold at rest for a bar that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, system edge or not, for the bar outermost on its edge (the one that takes the system edge) |
@@ -1043,8 +1043,8 @@ it from outside, by a tap or the keyboard's next action. So a field and the
 button under it come up together, `clearance` clear of the keyboard.
 `onlyWhileFocused: true` keeps the rest of a form's widgets still.
 
-A region lifts over 280 ms and settles back the same way. Give it an
-`animationStyle:` to change that: its `duration` and `curve` are for the lift,
+A region lifts over 280 ms along `Curves.easeOutCubic` and settles back the same way. Give it an
+`animationStyle:` to change that (it replaces `duration:` and `curve:`, deprecated): its `duration` and `curve` are for the lift,
 its `reverseDuration` and `reverseCurve` for settling back, and
 `AnimationStyle.noAnimation` moves the content at once.
 

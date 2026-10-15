@@ -31,3 +31,19 @@ void withdraws(bool b) {
   const HarborDock.quay(tide: HarborTideStance.pilings, withdrawsAtHighTide: true, child: SizedBox());
   const HarborDock.pier(withdrawsAtHighTide: true, child: SizedBox());
 }
+
+void animationStyle(Duration d) {
+  // duration: and curve: go into animationStyle:, alone or together; given beside an
+  // animationStyle they are left, deprecated and still working.
+  const HarborBar.overlay(duration: Duration(milliseconds: 120), child: SizedBox());
+  const HarborBar.solid(curve: Curves.linear, child: SizedBox());
+  HarborBar.reserve(extent: 40, duration: d, curve: Curves.easeOut);
+  const HarborBar.solid(
+    duration: Duration(milliseconds: 120),
+    animationStyle: AnimationStyle(reverseDuration: Duration(milliseconds: 60)),
+    child: SizedBox(),
+  );
+  const HarborDock.pier(duration: Duration(milliseconds: 90), child: SizedBox());
+  const HarborKeepInSightRegion(duration: Duration(milliseconds: 400), curve: Curves.easeIn, child: SizedBox());
+  const HarborKeepInSightRegion(curve: Curves.easeIn, child: SizedBox());
+}

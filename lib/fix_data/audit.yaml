@@ -232,3 +232,219 @@ transforms:
       keyboard:
         kind: 'fragment'
         value: 'arguments[keyboard]'
+  # duration: and curve: on HarborBar.overlay go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'overlay'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # duration: and curve: on HarborBar.solid go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'solid'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # duration: and curve: on HarborBar.reserve go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'reserve'
+      inClass: 'HarborBar'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'
+  # duration: and curve: on HarborKeepInSightRegion go into animationStyle:, which already covered them. Where
+  # the call gives an animationStyle too, the two cannot be merged by a template, so it is left.
+  - title: "Migrate to 'animationStyle'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborKeepInSightRegion'
+    oneOf:
+      - if: "duration != '' && curve != '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %}, curve: {% curve %})'
+              requiredIf: "duration != '' && curve != '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+          - kind: 'removeParameter'
+            name: 'curve'
+      - if: "duration != '' && curve == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(duration: {% duration %})'
+              requiredIf: "duration != '' && curve == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'duration'
+      - if: "curve != '' && duration == '' && animationStyle == ''"
+        changes:
+          - kind: 'addParameter'
+            index: 1
+            name: 'animationStyle'
+            style: optional_named
+            argumentValue:
+              expression: 'AnimationStyle(curve: {% curve %})'
+              requiredIf: "curve != '' && duration == '' && animationStyle == ''"
+          - kind: 'removeParameter'
+            name: 'curve'
+    variables:
+      duration:
+        kind: 'fragment'
+        value: 'arguments[duration]'
+      curve:
+        kind: 'fragment'
+        value: 'arguments[curve]'
+      animationStyle:
+        kind: 'fragment'
+        value: 'arguments[animationStyle]'

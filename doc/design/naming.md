@@ -110,7 +110,8 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborDock.coast` / `effectiveCoast` | `systemEdges` / `effectiveSystemEdges` | RP / rename | |
 | `HarborDock.withdrawsAtHighTide` | `keyboard: HarborKeyboardStance.withdraws` | M + conditional fix | After 0.9.1. `withdraws` lays out as `stays` does. `audit.yaml` rewrites `withdrawsAtHighTide: true` on a bar that stays (the default) and drops `false`; with `rides`, `reserves` or a variable the deprecated flag is left, still working. `reserves` and withdrawing cannot both be said in one stance, which is the point: a bar that holds the keyboard's space has nothing to withdraw for |
 | `HarborDock.copyWith(tide:)` | `copyWith(keyboard:)` | RP | |
-| `HarborDock.kind`, `state`, `extentPolicy`, `duration`, `curve`, `animationStyle`, `backdrop`, `hitTestBehavior`, `restingExtent`, `minimum`, `reserved`, `key`, `debugLabel` | unchanged | | `duration`/`curve` go in a later step |
+| `HarborDock.kind`, `state`, `extentPolicy`, `animationStyle`, `backdrop`, `hitTestBehavior`, `restingExtent`, `minimum`, `reserved`, `key`, `debugLabel` | unchanged | | |
+| `HarborDock.duration` / `curve` | `animationStyle: AnimationStyle(duration:, curve:)` | conditional fix | Deprecated after 0.9.1, on the bar and on `HarborKeepInSightRegion`; the fix writes the style where the call gives none, and leaves a call that gives both |
 | `HarborDockKind` | `HarborBarKind` | T+E | |
 | `HarborDockKind.pier` / `.quay` | `.overlay` / `.solid` | T+E | |
 | `HarborDockState` | `HarborBarState` | T | `open`, `dark`, `withdrawn` unchanged. `HarborYield` merges into it later |

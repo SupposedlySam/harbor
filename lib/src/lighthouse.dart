@@ -241,19 +241,26 @@ class _HarborBeaconState extends State<HarborKeepInSight> {
 class HarborKeepInSightRegion extends StatefulWidget {
   const HarborKeepInSightRegion({
     super.key,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 280),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeOutCubic,
     this.animationStyle,
     required this.child,
   });
 
+  /// How long a lift takes, where [animationStyle] does not say.
+  @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Duration duration;
+
+  /// The curve a lift moves along, where [animationStyle] does not say.
+  @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Curve curve;
 
-  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
-  /// duration and curve. Its `duration` and `curve` are for lifting, and its `reverseDuration` and
-  /// `reverseCurve` for settling back down; each falls back to the forward one, then to [duration]
-  /// and [curve]. [AnimationStyle.noAnimation] moves the content at once.
+  /// How the content moves, as `AnimationStyle` sets it on Flutter's routes: its `duration` and
+  /// `curve` are for lifting, and its `reverseDuration` and `reverseCurve` for settling back down;
+  /// each reverse one falls back to the forward one. Left unset, the content moves over 280 ms along
+  /// [Curves.easeOutCubic]. [AnimationStyle.noAnimation] moves it at once.
   final AnimationStyle? animationStyle;
   final Widget child;
 
@@ -267,6 +274,7 @@ class HarborKeepInSightRegion extends StatefulWidget {
       DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 280)),
     );
     properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeOutCubic));
+    properties.add(DiagnosticsProperty<AnimationStyle>('animationStyle', animationStyle, defaultValue: null));
   }
 }
 

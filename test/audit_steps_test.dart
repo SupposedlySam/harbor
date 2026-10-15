@@ -172,4 +172,60 @@ void main() {
       expect(strip().toDiagnosticsNode().toStringDeep(), contains('keyboard: withdraws'));
     });
   });
+
+  group('duration and curve go into animationStyle', () {
+    // How far the tab bar has slid out, [after] withdrawing it.
+    Future<double> slidAfter(
+      final WidgetTester tester,
+      final HarborBar Function(HarborBarState state) bar,
+      final Duration after,
+    ) async {
+      final ValueNotifier<HarborBarState> state = ValueNotifier<HarborBarState>(HarborBarState.open);
+      addTearDown(state.dispose);
+      await tester.pumpHarborTrial(
+        _app(
+          ValueListenableBuilder<HarborBarState>(
+            valueListenable: state,
+            builder: (final BuildContext context, final HarborBarState value, final Widget? _) =>
+                HarborFrame(bottom: <HarborBar>[bar(value)], body: const SizedBox.expand()),
+          ),
+        ),
+        device: HarborTrialDevice.iPhone17,
+      );
+      final double top = _rect(tester, 'nav').top;
+      state.value = HarborBarState.withdrawn;
+      await tester.pump();
+      await tester.pump(after);
+      return _rect(tester, 'nav').top - top;
+    }
+
+    HarborBar nav(final HarborBarState state, {final AnimationStyle? style, final Duration? duration}) =>
+        duration != null
+        ? HarborBar.solid(
+            state: state,
+            duration: duration,
+            child: const SizedBox(key: ValueKey<String>('nav'), height: _navHeight),
+          )
+        : HarborBar.solid(
+            state: state,
+            animationStyle: style,
+            child: const SizedBox(key: ValueKey<String>('nav'), height: _navHeight),
+          );
+
+    testWidgets('left unset, a bar still moves over 250 ms', (final tester) async {
+      expect(await slidAfter(tester, nav, const Duration(milliseconds: 200)), lessThan(_navHeight + 34));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(_rect(tester, 'nav').top, greaterThanOrEqualTo(874 - 0.5), reason: 'gone by 260 ms');
+    });
+
+    testWidgets('AnimationStyle(duration:) sets it, and the deprecated duration: still does', (final tester) async {
+      HarborBar styled(final HarborBarState s) =>
+          nav(s, style: const AnimationStyle(duration: Duration(milliseconds: 100)));
+      await slidAfter(tester, styled, const Duration(milliseconds: 110));
+      expect(_rect(tester, 'nav').top, greaterThanOrEqualTo(874 - 0.5));
+      HarborBar old(final HarborBarState s) => nav(s, duration: const Duration(milliseconds: 100));
+      await slidAfter(tester, old, const Duration(milliseconds: 110));
+      expect(_rect(tester, 'nav').top, greaterThanOrEqualTo(874 - 0.5));
+    });
+  });
 }

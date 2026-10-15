@@ -105,7 +105,9 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 250),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     this.backdrop,
@@ -127,7 +129,9 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 250),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     this.backdrop,
@@ -165,7 +169,9 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
+    @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.duration = const Duration(milliseconds: 250),
+    @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
     this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     @Deprecated('Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it. Deprecated after 0.9.1.')
@@ -216,15 +222,19 @@ class HarborBar with Diagnosticable {
   /// How a withdrawing bar gives its space back.
   final HarborExtentPolicy extentPolicy;
 
-  /// How long the bar takes to go dark, withdraw or return.
+  /// How long the bar takes to go dark, withdraw or return, where [animationStyle] does not say.
+  @Deprecated('Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Duration duration;
+
+  /// The curve the bar goes dark, withdraws or returns along, where [animationStyle] does not say.
+  @Deprecated('Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it. Deprecated after 0.9.1.')
   final Curve curve;
 
-  /// Overrides [duration] and [curve], as `MaterialApp.themeAnimationStyle` overrides its
-  /// duration and curve. Its `duration` and `curve` are for returning and lighting up, and its
-  /// `reverseDuration` and `reverseCurve` for withdrawing and going dark; each falls back to the
-  /// forward one, then to [duration] and [curve]. [AnimationStyle.noAnimation] changes the bar's
-  /// state at once.
+  /// How the bar moves, as `AnimationStyle` sets it on Flutter's routes: its `duration` and `curve`
+  /// are for returning and lighting up, and its `reverseDuration` and `reverseCurve` for withdrawing
+  /// and going dark; each reverse one falls back to the forward one. Left unset, a bar moves over
+  /// 250 ms along [Curves.easeInOutCubic]. [AnimationStyle.noAnimation] changes the bar's state at
+  /// once.
   final AnimationStyle? animationStyle;
 
   /// Painted under the bar's whole space, system edge included: its surface, or a
@@ -358,6 +368,7 @@ class HarborBar with Diagnosticable {
       DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 250)),
     );
     properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeInOutCubic));
+    properties.add(DiagnosticsProperty<AnimationStyle>('animationStyle', animationStyle, defaultValue: null));
     properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
     properties.add(
       EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
