@@ -79,7 +79,7 @@ MIT licensed.
 | `HarborFlareSlot`, `HarborFlareEntry`, `HarborFlareTarget.sea` | `HarborToastSlot`, `HarborToastEntry`, `HarborToastTarget.root` |
 | `showHarborSheet(breakwater:, keepsTopCoast:)` | `showHarborSheet(coversPage:, reachesTop:)` |
 | `showHarborDialog(inheritClearWater:)` | `showHarborDialog(inheritRoom:)` |
-| `HarborBeacon`, `HarborLighthouse`, `HarborLighthouseRegion` | `HarborKeepInSight`, `HarborKeepInSightRegion` |
+| `HarborBeacon`, `HarborLighthouse`, `HarborLighthouseRegion` | `HarborKeepInSight` and `HarborKeepInSightRegion` in 0.9.0, since split into `HarborCoverageListener`, `HarborKeepVisible` and `HarborLift`, in a `HarborKeepVisibleRegion` ([Keeping in sight](#keeping-in-sight)) |
 | `HarborChart`, `HarborChartOverlay` | `HarborInspector`, `HarborInspectorOverlay` |
 | `HarborFleet`, `HarborFleetObserver`, `controller.fleet` | `HarborFrameRegistry`, `HarborFrameObserver`, `controller.registry` |
 | `HarborScaleModel` | `HarborScaledScreen` |
