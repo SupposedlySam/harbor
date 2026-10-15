@@ -1,0 +1,36 @@
+// The HarborDefaults transforms (lib/fix_data/defaults.yaml): a frame's and a root's hinge policy into
+// `defaults:`, every combination, under the new and the 0.8 names, and HarborFlarePolicy into
+// HarborDefaultsScope.
+
+import 'package:flutter/widgets.dart';
+import 'package:harbor/harbor.dart';
+
+void frames(HarborHinge h) {
+  const HarborFrame(defaults: HarborDefaults(hinge: HarborHinge.never), body: SizedBox());
+  HarborFrame(defaults: HarborDefaults(barHinge: h), body: const SizedBox());
+  const HarborFrame(defaults: HarborDefaults(barHinge: HarborHinge.always), body: SizedBox());
+  const HarborFrame(defaults: HarborDefaults(hinge: HarborHinge.never, barHinge: HarborHinge.always), body: SizedBox());
+  HarborFrame(defaults: HarborDefaults(hinge: h, barHinge: HarborHinge.never), body: const SizedBox());
+  const HarborFrame(defaults: HarborDefaults(hinge: HarborHinge.avoidOccluding), body: SizedBox());
+  const HarborFrame(defaults: HarborDefaults(barHinge: HarborHinge.never), body: SizedBox());
+  const HarborFrame.page(defaults: HarborDefaults(hinge: HarborHinge.never), body: SizedBox());
+  const HarborFrame.page(defaults: HarborDefaults(barHinge: HarborHinge.never), body: SizedBox());
+  HarborFrame.page(defaults: HarborDefaults(hinge: h, barHinge: HarborHinge.always), body: const SizedBox());
+  // Left alone: defaults: is given beside the old argument, and wins; merge them by hand.
+  HarborFrame(defaults: const HarborDefaults(toastQueue: HarborToastQueue.replace), hinge: h, body: const SizedBox());
+}
+
+void roots(HarborHinge h) {
+  const HarborRoot(defaults: HarborDefaults(hinge: HarborHinge.never), child: SizedBox());
+  HarborRoot(defaults: HarborDefaults(hinge: h), child: const SizedBox());
+  const HarborRoot(defaults: HarborDefaults(hinge: HarborHinge.never), child: SizedBox());
+}
+
+void policies(HarborToastQueue q) {
+  const HarborDefaultsScope(defaults: HarborDefaults(toastQueue: HarborToastQueue.replace), child: SizedBox());
+  HarborDefaultsScope(defaults: HarborDefaults(toastQueue: q), child: const SizedBox());
+}
+
+// Left alone, and must not stop dart fix: with HarborFlarePolicy deprecated as a class, a static
+// call through it crashed the analysis server under `dart fix --apply`, so only its constructor is.
+HarborToastQueue queue(BuildContext context) => HarborFlarePolicy.queueOf(context);
