@@ -149,7 +149,12 @@ All of these land after the four areas above, each with fixes:
     one constructor the old positional `HarborTitleSafe` and the new named parameters) or ugly
     constructor names, for no gain in clarity. It keeps its name;
   - fix the stale `HarborCoastFeature.hinge` and `isPort` docs.
-- `HarborBeacon` splits into three widgets, one per job.
+- `HarborBeacon` splits into three widgets, one per job. Named by the owner on 2026-10-14:
+  `HarborCoverageListener(edge:, onCoverage:)` reports what covers it, `HarborKeepVisible` keeps itself
+  scrolled clear (its whole job, so on by default; `reveal` and `coverageOf` move there), and
+  `HarborLift` lifts over the keyboard inside a `HarborKeepVisibleRegion`. `HarborKeepInSight` is
+  deprecated whole, forwarding exactly as before. `HarborKeepVisible` and `HarborLift` take `active:`,
+  as `HarborHideBar` does, so a job can be switched off without remounting the child.
 - One internal page-overlay host for flares and non-modal sheets.
 - **`newPort`:** infer it at route boundaries, and keep the parameter for the rare nested case.
 

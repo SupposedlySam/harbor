@@ -1225,8 +1225,7 @@ class _LighthouseDemo extends StatelessWidget {
               const HarborClear.rowInsets(child: _Field('Speed', '6 knots')),
               const HarborClear.rowInsets(child: _Field('Flag', 'Red ensign')),
               const HarborClear.rowInsets(child: _Field('Crew', '3')),
-              HarborKeepInSight(
-                keepInSight: true,
+              HarborKeepVisible(
                 clearance: 16,
                 child: HarborClear.rowInsets(
                   child: _Field('Remarks', focused ? 'Under full sail|' : '', focused: focused),

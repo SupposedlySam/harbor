@@ -44,8 +44,8 @@ void animationStyle(Duration d) {
     child: SizedBox(),
   );
   const HarborBar.overlay(animationStyle: AnimationStyle(duration: Duration(milliseconds: 90)), child: SizedBox());
-  const HarborKeepInSightRegion(animationStyle: AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn), child: SizedBox());
-  const HarborKeepInSightRegion(animationStyle: AnimationStyle(curve: Curves.easeIn), child: SizedBox());
+  const HarborKeepVisibleRegion(animationStyle: AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn), child: SizedBox());
+  const HarborKeepVisibleRegion(animationStyle: AnimationStyle(curve: Curves.easeIn), child: SizedBox());
 }
 
 void sizing(HarborSizing variable, double f) {
@@ -60,4 +60,24 @@ void sizing(HarborSizing variable, double f) {
   const HarborSizing hugs = HarborSizing.hug();
   const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.8), body: SizedBox());
   <Object>[hugs];
+}
+
+void keepInSight(BuildContext context, RenderBox box, HarborController frame, bool b) {
+  // HarborKeepInSight splits into three widgets. A call that does one job becomes that widget, its
+  // keepInSight: or lift: the new widget's active: when it is not true; one that does two is left.
+  HarborCoverageListener(onCoverage: (double c) {}, child: const SizedBox());
+  HarborCoverageListener(edge: HarborEdge.bottom, onCoverage: (double c) {}, child: const SizedBox());
+  const HarborKeepVisible(child: SizedBox());
+  const HarborKeepVisible(onlyWhileFocused: true, clearance: 16, child: SizedBox());
+  const HarborLift(clearance: 80, holdPosition: true, child: SizedBox());
+  HarborKeepInSight(keepInSight: true, onObscured: (double c) {}, child: const SizedBox());
+  HarborKeepVisible(active: b, child: const SizedBox());
+  HarborLift(active: b, holdPosition: b, child: const SizedBox());
+  const HarborKeepVisibleRegion(child: SizedBox());
+  // The 0.8 names chain through the rename.
+  const HarborKeepVisible(clearance: 24, child: SizedBox());
+  const HarborKeepVisibleRegion(child: HarborLift(child: SizedBox()));
+  HarborKeepVisible.reveal(context, clearance: 24);
+  HarborKeepVisible.reveal(context);
+  HarborKeepVisible.coverageOf(box, frame, HarborEdge.top);
 }

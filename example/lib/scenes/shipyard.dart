@@ -14,8 +14,8 @@ import '../game/widgets.dart';
 /// boats (scenes #21 to #24).
 ///
 /// - **Shipyard canvas (#21):** the body runs under the keyboard
-///   (`bodyClearsKeyboard: false`). Boats sit in a [HarborKeepInSightRegion], each
-///   one a [HarborKeepInSight] that lifts while selected, so a boat the paint sheet
+///   (`bodyClearsKeyboard: false`). Boats sit in a [HarborKeepVisibleRegion], each
+///   one a [HarborLift] that lifts while selected, so a boat the paint sheet
 ///   would cover rises until it is 80 clear of the sheet's top.
 /// - **Paint shop (#22):** a non-modal sheet that covers the page, whose footer
 ///   is a HarborKeyboardSpace: the color tray takes exactly the keyboard's ground, so nothing
@@ -357,7 +357,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
               child: TickerMode(enabled: !still, child: const Sea()),
             ),
             Positioned.fill(
-              child: HarborKeepInSightRegion(
+              child: HarborKeepVisibleRegion(
                 child: LayoutBuilder(
                   builder: (final BuildContext context, final BoxConstraints constraints) =>
                       _pieces(constraints.biggest, still: still),
@@ -402,7 +402,7 @@ class _ShipyardCanvasState extends State<ShipyardCanvas> {
       final bool selected = piece.id == _yard.selectedId;
       Widget art = boat ? YardBoat(piece: piece, selected: selected, bob: !still) : const CrateArt(size: 40);
       if (boat) {
-        art = HarborKeepInSight(lift: selected, clearance: 80, holdPosition: _yard.draggingId == piece.id, child: art);
+        art = HarborLift(active: selected, clearance: 80, holdPosition: _yard.draggingId == piece.id, child: art);
       }
       children.add(
         Positioned(

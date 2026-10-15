@@ -276,9 +276,13 @@ public member was read, and the ones without a harbour word are left out to keep
 
 | Old | New | Fix | Note |
 |---|---|---|---|
-| `HarborBeacon` | `HarborKeepInSight` | T | From the RFC. The beacon splits into three widgets in audit step 10; this name goes to the keep-in-sight one, and the other two jobs (`onObscured`, `lift`) move off it then |
-| `HarborLighthouse` | `HarborKeepInSight` | T+S | Its statics `reveal` and `coverageOf` move onto the widget class, as `Scrollable.ensureVisible` sits on `Scrollable`. A typedef to a widget is harmless here: `HarborLighthouse` is `abstract final` and nobody constructs it |
-| `HarborLighthouseRegion` | `HarborKeepInSightRegion` | T | |
+| `HarborBeacon` | `HarborKeepInSight` | T | From the RFC. Split after 0.9.1 (below), and `HarborKeepInSight` is deprecated whole |
+| `HarborKeepInSight(onObscured:)` | `HarborCoverageListener(edge:, onCoverage:, child:)` | conditional fix | The audit's split (owner, 2026-10-14): reports what covers it |
+| `HarborKeepInSight(keepInSight:)` | `HarborKeepVisible(active:, onlyWhileFocused:, clearance:, child:)` | conditional fix | Keeps itself scrolled clear of the bars and the keyboard, on by default; `keepInSight:` given a variable becomes `active:` |
+| `HarborKeepInSight(lift:)` | `HarborLift(active:, clearance:, holdPosition:, child:)` | conditional fix | Lifts over what covers the bottom, inside a region. A call that does two jobs is manual: nest the widgets |
+| `HarborKeepInSight.reveal` / `coverageOf` | `HarborKeepVisible.reveal` / `coverageOf` | RB | |
+| `HarborLighthouse` | `HarborKeepInSight` | T+S | Its statics `reveal` and `coverageOf` move onto the widget class, as `Scrollable.ensureVisible` sits on `Scrollable`, and on to `HarborKeepVisible` after 0.9.1. A typedef to a widget is harmless here: `HarborLighthouse` is `abstract final` and nobody constructs it |
+| `HarborLighthouseRegion` | `HarborKeepInSightRegion` | T | And `HarborKeepVisibleRegion` after 0.9.1 (T), so the names match |
 
 ### The inspector (the chart) and the frame registry (the fleet)
 

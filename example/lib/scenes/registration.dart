@@ -9,7 +9,7 @@ import '../game/widgets.dart';
 ///
 /// Its footer is a solid bar that stays, so the keyboard covers the Continue
 /// button while you type and the form ends at the keyboard's top. Each field is a
-/// HarborKeepInSight that keeps itself in sight as the keyboard rises. While the
+/// HarborKeepVisible that keeps itself in sight as the keyboard rises. While the
 /// berth password has focus, the same footer switches to riding the keyboard, with
 /// the password rules on it. The crest at the top reads the keyboard's height and
 /// shrinks as it comes in: information only, never what anything clears.
@@ -242,8 +242,7 @@ class _Field extends StatelessWidget {
   final bool last;
 
   @override
-  Widget build(final BuildContext context) => HarborKeepInSight(
-    keepInSight: true,
+  Widget build(final BuildContext context) => HarborKeepVisible(
     onlyWhileFocused: true,
     clearance: 24,
     child: Padding(

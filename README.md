@@ -145,7 +145,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborToasts.show` | `SnackBar`, through `ScaffoldMessenger.showSnackBar` | Toasts at one slot take turns, as snack bars do, and a toast's time counts only while it is in sight; toasts at different slots show together. It builds any widget, at one of four heights (`HarborToastSlot`), clear of the bars of the page that showed it. Both are live regions |
 | `showHarborSheet` | `showModalBottomSheet`; `HarborSheet.draggable` is built on `DraggableScrollableSheet`; `barrier: HarborSheetBarrier.none` is `showBottomSheet` | Its header and footer are bars, so the body runs under the header and the footer rides the keyboard. harbor imports no Material, so a Material app passes in its theme's pieces ([Sheets and dialogs](#sheets-and-dialogs)) |
 | `showHarborSheet(coversPage: true)` | None | A `Scaffold` lifts its floating action button over a bottom sheet but leaves the body under it. A sheet that covers the page tells the page that opened it how far it covers, and the page's content keeps clear |
-| `HarborKeepInSight` | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the bars and the keyboard of every `HarborScrollView` it passes through. `HarborKeepInSight(onObscured:)`, how much of a widget the header covers, and `HarborKeepInSightRegion`, lifting content that does not scroll, have no Flutter equivalent |
+| `HarborKeepVisible` | `Scrollable.ensureVisible`, `RenderObject.showOnScreen`, `TextField.scrollPadding` | A reveal clears the bars and the keyboard of every `HarborScrollView` it passes through. `HarborCoverageListener`, how much of a widget the header covers, and `HarborLift` in a `HarborKeepVisibleRegion`, lifting content that does not scroll, have no Flutter equivalent |
 | `HarborScaledScreen` | A `FittedBox` around a `MediaQuery` with a fixed `size` | The real screen's insets are re-based into the reference screen's coordinates. Under a bare `FittedBox`, content still reads the real screen's `MediaQuery` |
 | `HarborInspector` | `debugPaintSizeEnabled` | It draws who holds each edge, at which layer, and the room, and serves the same as data (`HarborInspector.snapshot`) |
 | `pumpHarborTrial` | `tester.view.padding`, `viewPadding` and `viewInsets`, set with `FakeViewPadding` | Devices come with their status bar, home indicator, keyboard height and folds already set, and assertions are about the room, not numbers |
@@ -1031,17 +1031,24 @@ reduced motion still wins.
 ## Keeping in sight
 
 ```dart
-HarborKeepInSight(onObscured: (covered) => titleOpacity.value = covered, child: heroTitle); // covered: 0 to 1
-HarborKeepInSight(keepInSight: true, child: field);       // re-reveals as the keyboard opens or focus moves in
-HarborKeepInSightRegion(child: canvas)                    // + HarborKeepInSight(lift: true, clearance: 80)
-HarborKeepInSight.reveal(context, clearance: 24);
+HarborCoverageListener(onCoverage: (covered) => titleOpacity.value = covered, child: heroTitle); // 0 to 1
+HarborKeepVisible(child: field);                 // re-reveals as the keyboard opens or focus moves in
+HarborKeepVisibleRegion(child: canvas)           // + HarborLift(clearance: 80, child: boat) inside it
+HarborKeepVisible.reveal(context, clearance: 24);
 ```
 
-A focused field reveals its own caret, as `EditableText` does. A `HarborKeepInSight` with
-`keepInSight: true` reveals all of itself: when the keyboard opens, and when focus moves into
+Three widgets, one job each. A focused field reveals its own caret, as `EditableText` does. A
+`HarborKeepVisible` reveals all of itself: when the keyboard opens, and when focus moves into
 it from outside, by a tap or the keyboard's next action. So a field and the
 button under it come up together, `clearance` clear of the keyboard.
-`onlyWhileFocused: true` keeps the rest of a form's widgets still.
+`onlyWhileFocused: true` keeps the rest of a form's widgets still. A `HarborCoverageListener`
+reports how much of it the bars on its `edge` cover, and a `HarborLift` asks its region to lift it
+clear of what covers the bottom. `active: false` on `HarborKeepVisible` or `HarborLift` turns the job
+off without rebuilding the child as a different widget, as `HarborHideBar(active:)` does.
+
+`HarborKeepInSight`, which did all three, is deprecated: `HarborKeepInSight(onObscured:)` is
+`HarborCoverageListener(onCoverage:)`, `keepInSight:` is `HarborKeepVisible`, and `lift:` is
+`HarborLift`, and `dart fix` rewrites a call that does one of them.
 
 A region lifts over 280 ms along `Curves.easeOutCubic` and settles back the same way. Give it an
 `animationStyle:` to change that (it replaces `duration:` and `curve:`, deprecated): its `duration` and `curve` are for the lift,

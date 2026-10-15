@@ -1045,7 +1045,9 @@ class HarborController {
   List<HarborToastEntry> get flares => toasts;
 
   /// The flares raised on this harbor: the old name of [toasts].
-  @Deprecated('Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.')
+  @Deprecated(
+    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
+  )
   List<HarborToastEntry> get signals => toasts;
 
   void _raiseFlare(final HarborToastEntry flare) {

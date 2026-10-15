@@ -275,4 +275,129 @@ void main() {
       );
     });
   });
+
+  group('HarborKeepInSight splits into three widgets, one per job', () {
+    testWidgets('HarborCoverageListener reports how much of it the header covers', (final tester) async {
+      final List<double> reports = <double>[];
+      await tester.pumpHarborTrial(
+        _app(
+          HarborFrame(
+            top: const <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50))],
+            body: HarborScrollView(
+              slivers: <Widget>[
+                SliverToBoxAdapter(
+                  child: HarborCoverageListener(onCoverage: reports.add, child: const SizedBox(height: 100)),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 2000)),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(reports.last, 0.0);
+      await tester.drag(find.byType(Scrollable), const Offset(0, -50));
+      await tester.pumpAndSettle();
+      expect(reports.last, closeTo(0.5, 0.05));
+    });
+
+    Future<HarborTrial> pumpField(final WidgetTester tester, final bool active, final ScrollController controller) =>
+        tester.pumpHarborTrial(
+          _app(
+            HarborFrame(
+              body: HarborScrollView(
+                controller: controller,
+                slivers: <Widget>[
+                  const SliverToBoxAdapter(child: SizedBox(height: 600)),
+                  SliverToBoxAdapter(
+                    child: HarborKeepVisible(
+                      active: active,
+                      clearance: 16,
+                      child: const SizedBox(key: ValueKey<String>('field'), height: 40),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 600)),
+                ],
+              ),
+            ),
+          ),
+          device: HarborTrialDevice.iPhoneSE,
+        );
+
+    testWidgets('HarborKeepVisible keeps itself clear of the keyboard as it opens; inactive, it does not', (
+      final tester,
+    ) async {
+      final ScrollController controller = ScrollController();
+      addTearDown(controller.dispose);
+      final HarborTrial trial = await pumpField(tester, true, controller);
+      expect(_rect(tester, 'field').bottom, 660, reason: 'in sight with the keyboard down');
+      await trial.showKeyboard(settle: true);
+      expect(_rect(tester, 'field').bottom, lessThanOrEqualTo(trial.keyboardTop - 16 + 0.5));
+    });
+
+    testWidgets('HarborKeepVisible(active: false) leaves its child where it scrolls', (final tester) async {
+      final ScrollController controller = ScrollController();
+      addTearDown(controller.dispose);
+      final HarborTrial trial = await pumpField(tester, false, controller);
+      await trial.showKeyboard(settle: true);
+      expect(controller.offset, 0, reason: 'nothing scrolled it, so the keyboard covers it');
+    });
+
+    Future<void> pumpBoat(final WidgetTester tester, final bool active) => tester.pumpHarborTrial(
+      _app(
+        HarborFrame(
+          bottom: const <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50))],
+          body: HarborKeepVisibleRegion(
+            animationStyle: AnimationStyle.noAnimation,
+            child: Stack(
+              children: <Widget>[
+                Positioned(
+                  top: 800,
+                  left: 100,
+                  child: HarborLift(
+                    active: active,
+                    child: const SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      device: HarborTrialDevice.iPhone17,
+    );
+
+    testWidgets('HarborLift lifts its child clear of the tab bar in its region; inactive, it settles', (
+      final tester,
+    ) async {
+      await pumpBoat(tester, true);
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'boat').bottom, lessThanOrEqualTo(874 - 34 - 50 + 0.5));
+      await pumpBoat(tester, false);
+      await tester.pumpAndSettle();
+      expect(_rect(tester, 'boat').top, 800, reason: 'back where it was placed');
+    });
+
+    testWidgets('the deprecated HarborKeepInSight still does all three', (final tester) async {
+      final List<double> reports = <double>[];
+      await tester.pumpHarborTrial(
+        _app(
+          HarborFrame(
+            top: const <HarborBar>[HarborBar.overlay(child: SizedBox(height: 50))],
+            body: HarborScrollView(
+              slivers: <Widget>[
+                SliverToBoxAdapter(
+                  child: HarborKeepInSight(onObscured: reports.add, child: const SizedBox(height: 100)),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 2000)),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(reports.last, 0.0);
+      expect(const HarborKeepInSightRegion(child: SizedBox()), isA<HarborKeepVisibleRegion>());
+    });
+  });
 }

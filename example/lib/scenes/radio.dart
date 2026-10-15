@@ -464,9 +464,7 @@ class _ChannelPageState extends State<ChannelPage> {
                   onLongPress: (final BuildContext context) => _showActions(context, logged),
                 );
                 // The call being edited keeps itself in sight as the keyboard comes in.
-                return logged.id == _editingId
-                    ? HarborKeepInSight(keepInSight: true, clearance: 8, child: bubble)
-                    : bubble;
+                return logged.id == _editingId ? HarborKeepVisible(clearance: 8, child: bubble) : bubble;
               },
             ),
           ],

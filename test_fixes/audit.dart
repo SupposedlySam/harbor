@@ -61,3 +61,23 @@ void sizing(HarborSizing variable, double f) {
   const Harbor(sizing: HarborSizing.hugBody, maxExtentFraction: 0.8, body: SizedBox());
   <Object>[hugs];
 }
+
+void keepInSight(BuildContext context, RenderBox box, HarborController frame, bool b) {
+  // HarborKeepInSight splits into three widgets. A call that does one job becomes that widget, its
+  // keepInSight: or lift: the new widget's active: when it is not true; one that does two is left.
+  HarborKeepInSight(onObscured: (double c) {}, child: const SizedBox());
+  HarborKeepInSight(edge: HarborEdge.bottom, onObscured: (double c) {}, clearance: 8, child: const SizedBox());
+  const HarborKeepInSight(keepInSight: true, child: SizedBox());
+  const HarborKeepInSight(keepInSight: true, onlyWhileFocused: true, clearance: 16, child: SizedBox());
+  const HarborKeepInSight(lift: true, clearance: 80, holdPosition: true, child: SizedBox());
+  HarborKeepInSight(keepInSight: true, onObscured: (double c) {}, child: const SizedBox());
+  HarborKeepInSight(keepInSight: b, child: const SizedBox());
+  HarborKeepInSight(lift: b, holdPosition: b, child: const SizedBox());
+  const HarborKeepInSightRegion(child: SizedBox());
+  // The 0.8 names chain through the rename.
+  const HarborBeacon(keepInSight: true, clearance: 24, child: SizedBox());
+  const HarborLighthouseRegion(child: HarborBeacon(lift: true, child: SizedBox()));
+  HarborKeepInSight.reveal(context, clearance: 24);
+  HarborLighthouse.reveal(context);
+  HarborKeepInSight.coverageOf(box, frame, HarborEdge.top);
+}
