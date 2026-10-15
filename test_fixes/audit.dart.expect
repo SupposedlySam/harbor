@@ -47,3 +47,17 @@ void animationStyle(Duration d) {
   const HarborKeepInSightRegion(animationStyle: AnimationStyle(duration: Duration(milliseconds: 400), curve: Curves.easeIn), child: SizedBox());
   const HarborKeepInSightRegion(animationStyle: AnimationStyle(curve: Curves.easeIn), child: SizedBox());
 }
+
+void sizing(HarborSizing variable, double f) {
+  // HarborSizing is a class: hugBody is hug(), and a frame's maxExtentFraction moves into it. A
+  // frame that fills never read the fraction, so it goes; beside a variable sizing it is left.
+  const HarborFrame(sizing: HarborSizing.hug(), body: SizedBox());
+  const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.5), body: SizedBox());
+  HarborFrame.page(sizing: HarborSizing.hug(maxFraction: f), body: const SizedBox());
+  const HarborFrame(body: SizedBox());
+  const HarborFrame(sizing: HarborSizing.fill, body: SizedBox());
+  HarborFrame(sizing: variable, maxExtentFraction: 0.5, body: const SizedBox());
+  const HarborSizing hugs = HarborSizing.hug();
+  const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.8), body: SizedBox());
+  <Object>[hugs];
+}

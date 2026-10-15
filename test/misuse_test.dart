@@ -82,7 +82,7 @@ void main() {
     final Object error = errors.first.exception;
     expect(error, isA<FlutterError>());
     expect('$error', contains('settings'));
-    expect('$error', contains('HarborSizing.hugBody'));
+    expect('$error', contains('HarborSizing.hug()'));
   });
 
   testWidgets('a quay listed inside a pier says to list it nearer the edge', (final tester) async {

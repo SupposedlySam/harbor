@@ -228,4 +228,51 @@ void main() {
       expect(_rect(tester, 'nav').top, greaterThanOrEqualTo(874 - 0.5));
     });
   });
+
+  group('HarborSizing is a class: fill, and hug(maxFraction:)', () {
+    Future<double> heightOf(final WidgetTester tester, final HarborFrame frame) async {
+      await tester.pumpHarborTrial(
+        _app(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: KeyedSubtree(key: const ValueKey<String>('frame'), child: frame),
+          ),
+        ),
+        device: HarborTrialDevice.iPhone17,
+      );
+      return _rect(tester, 'frame').height;
+    }
+
+    const Widget tall = SizedBox(height: 2000);
+    const Widget short = SizedBox(height: 120);
+
+    testWidgets('hug() is as tall as its body, and maxFraction caps it as maxExtentFraction did', (final tester) async {
+      expect(await heightOf(tester, const HarborFrame(sizing: HarborSizing.hug(), body: short)), 120);
+      expect(await heightOf(tester, const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.5), body: tall)), 437);
+      expect(
+        await heightOf(tester, const HarborFrame(sizing: HarborSizing.hugBody, maxExtentFraction: 0.5, body: tall)),
+        437,
+      );
+      expect(
+        await heightOf(tester, const HarborFrame(maxExtentFraction: 0.5, body: short)),
+        874,
+        reason: 'fill ignores it',
+      );
+    });
+
+    test('the enum\'s spellings still read as they did', () {
+      expect(HarborSizing.hugBody, const HarborSizing.hug());
+      expect(HarborSizing.hugBody.hugs, isTrue);
+      expect(HarborSizing.fill.hugs, isFalse);
+      expect(HarborSizing.values, <HarborSizing>[HarborSizing.fill, const HarborSizing.hug()]);
+      expect(<String>[for (final HarborSizing s in HarborSizing.values) s.name], <String>['fill', 'hugBody']);
+      expect(<int>[for (final HarborSizing s in HarborSizing.values) s.index], <int>[0, 1]);
+      expect(const HarborSizing.hug(maxFraction: 0.5), isNot(const HarborSizing.hug()));
+      expect(
+        const HarborFrame(sizing: HarborSizing.hug(maxFraction: 0.5), body: short).maxExtentFraction,
+        0.5,
+        reason: 'the deprecated getter reads the sizing\'s fraction',
+      );
+    });
+  });
 }

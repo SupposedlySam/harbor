@@ -95,7 +95,8 @@ public member was read, and the ones without a harbour word are left out to keep
 | `Harbor.buoys` | `floats` | RP | `List<HarborFloat>` |
 | `Harbor.bodyClearsTide` | `bodyClearsKeyboard` | RP | And on `HarborSheet` |
 | `Harbor.wakePainter` | `edgeEffectPainter` | RP | See Q4 |
-| `Harbor.top/bottom/start/end`, `body`, `margin`, `minimum`, `sizing`, `maxExtentFraction`, `hinge`, `debugLabel` | unchanged | | |
+| `Harbor.top/bottom/start/end`, `body`, `margin`, `minimum`, `sizing`, `hinge`, `debugLabel` | unchanged | | |
+| `Harbor.maxExtentFraction` | `sizing: HarborSizing.hug(maxFraction:)` | conditional fix | Deprecated after 0.9.1. Beside `fill` (or no `sizing`), which never read it, the fix removes it; beside a variable it is left |
 
 ### Bars (docks)
 
@@ -300,7 +301,7 @@ public member was read, and the ones without a harbour word are left out to keep
 | `HarborController.lastLayout`, `renderBox` | — | — | Already deprecated |
 | `HarborScaleModel` | `HarborScaledScreen` | T | Departure: the RFC's `HarborScaledFrame` reads as a kind of `HarborFrame`, which it is not. It lays out a whole screen at a reference size |
 | `HarborScaleModel.letterbox`, `referenceSize`, `devicePixelRatio` | unchanged | | `coast` → `systemEdges` as above |
-| `HarborSizing` | unchanged | | Becomes a class in audit step 8 |
+| `HarborSizing` | unchanged: a class | rename (`hugBody`) | After 0.9.1 a class: `HarborSizing.fill` (a constant, as before) and `HarborSizing.hug({maxFraction})`. `hugBody` is a deprecated constant equal to `hug()`, renamed to `hug()` by the fix; `values`, `name` and `index` are kept, deprecated |
 
 ## 4. The table: `package:harbor_test`
 

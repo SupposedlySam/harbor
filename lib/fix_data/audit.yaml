@@ -448,3 +448,169 @@ transforms:
       animationStyle:
         kind: 'fragment'
         value: 'arguments[animationStyle]'
+  # HarborSizing.hugBody is HarborSizing.hug().
+  - title: "Replace with 'HarborSizing.hug()'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      field: 'hugBody'
+      inClass: 'HarborSizing'
+    changes:
+      - kind: 'rename'
+        newName: 'hug()'
+  # HarborFrame(sizing:, maxExtentFraction:) is sizing: HarborSizing.hug(maxFraction:). A frame that
+  # fills never read the fraction, so beside fill it goes; beside a variable it is left.
+  - title: "Migrate to 'HarborSizing.hug(maxFraction:)'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: ''
+      inClass: 'HarborFrame'
+    oneOf:
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.fill'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+    variables:
+      sizing:
+        kind: 'fragment'
+        value: 'arguments[sizing]'
+      maxExtentFraction:
+        kind: 'fragment'
+        value: 'arguments[maxExtentFraction]'
+  # HarborFrame.page(sizing:, maxExtentFraction:) is sizing: HarborSizing.hug(maxFraction:). A frame that
+  # fills never read the fraction, so beside fill it goes; beside a variable it is left.
+  - title: "Migrate to 'HarborSizing.hug(maxFraction:)'"
+    date: 2026-10-14
+    element:
+      uris: [ 'harbor.dart' ]
+      constructor: 'page'
+      inClass: 'HarborFrame'
+    oneOf:
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hugBody'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'sizing'
+          - kind: 'addParameter'
+            index: 1
+            name: 'sizing'
+            style: optional_named
+            argumentValue:
+              expression: '{% HarborSizing %}.hug(maxFraction: {% maxExtentFraction %})'
+              requiredIf: "maxExtentFraction != '' && sizing == 'const HarborSizing.hug()'"
+              variables:
+                HarborSizing:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborSizing'
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+      - if: "maxExtentFraction != '' && sizing == 'HarborSizing.fill'"
+        changes:
+          - kind: 'removeParameter'
+            name: 'maxExtentFraction'
+    variables:
+      sizing:
+        kind: 'fragment'
+        value: 'arguments[sizing]'
+      maxExtentFraction:
+        kind: 'fragment'
+        value: 'arguments[maxExtentFraction]'

@@ -414,8 +414,7 @@ class HarborSheet extends StatelessWidget {
     Widget port = HarborFrame(
       isPage: true,
       bodyClearsKeyboard: bodyClearsKeyboard,
-      sizing: hug ? HarborSizing.hugBody : HarborSizing.fill,
-      maxExtentFraction: hug ? maxExtentFraction : null,
+      sizing: hug ? HarborSizing.hug(maxFraction: maxExtentFraction) : HarborSizing.fill,
       debugLabel: debugLabel ?? 'sheet',
       top: <HarborBar>[
         if ((header ?? this.header) != null)

@@ -248,9 +248,9 @@ edge, system edge included, or 80 past the bars outside it, paints nothing and t
 no taps. It is an overlay bar by default (`kind: HarborBarKind.solid` stops the body
 at it) and takes a `keyboard:` like any bar.
 
-A `HarborFrame` fills the space it is given, as a page does. `sizing: HarborSizing.hugBody`
-makes it as tall as its body and bars, as a content-sized sheet is, and
-`maxExtentFraction:` caps that at a share of the space above the keyboard (of the
+A `HarborFrame` fills the space it is given, as a page does (`HarborSizing.fill`). `sizing:
+HarborSizing.hug()` makes it as tall as its body and bars, as a content-sized sheet is, and
+`HarborSizing.hug(maxFraction: 0.9)` caps that at a share of the space above the keyboard (of the
 whole height when `bodyClearsKeyboard` is false). `systemEdges:` replaces the system edges a frame
 reads from `MediaQuery` (`HarborSystemEdges.fixed(...)`, `HarborSystemEdges.none` for goldens,
 `HarborSystemEdges.titleSafe(...)` on a TV), on a `HarborRoot` or any `HarborFrame`, and
