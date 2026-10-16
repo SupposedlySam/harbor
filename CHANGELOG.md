@@ -1,3 +1,7 @@
+## 1.0.0
+
+harbor 1.0: the API named after the layout model (#120), with every deprecated name removed. This is 1.0.0-dev.1, below, unchanged: Rubric, gravity_brew, Flyby and a production app on iOS, Android and tvOS (#152) confirmed it before release. **Migrating:** upgrade to 0.10.3 first and run `dart fix --apply` there; code with no deprecated harbor names needs no change. The notes under 1.0.0-dev.1 list everything removed and what `dart fix` still covers on a jump straight to 1.0.
+
 ## 1.0.0-dev.1
 
 A pre-release of 1.0, for consumers to retest before 1.0.0. **Breaking:** every name deprecated in 0.x is removed, as `doc/design/DECISIONS.md` planned ("removed together in one breaking release before 1.0"). Nothing else changes: the showcase videos render frame for frame as they do on 0.10.3, and a consumer written on 0.10.3's non-deprecated API compiles and passes unchanged.
