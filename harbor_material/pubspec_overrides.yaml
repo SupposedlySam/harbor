@@ -1,0 +1,6 @@
+# Develops against the harbor beside it rather than the release on pub.dev.
+dependency_overrides:
+  harbor:
+    path: ../
+  harbor_test:
+    path: ../harbor_test

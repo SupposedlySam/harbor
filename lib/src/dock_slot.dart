@@ -152,7 +152,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
     final HarborBar bar = widget.dock;
     final HarborEdgeEffect edgeEffect = widget.leavesWake ? bar.edgeEffect : HarborEdgeEffect.none;
     final double? reserved = bar.reserved;
-    final Widget content = Padding(
+    final Widget content = _SystemEdgeAnnotations(
       padding: widget.coastPadding,
       child: reserved == null
           ? MediaQuery(data: widget.mediaQuery, child: _preferredHeight(bar.child))
@@ -525,5 +525,77 @@ class _RenderPreferredHeight extends RenderProxyBox {
     bool answers = true;
     box.visitChildren((final RenderObject child) => answers = answers && _answersIntrinsics(child));
     return answers;
+  }
+}
+
+/// Pads a bar's child by the system edge it takes, and carries the child's annotations over that
+/// padding.
+///
+/// The platform reads the status bar's style from an `AnnotatedRegion<SystemUiOverlayStyle>` at the
+/// middle of the status bar, and an `AppBar` annotates only its own box. In a `Scaffold` that box
+/// runs under the status bar; in a bar it starts below it, so the status bar found no style. A
+/// lookup in the padding is answered from the nearest point of the child instead, as if the child
+/// reached the screen's edge, so `AppBar.systemOverlayStyle` sets the status bar here as it does
+/// under a `Scaffold` (and a bottom bar's annotation reaches Android's navigation bar).
+class _SystemEdgeAnnotations extends SingleChildRenderObjectWidget {
+  const _SystemEdgeAnnotations({required this.padding, super.child});
+
+  final EdgeInsetsDirectional padding;
+
+  @override
+  _RenderSystemEdgeAnnotations createRenderObject(final BuildContext context) =>
+      _RenderSystemEdgeAnnotations(padding: padding, textDirection: Directionality.of(context));
+
+  @override
+  void updateRenderObject(final BuildContext context, final _RenderSystemEdgeAnnotations renderObject) {
+    renderObject
+      ..padding = padding
+      ..textDirection = Directionality.of(context);
+  }
+}
+
+class _RenderSystemEdgeAnnotations extends RenderPadding {
+  _RenderSystemEdgeAnnotations({required EdgeInsetsDirectional super.padding, required super.textDirection});
+
+  @override
+  bool get alwaysNeedsCompositing => child != null;
+
+  @override
+  void paint(final PaintingContext context, final Offset offset) {
+    final RenderBox? child = this.child;
+    if (child == null) {
+      return;
+    }
+    final BoxParentData childParentData = child.parentData! as BoxParentData;
+    final _SystemEdgeAnnotationLayer layer =
+        (this.layer as _SystemEdgeAnnotationLayer?) ?? _SystemEdgeAnnotationLayer();
+    layer
+      ..bounds = offset & size
+      ..childBounds = (offset + childParentData.offset) & child.size;
+    this.layer = layer;
+    context.pushLayer(layer, super.paint, offset);
+  }
+}
+
+/// Answers a lookup in a bar's padding from the nearest point of its child.
+class _SystemEdgeAnnotationLayer extends ContainerLayer {
+  Rect bounds = Rect.zero;
+  Rect childBounds = Rect.zero;
+
+  @override
+  bool findAnnotations<S extends Object>(
+    final AnnotationResult<S> result,
+    final Offset localPosition, {
+    required final bool onlyFirst,
+  }) {
+    if (!bounds.contains(localPosition) || childBounds.contains(localPosition) || childBounds.isEmpty) {
+      return super.findAnnotations(result, localPosition, onlyFirst: onlyFirst);
+    }
+    // A Rect contains its top and left edges but not its bottom and right ones.
+    final Offset nearest = Offset(
+      clampDouble(localPosition.dx, childBounds.left, math.max(childBounds.left, childBounds.right - 0.5)),
+      clampDouble(localPosition.dy, childBounds.top, math.max(childBounds.top, childBounds.bottom - 0.5)),
+    );
+    return super.findAnnotations(result, nearest, onlyFirst: onlyFirst);
   }
 }
