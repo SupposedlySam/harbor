@@ -241,6 +241,61 @@ All of these land after the four areas above, each with fixes:
   rarely written already, and `HarborFrame.page` stays explicit, for a frame inside another frame that
   should ignore its bars.
 
+## harbor_material (2026-10-16)
+
+harbor's core stays Material-free, as 0.2.0 made it ("harbor's core imports no design library, and a
+test keeps it that way"), with a companion package for the Material pieces once people asked for
+them. Two consumers have asked by writing the same glue by hand. Rubric did
+first, and Flyby, adopting harbor fully, wrote it again as `AppFrame`, `showAppSheet`, a drag handle,
+`AppToast` and a `HarborDefaults` filled from `MaterialLocalizations`. So the glue is a package,
+`harbor_material/`, beside `harbor_test/` and built the same way: its own pubspec, CHANGELOG and
+tests, a committed `pubspec_overrides.yaml` pointing harbor (and harbor_test) at the checkout, and a
+directory of its own in `tool/check.sh`. It is not one of harbor's dev dependencies, so the root
+analysis excludes it rather than resolve its imports without its `pub get`. 0.1.0 asks for
+`harbor: ^1.0.0` and is released after harbor 1.0.0.
+
+- **Which Material.** `package:flutter/material.dart`, the SDK's. Flutter 3.47 also publishes
+  Material as `material_ui`, but its `Theme` and `ThemeData` are other classes, so a package built on
+  one reads no theme in an app built on the other. Every consumer (Rubric, gravity_brew, Flyby)
+  imports the SDK's, and the 3.47.4 SDK's `material.dart` carries no deprecation. If the framework
+  copy is removed, as `test/boundary_test.dart` expects, harbor_material moves to `material_ui`
+  with its consumers, in a breaking release of its own.
+- **The names.** Each one is a harbor name with `Material` in it, as the package's name is:
+  `HarborMaterialFrame` is a `HarborFrame` on a Material page. It is not `HarborScaffold`, because it
+  is not a `Scaffold`: no drawer, no snack bar host, no `resizeToAvoidBottomInset`. It is not
+  `AppFrame` either, since that name belongs to the app. `HarborMaterialBar.appBar` returns a
+  `HarborBar`, as `HarborSheet.defaultHeaderBar` does. `HarborBar`'s constructors are harbor's, and
+  an extension cannot add one, so it is a static on a class of its own. `HarborMaterialDefaults.of`,
+  `HarborSnackToast` with `context.showSnackToast`, and `HarborMaterialSheet` with its
+  `HarborMaterialSheetSurface` and `HarborMaterialDragHandle` follow the same pattern.
+- **An AppBar's colour behind the status bar** comes from the bar's backdrop: a `Material` resolved
+  by the `AppBar`'s own rules, listening to the same `ScrollNotificationObserver` the `AppBar`
+  hears, so Material 3's scrolled-under colour and tint change with it. The other way would be to
+  let the `AppBar` run under the status bar and pad itself, as it does in a `Scaffold`. A bar hands
+  its child a `MediaQuery` with its own edge taken out, which is harbor's rule for every bar, and
+  carving out an exception for one widget is not worth it. The cost is that a translucent `AppBar`
+  colour is painted twice over the toolbar, which the docs say.
+- **A drag handle with no header** goes in a solid bar, so a plain body starts below it, as Material
+  pads a sheet's content below its handle. With a header, the handle goes above it, in the header's
+  bar.
+- **The sheet's surface is not clipped.** The content is clipped to the surface's shape by the
+  transparent `Material` over it, not by `HarborSheet.clip`, which would clip the surface's shadow
+  too.
+
+**In harbor's core, with it (1.0.x):** a bar carries its child's annotations over the system edge it
+pads. The platform reads the status bar's style at the middle of the status bar, and an `AppBar`
+annotates only its own box, which a bar pads below the status bar. Measured on every phone trial
+device, an `AppBar.systemOverlayStyle` in a top bar was never applied (`test/status_bar_style_test.dart`).
+A `systemOverlayStyle:` on the bar was the other choice. The automatic one fixes every app that put an
+`AppBar` in a bar, with no new API, follows the `AppBar`'s style as it changes, and works for any
+annotation, so a bottom bar's reaches Android's navigation bar. A child with no annotation leaves the
+lookup to the page, as before.
+
+**Out of scope:** a top-anchored sheet, one that pulls down from under the status bar. Sheets come
+up from the bottom. A pull-down panel is a float, a popover or an `OverlayPortal` that keeps clear
+of the status bar by `HarborRoom.of(context).systemEdges`. The README says so where it describes
+sheets.
+
 ## Product work outside the API
 
 - **Android landscape trial devices**, gesture and 3-button: yes, in `harbor_test` and the

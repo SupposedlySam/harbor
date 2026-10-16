@@ -28,3 +28,7 @@ One line per reading, newest last:
   steers away from. Claims checked against the code only where a fix touched them.
 - README.md — read whole at 7814ea3 on 2026-10-14 — for the sheets step: its float, sheet and
   dialog sections moved onto `HarborBarrier` and `headerBar:`/`footerBar:`; nothing else changed.
+- README.md — read whole at 9bc5490 on 2026-10-16 — for harbor_material: added the "Using
+  Material?" pointer under Installing, a line that a top-anchored sheet is out of scope, and that a
+  trial device's `systemEdges` is what other packages call its safe area. Nothing else changed; I
+  checked only the claims those lines lean on.
