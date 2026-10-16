@@ -22,6 +22,11 @@ else
   exit 2
 fi
 
+# A release's version bump must match what changed since the last release: the build number (+N)
+# for docs, tests and the example; a semantic version for code a consumer can observe.
+echo "== version bumps"
+python3 "$root/tool/check_version.py"
+
 for dir in "$root" "$root/harbor_test" "$root/harbor_material" "$root/example"; do
   echo "== ${dir#"$root"}/"
   (
