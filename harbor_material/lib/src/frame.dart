@@ -16,6 +16,11 @@ import 'app_bar.dart';
 /// `resizeToAvoidBottomInset`: the frame keeps clear of the keyboard itself
 /// ([bodyClearsKeyboard]), bar by bar.
 ///
+/// It is not a `Scaffold`, so `ScaffoldMessenger.showSnackBar` and `showMaterialBanner` have nothing
+/// to present into: with no `Scaffold` on screen they assert in debug and show nothing in release.
+/// Show snack bars on a page built from this frame with
+/// [HarborSnackToasts.showSnackToast] instead.
+///
 /// ```dart
 /// HarborMaterialFrame(
 ///   appBar: AppBar(title: const Text('Inbox')),
