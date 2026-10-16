@@ -44,10 +44,7 @@ void main() {
               slivers: <Widget>[
                 SliverToBoxAdapter(child: SizedBox(height: 420)),
                 SliverToBoxAdapter(
-                  child: HarborKeepInSight(
-                    keepInSight: true,
-                    child: SizedBox(key: ValueKey<String>('field'), height: 40),
-                  ),
+                  child: HarborKeepVisible(child: SizedBox(key: ValueKey<String>('field'), height: 40)),
                 ),
                 SliverToBoxAdapter(child: SizedBox(height: 1500)),
               ],

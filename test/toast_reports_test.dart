@@ -337,7 +337,12 @@ void main() {
     Widget page(final Widget body) => MaterialApp(
       builder: (final c, final child) => HarborRoot(child: child!),
       home: HarborFrame(
-        bottom: <HarborBar>[HarborBar.solid(duration: Duration.zero, child: _bar('nav', 56))],
+        bottom: <HarborBar>[
+          HarborBar.solid(
+            animationStyle: const AnimationStyle(duration: Duration.zero),
+            child: _bar('nav', 56),
+          ),
+        ],
         body: body,
       ),
     );

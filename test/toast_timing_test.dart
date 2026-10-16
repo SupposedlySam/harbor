@@ -1,13 +1,8 @@
 // HarborToastTiming: one value for how long a toast stays (doc/design/flares.md, DECISIONS Q11-Q14),
-// the deprecated duration:, persist:, countsEntrance: and countsWhileCovered: forwarding to it, and
-// the slim HarborToastEntry a caller holds.
-
-// The deprecated spellings are what part of this file checks.
-// ignore_for_file: deprecated_member_use_from_same_package
+// and the slim HarborToastEntry a caller holds.
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
@@ -125,127 +120,10 @@ void main() {
       await _wait(tester, 0.2);
       expect(entry.showing.value, isFalse, reason: 'counted from the start of the entrance, not its end');
     });
-
-    testWidgets('given with a deprecated spelling, it asserts', (final tester) async {
-      final BuildContext page = await _page(tester);
-      for (final VoidCallback show in <VoidCallback>[
-        () => HarborToasts.show(page, timing: HarborToastTiming.untilHidden, duration: null, builder: _toast),
-        () => HarborToasts.show(page, timing: HarborToastTiming.untilHidden, persist: false, builder: _toast),
-        () => HarborToasts.show(page, timing: HarborToastTiming.untilHidden, countsEntrance: false, builder: _toast),
-        () =>
-            HarborToasts.show(page, timing: HarborToastTiming.untilHidden, countsWhileCovered: false, builder: _toast),
-      ]) {
-        expect(show, throwsAssertionError);
-      }
-    });
-  });
-
-  group('the deprecated spellings forward to it', () {
-    testWidgets('duration: null stays, and duration: d is d', (final tester) async {
-      final BuildContext page = await _page(tester);
-      final HarborToastEntry stays = HarborToasts.show(page, duration: null, builder: _toast);
-      final HarborToastEntry two = HarborToasts.show(
-        page,
-        slot: HarborToastSlot.low,
-        duration: const Duration(seconds: 2),
-        builder: _toast,
-      );
-      expect(stays.duration, isNull);
-      expect(two.duration, const Duration(seconds: 2));
-      await _wait(tester, 2.5);
-      expect(two.showing.value, isFalse);
-      expect(stays.showing.value, isTrue);
-      stays.hide();
-      await _wait(tester, 1);
-    });
-
-    testWidgets('persist: true is a null duration, whatever duration: says', (final tester) async {
-      final BuildContext page = await _page(tester);
-      final HarborToastEntry entry = HarborToasts.show(
-        page,
-        persist: true,
-        duration: const Duration(seconds: 1),
-        builder: _toast,
-      );
-      expect(entry.duration, isNull);
-      expect(entry.persist, isTrue);
-      await _wait(tester, 10);
-      expect(entry.showing.value, isTrue);
-      // The behaviour change: persist was a flag beside the duration, so setting a duration on a
-      // persisting toast started no time. It is the duration now, so it does.
-      entry.duration = const Duration(seconds: 1);
-      expect(entry.persist, isFalse);
-      await _wait(tester, 1.1);
-      expect(entry.showing.value, isFalse);
-    });
-
-    testWidgets('persist: false is the default', (final tester) async {
-      final BuildContext page = await _page(tester);
-      final HarborToastEntry entry = HarborToasts.show(page, persist: false, builder: _toast);
-      expect(entry.duration, const Duration(seconds: 4));
-      await _wait(tester, 4.5);
-      expect(entry.showing.value, isFalse);
-    });
-
-    testWidgets('countsEntrance: counts the entrance', (final tester) async {
-      final BuildContext page = await _page(tester);
-      final HarborToastEntry entry = HarborToasts.show(
-        page,
-        countsEntrance: true,
-        duration: const Duration(seconds: 1),
-        builder: _toast,
-      );
-      expect(entry.countsEntrance, isTrue);
-      await _wait(tester, 0.9);
-      expect(entry.showing.value, isTrue, reason: 'positive control: still up just before its second');
-      await _wait(tester, 0.2);
-      expect(entry.showing.value, isFalse, reason: 'counted from the start of the entrance, not its end');
-    });
-
-    for (final bool counts in <bool>[false, true]) {
-      testWidgets('countsWhileCovered: $counts ${counts ? 'runs the time' : 'stops it'} under a covering page', (
-        final tester,
-      ) async {
-        final BuildContext page = await _page(tester);
-        final HarborToastEntry entry = HarborToasts.show(
-          page,
-          countsWhileCovered: counts,
-          duration: const Duration(seconds: 2),
-          builder: _toast,
-        );
-        expect(entry.countsWhileCovered, counts);
-        await _wait(tester, 0.3); // the entrance
-        unawaited(
-          Navigator.of(page).push(
-            MaterialPageRoute<void>(builder: (final BuildContext _) => const HarborFrame(body: Text('next page'))),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await _wait(tester, 3);
-        expect(entry.showing.value, !counts);
-        entry.hide();
-        await _wait(tester, 1);
-      });
-    }
-
-    testWidgets('raise, the 0.8 name, forwards them too', (final tester) async {
-      final BuildContext page = await _page(tester);
-      final HarborToastEntry entry = HarborToasts.raise(page, persist: true, builder: _toast);
-      expect(entry.duration, isNull);
-      final HarborToastEntry timed = HarborToasts.raise(
-        page,
-        slot: HarborToastSlot.low,
-        timing: const HarborToastTiming(duration: Duration(seconds: 1)),
-        builder: _toast,
-      );
-      expect(timed.duration, const Duration(seconds: 1));
-      entry.hide();
-      await _wait(tester, 2);
-    });
   });
 
   group('the entry', () {
-    testWidgets('reads back how it was shown through its deprecated getters', (final tester) async {
+    testWidgets('reads back how it was placed', (final tester) async {
       final BuildContext page = await _page(tester);
       final HarborToastEntry entry = HarborToasts.show(
         page,
@@ -256,13 +134,6 @@ void main() {
         builder: _toast,
       );
       await tester.pump();
-      expect(entry.queue, HarborToastQueue.replace);
-      expect(entry.liveRegion, isFalse);
-      expect(entry.transitionDuration, Duration.zero);
-      expect(entry.owner, same(HarborFrame.of(page)));
-      expect(entry.shownFrom, same(HarborFrame.of(page)));
-      expect(entry.timing, isA<ValueListenable<int>>());
-      expect(entry.reachesSystemEdges, isFalse);
       expect(entry.placement, isA<HarborAligned>());
       expect(entry.anchor, isNull);
       expect(entry.side, HarborAnchorSide.below, reason: 'non-null, for HarborAnchorClip(side: entry.side)');
@@ -270,15 +141,6 @@ void main() {
       await _wait(tester, 1);
     });
 
-    testWidgets('hide(reason:), deprecated, still reports the first reason given', (final tester) async {
-      final BuildContext page = await _page(tester);
-      final HarborToastEntry entry = HarborToasts.show(page, builder: _toast);
-      entry
-        ..hide(reason: HarborToastClosedReason.dismiss)
-        ..hide();
-      await _wait(tester, 1);
-      expect(await _closed(tester, entry), HarborToastClosedReason.dismiss);
-    });
     testWidgets('dismiss() closes it as the user dismissed it', (final tester) async {
       final BuildContext page = await _page(tester);
       final HarborToastEntry entry = HarborToasts.show(page, timing: HarborToastTiming.untilHidden, builder: _toast);

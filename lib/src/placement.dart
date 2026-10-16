@@ -18,12 +18,6 @@ enum HarborAnchorSide {
   start,
   end;
 
-  @Deprecated('Use HarborAnchorSide.start, the reading-order name Flutter uses.')
-  static const HarborAnchorSide before = start;
-
-  @Deprecated('Use HarborAnchorSide.end, the reading-order name Flutter uses.')
-  static const HarborAnchorSide after = end;
-
   HarborAnchorSide get _opposite => switch (this) {
     above => below,
     below => above,

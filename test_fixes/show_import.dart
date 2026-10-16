@@ -5,7 +5,8 @@
 // (Dart 3.13.3): a template's `kind: 'import'` variable reaches DartEditBuilder.writeImportedName,
 // which takes the existing import of package:harbor/harbor.dart without reading its combinators, and
 // a `replacedBy` asks importLibraryElement for that import without a name to show. A rename is
-// different: it renames the name in the `show` list too, as HarborDockKind shows here. The README's
+// different: it renamed the name in the `show` list too, while the old name existed; against 1.0, which
+// removed HarborDockKind, the list keeps it (undefined_shown_name), as this golden shows. The README's
 // upgrading section and each release's Migrating notes say what to do by hand. If the analyzer
 // learns to extend the list, this golden fails, and the notes can go.
 //
@@ -29,7 +30,7 @@ Widget _toast(BuildContext context) => const SizedBox();
 
 Object show(BuildContext context, HarborController frame) {
   // A rename: the shown name is renamed with the call.
-  const Object kind = HarborDockKind.pier;
+  const Object kind = HarborDockKind.overlay;
   // toasts.yaml: HarborToastTiming.
   HarborToasts.show(context, duration: const Duration(seconds: 2), builder: _toast);
   // placement.yaml: HarborAligned.

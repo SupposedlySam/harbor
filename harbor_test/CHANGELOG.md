@@ -1,3 +1,10 @@
+## 1.0.0-dev.1
+
+Needs harbor 1.0.0-dev.1, a pre-release of 1.0, and is one too. **Breaking:** every name deprecated in 0.x is removed. Nothing else changes.
+
+* Removed: the `HarborSeaTrials` extension (`pumpSeaTrial`, now `pumpHarborTrial`), the `HarborSeaTrial` typedef (`HarborTrial`), `isInClearWater` (`isInRoom`), `HarborTrial.tideIn`, `waterline`, `raiseTide`, `lowerTide`, `setTide`, `clearWaterAround` and `docksAround` (`keyboardShown`, `keyboardTop`, `showKeyboard`, `hideKeyboard`, `setKeyboard`, `roomAround`, `barsAround`), and `HarborTrialDevice.coast`, `tideHeight`, `reportsCoastUnderTide` and `coastWhen` (`systemEdges`, `keyboardHeight`, `reportsSystemEdgesUnderKeyboard`, `systemEdgesWhen`).
+* **Migrating:** upgrade to 0.4.3 (with harbor 0.10.3) first and run `dart fix --apply` there; code with no deprecated harbor_test names needs no change. Against 1.0.0-dev.1 directly, harbor_test's fix data still renames `tester.pumpSeaTrial(...)` (and a bare `pumpSeaTrial(...)` inside an extension on `WidgetTester`), the types, the methods and the device's getters read through a receiver. It cannot rename a getter read through implicit `this` in an extension on `HarborTrial` or `HarborTrialDevice`, or the method of `HarborSeaTrials(tester).pumpSeaTrial(...)`, which becomes `HarborTrials(tester).pumpSeaTrial(...)`: write `tester.pumpHarborTrial(...)`. harbor's CHANGELOG has the full list.
+
 ## 0.4.3
 
 * **Migrating:** a test that reaches a trial through a helper (`session.trial.docksAround(finder)`), without importing harbor_test itself, needs `import 'package:harbor_test/harbor_test.dart';` added before `dart fix` (#150). The analyzer offers harbor_test's fixes only in a file that imports it; `dart fix --apply` removes the import again when the file names nothing from it. Every deprecation message now says so. harbor's CHANGELOG has the details.

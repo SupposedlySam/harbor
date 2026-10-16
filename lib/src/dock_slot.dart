@@ -11,10 +11,6 @@ import 'edge_effect.dart';
 
 /// Builds one bar in its frame: its system edge padding, backdrop, frosting,
 /// hairline, and its dark and withdraw animations.
-@Deprecated(
-  'HarborDockSlot is how a harbor builds a dock, and stops being exported in a later release. Read where bars '
-  'are with HarborInspector.nearest(context).bars (or barsAround in harbor_test), or find the dock\'s child.',
-)
 class HarborDockSlot extends StatefulWidget {
   /// Made by the frame for each of its bars.
   @internal
@@ -61,15 +57,19 @@ class HarborDockSlot extends StatefulWidget {
   }
 }
 
+/// How a bar moves where its `animationStyle` does not say.
+const Duration _defaultDuration = Duration(milliseconds: 250);
+const Curve _defaultCurve = Curves.easeInOutCubic;
+
 class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStateMixin {
   late final AnimationController _presence = AnimationController(
     vsync: this,
-    duration: widget.dock.duration,
+    duration: _defaultDuration,
     value: widget.state == HarborBarState.withdrawn ? 0.0 : 1.0,
   );
   late final AnimationController _light = AnimationController(
     vsync: this,
-    duration: widget.dock.duration,
+    duration: _defaultDuration,
     value: widget.state == HarborBarState.dark ? 0.0 : 1.0,
   );
   late final CurvedAnimation _presenceCurve = CurvedAnimation(
@@ -79,7 +79,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   );
   late final CurvedAnimation _lightCurve = CurvedAnimation(parent: _light, curve: _curve, reverseCurve: _reverseCurve);
 
-  Curve get _curve => widget.dock.animationStyle?.curve ?? widget.dock.curve;
+  Curve get _curve => widget.dock.animationStyle?.curve ?? _defaultCurve;
   Curve get _reverseCurve => widget.dock.animationStyle?.reverseCurve ?? _curve;
 
   @override
@@ -116,7 +116,7 @@ class _HarborDockSlotState extends State<HarborDockSlot> with TickerProviderStat
   void _setDurations() {
     final bool still = MediaQuery.disableAnimationsOf(context);
     final AnimationStyle? style = widget.dock.animationStyle;
-    final Duration duration = still ? Duration.zero : style?.duration ?? widget.dock.duration;
+    final Duration duration = still ? Duration.zero : style?.duration ?? _defaultDuration;
     final Duration reverseDuration = still ? Duration.zero : style?.reverseDuration ?? duration;
     for (final AnimationController controller in <AnimationController>[_presence, _light]) {
       controller

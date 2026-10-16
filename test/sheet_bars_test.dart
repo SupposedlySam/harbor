@@ -94,7 +94,7 @@ void main() {
       tester,
       page,
       const HarborSheet(
-        footerBar: HarborBar.solid(withdrawsAtHighTide: true, child: _actions),
+        footerBar: HarborBar.solid(keyboard: HarborKeyboardStance.withdraws, child: _actions),
         body: _body,
       ),
     );
@@ -167,43 +167,5 @@ void main() {
       ),
       throwsAssertionError,
     );
-  });
-
-  group('the deprecated knobs', () {
-    testWidgets('still set the plain footer, and with a footerBar are an assert', (final tester) async {
-      final (_, BuildContext page) = await _page(tester, device: HarborTrialDevice.iPhoneSE);
-      // ignore: deprecated_member_use_from_same_package
-      await _open(tester, page, const HarborSheet(footer: _actions, footerMinimum: 0, body: _body));
-      expect(_rect(tester, 'actions').bottom, 667, reason: 'no minimum, on a phone with no home indicator');
-      expect(
-        // ignore: deprecated_member_use_from_same_package
-        () => HarborSheet(
-          footerBar: const HarborBar.solid(child: _actions),
-          footerMinimum: 0,
-          body: _body,
-        ),
-        throwsAssertionError,
-      );
-      expect(
-        // ignore: deprecated_member_use_from_same_package
-        () => HarborSheet(
-          headerBar: const HarborBar.overlay(child: _title),
-          headerEdgeEffect: HarborEdgeEffect.none,
-          body: _body,
-        ),
-        throwsAssertionError,
-      );
-    });
-
-    test('read back what the plain bars use', () {
-      // ignore: deprecated_member_use_from_same_package
-      const HarborSheet sheet = HarborSheet(footer: _actions, footerKeyboard: HarborKeyboardStance.stays, body: _body);
-      // ignore: deprecated_member_use_from_same_package
-      expect(sheet.footerKeyboard, HarborKeyboardStance.stays);
-      // ignore: deprecated_member_use_from_same_package
-      expect(sheet.footerMinimum, 16);
-      // ignore: deprecated_member_use_from_same_package
-      expect(sheet.headerEdgeEffect, const HarborEdgeEffect.fade(length: 12));
-    });
   });
 }

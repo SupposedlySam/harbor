@@ -2,6 +2,11 @@
 // subclass whose constructors are replaced by HarborBar's; HarborMooringLine, replaced by
 // HarborClear.rowInsets; HarborBuoy, a subclass too; and named constructors reached through an old
 // type name, which keep their names.
+//
+// 1.0 removed the old classes, so the calls here are written without `const`: against 1.0 a `const`
+// creation of a removed class gets no fix (jump_to_1_0.dart). HarborDock's constructors are keyed on
+// HarborBar, where its class rename lands them. A HarborMooringLine tear-off was yours to change in
+// 0.9, and still is: its type is left.
 
 import 'package:flutter/widgets.dart';
 import 'package:harbor/harbor.dart';
@@ -14,15 +19,13 @@ void bars() {
     const HarborBar.reserve(extent: 40, kind: HarborBarKind.solid),
   ];
   HarborFrame(top: top, bottom: const <HarborBar>[HarborBar.solid(child: SizedBox())], body: const SizedBox());
-  final HarborBar Function({required Widget child}) pier = HarborBar.overlay;
-  <Object?>[pier];
 }
 
 void rows() {
   const HarborClear.rowInsets(child: SizedBox());
   const HarborClear.rowInsets(follow: HarborFollow.resting, child: SizedBox());
   // A tear-off and the type HarborMooringLine have no HarborClear equivalent: left, deprecated.
-  final HarborMooringLine Function({required Widget child}) row = HarborMooringLine.new;
+  final HarborMooringLine Function({required Widget child}) row = HarborClear.rowInsets.new;
   <Object?>[row];
 }
 

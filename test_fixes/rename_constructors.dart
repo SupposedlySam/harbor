@@ -2,33 +2,36 @@
 // subclass whose constructors are replaced by HarborBar's; HarborMooringLine, replaced by
 // HarborClear.rowInsets; HarborBuoy, a subclass too; and named constructors reached through an old
 // type name, which keep their names.
+//
+// 1.0 removed the old classes, so the calls here are written without `const`: against 1.0 a `const`
+// creation of a removed class gets no fix (jump_to_1_0.dart). HarborDock's constructors are keyed on
+// HarborBar, where its class rename lands them. A HarborMooringLine tear-off was yours to change in
+// 0.9, and still is: its type is left.
 
 import 'package:flutter/widgets.dart';
 import 'package:harbor/harbor.dart';
 
 void bars() {
   final List<HarborDock> top = <HarborDock>[
-    const HarborDock.pier(child: SizedBox()),
-    const HarborDock.quay(debugLabel: 'tabs', child: SizedBox()),
-    const HarborDock.reserve(extent: 80),
-    const HarborDock.reserve(extent: 40, kind: HarborDockKind.quay),
+    HarborDock.pier(child: SizedBox()),
+    HarborDock.quay(debugLabel: 'tabs', child: SizedBox()),
+    HarborDock.reserve(extent: 80),
+    HarborDock.reserve(extent: 40, kind: HarborDockKind.solid),
   ];
   Harbor(top: top, bottom: const <HarborDock>[HarborDock.quay(child: SizedBox())], body: const SizedBox());
-  final HarborDock Function({required Widget child}) pier = HarborDock.pier;
-  <Object?>[pier];
 }
 
 void rows() {
-  const HarborMooringLine(child: SizedBox());
-  const HarborMooringLine(follow: HarborFollow.resting, child: SizedBox());
+  HarborMooringLine(child: SizedBox());
+  HarborMooringLine(follow: HarborFollow.resting, child: SizedBox());
   // A tear-off and the type HarborMooringLine have no HarborClear equivalent: left, deprecated.
   final HarborMooringLine Function({required Widget child}) row = HarborMooringLine.new;
   <Object?>[row];
 }
 
 void floats(HarborAnchor anchor) {
-  const HarborBuoy(child: SizedBox());
-  const HarborBuoy(modal: true, onDismiss: _close, child: SizedBox());
+  HarborBuoy(child: SizedBox());
+  HarborBuoy(modal: true, onDismiss: _close, child: SizedBox());
   const List<HarborBuoy> floats = <HarborBuoy>[HarborBuoy(child: SizedBox())];
   <Object?>[floats];
 }
@@ -36,10 +39,10 @@ void floats(HarborAnchor anchor) {
 void named(BuildContext context) {
   HarborFairway.box(child: const SizedBox());
   HarborFairway.paddingOf(context);
-  const HarborCoast.fixed(EdgeInsets.zero);
-  const HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05));
-  const HarborWake.fade(length: 12);
-  const HarborWake.hairline();
+  HarborCoast.fixed(EdgeInsets.zero);
+  HarborCoast.titleSafe(HarborTitleSafe.fraction(0.05));
+  HarborWake.fade(length: 12);
+  HarborWake.hairline();
   HarborSheet.draggable(builder: (context, controller) => const SizedBox());
 }
 
@@ -53,7 +56,7 @@ void stored(HarborDock dock, Harbor frame, HarborSea sea) {
   final HarborCoast root = sea.coast;
   final List<HarborBuoy> floats = frame.buoys;
   final HarborFairway scroll = HarborFairway(slivers: const <Widget>[]);
-  final HarborDock copy = dock.copyWith(tide: HarborTideStance.float);
+  final HarborDock copy = dock.copyWith(tide: HarborTideStance.rides);
   <Object?>[edge, top, edges, root, floats, scroll, copy];
 }
 
@@ -65,7 +68,7 @@ void subclasses(BuildContext context, OverlayPortalController menu, HarborWaters
     remaining: 0,
     highWater: 300,
     highWaterIsEstimate: false,
-    phase: HarborTidePhase.low,
+    phase: HarborTidePhase.hidden,
   );
   final HarborTideState read = HarborTide.of(context);
   const HarborWakeBand band = HarborWakeBand(dockEdge: 40, wakeEnd: 80, dockOpacity: 0.5);
@@ -78,12 +81,12 @@ void subclasses(BuildContext context, OverlayPortalController menu, HarborWaters
   const HarborPontoon attached = HarborPontoon(edge: HarborEdge.bottom, dock: HarborDock.pier(child: SizedBox()), child: SizedBox());
   const HarborDockRecord record = HarborDockRecord(
     edge: HarborEdge.top,
-    kind: HarborDockKind.pier,
+    kind: HarborDockKind.overlay,
     rect: Rect.zero,
     extent: 0,
     restingExtent: 0,
     state: HarborDockState.open,
-    tide: HarborTideStance.pilings,
+    tide: HarborTideStance.stays,
   );
   final HarborChartEntry? nearest = HarborChart.nearest(context);
   final List<HarborDockRecord> docks = nearest?.docks ?? const <HarborDockRecord>[];

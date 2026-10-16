@@ -39,6 +39,46 @@ wins.
   timing, defaults). Nautical names stay on harbor's own ideas (buoy, flare, dock, clear water).
   Whether harbor's own ideas get renamed (#120) is decided last, once the surface is smaller.
 
+## Fix data after 1.0 (1.0.0-dev.1, 2026-10-16)
+
+1.0 removes every deprecated name, so a 0.x call is no longer `deprecated_member_use` but
+`undefined_*`, and a data-driven fix fires only where the analyzer offers one for that diagnostic.
+Measured in a scratch consumer (Dart 3.13, the Flutter in `.fvmrc`): every `test_fixes/` input, a
+0.8-era file, fixed against 0.10.3 and against 1.0, then compared with the goldens. Against 0.10.3
+every golden matched. Against 1.0:
+
+- **Still fire:** type renames (typedefs and removed subclasses), member renames through a
+  receiver or in a subclass, methods through implicit `this`, parameter renames, and the composite
+  rewrites (`placement.yaml`, `sheets.yaml`, `toasts.yaml`, `bars.yaml`, `audit.yaml`,
+  `defaults.yaml`), in calls written without `const`. A transform keyed on a surviving class fires
+  even where the member it names is gone (`HarborFloat.anchored`, `HarborScrollView.box`).
+- **Kept, re-keyed:** `HarborDock.pier`, `.quay` and `.reserve`. Keyed on `HarborDock`, they never
+  matched once the class was gone, and the class rename turned `HarborDock.pier(...)` into an
+  undefined `HarborBar.pier(...)`. Keyed on `HarborBar`, where the rename lands them, they fire on
+  the next pass, parameters included. The owner chose to re-key rather than drop, since these are
+  the most-used 0.8 calls.
+- **Kept, guarded:** `HarborFlarePolicy` to `HarborDefaultsScope`. Unguarded, it matched
+  `HarborFlarePolicy.queueOf(context)` against 1.0, its `queue` template was invalid, and the
+  analysis server threw ("Cannot access an invalid result") and left `dart fix` hanging for the
+  whole project. `if: "queue != ''"` keeps it to the constructor call; `test_fixes/defaults.dart`
+  keeps the `queueOf` line.
+- **Dropped, cannot fire:** renamed enum values (`undefined_enum_constant` gets no data-driven
+  fix), `HarborKeepInSight.reveal` and `.coverageOf` (keyed on a class that splits rather than
+  being renamed), the `HarborDock`-keyed constructor transforms (re-keyed above), and
+  `pumpSeaTrial` keyed on `HarborSeaTrials`. Re-keying that one on `HarborTrials`, by `inExtension:`
+  or `inClass:`, was measured and does not fire: no data-driven fix for a method an extension
+  override lacks. Dropped, firing into nothing: `HarborToastEntry.raisedIn` and `reachesCoast`,
+  whose targets 1.0 removed too.
+- **Left, the analyzer's:** a `const` creation of a removed class gets no fix at all (written
+  without `const`, the same call migrates fully), a getter read through implicit `this` in an
+  extension, a tear-off of a removed constructor, and a removed name in a `show` list.
+  `test_fixes/jump_to_1_0.dart` records each, and the CHANGELOG lists them with the advice to step
+  through 0.10.3, where every fix applies. The `dart:core` `uris:` workaround stays rejected (#150).
+
+The goldens' inputs now write removed-class creations without `const`, so they keep checking the
+transforms rather than the `const` limit, and `rename_values.dart` is gone with the enum-value
+renames it checked.
+
 ## Naming (#120): adopt the rename
 
 Harbor's capabilities are worth learning; the harbour words are a tax on top of them. The README

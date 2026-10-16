@@ -11,15 +11,7 @@ enum HarborRest {
   fadeEnd,
 
   /// At the bar's inner face, with the last stretch of the fade over the first row.
-  barFace;
-
-  /// The old name of [fadeEnd].
-  @Deprecated('Renamed fadeEnd. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborRest wakeEnd = fadeEnd;
-
-  /// The old name of [barFace].
-  @Deprecated('Renamed barFace. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborRest dockEdge = barFace;
+  barFace,
 }
 
 enum HarborEdgeEffectKind { none, fade, hairline }
@@ -68,21 +60,11 @@ class HarborEdgeEffect with Diagnosticable {
     this.length = 16.0,
     this.blurSigma = 0.0,
     this.restsAt = HarborRest.fadeEnd,
-    final double faceOpacity = 0.25,
-    @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final double? dockOpacity,
+    this.faceOpacity = 0.25,
     this.curve = Curves.linear,
-  }) : assert(
-         dockOpacity == null || faceOpacity == 0.25 || dockOpacity == faceOpacity,
-         'faceOpacity and the deprecated dockOpacity disagree. Give faceOpacity alone.',
-       ),
-       assert(
-         (dockOpacity ?? faceOpacity) >= 0.0 && (dockOpacity ?? faceOpacity) <= 1.0,
-         'faceOpacity is an opacity, from 0 to 1.',
-       ),
+  }) : assert(faceOpacity >= 0.0 && faceOpacity <= 1.0, 'faceOpacity is an opacity, from 0 to 1.'),
        kind = HarborEdgeEffectKind.fade,
-       color = null,
-       faceOpacity = dockOpacity ?? faceOpacity;
+       color = null;
 
   /// A line of [thickness] on the bar's inner face.
   ///
@@ -106,10 +88,6 @@ class HarborEdgeEffect with Diagnosticable {
 
   /// How opaque content is at the bar's inner face, for a fade.
   final double faceOpacity;
-
-  /// The old name of [faceOpacity].
-  @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  double get dockOpacity => faceOpacity;
 
   /// The shape of a fade's ramp from [faceOpacity] at the bar's inner face to
   /// fully opaque where the fade ends.
@@ -154,41 +132,6 @@ class HarborEdgeEffect with Diagnosticable {
   }
 }
 
-/// The old name of [HarborEdgeEffect], whose constructors keep their names.
-///
-/// A subclass rather than a typedef: `dart fix` renames `fade(dockOpacity:)`, and a typedef cannot
-/// carry a fix on a named constructor's call.
-@Deprecated('Renamed HarborEdgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborWake extends HarborEdgeEffect {
-  const HarborWake._none() : super._(HarborEdgeEffectKind.none);
-
-  /// The old name of [HarborEdgeEffect.none].
-  static const HarborWake none = HarborWake._none();
-
-  /// The old name of [HarborEdgeEffect.fade].
-  @Deprecated('Renamed HarborEdgeEffect.fade. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborWake.fade({
-    super.length = 16.0,
-    super.blurSigma,
-    super.restsAt,
-    final double faceOpacity = 0.25,
-    @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final double? dockOpacity,
-    super.curve,
-  }) : assert(
-         dockOpacity == null || faceOpacity == 0.25 || dockOpacity == faceOpacity,
-         'faceOpacity and the deprecated dockOpacity disagree. Give faceOpacity alone.',
-       ),
-       super._(HarborEdgeEffectKind.fade, faceOpacity: dockOpacity ?? faceOpacity);
-
-  /// The old name of [HarborEdgeEffect.hairline].
-  @Deprecated(
-    'Renamed HarborEdgeEffect.hairline. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  const HarborWake.hairline({final double thickness = 1.0, final Color color = const Color(0x1F000000)})
-    : super._(HarborEdgeEffectKind.hairline, length: thickness, color: color, restsAt: HarborRest.barFace);
-}
-
 /// Wraps a frame's body so content fades out as it passes under the bars.
 ///
 /// Give a [HarborFrame] your own to draw the edge effect differently (a progressive blur
@@ -196,13 +139,6 @@ class HarborWake extends HarborEdgeEffect {
 /// body's edge.
 typedef HarborEdgeEffectPainter =
     Widget Function(BuildContext context, Map<HarborEdge, HarborFadeBand> bands, Widget body);
-
-/// The default [HarborEdgeEffectPainter]: an alpha mask over the body, transparent
-/// at the body's edge, a quarter opaque at the bar's inner face, and fully
-/// opaque where the fade ends.
-@Deprecated('Use HarborFadeMask.alphaFade instead. Deprecated after 0.2.0.')
-Widget harborAlphaWake(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) =>
-    HarborFadeMask.alphaFade(context, bands, body);
 
 /// An alpha mask that fades [child] out along its fade [bands]. Paints
 /// nothing extra when there are none, so it can always be in the tree.
@@ -217,26 +153,13 @@ class HarborFadeMask extends SingleChildRenderObjectWidget {
   static Widget alphaFade(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) =>
       HarborFadeMask(bands: bands, child: body);
 
-  /// The old name of [alphaFade].
-  @Deprecated('Renamed alphaFade. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborFadeBand> bands, final Widget body) =>
-      alphaFade(context, bands, body);
-
   /// The fade bands, by edge, measured from the body's edge.
   final Map<HarborEdge, HarborFadeBand> bands;
-
-  /// The old name of [bands].
-  @Deprecated('Renamed bands. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  Map<HarborEdge, HarborFadeBand> get wakes => bands;
 
   /// How visible content is at the bar's inner face, for a band that does
   /// not say ([HarborFadeBand.faceOpacity] is null, as it is for a
   /// `HarborEdgeEffect.fade` at its default).
   final double faceOpacity;
-
-  /// The old name of [faceOpacity].
-  @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  double get dockOpacity => faceOpacity;
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -256,31 +179,6 @@ class HarborFadeMask extends SingleChildRenderObjectWidget {
       ..faceOpacity = faceOpacity
       ..textDirection = Directionality.of(context);
   }
-}
-
-/// The old name of [HarborFadeMask], which takes the old names of its parameters.
-///
-/// A subclass rather than a typedef, so the new constructor can keep its parameters required.
-@Deprecated('Renamed HarborFadeMask. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborWakeMask extends HarborFadeMask {
-  /// The old name of [HarborFadeMask.new].
-  @Deprecated('Renamed HarborFadeMask. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborWakeMask({
-    super.key,
-    @Deprecated('Renamed bands. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final Map<HarborEdge, HarborFadeBand>? wakes,
-    @Deprecated('Renamed faceOpacity. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final double? dockOpacity,
-    super.child,
-  }) : assert(wakes != null, 'wakes is required.'),
-       super(bands: wakes ?? const <HarborEdge, HarborFadeBand>{}, faceOpacity: dockOpacity ?? 0.25);
-
-  /// The old name of [HarborFadeMask.alphaFade].
-  @Deprecated(
-    'Renamed HarborFadeMask.alphaFade. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  static Widget alphaWake(final BuildContext context, final Map<HarborEdge, HarborFadeBand> wakes, final Widget body) =>
-      HarborFadeMask.alphaFade(context, wakes, body);
 }
 
 class RenderHarborFadeMask extends RenderProxyBox {

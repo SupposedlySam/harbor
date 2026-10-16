@@ -45,7 +45,7 @@ void reads(
   <Object?>[controller.breakwaterTopsInGlobal, controller.breakwaterCoverage, controller.breakwaterChanges, controller.flares];
   <Object?>[clear.clearsKeyboard, clear.rowInsets, clear.padding, scroll.rowInsets, scroll.clearsKeyboard, scroll.edgeEffects, scroll.startsUnderBars];
   <Object?>[sliver.clearsKeyboard, fade.faceOpacity, band.barFace, band.fadeEnd, band.faceOpacity, mask.bands, mask.faceOpacity];
-  <Object?>[popover.popoverBuilder, toast.shownFrom, toast.reachesSystemEdges, registry.frames, registry.root];
+  <Object?>[popover.popoverBuilder, registry.frames, registry.root];
   <Object?>[sheet.headerEdgeEffect, sheet.footerEdgeEffect, sheet.footerKeyboard, sheet.clearsTopSystemEdge, sheet.bodyClearsKeyboard, dialog.inheritRoom];
   <Object?>[entry.room, entry.bars, entry.keyboard, scaled.systemEdges];
 }
@@ -64,7 +64,6 @@ void calls(BuildContext context, HarborController controller, HarborToastEntry t
   controller.addPageCover(ValueNotifier<double>(0)).remove();
   controller.addPageCoverEdge(ValueNotifier<double>(0)).remove();
   toast.hide();
-  toast.hide(reason: HarborToastClosedReason.dismiss);
   claim.release();
 }
 
@@ -77,45 +76,47 @@ void tearOffs(BuildContext context) {
 }
 
 // The same reads through implicit `this`, inside an extension on each type (#143): a member read with no
-// target is matched by its declaring type rather than by a target's type.
+// target is matched by its declaring type rather than by a target's type. Against 1.0, which removed the
+// old getters, a getter read this way is left as it is (no data-driven fix for it as undefined); a
+// method called this way is still renamed. On 0.10.3 both migrate. jump_to_1_0.dart has the case.
 extension Implicit on HarborFrame {
-  List<Object?> get reads => <Object?>[floats, systemEdges, isPage, bodyClearsKeyboard, edgeEffectPainter, barHinge];
+  List<Object?> get reads => <Object?>[buoys, coast, newPort, bodyClearsTide, wakePainter, dockHinge];
 }
 extension ImplicitSea on HarborRoot {
-  List<Object?> get reads => <Object?>[systemEdges];
+  List<Object?> get reads => <Object?>[coast];
 }
 extension ImplicitDock on HarborBar {
-  List<Object?> get reads => <Object?>[edgeEffect, keyboard, systemEdges, effectiveSystemEdges];
+  List<Object?> get reads => <Object?>[wake, tide, coast, effectiveCoast];
 }
 extension ImplicitDockRecord on HarborBarRecord {
-  List<Object?> get reads => <Object?>[keyboard];
+  List<Object?> get reads => <Object?>[tide];
 }
 extension ImplicitPontoon on HarborAttachedBar {
-  List<Object?> get reads => <Object?>[bar];
+  List<Object?> get reads => <Object?>[dock];
 }
 extension ImplicitPontoonHandle on HarborAttachedBarHandle {
-  List<Object?> get reads => <Object?>[bar];
+  List<Object?> get reads => <Object?>[dock];
 }
 extension ImplicitCoast on HarborSystemEdges {
-  List<Object?> get reads => <Object?>[ignoresKeyboard];
+  List<Object?> get reads => <Object?>[calmTide];
 }
 extension ImplicitTideState on HarborKeyboardState {
-  List<Object?> get reads => <Object?>[settledHeight, settledHeightIsEstimate, isShown];
+  List<Object?> get reads => <Object?>[highWater, highWaterIsEstimate, isIn];
 }
 extension ImplicitDryDock on HarborKeyboardSpace {
-  List<Object?> get reads => <Object?>[showsChildWithKeyboard];
+  List<Object?> get reads => <Object?>[showsChildAtHighTide];
 }
 extension ImplicitWatersData on HarborRoomData {
-  List<Object?> get reads => <Object?>[systemEdges, systemEdgesSteady, bars, barsResting, fadeBands, hasBars, fadeBandsPainted, handled(HarborEdge.vertical), fadeBandOf(HarborEdge.top)];
+  List<Object?> get reads => <Object?>[coast, coastSteady, docks, docksResting, wakes, hasDocks, wakesPainted, handled(HarborEdge.vertical), fadeBandOf(HarborEdge.top)];
 }
 extension ImplicitCastOff on HarborHandled {
-  List<Object?> get reads => <Object?>[clearsKeyboard, clearsBars];
+  List<Object?> get reads => <Object?>[tide, docks];
 }
 extension ImplicitLayoutRecord on HarborLayoutRecord {
-  List<Object?> get reads => <Object?>[room, bars, keyboard];
+  List<Object?> get reads => <Object?>[clearWater, docks, tide];
 }
 extension ImplicitController on HarborController {
-  List<Object?> get reads => <Object?>[room, roomInGlobal(), registry, isPage, dockedEdges, breakwaterTopsInGlobal, breakwaterCoverage, breakwaterChanges, flares];
+  List<Object?> get reads => <Object?>[clearWater, roomInGlobal(), fleet, isPort, dockedEdges, breakwaterTopsInGlobal, breakwaterCoverage, breakwaterChanges, flares];
 
   void calls() {
     withDockOn(HarborEdge.top);
@@ -130,46 +131,43 @@ extension ImplicitController on HarborController {
   }
 }
 extension ImplicitMoored on HarborClear {
-  List<Object?> get reads => <Object?>[clearsKeyboard, rowInsets, padding];
+  List<Object?> get reads => <Object?>[tide, mooringLine, extra];
 }
 extension ImplicitFairway on HarborScrollView {
-  List<Object?> get reads => <Object?>[rowInsets, clearsKeyboard, edgeEffects, startsUnderBars];
+  List<Object?> get reads => <Object?>[mooringLine, tide, wake, startsInOpenWater];
 }
 extension ImplicitFairwaySliver on HarborSliverClear {
-  List<Object?> get reads => <Object?>[clearsKeyboard];
+  List<Object?> get reads => <Object?>[tide];
 }
 extension ImplicitWake on HarborEdgeEffect {
-  List<Object?> get reads => <Object?>[faceOpacity];
+  List<Object?> get reads => <Object?>[dockOpacity];
 }
 extension ImplicitWakeBand on HarborFadeBand {
-  List<Object?> get reads => <Object?>[barFace, fadeEnd, faceOpacity];
+  List<Object?> get reads => <Object?>[dockEdge, wakeEnd, dockOpacity];
 }
 extension ImplicitWakeMask on HarborFadeMask {
-  List<Object?> get reads => <Object?>[bands, faceOpacity];
+  List<Object?> get reads => <Object?>[wakes, dockOpacity];
 }
 extension ImplicitPortalBuoy on HarborPopover {
-  List<Object?> get reads => <Object?>[popoverBuilder];
+  List<Object?> get reads => <Object?>[buoyBuilder];
 }
 extension ImplicitFlareEntry on HarborToastEntry {
-  List<Object?> get reads => <Object?>[shownFrom, reachesSystemEdges];
-
   void calls() {
     hide();
-    hide(reason: HarborToastClosedReason.dismiss);
   }
 }
 extension ImplicitFleet on HarborFrameRegistry {
-  List<Object?> get reads => <Object?>[frames, root];
+  List<Object?> get reads => <Object?>[harbors, sea];
 }
 extension ImplicitSheet on HarborSheet {
-  List<Object?> get reads => <Object?>[headerEdgeEffect, footerEdgeEffect, footerKeyboard, clearsTopSystemEdge, bodyClearsKeyboard];
+  List<Object?> get reads => <Object?>[headerWake, footerWake, footerTide, clearsTopCoast, bodyClearsTide];
 }
 extension ImplicitDialogRoute on HarborDialogRoute<void> {
-  List<Object?> get reads => <Object?>[inheritRoom];
+  List<Object?> get reads => <Object?>[inheritClearWater];
 }
 extension ImplicitChartEntry on HarborInspectorEntry {
-  List<Object?> get reads => <Object?>[room, bars, keyboard];
+  List<Object?> get reads => <Object?>[clearWater, docks, tide];
 }
 extension ImplicitScaleModel on HarborScaledScreen {
-  List<Object?> get reads => <Object?>[systemEdges];
+  List<Object?> get reads => <Object?>[coast];
 }

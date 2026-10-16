@@ -45,7 +45,7 @@ void reads(
   <Object?>[controller.breakwaterTopsInGlobal, controller.breakwaterCoverage, controller.breakwaterChanges, controller.flares];
   <Object?>[clear.tide, clear.mooringLine, clear.extra, scroll.mooringLine, scroll.tide, scroll.wake, scroll.startsInOpenWater];
   <Object?>[sliver.tide, fade.dockOpacity, band.dockEdge, band.wakeEnd, band.dockOpacity, mask.wakes, mask.dockOpacity];
-  <Object?>[popover.buoyBuilder, toast.raisedIn, toast.reachesCoast, registry.harbors, registry.sea];
+  <Object?>[popover.buoyBuilder, registry.harbors, registry.sea];
   <Object?>[sheet.headerWake, sheet.footerWake, sheet.footerTide, sheet.clearsTopCoast, sheet.bodyClearsTide, dialog.inheritClearWater];
   <Object?>[entry.clearWater, entry.docks, entry.tide, scaled.coast];
 }
@@ -57,14 +57,13 @@ void calls(BuildContext context, HarborController controller, HarborFlareEntry t
   HarborWakeMask.alphaWake(context, const <HarborEdge, HarborWakeBand>{}, const SizedBox());
   controller.withDockOn(HarborEdge.top);
   final HarborClaim claim = controller.makeWay(HarborEdge.bottom, mode: HarborYield.dark);
-  final HarborPontoonHandle handle = controller.addPontoon(HarborEdge.bottom, const HarborDock.reserve(extent: 0));
-  controller.updatePontoon(handle, HarborEdge.top, const HarborDock.reserve(extent: 0));
+  final HarborPontoonHandle handle = controller.addPontoon(HarborEdge.bottom, HarborDock.reserve(extent: 0));
+  controller.updatePontoon(handle, HarborEdge.top, HarborDock.reserve(extent: 0));
   controller.pontoonsOn(HarborEdge.top);
   controller.removePontoon(handle);
   controller.addBreakwater(ValueNotifier<double>(0)).remove();
   controller.addBreakwaterEdge(ValueNotifier<double>(0)).remove();
   toast.lower();
-  toast.lower(reason: HarborFlareClosedReason.dismiss);
   claim.release();
 }
 
@@ -77,7 +76,9 @@ void tearOffs(BuildContext context) {
 }
 
 // The same reads through implicit `this`, inside an extension on each type (#143): a member read with no
-// target is matched by its declaring type rather than by a target's type.
+// target is matched by its declaring type rather than by a target's type. Against 1.0, which removed the
+// old getters, a getter read this way is left as it is (no data-driven fix for it as undefined); a
+// method called this way is still renamed. On 0.10.3 both migrate. jump_to_1_0.dart has the case.
 extension Implicit on Harbor {
   List<Object?> get reads => <Object?>[buoys, coast, newPort, bodyClearsTide, wakePainter, dockHinge];
 }
@@ -120,8 +121,8 @@ extension ImplicitController on HarborController {
   void calls() {
     withDockOn(HarborEdge.top);
     final HarborClaim claim = makeWay(HarborEdge.bottom, mode: HarborYield.dark);
-    final HarborPontoonHandle handle = addPontoon(HarborEdge.bottom, const HarborDock.reserve(extent: 0));
-    updatePontoon(handle, HarborEdge.top, const HarborDock.reserve(extent: 0));
+    final HarborPontoonHandle handle = addPontoon(HarborEdge.bottom, HarborDock.reserve(extent: 0));
+    updatePontoon(handle, HarborEdge.top, HarborDock.reserve(extent: 0));
     pontoonsOn(HarborEdge.top);
     removePontoon(handle);
     addBreakwater(ValueNotifier<double>(0)).remove();
@@ -151,11 +152,8 @@ extension ImplicitPortalBuoy on HarborPortalBuoy {
   List<Object?> get reads => <Object?>[buoyBuilder];
 }
 extension ImplicitFlareEntry on HarborFlareEntry {
-  List<Object?> get reads => <Object?>[raisedIn, reachesCoast];
-
   void calls() {
     lower();
-    lower(reason: HarborFlareClosedReason.dismiss);
   }
 }
 extension ImplicitFleet on HarborFleet {

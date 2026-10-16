@@ -33,55 +33,7 @@ class HarborPopover extends StatefulWidget {
     required this.controller,
     required this.popoverBuilder,
     required this.child,
-    final HarborAnchored? placement,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it in a file that '
-      'imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final HarborAnchor? anchor,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored added after `dart fix`, or the import widened.',
-    )
-    final HarborAnchorSide? side,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it in a file '
-      'that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final double? gap,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final double? overlap,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it '
-      'in a file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with '
-      '`show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final HarborCrossAlignment? crossAlignment,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it in '
-      'a file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final double? crossOffset,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final EdgeInsetsGeometry? margin,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it in a file '
-      'that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    final bool? flips,
+    this.placement = const HarborAnchored(null, side: HarborAnchorSide.above),
     this.onDismiss,
     this.consumeOutsideTaps = false,
     this.requestFocus = false,
@@ -89,29 +41,7 @@ class HarborPopover extends StatefulWidget {
   }) : assert(
          !requestFocus || onDismiss != null,
          'A HarborPopover that takes focus needs an onDismiss, so Escape can close it and a keyboard user is not left in it.',
-       ),
-       assert(
-         placement == null ||
-             (anchor == null &&
-                 side == null &&
-                 gap == null &&
-                 overlap == null &&
-                 crossAlignment == null &&
-                 crossOffset == null &&
-                 margin == null &&
-                 flips == null),
-         'Give a popover a placement, or the deprecated anchor, side, gap, overlap, crossAlignment, crossOffset, '
-         'margin and flips, not both.',
-       ),
-       _placement = placement,
-       _anchor = anchor,
-       _side = side,
-       _gap = gap,
-       _overlap = overlap,
-       _crossAlignment = crossAlignment,
-       _crossOffset = crossOffset,
-       _margin = margin,
-       _flips = flips;
+       );
 
   /// Shows and hides the popover.
   final OverlayPortalController controller;
@@ -120,74 +50,15 @@ class HarborPopover extends StatefulWidget {
   /// themes and frame.
   final WidgetBuilder popoverBuilder;
 
-  /// The old name of [popoverBuilder].
-  @Deprecated('Renamed popoverBuilder. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  WidgetBuilder get buoyBuilder => popoverBuilder;
-
   /// Where this widget lives in the tree, and its anchor when [placement] has none.
   final Widget child;
-
-  // The placement given, or null when the deprecated parameters were used (or none at all).
-  final HarborAnchored? _placement;
-  final HarborAnchor? _anchor;
-  final HarborAnchorSide? _side;
-  final double? _gap;
-  final double? _overlap;
-  final HarborCrossAlignment? _crossAlignment;
-  final double? _crossOffset;
-  final EdgeInsetsGeometry? _margin;
-  final bool? _flips;
 
   /// Where the popover sits by its anchor. A null [HarborAnchored.anchor] anchors it to [child], and a
   /// null [HarborAnchored.flips] flips it when its side has no room.
   ///
   /// Given no placement, it sits above [child], as it did before placements: a popover's side
   /// was above by default, where a [HarborAnchored]'s is below.
-  HarborAnchored get placement =>
-      _placement ??
-      HarborAnchored(
-        _anchor,
-        side: _side ?? HarborAnchorSide.above,
-        gap: _gap ?? HarborAnchored.defaultGap,
-        overlap: _overlap ?? 0.0,
-        crossAlignment: _crossAlignment ?? HarborCrossAlignment.center,
-        crossOffset: _crossOffset ?? 0.0,
-        flips: _flips,
-        margin: _margin ?? HarborAnchored.defaultMargin,
-      );
-
-  /// What the popover sits by. Null anchors it to [child].
-  @Deprecated('Read placement.anchor. Deprecated after 0.7.0.')
-  HarborAnchor? get anchor => placement.anchor;
-
-  /// Which side of its anchor the popover sits on before any flip.
-  @Deprecated('Read placement.side. Deprecated after 0.7.0.')
-  HarborAnchorSide get side => placement.side;
-
-  /// How far the popover sits from its anchor.
-  @Deprecated('Read placement.gap. Deprecated after 0.7.0.')
-  double get gap => placement.gap;
-
-  /// How far the popover reaches back over its anchor.
-  @Deprecated('Read placement.overlap. Deprecated after 0.7.0.')
-  double get overlap => placement.overlap;
-
-  /// How the popover lines up with its anchor across its side; centred by default.
-  @Deprecated('Read placement.crossAlignment. Deprecated after 0.7.0.')
-  HarborCrossAlignment get crossAlignment => placement.crossAlignment;
-
-  /// How far the popover is moved across its side from where its cross alignment puts it.
-  @Deprecated('Read placement.crossOffset. Deprecated after 0.7.0.')
-  double get crossOffset => placement.crossOffset;
-
-  /// How far in from the room's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
-  EdgeInsetsGeometry get margin => placement.margin;
-
-  /// Whether the popover goes to the opposite side of its anchor when its side has no room and that
-  /// side has.
-  @Deprecated('Read placement.flips. Deprecated after 0.7.0.')
-  bool get flips => placement.flips ?? true;
+  final HarborAnchored placement;
 
   /// Called while the popover is shown when a tap lands outside both the popover and [child] (a
   /// [TapRegion] group, as a `MenuAnchor`'s), when Escape is pressed with focus in either, and on
@@ -237,17 +108,13 @@ class HarborPopover extends StatefulWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<OverlayPortalController>('controller', controller));
-    if (_placement case final HarborAnchored placement) {
-      properties.add(DiagnosticsProperty<HarborAnchored>('placement', placement));
-    } else {
-      // Made with the deprecated parameters, or none: described as it was then.
-      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', _anchor, defaultValue: null));
-      properties.add(EnumProperty<HarborAnchorSide>('side', _side, defaultValue: null));
-      properties.add(DoubleProperty('gap', _gap, defaultValue: null));
-      properties.add(DoubleProperty('overlap', _overlap, defaultValue: null));
-      properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', _margin, defaultValue: null));
-      properties.add(FlagProperty('flips', value: _flips ?? true, ifFalse: 'no flip'));
-    }
+    properties.add(
+      DiagnosticsProperty<HarborAnchored>(
+        'placement',
+        placement,
+        defaultValue: const HarborAnchored(null, side: HarborAnchorSide.above),
+      ),
+    );
     properties.add(FlagProperty('requestFocus', value: requestFocus, ifTrue: 'requests focus'));
   }
 }
@@ -550,88 +417,3 @@ class _PopoverDismissalState extends State<_PopoverDismissal> {
     child: widget.child,
   );
 }
-
-/// The old name of [HarborPopover], which takes the old name of its builder.
-///
-/// A subclass rather than a typedef, so the new constructor can keep [HarborPopover.popoverBuilder]
-/// required.
-@Deprecated('Renamed HarborPopover. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborPortalBuoy extends HarborPopover {
-  /// The old name of [HarborPopover.new].
-  @Deprecated('Renamed HarborPopover. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborPortalBuoy({
-    super.key,
-    required super.controller,
-    @Deprecated('Renamed popoverBuilder. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final WidgetBuilder? buoyBuilder,
-    required super.child,
-    super.placement,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, side: HarborAnchorSide.above). `dart fix` applies it in a file that '
-      'imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.anchor,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored added after `dart fix`, or the import widened.',
-    )
-    super.side,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, gap: ...). `dart fix` applies it in a file '
-      'that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.gap,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, overlap: ...). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.overlap,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossAlignment: ...). `dart fix` applies it '
-      'in a file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with '
-      '`show` needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.crossAlignment,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, crossOffset: ...). `dart fix` applies it in '
-      'a file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.crossOffset,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, margin: ...). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.margin,
-    @Deprecated(
-      'Use placement: HarborAnchored(null, side: HarborAnchorSide.above, flips: ...). `dart fix` applies it in a file '
-      'that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs '
-      'HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.flips,
-    super.onDismiss,
-    super.consumeOutsideTaps,
-    super.requestFocus,
-    super.hinge,
-  }) : assert(buoyBuilder != null, 'buoyBuilder is required.'),
-       super(popoverBuilder: buoyBuilder ?? _noPopover);
-
-  /// The old name of [HarborPopover.sideOf].
-  @Deprecated('Renamed HarborPopover.sideOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static HarborAnchorSide sideOf(final BuildContext context) => HarborPopover.sideOf(context);
-
-  /// The old name of [HarborPopover.maybeSideOf].
-  @Deprecated(
-    'Renamed HarborPopover.maybeSideOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  static HarborAnchorSide? maybeSideOf(final BuildContext context) => HarborPopover.maybeSideOf(context);
-}
-
-/// What a [HarborPortalBuoy] built without its deprecated `buoyBuilder` falls back to: never
-/// shown, since the builder is asserted.
-Widget _noPopover(final BuildContext context) => const SizedBox.shrink();

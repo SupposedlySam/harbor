@@ -24,13 +24,11 @@ void main() {
           keyboard: HarborKeyboardStance.rides,
           state: HarborBarState.withdrawn,
           minimum: 16.0,
-          withdrawsAtHighTide: true,
           debugLabel: 'tab bar',
           backdrop: _child,
           child: _child,
         ).toString(),
-        'HarborBar.solid(keyboard: rides, state: withdrawn, has backdrop, withdraws while the keyboard is up, minimum: 16.0, '
-        'debugLabel: "tab bar")',
+        'HarborBar.solid(keyboard: rides, state: withdrawn, has backdrop, minimum: 16.0, debugLabel: "tab bar")',
       );
     });
 
@@ -58,30 +56,8 @@ void main() {
     });
 
     test('a float shows how it is placed', () {
+      // placement_test.dart covers how a float given a placement describes itself.
       expect(const HarborFloat(child: _child).toString(), 'HarborFloat');
-      final HarborAnchor anchor = HarborAnchor(debugLabel: 'more button');
-      addTearDown(anchor.dispose);
-      // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
-      // how a float given a placement describes itself.
-      // ignore: deprecated_member_use_from_same_package
-      final HarborFloat menu = HarborFloat.anchored(
-        // ignore: deprecated_member_use_from_same_package
-        anchor: anchor,
-        side: HarborAnchorSide.below,
-        onDismiss: () {},
-        requestFocus: false,
-        barrier: const HarborBarrier.clear(label: 'Close menu'),
-        child: _child,
-      );
-      expect(menu.toStringShort(), 'HarborFloat.anchored');
-      expect(_shown(menu), <String>[
-        'anchor: ${describeIdentity(anchor)}(more button)',
-        'side: below',
-        'modal',
-        'barrier: HarborBarrier.clear(label: "Close menu")',
-        'has onDismiss',
-        'does not take focus',
-      ]);
     });
 
     test('a sheet extent shows its non-default heights and is equal by value', () {
@@ -153,7 +129,7 @@ void main() {
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
             rowInsets: false,
-            bars: false,
+            clearsBars: false,
             clearsKeyboard: false,
             revealMargin: 24.0,
             startsUnderBars: true,
@@ -178,7 +154,7 @@ void main() {
         _shown(
           const HarborClear(
             edges: HarborEdge.vertical,
-            bars: false,
+            clearsBars: false,
             follow: HarborFollow.resting,
             rowInsets: true,
             minimum: EdgeInsetsDirectional.only(bottom: 16.0),
@@ -195,32 +171,10 @@ void main() {
       );
     });
 
-    test('a keep-in-sight, a scaled screen and a popover show their settings', () {
-      expect(_shown(const HarborKeepInSight(child: _child)), isEmpty);
-      expect(
-        _shown(const HarborKeepInSight(edge: HarborEdge.bottom, keepInSight: true, clearance: 8.0, child: _child)),
-        <String>['edge: bottom', 'keep in sight', 'clearance: 8.0'],
-      );
-
+    test('a scaled screen shows its settings', () {
       expect(_shown(const HarborScaledScreen(referenceSize: Size(1200.0, 675.0), child: _child)), <String>[
         'referenceSize: Size(1200.0, 675.0)',
       ]);
-
-      final OverlayPortalController controller = OverlayPortalController(debugLabel: 'row menu');
-      final List<String> portal = _shown(
-        // The deprecated spelling, which still describes itself as it did; placement_test.dart covers
-        // how a popover given a placement describes itself.
-        HarborPopover(
-          controller: controller,
-          // ignore: deprecated_member_use_from_same_package
-          side: HarborAnchorSide.below,
-          // ignore: deprecated_member_use_from_same_package
-          flips: false,
-          popoverBuilder: (final BuildContext context) => _child,
-          child: _child,
-        ),
-      );
-      expect(portal, <String>['controller: $controller', 'side: below', 'no flip']);
     });
 
     test('a sheet shows its extent and what differs from a default sheet', () {

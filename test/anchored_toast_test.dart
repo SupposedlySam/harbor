@@ -132,7 +132,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('is given its anchor alone, without a slot or an alignment', (final tester) async {
+  testWidgets('is given its anchor alone, without a slot', (final tester) async {
     late BuildContext page;
     await tester.pumpHarborTrial(
       _app(
@@ -144,17 +144,8 @@ void main() {
     expect(
       () => HarborToasts.show(
         page,
-        anchor: anchor,
+        placement: HarborAnchored(anchor),
         slot: HarborToastSlot.low,
-        builder: (final BuildContext _) => _toast('toast'),
-      ),
-      throwsAssertionError,
-    );
-    expect(
-      () => HarborToasts.show(
-        page,
-        anchor: anchor,
-        alignment: Alignment.center,
         builder: (final BuildContext _) => _toast('toast'),
       ),
       throwsAssertionError,

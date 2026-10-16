@@ -10,13 +10,13 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
   const HarborBuoyCrossAlignment cross = HarborBuoyCrossAlignment.start;
 
   // before and after, the names of start and end through 0.2.0, through either enum name.
-  const HarborBuoySide before = HarborBuoySide.before;
-  const HarborAnchorSide after = HarborAnchorSide.after;
+  const HarborBuoySide before = HarborBuoySide.start;
+  const HarborAnchorSide after = HarborAnchorSide.end;
 
   // An aligned buoy.
-  const HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: SizedBox());
-  const HarborBuoy(margin: EdgeInsets.zero, child: SizedBox());
-  const HarborBuoy(alignment: Alignment.topCenter, margin: EdgeInsets.all(4), requestFocus: false, child: SizedBox());
+  HarborBuoy(alignment: AlignmentDirectional.bottomEnd, child: SizedBox());
+  HarborBuoy(margin: EdgeInsets.zero, child: SizedBox());
+  HarborBuoy(alignment: Alignment.topCenter, margin: EdgeInsets.all(4), requestFocus: false, child: SizedBox());
   HarborBuoy(alignment: Alignment.center, onDismiss: close, child: const SizedBox());
 
   // An anchored buoy: its old side was above, so side: above is written where it was left out.
@@ -31,7 +31,6 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
     crossAlignment: HarborBuoyCrossAlignment.end,
     crossOffset: 3,
     margin: const EdgeInsets.all(5),
-    modal: true,
     onDismiss: close,
     child: const SizedBox(),
   );

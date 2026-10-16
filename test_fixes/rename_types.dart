@@ -15,7 +15,7 @@ void types(BuildContext context, HarborController controller, ValueNotifier<doub
   final HarborController? nearest = Harbor.maybeOf(context);
 
   // Bars.
-  const HarborDockKind kind = HarborDockKind.pier;
+  const HarborDockKind kind = HarborDockKind.overlay;
   const HarborDockState state = HarborDockState.dark;
   const HarborCoastStance stance = HarborCoastStance.steady;
   final List<HarborDockRecord> records = <HarborDockRecord>[];
@@ -28,8 +28,8 @@ void types(BuildContext context, HarborController controller, ValueNotifier<doub
   const HarborCoast fixed = HarborCoast.fixed(EdgeInsets.zero);
   const HarborCoastFeature feature = HarborCoastFeature.statusBar;
   final HarborTideState keyboard = HarborTide.of(context);
-  const HarborTidePhase phase = HarborTidePhase.low;
-  const HarborTideStance keyboardStance = HarborTideStance.float;
+  const HarborTidePhase phase = HarborTidePhase.hidden;
+  const HarborTideStance keyboardStance = HarborTideStance.rides;
   const HarborDryDock space = HarborDryDock();
   final HarborTideSource source = HarborTideSource(height: ime, child: const SizedBox());
 
@@ -63,7 +63,6 @@ void types(BuildContext context, HarborController controller, ValueNotifier<doub
   // Sheets, keeping in sight, the inspector, the registry and the scaled screen.
   final HarborBreakwater cover = controller.addBreakwater(ValueNotifier<double>(0));
   const HarborBeacon keep = HarborBeacon(child: SizedBox());
-  HarborLighthouse.reveal(context);
   const HarborLighthouseRegion region = HarborLighthouseRegion(child: SizedBox());
   final List<HarborChartEntry> entries = HarborChart.snapshot(context);
   const HarborChartOverlay inspector = HarborChartOverlay(child: SizedBox());

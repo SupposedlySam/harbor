@@ -1136,7 +1136,7 @@ void main() {
                   height: 40,
                   child: HarborScrollView(
                     scrollDirection: Axis.horizontal,
-                    bars: false,
+                    clearsBars: false,
                     slivers: <Widget>[
                       SliverToBoxAdapter(child: SizedBox(width: 50, child: _AspectReader(HarborRoomAspect.bars))),
                     ],
@@ -1183,7 +1183,7 @@ void main() {
                   height: 100,
                   child: HarborScrollView(
                     clearsKeyboard: false,
-                    bars: false,
+                    clearsBars: false,
                     slivers: <Widget>[SliverToBoxAdapter(child: SizedBox(height: 10))],
                   ),
                 ),
@@ -1221,7 +1221,7 @@ void main() {
               children: <Widget>[
                 const HarborClear(
                   edges: <HarborEdge>{HarborEdge.top, HarborEdge.start, HarborEdge.end},
-                  bars: false,
+                  clearsBars: false,
                   clearsKeyboard: false,
                   child: SizedBox(height: 10),
                 ),
@@ -1534,13 +1534,9 @@ void main() {
   });
 
   // Breaks if: a builder stops taking the named builder type a caller holds it in.
-  testWidgets('`HarborOpenWater` and a draggable sheet take named builder types', (final tester) async {
-    final HarborWatersWidgetBuilder background = (final BuildContext context, final HarborRoomData room) =>
-        SizedBox(key: const ValueKey<String>('water'), height: room.frameSize.height);
+  testWidgets('a draggable sheet takes a named builder type', (final tester) async {
     final ScrollableWidgetBuilder list = (final BuildContext context, final ScrollController controller) =>
         HarborScrollView(controller: controller, slivers: const <Widget>[]);
-    await tester.pumpHarborTrial(_app(HarborFrame(body: HarborOpenWater(builder: background))));
-    expect(_rect(tester, 'water').height, tester.view.physicalSize.height / tester.view.devicePixelRatio);
     expect(HarborSheet.draggable(builder: list).builder, same(list));
   });
 }

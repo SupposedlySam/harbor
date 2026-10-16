@@ -1,8 +1,7 @@
 // HarborBarrier: one value for what a sheet, a dialog and a float put over the page, in place of
 // five loose sheet parameters that disagreed (`barrier: HarborSheetBarrier.dismissible` meant dimmed,
 // `isDismissible` applied to clear too, `barrierColor` only to dimmed), three on a dialog and three on
-// a float, each spelled differently. Each test checks what a host does with a barrier; the
-// deprecated spellings are checked to still do what they did, through the value.
+// a float, each spelled differently. Each test checks what a host does with a barrier.
 
 import 'dart:async';
 
@@ -140,20 +139,6 @@ void main() {
       expect(const HarborBarrier.clear(onTapHint: 'close').toString(), 'HarborBarrier.clear(onTapHint: "close")');
       expect(HarborBarrier.none.toString(), 'HarborBarrier.none');
     });
-
-    test('the deprecated HarborSheetBarrier values are the barriers they stand for', () {
-      // ignore: deprecated_member_use_from_same_package
-      const List<HarborBarrier> old = HarborSheetBarrier.values;
-      expect(<bool>[for (final HarborBarrier b in old) b.blocks], <bool>[true, true, false]);
-      expect(
-        <Color>[for (final HarborBarrier b in old) b.color],
-        <Color>[HarborBarrier.defaultColor, const Color(0x00000000), const Color(0x00000000)],
-      );
-      // ignore: deprecated_member_use_from_same_package
-      expect(HarborSheetBarrier.none.toString(), 'HarborSheetBarrier.none');
-      // ignore: deprecated_member_use_from_same_package
-      expect(HarborSheetBarrier.clear.name, 'clear');
-    });
   });
 
   group('a sheet', () {
@@ -215,90 +200,6 @@ void main() {
       expect(ModalRoute.of(tester.element(find.text('sheet'))), ModalRoute.of(page), reason: 'no route of its own');
       await tester.tap(find.text('Page action'));
       expect(taps, <String>['page']);
-    });
-
-    group('the deprecated spellings', () {
-      testWidgets('isDismissible: false still keeps the sheet up, on a clear barrier too', (final tester) async {
-        final BuildContext page = await _page(tester);
-        unawaited(
-          showHarborSheet<void>(
-            page,
-            // ignore: deprecated_member_use_from_same_package
-            barrier: HarborSheetBarrier.clear,
-            // ignore: deprecated_member_use_from_same_package
-            isDismissible: false,
-            builder: _sheet,
-          ),
-        );
-        await tester.pumpAndSettle();
-        final ModalRoute<Object?> route = _routeOf(tester, 'sheet');
-        expect(route.barrierDismissible, isFalse);
-        expect(route.barrierColor, const Color(0x00000000));
-      });
-
-      testWidgets('barrierColor tints a dimmed barrier and leaves a clear one clear, as it always did', (
-        final tester,
-      ) async {
-        final BuildContext page = await _page(tester);
-        // ignore: deprecated_member_use_from_same_package
-        unawaited(showHarborSheet<void>(page, barrierColor: _tint, barrierLabel: 'Fermer', builder: _sheet));
-        await tester.pumpAndSettle();
-        expect(_routeOf(tester, 'sheet').barrierColor, _tint);
-        expect(_routeOf(tester, 'sheet').barrierLabel, 'Fermer');
-        Navigator.of(tester.element(find.text('sheet'))).pop();
-        await tester.pumpAndSettle();
-
-        unawaited(
-          showHarborSheet<void>(
-            page,
-            barrier: const HarborBarrier.clear(),
-            // ignore: deprecated_member_use_from_same_package
-            barrierColor: _tint,
-            builder: _sheet,
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(_routeOf(tester, 'sheet').barrierColor, const Color(0x00000000));
-      });
-
-      testWidgets('HarborSheetBarrier.none is still a sheet with no barrier', (final tester) async {
-        final BuildContext page = await _page(tester);
-        // ignore: deprecated_member_use_from_same_package
-        unawaited(showHarborSheet<void>(page, barrier: HarborSheetBarrier.none, builder: _sheet));
-        await tester.pumpAndSettle();
-        expect(ModalRoute.of(tester.element(find.text('sheet'))), ModalRoute.of(page));
-      });
-
-      // As on 0.9.1: with no barrier they do nothing, and are ignored rather than asserted, while
-      // they exist. Whether the barrier is none can depend on a variable dart fix leaves alone.
-      for (final HarborBarrier none in <HarborBarrier>[
-        HarborBarrier.none,
-        // ignore: deprecated_member_use_from_same_package
-        HarborSheetBarrier.none,
-      ]) {
-        testWidgets('with no barrier ($none) they are ignored, as they were', (final tester) async {
-          final BuildContext page = await _page(tester);
-          unawaited(
-            showHarborSheet<void>(
-              page,
-              barrier: none,
-              // ignore: deprecated_member_use_from_same_package
-              isDismissible: false,
-              // ignore: deprecated_member_use_from_same_package
-              barrierLabel: 'x',
-              // ignore: deprecated_member_use_from_same_package
-              barrierColor: _tint,
-              // ignore: deprecated_member_use_from_same_package
-              barrierOnTapHint: 'close',
-              builder: _sheet,
-            ),
-          );
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expect(find.text('sheet'), findsOneWidget);
-          expect(ModalRoute.of(tester.element(find.text('sheet'))), ModalRoute.of(page), reason: 'still no route');
-        });
-      }
     });
   });
 
@@ -363,49 +264,12 @@ void main() {
       expect(find.text('dialog'), findsOneWidget);
     });
 
-    testWidgets("a route's deprecated barrierColor: null is still a barrier with no colour", (final tester) async {
-      final BuildContext page = await _page(tester);
-      unawaited(
-        Navigator.of(page).push(
-          // ignore: deprecated_member_use_from_same_package
-          HarborDialogRoute<void>(context: page, barrierColor: null, builder: (_) => const Text('dialog')),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final HarborDialogRoute<Object?> route = _routeOf(tester, 'dialog') as HarborDialogRoute<Object?>;
-      expect(route.barrierColor, const Color(0x00000000));
-      expect(route.barrier, const HarborBarrier.clear());
-      expect(route.barrierDismissible, isTrue);
-    });
-
     testWidgets('cannot take HarborBarrier.none', (final tester) async {
       final BuildContext page = await _page(tester);
       expect(
         () => HarborDialogRoute<void>(context: page, barrier: HarborBarrier.none, builder: (_) => const SizedBox()),
         throwsAssertionError,
       );
-    });
-
-    testWidgets('the deprecated barrierColor, barrierDismissible and barrierLabel still apply', (final tester) async {
-      final BuildContext page = await _page(tester);
-      unawaited(
-        showHarborDialog<void>(
-          page,
-          // ignore: deprecated_member_use_from_same_package
-          barrierColor: _tint,
-          // ignore: deprecated_member_use_from_same_package
-          barrierDismissible: false,
-          // ignore: deprecated_member_use_from_same_package
-          barrierLabel: 'Fermer',
-          builder: (_) => const Text('dialog'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final HarborDialogRoute<Object?> route = _routeOf(tester, 'dialog') as HarborDialogRoute<Object?>;
-      expect(route.barrierColor, _tint);
-      expect(route.barrierDismissible, isFalse);
-      expect(route.barrierLabel, 'Fermer');
-      expect(route.barrier, const HarborBarrier.dimmed(color: _tint, dismissible: false, label: 'Fermer'));
     });
   });
 
@@ -466,64 +330,6 @@ void main() {
 
     test('a barrier needs onDismiss', () {
       expect(() => HarborFloat(barrier: const HarborBarrier.clear(), child: const SizedBox()), throwsAssertionError);
-    });
-
-    group('the deprecated spellings', () {
-      test('modal: true reads as a clear barrier, or a dimmed one with a barrierColor', () {
-        void close() {}
-        // ignore: deprecated_member_use_from_same_package
-        final HarborFloat clear = HarborFloat(
-          modal: true,
-          barrierLabel: 'Fermer',
-          onDismiss: close,
-          child: const SizedBox(),
-        );
-        expect(clear.barrier, const HarborBarrier.clear(label: 'Fermer'));
-        expect(clear.modal, isTrue);
-        // ignore: deprecated_member_use_from_same_package
-        expect(clear.barrierLabel, 'Fermer');
-        // ignore: deprecated_member_use_from_same_package
-        final HarborFloat dimmed = HarborFloat(
-          modal: true,
-          barrierColor: _tint,
-          onDismiss: close,
-          child: const SizedBox(),
-        );
-        expect(dimmed.barrier, const HarborBarrier.dimmed(color: _tint));
-        // ignore: deprecated_member_use_from_same_package
-        expect(dimmed.barrierColor, _tint);
-        // ignore: deprecated_member_use_from_same_package
-        expect(dimmed.barrierLabel, 'Dismiss');
-        // ignore: deprecated_member_use_from_same_package
-        expect(
-          const HarborFloat(barrierColor: _tint, child: SizedBox()).modal,
-          isFalse,
-          reason: 'it did nothing alone',
-        );
-      });
-
-      test('giving both is an assert', () {
-        expect(
-          () => HarborFloat(
-            barrier: const HarborBarrier.clear(),
-            // ignore: deprecated_member_use_from_same_package
-            modal: true,
-            onDismiss: () {},
-            child: const SizedBox(),
-          ),
-          throwsAssertionError,
-        );
-        expect(
-          () => HarborFloat(
-            barrier: const HarborBarrier.clear(),
-            // ignore: deprecated_member_use_from_same_package
-            barrierLabel: 'Fermer',
-            onDismiss: () {},
-            child: const SizedBox(),
-          ),
-          throwsAssertionError,
-        );
-      });
     });
   });
 }

@@ -1,12 +1,9 @@
 # The dart fix golden tests (`dart fix --compare-to-golden`, run from this directory by
-# tool/check.sh). Each `.dart` file is code written against harbor's deprecated API, and its
+# tool/check.sh). Each `.dart` file is code written against harbor's 0.x API, and its
 # `.dart.expect` is what `dart fix --apply` must turn it into.
 #
-# These files live inside the harbor package, so the deprecations they use are from the same
-# package: deprecated_member_use_from_same_package is what makes the fixes fire here. A consumer's
-# code gets the default deprecated_member_use instead.
+# 1.0 removed the deprecated names these files are written against, so the fixes fire here from the
+# undefined_* diagnostics, as they do in a consumer's code jumping straight to 1.0. Removed-class
+# creations are written without `const`, which gets no fix against 1.0 (jump_to_1_0.dart). On 0.x a
+# consumer's code got deprecated_member_use, and these files deprecated_member_use_from_same_package.
 include: ../analysis_options.yaml
-
-linter:
-  rules:
-    - deprecated_member_use_from_same_package

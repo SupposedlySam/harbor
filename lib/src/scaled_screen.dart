@@ -25,16 +25,10 @@ class HarborScaledScreen extends StatelessWidget {
     super.key,
     required this.referenceSize,
     this.devicePixelRatio,
-    final HarborSystemEdges systemEdges = HarborSystemEdges.ambient,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborSystemEdges? coast,
+    this.systemEdges = HarborSystemEdges.ambient,
     this.letterbox = const Color(0xFF000000),
     required this.child,
-  }) : assert(
-         coast == null || identical(systemEdges, HarborSystemEdges.ambient) || identical(coast, systemEdges),
-         'systemEdges and the deprecated coast disagree. Give systemEdges alone.',
-       ),
-       systemEdges = coast ?? systemEdges;
+  });
 
   final Size referenceSize;
 
@@ -43,9 +37,6 @@ class HarborScaledScreen extends StatelessWidget {
 
   final HarborSystemEdges systemEdges;
 
-  /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborSystemEdges get coast => systemEdges;
   final Color letterbox;
   final Widget child;
 

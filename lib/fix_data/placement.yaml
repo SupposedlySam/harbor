@@ -25,26 +25,6 @@ transforms:
     changes:
       - kind: 'rename'
         newName: 'HarborCrossAlignment'
-  # HarborAnchorSide.before, the name of start through 0.2.0.
-  - title: "Rename to 'start'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      field: 'before'
-      inClass: 'HarborAnchorSide'
-    changes:
-      - kind: 'rename'
-        newName: 'start'
-  # HarborAnchorSide.after, the name of end through 0.2.0.
-  - title: "Rename to 'end'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      field: 'after'
-      inClass: 'HarborAnchorSide'
-    changes:
-      - kind: 'rename'
-        newName: 'end'
   # HarborBuoy.anchored(anchor: a, ...) becomes HarborBuoy(placement: HarborAnchored(a, ...)), from the diagnostic
   # on its deprecated anchor argument, so a tear-off (no arguments) is left alone. The old anchored buoy's side
   # was above, a HarborAnchored's is below, so side: above is written where it was left out.

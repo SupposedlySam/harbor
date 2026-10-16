@@ -19,7 +19,7 @@
 //    has no arguments, gets no fix, and stays deprecated and compiling.
 //  * A condition reads a missing argument as ''.
 //  * A static constant inside an enum (HarborAnchorSide.before) is a `field` `inClass`; `inEnum`
-//    does not match it.
+//    does not match it. Once removed (1.0) it is matched by neither, so those renames are gone.
 
 import 'dart:io';
 
@@ -228,21 +228,9 @@ String generate() {
       ..writeln("        newName: '$now'");
   }
 
-  // Reached through the old typedef too: HarborBuoySide.before is renamed HarborAnchorSide.before
-  // first, then this.
-  for (final (String old, String now) in <(String, String)>[('before', 'start'), ('after', 'end')]) {
-    out
-      ..writeln('  # HarborAnchorSide.$old, the name of $now through 0.2.0.')
-      ..writeln('  - title: "Rename to \'$now\'"')
-      ..writeln('    date: $_date')
-      ..writeln('    element:')
-      ..writeln("      uris: [ 'harbor.dart' ]")
-      ..writeln("      field: '$old'")
-      ..writeln("      inClass: 'HarborAnchorSide'")
-      ..writeln('    changes:')
-      ..writeln("      - kind: 'rename'")
-      ..writeln("        newName: '$now'");
-  }
+  // HarborAnchorSide.before and .after (the names of start and end through 0.2.0) were static
+  // constants on the enum, removed at 1.0: the analyzer offers no data-driven fix for an undefined
+  // enum constant, so their renames went with them.
 
   // HarborBuoy is a deprecated subclass of HarborFloat since 0.9.0, so a call spelled with either
   // name is keyed on the class that declares its constructor.

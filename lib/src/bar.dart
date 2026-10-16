@@ -14,15 +14,7 @@ enum HarborBarKind {
   /// list ends above.
   ///
   /// Solid bars are always nearer the edge than overlay bars on the same edge.
-  solid;
-
-  /// The old name of [overlay].
-  @Deprecated('Renamed overlay. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborBarKind pier = overlay;
-
-  /// The old name of [solid].
-  @Deprecated('Renamed solid. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborBarKind quay = solid;
+  solid,
 }
 
 /// How a bar takes the system edge it is built against.
@@ -105,23 +97,9 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.duration = const Duration(milliseconds: 250),
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    @Deprecated(
-      'Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborKeyboardStance added after `dart fix`, or the import widened.',
-    )
-    this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
@@ -137,23 +115,9 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.duration = const Duration(milliseconds: 250),
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.curve = Curves.easeInOutCubic,
     this.animationStyle,
     this.backdrop,
     this.hitTestBehavior = HitTestBehavior.opaque,
-    @Deprecated(
-      'Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborKeyboardStance added after `dart fix`, or the import widened.',
-    )
-    this._withdrawsAtHighTide = false,
     this.restingExtent,
     this.minimum = 0.0,
     this.debugLabel,
@@ -185,21 +149,7 @@ class HarborBar with Diagnosticable {
     this.systemEdges,
     this.state = HarborBarState.open,
     this.extentPolicy = HarborExtentPolicy.hold,
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.duration = const Duration(milliseconds: 250),
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.curve = Curves.easeInOutCubic,
     this.animationStyle,
-    @Deprecated(
-      'Use keyboard: HarborKeyboardStance.withdraws. `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborKeyboardStance added after `dart fix`, or the import widened.',
-    )
-    this._withdrawsAtHighTide = false,
     this.debugLabel,
   }) : assert(extent >= 0.0, 'A reserved extent cannot be negative.'),
        reserved = extent,
@@ -223,40 +173,16 @@ class HarborBar with Diagnosticable {
   /// nothing. Only the innermost bar on an edge draws one.
   final HarborEdgeEffect edgeEffect;
 
-  /// The old name of [edgeEffect].
-  @Deprecated('Renamed edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborEdgeEffect get wake => edgeEffect;
-
   /// How the bar meets the keyboard. Matters on the bottom edge.
   final HarborKeyboardStance keyboard;
 
-  /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborKeyboardStance get tide => keyboard;
-
   /// How the bar takes the system edge on its edge; null picks the default for [keyboard].
   final HarborSystemEdgeStance? systemEdges;
-
-  /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborSystemEdgeStance? get coast => systemEdges;
 
   final HarborBarState state;
 
   /// How a withdrawing bar gives its space back.
   final HarborExtentPolicy extentPolicy;
-
-  /// How long the bar takes to go dark, withdraw or return, where [animationStyle] does not say.
-  @Deprecated(
-    'Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-  )
-  final Duration duration;
-
-  /// The curve the bar goes dark, withdraws or returns along, where [animationStyle] does not say.
-  @Deprecated(
-    'Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-  )
-  final Curve curve;
 
   /// How the bar moves, as `AnimationStyle` sets it on Flutter's routes: its `duration` and `curve`
   /// are for returning and lighting up, and its `reverseDuration` and `reverseCurve` for withdrawing
@@ -273,17 +199,9 @@ class HarborBar with Diagnosticable {
   /// a tap on a header never reaches a row scrolled under it.
   final HitTestBehavior hitTestBehavior;
 
-  /// Whether the bar withdraws while the keyboard is up: [keyboard] is
-  /// [HarborKeyboardStance.withdraws], or the deprecated flag was given.
-  @Deprecated('Read keyboard == HarborKeyboardStance.withdraws. Deprecated after 0.9.1.')
-  bool get withdrawsAtHighTide => withdrawsWithKeyboard;
-
-  /// Whether the bar withdraws while the keyboard is up, by its [keyboard] or the deprecated flag.
+  /// Whether the bar withdraws while the keyboard is up: [keyboard] is [HarborKeyboardStance.withdraws].
   @internal
-  bool get withdrawsWithKeyboard => keyboard == HarborKeyboardStance.withdraws || _withdrawsAtHighTide;
-
-  /// The deprecated `withdrawsAtHighTide:`, which a bar of any stance could be given.
-  final bool _withdrawsAtHighTide;
+  bool get withdrawsWithKeyboard => keyboard == HarborKeyboardStance.withdraws;
 
   /// How far the bar reaches at rest, for a bar whose child grows (a rail that
   /// opens on focus). Content that follows the bar at rest keeps this
@@ -307,23 +225,8 @@ class HarborBar with Diagnosticable {
         HarborKeyboardStance.reserves => HarborSystemEdgeStance.none,
       };
 
-  /// The old name of [effectiveSystemEdges].
-  @Deprecated('Renamed effectiveSystemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborSystemEdgeStance get effectiveCoast => effectiveSystemEdges;
-
   /// This bar with a new [state], [child] or [keyboard].
-  HarborBar copyWith({
-    final HarborBarState? state,
-    final Widget? child,
-    final HarborKeyboardStance? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborKeyboardStance? tide,
-  }) {
-    assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.');
-    return _copyWith(state: state, child: child, keyboard: keyboard ?? tide);
-  }
-
-  HarborBar _copyWith({final HarborBarState? state, final Widget? child, final HarborKeyboardStance? keyboard}) =>
+  HarborBar copyWith({final HarborBarState? state, final Widget? child, final HarborKeyboardStance? keyboard}) =>
       reserved != null
       ? HarborBar.reserve(
           key: key,
@@ -333,10 +236,7 @@ class HarborBar with Diagnosticable {
           systemEdges: systemEdges,
           state: state ?? this.state,
           extentPolicy: extentPolicy,
-          duration: duration,
-          curve: curve,
           animationStyle: animationStyle,
-          withdrawsAtHighTide: _withdrawsAtHighTide,
           debugLabel: debugLabel,
         )
       : kind == HarborBarKind.overlay
@@ -348,12 +248,9 @@ class HarborBar with Diagnosticable {
           systemEdges: systemEdges,
           state: state ?? this.state,
           extentPolicy: extentPolicy,
-          duration: duration,
-          curve: curve,
           animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
-          withdrawsAtHighTide: _withdrawsAtHighTide,
           restingExtent: restingExtent,
           minimum: minimum,
           debugLabel: debugLabel,
@@ -366,12 +263,9 @@ class HarborBar with Diagnosticable {
           systemEdges: systemEdges,
           state: state ?? this.state,
           extentPolicy: extentPolicy,
-          duration: duration,
-          curve: curve,
           animationStyle: animationStyle,
           backdrop: backdrop,
           hitTestBehavior: hitTestBehavior,
-          withdrawsAtHighTide: _withdrawsAtHighTide,
           restingExtent: restingExtent,
           minimum: minimum,
           debugLabel: debugLabel,
@@ -393,129 +287,14 @@ class HarborBar with Diagnosticable {
     properties.add(
       EnumProperty<HarborExtentPolicy>('extentPolicy', extentPolicy, defaultValue: HarborExtentPolicy.hold),
     );
-    properties.add(
-      DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 250)),
-    );
-    properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeInOutCubic));
     properties.add(DiagnosticsProperty<AnimationStyle>('animationStyle', animationStyle, defaultValue: null));
     properties.add(ObjectFlagProperty<Widget>.has('backdrop', backdrop));
     properties.add(
       EnumProperty<HitTestBehavior>('hitTestBehavior', hitTestBehavior, defaultValue: HitTestBehavior.opaque),
-    );
-    properties.add(
-      FlagProperty('withdrawsAtHighTide', value: _withdrawsAtHighTide, ifTrue: 'withdraws while the keyboard is up'),
     );
     properties.add(DoubleProperty('restingExtent', restingExtent, defaultValue: null));
     properties.add(DoubleProperty('minimum', minimum, defaultValue: 0.0));
     properties.add(DoubleProperty('reserved', reserved, defaultValue: null));
     properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
-}
-
-/// The old name of [HarborBar], whose constructors were renamed too: [HarborDock.pier] is
-/// [HarborBar.overlay] and [HarborDock.quay] is [HarborBar.solid].
-///
-/// A subclass rather than a typedef, so `dart fix` can rename the constructors with the class.
-@Deprecated('Renamed HarborBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborDock extends HarborBar {
-  /// The old name of [HarborBar.overlay].
-  @Deprecated('Renamed HarborBar.overlay. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborDock.pier({
-    super.key,
-    required super.child,
-    final HarborEdgeEffect? edgeEffect,
-    @Deprecated('Renamed edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborEdgeEffect? wake,
-    final HarborKeyboardStance? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborKeyboardStance? tide,
-    final HarborSystemEdgeStance? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborSystemEdgeStance? coast,
-    super.state,
-    super.extentPolicy,
-    super.duration,
-    super.curve,
-    super.animationStyle,
-    super.backdrop,
-    super.hitTestBehavior,
-    super.withdrawsAtHighTide,
-    super.restingExtent,
-    super.minimum,
-    super.debugLabel,
-  }) : assert(wake == null || edgeEffect == null, 'Give edgeEffect or the deprecated wake, not both.'),
-       assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.'),
-       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
-       super.overlay(
-         edgeEffect: edgeEffect ?? wake ?? HarborEdgeEffect.none,
-         keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays,
-         systemEdges: systemEdges ?? coast,
-       );
-
-  /// The old name of [HarborBar.solid].
-  @Deprecated('Renamed HarborBar.solid. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborDock.quay({
-    super.key,
-    required super.child,
-    final HarborEdgeEffect? edgeEffect,
-    @Deprecated('Renamed edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborEdgeEffect? wake,
-    final HarborKeyboardStance? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborKeyboardStance? tide,
-    final HarborSystemEdgeStance? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborSystemEdgeStance? coast,
-    super.state,
-    super.extentPolicy,
-    super.duration,
-    super.curve,
-    super.animationStyle,
-    super.backdrop,
-    super.hitTestBehavior,
-    super.withdrawsAtHighTide,
-    super.restingExtent,
-    super.minimum,
-    super.debugLabel,
-  }) : assert(wake == null || edgeEffect == null, 'Give edgeEffect or the deprecated wake, not both.'),
-       assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.'),
-       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
-       super.solid(
-         edgeEffect: edgeEffect ?? wake ?? HarborEdgeEffect.none,
-         keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays,
-         systemEdges: systemEdges ?? coast,
-       );
-
-  /// The old name of [HarborBar.reserve].
-  @Deprecated('Renamed HarborBar.reserve. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborDock.reserve({
-    super.key,
-    required super.extent,
-    super.kind,
-    final HarborKeyboardStance? keyboard,
-    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborKeyboardStance? tide,
-    final HarborSystemEdgeStance? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborSystemEdgeStance? coast,
-    super.state,
-    super.extentPolicy,
-    super.duration,
-    super.curve,
-    super.animationStyle,
-    super.withdrawsAtHighTide,
-    super.debugLabel,
-  }) : assert(tide == null || keyboard == null, 'Give keyboard or the deprecated tide, not both.'),
-       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
-       super.reserve(keyboard: keyboard ?? tide ?? HarborKeyboardStance.stays, systemEdges: systemEdges ?? coast);
-
-  /// `HarborDock.pier`, `.quay` or `.reserve`, as the deprecated constructors were named, though
-  /// [kind] says `overlay` or `solid`.
-  @override
-  String toStringShort() =>
-      '${objectRuntimeType(this, 'HarborDock')}.${reserved != null
-          ? 'reserve'
-          : kind == HarborBarKind.overlay
-          ? 'pier'
-          : 'quay'}';
 }

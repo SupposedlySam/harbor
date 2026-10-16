@@ -1,5 +1,5 @@
 // HarborPlacement (0.7.0): one placement value for floats, popovers and toasts, placed by one
-// engine. The deprecated spellings it replaces are covered in deprecated_placement_test.dart.
+// engine.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

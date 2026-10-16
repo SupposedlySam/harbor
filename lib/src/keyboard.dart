@@ -25,44 +25,11 @@ enum HarborKeyboardStance {
   /// slides out.
   ///
   /// It cannot also [reserves]: a bar that holds the keyboard's space has nothing to withdraw for.
-  withdraws;
-
-  /// The old name of [rides].
-  @Deprecated('Renamed rides. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardStance float = rides;
-
-  /// The old name of [stays].
-  @Deprecated('Renamed stays. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardStance pilings = stays;
-
-  /// The old name of [reserves].
-  @Deprecated('Renamed reserves. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardStance dryDock = reserves;
+  withdraws,
 }
 
 /// Where the keyboard is in its cycle: [hidden], [opening], [shown] or [closing].
-enum HarborKeyboardPhase {
-  hidden,
-  opening,
-  shown,
-  closing;
-
-  /// The old name of [hidden].
-  @Deprecated('Renamed hidden. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardPhase low = hidden;
-
-  /// The old name of [opening].
-  @Deprecated('Renamed opening. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardPhase rising = opening;
-
-  /// The old name of [shown].
-  @Deprecated('Renamed shown. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardPhase high = shown;
-
-  /// The old name of [closing].
-  @Deprecated('Renamed closing. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborKeyboardPhase falling = closing;
-}
+enum HarborKeyboardPhase { hidden, opening, shown, closing }
 
 /// The keyboard as a frame sees it.
 ///
@@ -94,22 +61,8 @@ class HarborKeyboardState {
 
   final HarborKeyboardPhase phase;
 
-  /// The old name of [settledHeight].
-  @Deprecated('Renamed settledHeight. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  double get highWater => settledHeight;
-
-  /// The old name of [settledHeightIsEstimate].
-  @Deprecated(
-    'Renamed settledHeightIsEstimate. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  bool get highWaterIsEstimate => settledHeightIsEstimate;
-
   /// Whether the keyboard is shown at all.
   bool get isShown => height > 0.0;
-
-  /// The old name of [isShown].
-  @Deprecated('Renamed isShown. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get isIn => isShown;
 
   bool get isSettled => phase == HarborKeyboardPhase.hidden || phase == HarborKeyboardPhase.shown;
 
@@ -131,28 +84,6 @@ class HarborKeyboardState {
   @override
   String toString() =>
       'HarborKeyboardState(height: $height, remaining: $remaining, settledHeight: $settledHeight, phase: $phase)';
-}
-
-/// The old name of [HarborKeyboardState], which takes the old names of its parameters.
-///
-/// A subclass rather than a typedef, so the new constructor can keep its parameters required.
-@Deprecated('Renamed HarborKeyboardState. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborTideState extends HarborKeyboardState {
-  /// The old name of [HarborKeyboardState.new].
-  @Deprecated('Renamed HarborKeyboardState. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborTideState({
-    required super.height,
-    required super.remaining,
-    @Deprecated('Renamed settledHeight. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final double? highWater,
-    @Deprecated(
-      'Renamed settledHeightIsEstimate. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final bool? highWaterIsEstimate,
-    required super.phase,
-  }) : assert(highWater != null, 'highWater is required.'),
-       assert(highWaterIsEstimate != null, 'highWaterIsEstimate is required.'),
-       super(settledHeight: highWater ?? 0.0, settledHeightIsEstimate: highWaterIsEstimate ?? true);
 }
 
 /// Keeps the keyboard's phase and its settled heights for one view. Owned by
@@ -394,10 +325,6 @@ abstract final class HarborKeyboard {
           MediaQuery.viewInsetsOf(context).bottom) >
       0.0;
 
-  /// The old name of [isShownOf].
-  @Deprecated('Renamed isShownOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static bool isInOf(final BuildContext context) => isShownOf(context);
-
   /// The keyboard's settled height at [context], rebuilding the caller only when
   /// a new height settles or the screen turns.
   static double _settledHeightOf(final BuildContext context) {
@@ -413,19 +340,7 @@ abstract final class HarborKeyboard {
 ///
 /// Flutter has no equivalent: nothing in the SDK reserves the keyboard's height while it is down.
 class HarborKeyboardSpace extends StatelessWidget {
-  const HarborKeyboardSpace({
-    super.key,
-    this.child,
-    final bool showsChildWithKeyboard = false,
-    @Deprecated(
-      'Renamed showsChildWithKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final bool? showsChildAtHighTide,
-  }) : assert(
-         showsChildAtHighTide == null || !showsChildWithKeyboard || showsChildAtHighTide == showsChildWithKeyboard,
-         'showsChildWithKeyboard and the deprecated showsChildAtHighTide disagree. Give showsChildWithKeyboard alone.',
-       ),
-       showsChildWithKeyboard = showsChildAtHighTide ?? showsChildWithKeyboard;
+  const HarborKeyboardSpace({super.key, this.child, this.showsChildWithKeyboard = false});
 
   /// What fills the space while the keyboard is hidden.
   final Widget? child;
@@ -433,12 +348,6 @@ class HarborKeyboardSpace extends StatelessWidget {
   /// Whether [child] stays visible under a keyboard that does not cover it,
   /// such as a floating one.
   final bool showsChildWithKeyboard;
-
-  /// The old name of [showsChildWithKeyboard].
-  @Deprecated(
-    'Renamed showsChildWithKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  bool get showsChildAtHighTide => showsChildWithKeyboard;
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {

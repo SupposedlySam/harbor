@@ -1,8 +1,9 @@
 # harbor: notes for the agent working here
 
 `README.md` is the API and the vocabulary. Read it whole before changing anything: its "The one
-rule" section is the model the names come from (edges, bars, room), and its "Renamed in 0.9"
-table maps the 0.8 harbour names to them, with the complete table in `doc/design/naming.md`.
+rule" section is the model the names come from (edges, bars, room), and its appendix "Upgrading
+from 0.x: renamed in 0.9" maps the 0.8 harbour names to them, with the complete table in
+`doc/design/naming.md`.
 
 ## Running it
 

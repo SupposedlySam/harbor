@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
+import 'package:harbor/src/dock_slot.dart';
 import 'package:harbor_test/harbor_test.dart';
 
 Widget _bar(final String label, final double height) =>
@@ -419,7 +420,7 @@ void main() {
     await tester.fling(find.byKey(const ValueKey<String>('content')), const Offset(0, 60), 550);
     await tester.pumpAndSettle();
     expect(closed, isFalse);
-    closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+    HarborSheet.close(tester.element(find.byKey(const ValueKey<String>('content'))));
     await tester.pumpAndSettle();
 
     closed = false;
@@ -500,7 +501,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       final double top = _rect(tester, 'content').top;
-      closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+      HarborSheet.close(tester.element(find.byKey(const ValueKey<String>('content'))));
       await tester.pumpAndSettle();
       return top;
     }
@@ -550,7 +551,7 @@ void main() {
           barrier: barrier,
         );
         await tester.pumpAndSettle();
-        closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+        HarborSheet.close(tester.element(find.byKey(const ValueKey<String>('content'))));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 250));
         expect(shown(tester, restTop), closeTo(0.75, 0.02));
@@ -565,7 +566,7 @@ void main() {
         await tester.pump();
         await tester.pump();
         expect(_rect(tester, 'content').top, restTop);
-        closeHarborSheet(tester.element(find.byKey(const ValueKey<String>('content'))));
+        HarborSheet.close(tester.element(find.byKey(const ValueKey<String>('content'))));
         await tester.pump();
         await tester.pump();
         expect(find.byKey(const ValueKey<String>('content')), findsNothing);
@@ -1085,26 +1086,6 @@ void main() {
     expect(find.byKey(const ValueKey<String>('folders')), findsNothing);
   });
 
-  testWidgets('closeHarborSheet still closes the sheet it is called from', (final tester) async {
-    final BuildContext page = await _page(tester);
-    late BuildContext sheet;
-    bool closed = false;
-    unawaited(
-      showHarborSheet<void>(
-        page,
-        builder: (final BuildContext context) {
-          sheet = context;
-          return HarborSheet(body: _bar('folders', 200));
-        },
-      ).then((final void _) => closed = true),
-    );
-    await tester.pumpAndSettle();
-    // ignore: deprecated_member_use_from_same_package, the old name forwards to HarborSheet.close.
-    closeHarborSheet(sheet);
-    await tester.pumpAndSettle();
-    expect(closed, isTrue);
-    expect(find.byKey(const ValueKey<String>('folders')), findsNothing);
-  });
   testWidgets("a sheet route is a semantics scope named by its semanticLabel, holding the sheet's content", (
     final tester,
   ) async {

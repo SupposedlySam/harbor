@@ -17,7 +17,6 @@ import 'edge_effect.dart';
 import 'frame.dart';
 import 'hinge.dart';
 import 'keyboard.dart';
-import 'renamed.dart';
 import 'render_frame.dart';
 import 'room.dart';
 
@@ -126,100 +125,17 @@ class HarborSheet extends StatelessWidget {
     this.footerBar,
     required Widget this.body,
     this.surface,
-    @Deprecated(
-      'Give headerBar: HarborSheet.defaultHeaderBar(header) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the header can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final HarborEdgeEffect? headerEdgeEffect,
-    @Deprecated(
-      'Renamed headerEdgeEffect, itself deprecated: give headerBar: a HarborBar with its edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final HarborEdgeEffect? headerWake,
-    @Deprecated(
-      'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the footer can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final HarborEdgeEffect? footerEdgeEffect,
-    @Deprecated(
-      'Renamed footerEdgeEffect, itself deprecated: give footerBar: a HarborBar with its edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final HarborEdgeEffect? footerWake,
-    @Deprecated(
-      'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its minimum. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the footer can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final double? footerMinimum,
-    @Deprecated(
-      'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its keyboard. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the footer can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final HarborKeyboardStance? footerKeyboard,
-    @Deprecated(
-      'Renamed footerKeyboard, itself deprecated: give footerBar: a HarborBar with its keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final HarborKeyboardStance? footerTide,
     this.maxExtentFraction = 0.9,
     this.debugLabel,
     this.contentBuilder,
     this.clip,
     this.dragToClose = false,
     this.closeFlingVelocity = 700.0,
-    final bool clearsTopSystemEdge = true,
-    @Deprecated('Renamed clearsTopSystemEdge. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? clearsTopCoast,
+    this.clearsTopSystemEdge = true,
     this.clearsSides = false,
-    final bool bodyClearsKeyboard = true,
-    @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bodyClearsTide,
+    this.bodyClearsKeyboard = true,
   }) : assert(header == null || headerBar == null, 'Give a sheet header or headerBar, not both.'),
        assert(footer == null || footerBar == null, 'Give a sheet footer or footerBar, not both.'),
-       assert(
-         headerBar == null || (headerEdgeEffect == null && headerWake == null),
-         'headerEdgeEffect is for a plain header. Give a headerBar its own edgeEffect.',
-       ),
-       assert(
-         footerBar == null ||
-             (footerEdgeEffect == null &&
-                 footerWake == null &&
-                 footerMinimum == null &&
-                 footerKeyboard == null &&
-                 footerTide == null),
-         'footerEdgeEffect, footerMinimum and footerKeyboard are for a plain footer. Give a footerBar its own.',
-       ),
-       assert(
-         headerWake == null || headerEdgeEffect == null || identical(headerWake, headerEdgeEffect),
-         'headerEdgeEffect and the deprecated headerWake disagree. Give headerBar alone.',
-       ),
-       assert(
-         footerWake == null || footerEdgeEffect == null || identical(footerWake, footerEdgeEffect),
-         'footerEdgeEffect and the deprecated footerWake disagree. Give footerBar alone.',
-       ),
-       assert(
-         footerTide == null || footerKeyboard == null || footerTide == footerKeyboard,
-         'footerKeyboard and the deprecated footerTide disagree. Give footerBar alone.',
-       ),
-       assert(
-         clearsTopCoast == null || clearsTopSystemEdge || clearsTopCoast == clearsTopSystemEdge,
-         'clearsTopSystemEdge and the deprecated clearsTopCoast disagree. Give clearsTopSystemEdge alone.',
-       ),
-       assert(
-         bodyClearsTide == null || bodyClearsKeyboard || bodyClearsTide == bodyClearsKeyboard,
-         'bodyClearsKeyboard and the deprecated bodyClearsTide disagree. Give bodyClearsKeyboard alone.',
-       ),
-       _headerEdgeEffect = headerEdgeEffect ?? headerWake ?? _defaultHeaderEdgeEffect,
-       _footerEdgeEffect = footerEdgeEffect ?? footerWake ?? _defaultFooterEdgeEffect,
-       _footerMinimum = footerMinimum ?? _defaultFooterMinimum,
-       _footerKeyboard = footerKeyboard ?? footerTide ?? _defaultFooterKeyboard,
-       clearsTopSystemEdge = clearsTopCoast ?? clearsTopSystemEdge,
-       bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
        assert(closeFlingVelocity >= 0.0),
        builder = null,
        extent = null,
@@ -246,98 +162,15 @@ class HarborSheet extends StatelessWidget {
     this.controller,
     this.expand = true,
     this.surface,
-    @Deprecated(
-      'Give headerBar: HarborSheet.defaultHeaderBar(header) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the header can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final HarborEdgeEffect? headerEdgeEffect,
-    @Deprecated(
-      'Renamed headerEdgeEffect, itself deprecated: give headerBar: a HarborBar with its edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final HarborEdgeEffect? headerWake,
-    @Deprecated(
-      'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its edgeEffect. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the footer can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final HarborEdgeEffect? footerEdgeEffect,
-    @Deprecated(
-      'Renamed footerEdgeEffect, itself deprecated: give footerBar: a HarborBar with its edgeEffect. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final HarborEdgeEffect? footerWake,
-    @Deprecated(
-      'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its minimum. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the footer can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final double? footerMinimum,
-    @Deprecated(
-      'Give footerBar: HarborSheet.defaultFooterBar(footer) or a HarborBar of your own, with its keyboard. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart, but not where the footer can be null. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBar added after `dart fix`, or the '
-      'import widened.',
-    )
-    final HarborKeyboardStance? footerKeyboard,
-    @Deprecated(
-      'Renamed footerKeyboard, itself deprecated: give footerBar: a HarborBar with its keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-    )
-    final HarborKeyboardStance? footerTide,
     this.debugLabel,
     this.contentBuilder,
     this.clip,
     this.closeFlingVelocity = 700.0,
-    final bool clearsTopSystemEdge = true,
-    @Deprecated('Renamed clearsTopSystemEdge. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? clearsTopCoast,
+    this.clearsTopSystemEdge = true,
     this.clearsSides = false,
-    final bool bodyClearsKeyboard = true,
-    @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bodyClearsTide,
+    this.bodyClearsKeyboard = true,
   }) : assert(header == null || headerBar == null, 'Give a sheet header or headerBar, not both.'),
        assert(footer == null || footerBar == null, 'Give a sheet footer or footerBar, not both.'),
-       assert(
-         headerBar == null || (headerEdgeEffect == null && headerWake == null),
-         'headerEdgeEffect is for a plain header. Give a headerBar its own edgeEffect.',
-       ),
-       assert(
-         footerBar == null ||
-             (footerEdgeEffect == null &&
-                 footerWake == null &&
-                 footerMinimum == null &&
-                 footerKeyboard == null &&
-                 footerTide == null),
-         'footerEdgeEffect, footerMinimum and footerKeyboard are for a plain footer. Give a footerBar its own.',
-       ),
-       assert(
-         headerWake == null || headerEdgeEffect == null || identical(headerWake, headerEdgeEffect),
-         'headerEdgeEffect and the deprecated headerWake disagree. Give headerBar alone.',
-       ),
-       assert(
-         footerWake == null || footerEdgeEffect == null || identical(footerWake, footerEdgeEffect),
-         'footerEdgeEffect and the deprecated footerWake disagree. Give footerBar alone.',
-       ),
-       assert(
-         footerTide == null || footerKeyboard == null || footerTide == footerKeyboard,
-         'footerKeyboard and the deprecated footerTide disagree. Give footerBar alone.',
-       ),
-       assert(
-         clearsTopCoast == null || clearsTopSystemEdge || clearsTopCoast == clearsTopSystemEdge,
-         'clearsTopSystemEdge and the deprecated clearsTopCoast disagree. Give clearsTopSystemEdge alone.',
-       ),
-       assert(
-         bodyClearsTide == null || bodyClearsKeyboard || bodyClearsTide == bodyClearsKeyboard,
-         'bodyClearsKeyboard and the deprecated bodyClearsTide disagree. Give bodyClearsKeyboard alone.',
-       ),
-       _headerEdgeEffect = headerEdgeEffect ?? headerWake ?? _defaultHeaderEdgeEffect,
-       _footerEdgeEffect = footerEdgeEffect ?? footerWake ?? _defaultFooterEdgeEffect,
-       _footerMinimum = footerMinimum ?? _defaultFooterMinimum,
-       _footerKeyboard = footerKeyboard ?? footerTide ?? _defaultFooterKeyboard,
-       clearsTopSystemEdge = clearsTopCoast ?? clearsTopSystemEdge,
-       bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
        assert(closeFlingVelocity >= 0.0),
        body = null,
        maxExtentFraction = null,
@@ -398,49 +231,11 @@ class HarborSheet extends StatelessWidget {
   /// Painted under the whole sheet: its color and corners.
   final Widget? surface;
 
-  final HarborEdgeEffect _headerEdgeEffect;
-  final HarborEdgeEffect _footerEdgeEffect;
-  final double _footerMinimum;
-  final HarborKeyboardStance _footerKeyboard;
-
-  /// The edge effect of a plain [header]'s bar.
-  @Deprecated('Read headerBar, or HarborSheet.defaultHeaderBar. Deprecated after 0.9.1.')
-  HarborEdgeEffect get headerEdgeEffect => _headerEdgeEffect;
-
-  /// The old name of [headerEdgeEffect].
-  @Deprecated('Read headerBar, or HarborSheet.defaultHeaderBar.')
-  HarborEdgeEffect get headerWake => _headerEdgeEffect;
-
-  /// The edge effect of a plain [footer]'s bar.
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.1.')
-  HarborEdgeEffect get footerEdgeEffect => _footerEdgeEffect;
-
-  /// The old name of [footerEdgeEffect].
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar.')
-  HarborEdgeEffect get footerWake => _footerEdgeEffect;
-
-  /// The minimum of a plain [footer]'s bar.
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.1.')
-  double get footerMinimum => _footerMinimum;
-
-  /// How a plain [footer]'s bar meets the keyboard.
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar. Deprecated after 0.9.1.')
-  HarborKeyboardStance get footerKeyboard => _footerKeyboard;
-
-  /// The old name of [footerKeyboard].
-  @Deprecated('Read footerBar, or HarborSheet.defaultFooterBar.')
-  HarborKeyboardStance get footerTide => _footerKeyboard;
-
-  /// The header's bar: [headerBar], or a plain [header] in the sheet's own bar (with the
-  /// deprecated knobs, where a call gives them).
+  /// The header's bar: [headerBar], or a plain [header] in the sheet's own bar.
   HarborBar? get _header =>
       headerBar ??
       switch (header) {
-        final Widget header => HarborBar.overlay(
-          edgeEffect: _headerEdgeEffect,
-          debugLabel: 'sheet header',
-          child: header,
-        ),
+        final Widget header => defaultHeaderBar(header),
         null => null,
       };
 
@@ -448,13 +243,7 @@ class HarborSheet extends StatelessWidget {
   HarborBar? get _footer =>
       footerBar ??
       switch (footer) {
-        final Widget footer => HarborBar.solid(
-          keyboard: _footerKeyboard,
-          edgeEffect: _footerEdgeEffect,
-          minimum: _footerMinimum,
-          debugLabel: 'sheet footer',
-          child: footer,
-        ),
+        final Widget footer => defaultFooterBar(footer),
         null => null,
       };
 
@@ -515,10 +304,6 @@ class HarborSheet extends StatelessWidget {
   /// up there.
   final bool clearsTopSystemEdge;
 
-  /// The old name of [clearsTopSystemEdge].
-  @Deprecated('Renamed clearsTopSystemEdge. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get clearsTopCoast => clearsTopSystemEdge;
-
   /// Whether the header, body and footer clear the system edges on the left and right
   /// (a phone's notch in landscape, a cutout on a side edge) and mark them handled,
   /// so content beneath does not clear it again. The [surface] still runs edge
@@ -545,34 +330,12 @@ class HarborSheet extends StatelessWidget {
   /// whole height, the keyboard included.
   final bool bodyClearsKeyboard;
 
-  /// The old name of [bodyClearsKeyboard].
-  @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get bodyClearsTide => bodyClearsKeyboard;
-
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<HarborSheetExtent>('extent', extent, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborBar>('headerBar', headerBar, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborBar>('footerBar', footerBar, defaultValue: null));
-    properties.add(
-      DiagnosticsProperty<HarborEdgeEffect>(
-        'headerEdgeEffect',
-        _headerEdgeEffect,
-        defaultValue: _defaultHeaderEdgeEffect,
-      ),
-    );
-    properties.add(
-      DiagnosticsProperty<HarborEdgeEffect>(
-        'footerEdgeEffect',
-        _footerEdgeEffect,
-        defaultValue: _defaultFooterEdgeEffect,
-      ),
-    );
-    properties.add(DoubleProperty('footerMinimum', _footerMinimum, defaultValue: _defaultFooterMinimum));
-    properties.add(
-      EnumProperty<HarborKeyboardStance>('footerKeyboard', _footerKeyboard, defaultValue: _defaultFooterKeyboard),
-    );
     properties.add(
       PercentProperty(
         'maxExtentFraction',
@@ -1026,11 +789,6 @@ class HarborSheetController extends ChangeNotifier {
 /// slide, as it does a modal bottom sheet: the sheet runs it forward to open
 /// and back to close, and the caller disposes it.
 ///
-/// `isDismissible`, `barrierColor`, `barrierLabel` and `barrierOnTapHint` are the spellings of the
-/// barrier through 0.9, deprecated: given, each overrides the matching field of [barrier]
-/// (`barrierColor` only tints a dimmed barrier, as it only ever did). With [HarborBarrier.none]
-/// they do nothing, and are ignored, as they always were.
-///
 /// See also:
 ///
 ///  * `showModalBottomSheet` and `ModalBottomSheetRoute`, the Material equivalent of a sheet with a
@@ -1039,59 +797,20 @@ Future<T?> showHarborSheet<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
   final bool coversPage = false,
-  @Deprecated('Renamed coversPage. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  final bool? breakwater,
   final HarborBarrier barrier = const HarborBarrier.dimmed(),
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final bool? isDismissible,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final Color? barrierColor,
   final double? maxWidth,
   final bool useRootNavigator = false,
   final Offset? anchorPoint,
   final bool? requestFocus,
   final bool reachesTop = false,
-  @Deprecated('Renamed reachesTop. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  final bool? keepsTopCoast,
   final RouteSettings? routeSettings,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final String? barrierLabel,
   final AnimationStyle? sheetAnimationStyle,
   final HarborSheetController? controller,
   final AnimationController? transitionAnimationController,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(onTapHint: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final String? barrierOnTapHint,
   final String? semanticLabel,
   final HarborHinge? hinge,
   final bool fillsScreenAtHinge = false,
 }) {
-  // With HarborBarrier.none the deprecated loose arguments do nothing, and are ignored, as they were
-  // through 0.9.1: whether the barrier is none can turn on a variable `dart fix` leaves alone, so an
-  // assert here would break calls that worked. When they are removed at 1.0 there is nothing to
-  // assert on.
-  final HarborBarrier effective = harborBarrierWith(
-    barrier,
-    color: barrierColor,
-    dismissible: isDismissible,
-    label: barrierLabel,
-    onTapHint: barrierOnTapHint,
-  );
   final NavigatorState navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   final HarborController? presenter = HarborController.maybeOf(context);
   // Read once, from the page that opens the sheet: what that page and the root above it chose.
@@ -1104,17 +823,17 @@ Future<T?> showHarborSheet<T>(
     // `Theme.of(context)` in a sheet's builder read the navigator's theme, not the page's.
     builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
     maxWidth: maxWidth ?? defaults.sheetMaxWidth,
-    reachesTop: renamed(keepsTopCoast, reachesTop, false, 'reachesTop', 'keepsTopCoast'),
+    reachesTop: reachesTop,
     anchorPoint: anchorPoint,
-    presenter: renamed(breakwater, coversPage, false, 'coversPage', 'breakwater') ? presenter : null,
+    presenter: coversPage ? presenter : null,
     animationStyle: sheetAnimationStyle,
     controller: controller,
-    scopesRoute: effective.blocks,
+    scopesRoute: barrier.blocks,
     semanticLabel: semanticLabel,
     hinge: hinge ?? defaults.hinge ?? HarborHinge.avoidSeparating,
     fillsScreenAtHinge: fillsScreenAtHinge,
   );
-  if (!effective.blocks) {
+  if (!barrier.blocks) {
     final OverlayState overlay = navigator.overlay!;
     // A non-modal sheet lives in the navigator's overlay, not in a route of its own, so it is tied
     // to the page's route by hand: back closes it first, it hides while another page is on top,
@@ -1134,10 +853,10 @@ Future<T?> showHarborSheet<T>(
   return navigator.push<T>(
     _HarborSheetRoute<T>(
       host: host,
-      barrierColor: effective.color,
-      barrierDismissible: effective.isDismissible,
-      barrierLabel: effective.label ?? defaults.barrierLabel ?? harborBarrierDismissLabel,
-      barrierOnTapHint: effective.onTapHint ?? defaults.sheetBarrierOnTapHint,
+      barrierColor: barrier.color,
+      barrierDismissible: barrier.isDismissible,
+      barrierLabel: barrier.label ?? defaults.barrierLabel ?? harborBarrierDismissLabel,
+      barrierOnTapHint: barrier.onTapHint ?? defaults.sheetBarrierOnTapHint,
       settings: routeSettings,
       animationStyle: sheetAnimationStyle,
       transitionAnimationController: transitionAnimationController,
@@ -1943,10 +1662,6 @@ class _CloseSheetAction extends DismissAction {
   @override
   void invoke(final DismissIntent intent) => unawaited(_close());
 }
-
-/// Closes the sheet [context] is in, whichever way it was opened.
-@Deprecated('Use HarborSheet.close instead, which also takes a result. Deprecated after 0.2.0.')
-void closeHarborSheet(final BuildContext context) => HarborSheet.close<Object?>(context);
 
 /// Draws the sheets with no barrier that its page opened, through an [OverlayPortal], so they
 /// paint just above the page and below every route pushed after it. Mounted by each page's

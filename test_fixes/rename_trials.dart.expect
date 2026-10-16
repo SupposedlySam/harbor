@@ -6,7 +6,6 @@ import 'package:harbor_test/harbor_test.dart';
 
 Future<void> trials(WidgetTester tester) async {
   final HarborTrial trial = await tester.pumpHarborTrial(const SizedBox(), device: HarborTrialDevice.iPhoneSE, keyboardShown: true);
-  await HarborTrials(tester).pumpHarborTrial(const SizedBox());
   await trial.showKeyboard(settle: true);
   await trial.hideKeyboard(pumpFor: Duration.zero);
   await trial.setKeyboard(shown: true);
@@ -36,13 +35,15 @@ extension PumpOnDevice on WidgetTester {
   }
 }
 
+// Through implicit `this`: against 1.0 the methods are renamed and the getters (tideIn, waterline,
+// and the device's below) are left as they are, as in rename_members.dart.
 extension ImplicitTrial on HarborTrial {
   Future<void> moves() async {
     await showKeyboard(settle: true);
     await hideKeyboard(pumpFor: Duration.zero);
     await setKeyboard(shown: true);
-    final bool up = keyboardShown;
-    final double top = keyboardTop;
+    final bool up = tideIn;
+    final double top = waterline;
     final Rect room = roomAround(find.byType(SizedBox));
     final List<Object> bars = barsAround(find.byType(SizedBox));
     <Object?>[up, top, room, bars];
@@ -50,5 +51,5 @@ extension ImplicitTrial on HarborTrial {
 }
 
 extension ImplicitDevice on HarborTrialDevice {
-  List<Object?> get reads => <Object?>[systemEdges, keyboardHeight, reportsSystemEdgesUnderKeyboard, systemEdgesWhen(keyboardShown: true), copyWith(systemEdges: EdgeInsets.zero, keyboardHeight: 100, reportsSystemEdgesUnderKeyboard: false)];
+  List<Object?> get reads => <Object?>[coast, tideHeight, reportsCoastUnderTide, systemEdgesWhen(keyboardShown: true), copyWith(systemEdges: EdgeInsets.zero, keyboardHeight: 100, reportsSystemEdgesUnderKeyboard: false)];
 }

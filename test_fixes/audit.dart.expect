@@ -77,7 +77,4 @@ void keepInSight(BuildContext context, RenderBox box, HarborController frame, bo
   // The 0.8 names chain through the rename.
   const HarborKeepVisible(clearance: 24, child: SizedBox());
   const HarborKeepVisibleRegion(child: HarborLift(child: SizedBox()));
-  HarborKeepVisible.reveal(context, clearance: 24);
-  HarborKeepVisible.reveal(context);
-  HarborKeepVisible.coverageOf(box, frame, HarborEdge.top);
 }
