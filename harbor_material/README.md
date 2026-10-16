@@ -64,6 +64,9 @@ showHarborSheet(
 );
 ```
 
+A snack toast's content spans the toast's width, so it aligns itself: give a `Text` its own `textAlign`, as a
+`SnackBar`'s content does.
+
 It looks the same. What harbor changes is where things sit: the list rests clear of the app bar and
 the navigation bar, a form in the sheet keeps above the keyboard and the home indicator, the toast
 keeps clear of the navigation bar and the keyboard, and nothing pads by hand. The

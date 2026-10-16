@@ -1326,7 +1326,9 @@ harbor), needs `import 'package:harbor/harbor.dart';` added before `dart fix`, o
 was, and a second run says "Nothing to fix!". `dart fix` removes the import again afterwards if the
 file names nothing from it. The analyzer offers a package's fixes only in a file that imports that
 package's library (#150). harbor_test's fixes are the same, with
-`import 'package:harbor_test/harbor_test.dart';`.
+`import 'package:harbor_test/harbor_test.dart';`. On a jump straight from 0.x to 1.0, the same
+run can remove that import as unused before migrating the call, since the removed type does not
+resolve: re-add it and run `dart fix --apply` again, or step through 0.10.3, which keeps it.
 
 ## Example
 

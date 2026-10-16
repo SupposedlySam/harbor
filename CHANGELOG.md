@@ -1,3 +1,7 @@
+## 1.0.2
+
+* Docs: one more case on the list of what `dart fix` cannot do when jumping straight to 1.0 (under 1.0.0-dev.1), found by the upgrade test in #152. An import added before the jump so a file that reaches harbor through a helper gets migrated (#150's note) can be removed as unused by the same run, leaving the call unmigrated. Re-add it and run `dart fix --apply` again. Stepping through 0.10.3 avoids it. No code changes.
+
 ## 1.0.1
 
 * **Fix:** an `AppBar`'s `systemOverlayStyle` sets the status bar from a top bar, as it does from a `Scaffold`. The platform reads the status bar's style from the `AnnotatedRegion<SystemUiOverlayStyle>` at the middle of the status bar, and an `AppBar` annotates only its own box, which a bar pads below the status bar, so the lookup found nothing and the app's style was never applied. A bar now answers a lookup in the system edge it pads from the nearest point of its child, for any annotation: a top bar's reaches the status bar, and a bottom bar's reaches Android's navigation bar. A bar whose child sets no style leaves the status bar to whatever annotates the page, as before. `test/status_bar_style_test.dart` measures it the way `RenderView` samples it.
@@ -43,6 +47,7 @@ A pre-release of 1.0, for consumers to retest before 1.0.0. **Breaking:** every 
 * A tear-off of a removed constructor (`HarborDock.pier` as a value): write the new one.
 * A removed name in an import's `show` list: it stays, and the analyzer reports `undefined_shown_name`. Widen the import, as #146 advised.
 * `HarborSeaTrials(tester).pumpSeaTrial(...)`, through the extension by name: it becomes `HarborTrials(tester).pumpSeaTrial(...)`; write `tester.pumpHarborTrial(...)`.
+* A helper-reach import added before the jump (#150's note) can be removed as unused by the same run, leaving the call unmigrated: the removed type is unresolved when unused imports are judged, so the import looks unused. Re-add the import and run `dart fix --apply` again. Found after release by the upgrade test in #152; the recommended path through 0.10.3 does not hit it, because the old type still resolves there.
 
 ## 0.10.3
 

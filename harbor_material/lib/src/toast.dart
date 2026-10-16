@@ -119,6 +119,9 @@ extension HarborSnackToasts on BuildContext {
   /// `SnackBar` with an action persists, so a screen reader reaches it in time; otherwise for
   /// [timing], or the defaults' (4 s). The other arguments are [HarborToasts.show]'s.
   ///
+  /// [content] spans the toast's width, so it aligns itself: give a `Text` its own `textAlign`
+  /// (as a `SnackBar`'s content does); the toast takes no alignment of its own.
+  ///
   /// ```dart
   /// context.showSnackToast(const Text('Archived'), actionLabel: 'Undo', onAction: restore);
   /// ```
