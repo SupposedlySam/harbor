@@ -19,6 +19,12 @@ import 'placement.dart';
 /// A page's defaults reach into what it opens: sheets, dialogs and toasts carry them across the
 /// route, as they carry the page's themes.
 ///
+/// Defaults are read from below the scope that sets them, as a theme is. A context above the
+/// scope, including the context of the widget that builds the scope, sees the outer defaults: a
+/// `HarborToasts.show(context, ...)` from that widget's own `build` or handler takes the queue,
+/// timing and hinge of the scope around it, not of the one it builds. Read them, or show from,
+/// a context inside the scope (a [Builder] under it, or a widget of its child).
+///
 /// It holds policy, not look: no widget-valued field, ever. A sheet's surface or clip belongs in
 /// the app's own wrapper around [showHarborSheet], and measured geometry (the margin, the system
 /// edges) stays on [HarborRoot] and [HarborFrame], where readers rebuild only for what they read.
@@ -202,6 +208,10 @@ class HarborDefaults with Diagnosticable {
 ///   child: remoteDrivenScreen,
 /// )
 /// ```
+///
+/// Its defaults are read from below it. A context above it, including the context of the widget
+/// that builds it, sees the outer defaults, so a toast shown from that widget's own context does not
+/// take [defaults]: show it from a context inside [child].
 class HarborDefaultsScope extends StatelessWidget {
   /// Merges [defaults] over the defaults above, for [child].
   const HarborDefaultsScope({super.key, required this.defaults, required this.child});

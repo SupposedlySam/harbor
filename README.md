@@ -38,78 +38,6 @@ flutter pub add dev:harbor_test   # trials, for widget tests
 
 MIT licensed.
 
-## Renamed in 0.9
-
-0.9 renames the API after the model above; the 0.8 names still work, deprecated until 1.0, and
-`dart fix --apply` followed by `dart format` migrates your code. The main renames:
-
-| 0.8 | 0.9 |
-|---|---|
-| `HarborSea` | `HarborRoot` |
-| `Harbor` | `HarborFrame` |
-| `Harbor(newPort: true)` | `HarborFrame(isPage: true)`, which `dart fix` writes; `HarborFrame.page(...)` says the same and reads better |
-| `HarborDock.pier` / `.quay` / `.reserve` | `HarborBar.overlay` / `.solid` / `.reserve` |
-| `HarborDockState`, `HarborDockKind.pier` / `.quay` | `HarborBarState`, `HarborBarKind.overlay` / `.solid` |
-| `HarborCoast`, `coast:` | `HarborSystemEdges`, `systemEdges:` |
-| `HarborCoastStance` | `HarborSystemEdgeStance` |
-| `HarborTide.of` / `.isInOf` | `HarborKeyboard.of` / `.isShownOf` |
-| `HarborTideState.highWater` / `.isIn` | `HarborKeyboardState.settledHeight` / `.isShown` |
-| `HarborTideStance.float` / `.pilings` / `.dryDock`, a bar's `tide:` | `HarborKeyboardStance.rides` / `.stays` / `.reserves`, a bar's `keyboard:` |
-| `tide:` on `HarborMoored`, `HarborFairway`, `HarborFairwaySliver`, `HarborCastOff`, `paddingOf` | `clearsKeyboard:` |
-| `bars:` (0.8.0) on the same, and `HarborCastOff(docks:)` | `clearsBars:` |
-| `HarborDryDock(showsChildAtHighTide:)`, `HarborTideSource` | `HarborKeyboardSpace(showsChildWithKeyboard:)`, `HarborKeyboardSource` |
-| `bodyClearsTide:` | `bodyClearsKeyboard:` |
-| `HarborWake`, `wake:` | `HarborEdgeEffect`, `edgeEffect:` (`edgeEffects:` on a scroll view) |
-| `HarborWakeMask(wakes:)`, `.alphaWake`, `wakePainter:` | `HarborFadeMask(bands:)`, `.alphaFade`, `edgeEffectPainter:` |
-| `HarborWatersData.wakes` / `.wakeOf`, `HarborWakeBand` | `HarborRoomData.fadeBands` / `.fadeBandOf`, `HarborFadeBand` |
-| `HarborController.clearWater` | `HarborController.room` |
-| `HarborWaters`, `HarborWatersData` | `HarborRoom`, `HarborRoomData` |
-| `HarborWaters.dockFaceOf` / `.steadyCoastOf` | `HarborRoom.barFaceOf` / `.steadySystemEdgeOf` |
-| `HarborMoored` | `HarborClear` |
-| `HarborMooringLine`, `mooringLine:` | `HarborClear.rowInsets(child:)`, `rowInsets:` |
-| `HarborCastOff` | `HarborHandled` |
-| `HarborFairway(startsInOpenWater:)`, `HarborFairwaySliver` | `HarborScrollView(startsUnderBars:)`, `HarborSliverClear` |
-| `HarborSliverDock` | `HarborSliverBar` |
-| `HarborOpenWater(builder:)` | a `Builder` and `HarborRoom.of(context)` |
-| `HarborMakeWay`, `makeWay` | `HarborHideBar`, `hideBar` |
-| `HarborPontoon(dock:)`, `addPontoon` | `HarborAttachedBar(bar:)`, `attachBar` |
-| `HarborBuoy`, `buoys:` | `HarborFloat`, `floats:` |
-| `HarborPortalBuoy(buoyBuilder:)` | `HarborPopover(popoverBuilder:)` |
-| `HarborFlares.raise`, `entry.lower()` | `HarborToasts.show`, `entry.hide()` |
-| `HarborFlareSlot`, `HarborFlareEntry`, `HarborFlareTarget.sea` | `HarborToastSlot`, `HarborToastEntry`, `HarborToastTarget.root` |
-| `showHarborSheet(breakwater:, keepsTopCoast:)` | `showHarborSheet(coversPage:, reachesTop:)` |
-| `showHarborDialog(inheritClearWater:)` | `showHarborDialog(inheritRoom:)` |
-| `HarborBeacon`, `HarborLighthouse`, `HarborLighthouseRegion` | `HarborKeepInSight` and `HarborKeepInSightRegion` in 0.9.0, since split into `HarborCoverageListener`, `HarborKeepVisible` and `HarborLift`, in a `HarborKeepVisibleRegion` ([Keeping in sight](#keeping-in-sight)) |
-| `HarborChart`, `HarborChartOverlay` | `HarborInspector`, `HarborInspectorOverlay` |
-| `HarborFleet`, `HarborFleetObserver`, `controller.fleet` | `HarborFrameRegistry`, `HarborFrameObserver`, `controller.registry` |
-| `HarborScaleModel` | `HarborScaledScreen` |
-| `pumpSeaTrial`, `raiseTide()`, `waterline`, `isInClearWater` | `pumpHarborTrial`, `showKeyboard()`, `keyboardTop`, `isInRoom` |
-
-`HarborOpenWater` is retired rather than renamed, and has no automatic fix. The `HarborClear`
-enum is removed so the widget can take its name: `clear: HarborClear.coast` is
-`clearsBars: false`, and `HarborClear.everything` was the default. `HarborMooringLine(child:)`
-becomes `HarborClear.rowInsets(child:)`, which builds a `HarborClear`, so a test that found rows
-with `find.byType(HarborMooringLine)` finds none after the fix: give the row a `Key`, or find it
-with `find.byWidgetPredicate((w) => w is HarborClear && w.rowInsets)`. The complete table, every
-member and parameter, is [`doc/design/naming.md`](doc/design/naming.md); the CHANGELOG lists the
-names not renamed yet.
-
-**A file that imports harbor with `show`** needs the new names added after `dart fix`, or the
-import widened to `import 'package:harbor/harbor.dart';` before it runs. A rename is renamed in
-the `show` list too, but a fix that brings in a name the call did not have (`HarborToastTiming`,
-`HarborAligned`, `HarborAnchored`, `HarborBarrier`, `HarborDefaults`, `HarborDefaultsScope`,
-`HarborBarState`, ...) writes it without touching the list, so the fixed file does not compile
-(`undefined_function`), and a second run does not repair it. That is the analyzer's data-driven
-fixes, which do not extend an import's combinators (#146).
-
-**A file that reaches harbor through a helper**, without importing harbor itself (it calls
-`session.frame.coast` on a helper's typed field, or imports a library of yours that re-exports
-harbor), needs `import 'package:harbor/harbor.dart';` added before `dart fix`, or it is left as it
-was, and a second run says "Nothing to fix!". `dart fix` removes the import again afterwards if the
-file names nothing from it. The analyzer offers a package's fixes only in a file that imports that
-package's library (#150). harbor_test's fixes are the same, with
-`import 'package:harbor_test/harbor_test.dart';`.
-
 ## The one rule
 
 A frame has layers: the **body** (your content) at the bottom, **bars** above it, **floats,
@@ -293,8 +221,8 @@ focus (`restingExtent:`) holds the header at its resting width.
 | `state: HarborBarState.dark` | Not drawn and not tappable, but it keeps its space |
 | `state: HarborBarState.withdrawn` | Slides out and gives its space back |
 | `extentPolicy:` | How a withdrawing bar gives its space back: `hold` (once it's gone, the default), `follow`, `release` |
-| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. Left unset, 250 ms along `Curves.easeInOutCubic`. It replaces `duration:` and `curve:`, deprecated |
-| `keyboard: HarborKeyboardStance.withdraws` | Leaves while the keyboard is up and comes back once it is down: a tool strip that would otherwise park mid-screen. It lays out as a bar that stays, so the keyboard covers it as it slides out. It replaces `withdrawsAtHighTide: true`, deprecated |
+| `animationStyle:` | How it moves, as `AnimationStyle` sets it on Flutter's routes: `duration` and `curve` to return or light up, `reverseDuration` and `reverseCurve` to withdraw or go dark, `AnimationStyle.noAnimation` for none. Left unset, 250 ms along `Curves.easeInOutCubic` |
+| `keyboard: HarborKeyboardStance.withdraws` | Leaves while the keyboard is up and comes back once it is down: a tool strip that would otherwise park mid-screen. It lays out as a bar that stays, so the keyboard covers it as it slides out |
 | `restingExtent:` | The size to hold at rest for a bar that grows, like a rail that opens on focus |
 | `minimum: 16` | At least this much room on the edge, system edge or not, for the bar outermost on its edge (the one that takes the system edge) |
 | `systemEdges: HarborSystemEdgeStance.live` / `.steady` / `.none` | How it takes the system edge on its side: as it is now (gone at the bottom while the keyboard is up; the default for a bar that rides the keyboard), as it is with the keyboard down (the default for one that stays), or not at all (the default for one that reserves) |
@@ -626,8 +554,7 @@ first and the one up leaves, closed with `HarborToastClosedReason.replaced`, for
 an Undo whose window is tied to a pending action.
 `HarborDefaultsScope(defaults: HarborDefaults(toastQueue: HarborToastQueue.replace), child:)` sets that
 for a subtree, such as a remote-driven TV screen where a newer "Saved" should replace the one up
-rather than arrive late (`HarborFlarePolicy(queue:, child:)`, its 0.8 spelling, still works,
-deprecated). `closed`
+rather than arrive late. `closed`
 completes once a toast has left, with why. `entry.phase` (`waiting`, `shown`,
 `closed`) and `entry.wasShown` say where it is synchronously, before `closed`
 completes: a toast hidden while it waits is `closed` by the time `hide()`
@@ -682,16 +609,6 @@ header. With no overlay either, it is reported through
 `FlutterError.reportError`, in release builds too. A toast's timers stop when it
 is hidden or when nothing is left to show it, so a test that ends with one up
 has no timer pending.
-
-Toasts were called signals through 0.3.0 and flares through 0.8; both sets of old names still
-work, deprecated, until 1.0.
-
-Through 0.6, floats, popovers and toasts took their placement as loose parameters
-(`HarborBuoy(alignment:, margin:)`, `HarborBuoy.anchored(anchor:, side:, gap:, ...)`,
-`HarborPortalBuoy(side:, ...)`, `HarborFlares.raise(alignment:, anchor:, ...)`), and the
-sides and cross alignments were `HarborBuoySide` and `HarborBuoyCrossAlignment`. Those
-still work, deprecated, with the defaults they had, and go at 1.0; `dart fix --apply`
-rewrites them to placements.
 
 ```dart
 final menu = OverlayPortalController();
@@ -808,7 +725,7 @@ the handle):
 ```dart
 HarborSheet(
   headerBar: HarborBar.overlay(child: tabs),                          // no fade
-  footerBar: HarborBar.solid(withdrawsAtHighTide: true, child: tools), // leaves while the keyboard is up
+  footerBar: HarborBar.solid(keyboard: HarborKeyboardStance.withdraws, child: tools), // leaves while the keyboard is up
   body: deck,
 )
 HarborSheet(footerBar: HarborSheet.defaultFooterBar(actions).copyWith(keyboard: HarborKeyboardStance.stays), body: form)
@@ -888,8 +805,7 @@ reads the hinge. `HarborDefaults(hinge: HarborHinge.never)` on a frame lays bars
 and the page's overlays too; `HarborDefaults(barHinge: HarborHinge.never)` lays only the bars
 across it, so its sheets, dialogs, toasts and menus still keep off. Both reach the frames nested
 in the page as well, unless a nested frame sets its own: a frame's bars follow its own `barHinge`,
-then its own `hinge`, and only then what a frame around it set. Through 0.9 these were `HarborFrame(hinge:, barHinge:)` and
-`HarborRoot(hinge:)`; they still work, deprecated, and `dart fix` moves them into `defaults:`.
+then its own `hinge`, and only then what a frame around it set.
 
 `HarborPanes(start:, end:)` is two panes, modelled on Windows' `TwoPaneView`:
 either side of a hinge the policy keeps off (side by side for a vertical one,
@@ -1005,10 +921,7 @@ What a sheet, a dialog or a float puts over the page is one value, a `HarborBarr
 what is over it unless it is not `dismissible`; back and Escape close it either way. Its
 `label` is what a screen reader announces for it ('Dismiss' when none is given), and its
 `onTapHint` says what tapping it does. A dialog is always a route with a barrier, so it
-cannot take `none` (an assert). Through 0.9 these were loose parameters on each
-(`isDismissible`, `barrierColor`, `barrierLabel`, `barrierOnTapHint` and the
-`HarborSheetBarrier` enum on a sheet, `barrierDismissible` on a dialog, `modal` on a
-float); they still work, deprecated, until 1.0.
+cannot take `none` (an assert).
 
 A sheet with a barrier is a route, as a modal bottom sheet is. `routeSettings:` reach your
 navigator observers and route-name analytics. Like a modal bottom sheet, the
@@ -1166,6 +1079,11 @@ opens, as its themes do: the sheets, dialogs and toasts it opens, and what those
 `HarborDefaults.of(context)` reads them in a build method; `HarborDefaults.read(context)` once,
 from a handler.
 
+Defaults are read from below the scope that sets them, as a theme is: a context above it,
+including the context of the widget that builds the `HarborDefaultsScope` (or the root or frame),
+sees the outer defaults. A toast shown from that widget's own context waits its turn under a
+scope that says `replace`; show it from a context inside the scope's child.
+
 `toastMargin` is for a toast shown at a `slot:` or at none: a toast given a `placement:` keeps the
 placement's own margin. A root does not take the defaults of a frame it is mounted in: a phone
 drawn inside a page starts from harbor's own. The defaults are policy, not look: a sheet's
@@ -1190,12 +1108,8 @@ reports how much of it the bars on its `edge` cover, and a `HarborLift` asks its
 clear of what covers the bottom. `active: false` on `HarborKeepVisible` or `HarborLift` turns the job
 off without rebuilding the child as a different widget, as `HarborHideBar(active:)` does.
 
-`HarborKeepInSight`, which did all three, is deprecated: `HarborKeepInSight(onObscured:)` is
-`HarborCoverageListener(onCoverage:)`, `keepInSight:` is `HarborKeepVisible`, and `lift:` is
-`HarborLift`, and `dart fix` rewrites a call that does one of them.
-
 A region lifts over 280 ms along `Curves.easeOutCubic` and settles back the same way. Give it an
-`animationStyle:` to change that (it replaces `duration:` and `curve:`, deprecated): its `duration` and `curve` are for the lift,
+`animationStyle:` to change that: its `duration` and `curve` are for the lift,
 its `reverseDuration` and `reverseCurve` for settling back, and
 `AnimationStyle.noAnimation` moves the content at once.
 
@@ -1247,8 +1161,7 @@ and `HarborInspector.nearest(context)` the nearest frame alone: its frame, body,
 room and bars in global coordinates, the way a test or a tool reads a
 frame without reaching into it.
 In debug and profile builds the `ext.harbor.inspector` VM-service extension serves
-it as JSON, for tools that drive the app. Its 0.8 name, `ext.harbor.chart`, is still served, and
-the JSON still carries the 0.8 keys (`clearWater`, `docks`, `tide`) beside the new ones, until 1.0.
+it as JSON, for tools that drive the app.
 
 Tooling that runs outside the widget tree (a debug panel, a logger, an
 automation driver) reads `HarborInspector.snapshotAll()`: every frame of every live
@@ -1325,8 +1238,83 @@ something sits relative to everything in the way, not against a number:
 `trial.barsAround(finder)` lists the bars of the frame around a widget. Both
 read `HarborInspector.nearest`, so a test of your own can too.
 
-`package:harbor/testing.dart`, where trials used to be, is now empty and
-deprecated: importing it points to `harbor_test`. It will be removed in a later release.
+## Upgrading from 0.x: renamed in 0.9
+
+0.9 renamed the API after [the model](#the-one-rule); 0.9 and 0.10 kept the 0.8 names, deprecated,
+and 1.0 removes them, with every other name deprecated before it. Code with no deprecated harbor
+names needs no change, unless it passes `placement: null` to a `HarborFloat` or a `HarborPopover`
+(their placement is no longer nullable: leave it out for the same default). For code that has them, move to 0.10.3 first, run `dart fix --apply` there,
+then `dart format` on what it changed, and then move to 1.0: on 0.10.3 every fix applies. Run
+against 1.0 directly, `dart fix` still migrates most of it, but not a `const` call of a removed
+class, a renamed enum value, or the few other cases the 1.0.0-dev.1 CHANGELOG lists. The main
+renames:
+
+| 0.8 | 0.9 |
+|---|---|
+| `HarborSea` | `HarborRoot` |
+| `Harbor` | `HarborFrame` |
+| `Harbor(newPort: true)` | `HarborFrame(isPage: true)`, which `dart fix` writes; `HarborFrame.page(...)` says the same and reads better |
+| `HarborDock.pier` / `.quay` / `.reserve` | `HarborBar.overlay` / `.solid` / `.reserve` |
+| `HarborDockState`, `HarborDockKind.pier` / `.quay` | `HarborBarState`, `HarborBarKind.overlay` / `.solid` |
+| `HarborCoast`, `coast:` | `HarborSystemEdges`, `systemEdges:` |
+| `HarborCoastStance` | `HarborSystemEdgeStance` |
+| `HarborTide.of` / `.isInOf` | `HarborKeyboard.of` / `.isShownOf` |
+| `HarborTideState.highWater` / `.isIn` | `HarborKeyboardState.settledHeight` / `.isShown` |
+| `HarborTideStance.float` / `.pilings` / `.dryDock`, a bar's `tide:` | `HarborKeyboardStance.rides` / `.stays` / `.reserves`, a bar's `keyboard:` |
+| `tide:` on `HarborMoored`, `HarborFairway`, `HarborFairwaySliver`, `HarborCastOff`, `paddingOf` | `clearsKeyboard:` |
+| `bars:` (0.8.0) on the same, and `HarborCastOff(docks:)` | `clearsBars:` |
+| `HarborDryDock(showsChildAtHighTide:)`, `HarborTideSource` | `HarborKeyboardSpace(showsChildWithKeyboard:)`, `HarborKeyboardSource` |
+| `bodyClearsTide:` | `bodyClearsKeyboard:` |
+| `HarborWake`, `wake:` | `HarborEdgeEffect`, `edgeEffect:` (`edgeEffects:` on a scroll view) |
+| `HarborWakeMask(wakes:)`, `.alphaWake`, `wakePainter:` | `HarborFadeMask(bands:)`, `.alphaFade`, `edgeEffectPainter:` |
+| `HarborWatersData.wakes` / `.wakeOf`, `HarborWakeBand` | `HarborRoomData.fadeBands` / `.fadeBandOf`, `HarborFadeBand` |
+| `HarborController.clearWater` | `HarborController.room` |
+| `HarborWaters`, `HarborWatersData` | `HarborRoom`, `HarborRoomData` |
+| `HarborWaters.dockFaceOf` / `.steadyCoastOf` | `HarborRoom.barFaceOf` / `.steadySystemEdgeOf` |
+| `HarborMoored` | `HarborClear` |
+| `HarborMooringLine`, `mooringLine:` | `HarborClear.rowInsets(child:)`, `rowInsets:` |
+| `HarborCastOff` | `HarborHandled` |
+| `HarborFairway(startsInOpenWater:)`, `HarborFairwaySliver` | `HarborScrollView(startsUnderBars:)`, `HarborSliverClear` |
+| `HarborSliverDock` | `HarborSliverBar` |
+| `HarborOpenWater(builder:)` | a `Builder` and `HarborRoom.of(context)` |
+| `HarborMakeWay`, `makeWay` | `HarborHideBar`, `hideBar` |
+| `HarborPontoon(dock:)`, `addPontoon` | `HarborAttachedBar(bar:)`, `attachBar` |
+| `HarborBuoy`, `buoys:` | `HarborFloat`, `floats:` |
+| `HarborPortalBuoy(buoyBuilder:)` | `HarborPopover(popoverBuilder:)` |
+| `HarborFlares.raise`, `entry.lower()` | `HarborToasts.show`, `entry.hide()` |
+| `HarborFlareSlot`, `HarborFlareEntry`, `HarborFlareTarget.sea` | `HarborToastSlot`, `HarborToastEntry`, `HarborToastTarget.root` |
+| `showHarborSheet(breakwater:, keepsTopCoast:)` | `showHarborSheet(coversPage:, reachesTop:)` |
+| `showHarborDialog(inheritClearWater:)` | `showHarborDialog(inheritRoom:)` |
+| `HarborBeacon`, `HarborLighthouse`, `HarborLighthouseRegion` | `HarborKeepInSight` and `HarborKeepInSightRegion` in 0.9.0, since split into `HarborCoverageListener`, `HarborKeepVisible` and `HarborLift`, in a `HarborKeepVisibleRegion` ([Keeping in sight](#keeping-in-sight)) |
+| `HarborChart`, `HarborChartOverlay` | `HarborInspector`, `HarborInspectorOverlay` |
+| `HarborFleet`, `HarborFleetObserver`, `controller.fleet` | `HarborFrameRegistry`, `HarborFrameObserver`, `controller.registry` |
+| `HarborScaleModel` | `HarborScaledScreen` |
+| `pumpSeaTrial`, `raiseTide()`, `waterline`, `isInClearWater` | `pumpHarborTrial`, `showKeyboard()`, `keyboardTop`, `isInRoom` |
+
+`HarborOpenWater` was retired rather than renamed, and has no automatic fix. The `HarborClear`
+enum is removed so the widget can take its name: `clear: HarborClear.coast` is
+`clearsBars: false`, and `HarborClear.everything` was the default. `HarborMooringLine(child:)`
+becomes `HarborClear.rowInsets(child:)`, which builds a `HarborClear`, so a test that found rows
+with `find.byType(HarborMooringLine)` finds none after the fix: give the row a `Key`, or find it
+with `find.byWidgetPredicate((w) => w is HarborClear && w.rowInsets)`. The complete table, every
+member and parameter, is [`doc/design/naming.md`](doc/design/naming.md), and the CHANGELOG's
+1.0.0-dev.1 entry lists every name 1.0 removes and what `dart fix` still does against 1.0 itself.
+
+**A file that imports harbor with `show`** needs the new names added after `dart fix`, or the
+import widened to `import 'package:harbor/harbor.dart';` before it runs. A rename is renamed in
+the `show` list too, but a fix that brings in a name the call did not have (`HarborToastTiming`,
+`HarborAligned`, `HarborAnchored`, `HarborBarrier`, `HarborDefaults`, `HarborDefaultsScope`,
+`HarborBarState`, ...) writes it without touching the list, so the fixed file does not compile
+(`undefined_function`), and a second run does not repair it. That is the analyzer's data-driven
+fixes, which do not extend an import's combinators (#146).
+
+**A file that reaches harbor through a helper**, without importing harbor itself (it calls
+`session.frame.coast` on a helper's typed field, or imports a library of yours that re-exports
+harbor), needs `import 'package:harbor/harbor.dart';` added before `dart fix`, or it is left as it
+was, and a second run says "Nothing to fix!". `dart fix` removes the import again afterwards if the
+file names nothing from it. The analyzer offers a package's fixes only in a file that imports that
+package's library (#150). harbor_test's fixes are the same, with
+`import 'package:harbor_test/harbor_test.dart';`.
 
 ## Example
 
