@@ -34,7 +34,8 @@ unreleased commit takes a git dependency on this repo with a `ref:`.
    A release that changes only documentation (README wording, CHANGELOG text, dartdoc comments,
    nothing a consumer's code can observe) bumps the build number, `1.0.1` -> `1.0.1+1`, never the
    semver patch: a semantic version is for a change to code (Jonah, 2026-10-16). The same goes for
-   harbor_test and harbor_material.
+   harbor_test and harbor_material. `tool/check_version.py`, run by `tool/check.sh`, fails a bump
+   that doesn't match the change, either way.
 2. `./tool/check.sh` must pass, and CI must be green on that commit.
 3. `fvm flutter pub publish --dry-run` must report 0 warnings. A pub.dev release can be retracted
    but never deleted, so look at the file list it prints, not just the verdict.

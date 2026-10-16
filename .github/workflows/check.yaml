@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # tool/check_version.py compares each package with its last release in git history.
+          fetch-depth: 0
 
       # .fvmrc is the one place the Flutter version is pinned; read it rather than repeat it here.
       - id: sdk
