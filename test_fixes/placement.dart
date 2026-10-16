@@ -31,7 +31,6 @@ void buoys(HarborAnchor anchor, VoidCallback close) {
     crossAlignment: HarborBuoyCrossAlignment.end,
     crossOffset: 3,
     margin: const EdgeInsets.all(5),
-    modal: true,
     onDismiss: close,
     child: const SizedBox(),
   );
