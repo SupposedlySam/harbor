@@ -1,3 +1,7 @@
+## 1.0.1
+
+* **Fix:** an `AppBar`'s `systemOverlayStyle` sets the status bar from a top bar, as it does from a `Scaffold`. The platform reads the status bar's style from the `AnnotatedRegion<SystemUiOverlayStyle>` at the middle of the status bar, and an `AppBar` annotates only its own box, which a bar pads below the status bar, so the lookup found nothing and the app's style was never applied. A bar now answers a lookup in the system edge it pads from the nearest point of its child, for any annotation: a top bar's reaches the status bar, and a bottom bar's reaches Android's navigation bar. A bar whose child sets no style leaves the status bar to whatever annotates the page, as before. `test/status_bar_style_test.dart` measures it the way `RenderView` samples it.
+
 ## 1.0.0
 
 harbor 1.0: the API named after the layout model (#120), with every deprecated name removed. This is 1.0.0-dev.1, below, unchanged: Rubric, gravity_brew, Flyby and a production app on iOS, Android and tvOS (#152) confirmed it before release. **Migrating:** upgrade to 0.10.3 first and run `dart fix --apply` there; code with no deprecated harbor names needs no change. The notes under 1.0.0-dev.1 list everything removed and what `dart fix` still covers on a jump straight to 1.0.

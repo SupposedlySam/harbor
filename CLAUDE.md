@@ -10,7 +10,7 @@ from 0.x: renamed in 0.9" maps the 0.8 harbour names to them, with the complete 
 The Flutter version is pinned in `.fvmrc`, so use `fvm flutter`, not a bare `flutter`.
 
 ```sh
-./tool/check.sh        # analyze (infos are fatal) and test: the package, harbor_test, then the example
+./tool/check.sh        # analyze (infos are fatal) and test: the package, harbor_test, harbor_material, then the example
 ```
 
 That script is the one gate. CI (`.github/workflows/check.yaml`) runs it on every push and pull
@@ -40,6 +40,12 @@ unreleased commit takes a git dependency on this repo with a `ref:`.
 directory. Its `pubspec.yaml` asks for harbor from pub.dev and its committed `pubspec_overrides.yaml`
 points that at `../` for development, so before releasing it raise its `harbor:` constraint to the
 harbor just published, bump its own `version:` and `CHANGELOG.md`, and run steps 3 and 4 there.
+
+`harbor_material/` (the Material companion, `doc/design/DECISIONS.md` "harbor_material") is a third,
+released the same way after harbor: its `pubspec.yaml` asks for `harbor: ^1.0.0` from pub.dev, its
+committed `pubspec_overrides.yaml` points harbor and harbor_test at the checkout, and it is not one
+of harbor's dev dependencies, so the root `analysis_options.yaml` excludes it and `tool/check.sh`
+analyzes it from its own directory.
 
 **What ships is decided by `.pubignore`, which replaces `.gitignore` for pub** in the root
 directory. A new gitignore rule must be copied there too, or pub will publish what git ignores.

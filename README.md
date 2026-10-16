@@ -36,6 +36,11 @@ flutter pub add harbor
 flutter pub add dev:harbor_test   # trials, for widget tests
 ```
 
+**Using Material?** [`harbor_material`](https://pub.dev/packages/harbor_material) has the Material
+pieces an app would otherwise write around harbor by hand: `HarborMaterialFrame` in place of a
+`Scaffold`, an `AppBar` in a bar with its colour behind the status bar, harbor's defaults from
+`MaterialLocalizations`, a `SnackBar`-look toast and a Material bottom sheet.
+
 MIT licensed.
 
 ## The one rule
@@ -768,6 +773,10 @@ in `MediaQuery.viewInsets`, a footer that rides the keyboard still rides up on i
 `maxExtentFraction` (0.9 of the space above the keyboard by default), or a
 draggable sheet's extents, is a share of the whole height.
 
+A sheet comes up from the bottom edge. A sheet anchored to the top, one that pulls down from under
+the status bar, is out of scope: build it from a float or a popover, or an `OverlayPortal` of your
+own, and keep it clear of the status bar with `HarborRoom.of(context).systemEdges`.
+
 On a dual-screen device, sheets and dialogs keep to one screen, as Material's do,
 and toasts and floats keep to the screen that holds them, never across the hinge.
 A flat fold, which has no width, may still be spanned.
@@ -971,7 +980,8 @@ English that Material and Cupertino fall back to, since `WidgetsLocalizations` h
 harbor imports no design library: it sits on Flutter's widgets layer, and since
 Flutter 3.47 Material and Cupertino are packages of their own. So a Material app
 passes Material's pieces in, the lines that `showModalBottomSheet` would have
-filled in for it. The barrier's label and tap hint and the sheet's width are the
+filled in for it (`harbor_material`'s `HarborMaterialSheet` and `HarborMaterialDefaults` are
+these lines, written once). The barrier's label and tap hint and the sheet's width are the
 same on every call, so they go on the root once ([Defaults](#defaults)); the rest
 is per sheet:
 
@@ -1229,7 +1239,9 @@ Devices: `iPhone17`, `iPhoneSE`, `androidThreeButton`, `androidGesture`,
 `foldableOpen` (a flat fold), `dualScreenCover`,
 `dualScreenOpen` (a hinge), `television`, plus the `phones` and `all` lists.
 Each device goes on the view at its own `devicePixelRatio`, and
-`device.displayFeatures` puts its folds and hinges there.
+`device.displayFeatures` puts its folds and hinges there. A device's `systemEdges` are its
+insets from the status bar, the home indicator and any cutout: what other screenshot and
+device-frame packages call its safe area (`safeArea`).
 `pumpHarborTrial(textScaleFactor:)` grows the system text size, so bars are
 measured at the size their text grew to. `trial.roomAround(finder)` returns the room
 around a widget, and `isInRoom` asserts against it, so a test checks where

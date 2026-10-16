@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# The one gate: analyze and test the package, its sea trials (harbor_test), then the example.
+# The one gate: analyze and test the package, its sea trials (harbor_test), its Material companion
+# (harbor_material), then the example.
 #
 # CI runs this, and so does a release (CLAUDE.md), so a release and a green build can never be
 # checked by two different lists that drift apart.
@@ -21,7 +22,7 @@ else
   exit 2
 fi
 
-for dir in "$root" "$root/harbor_test" "$root/example"; do
+for dir in "$root" "$root/harbor_test" "$root/harbor_material" "$root/example"; do
   echo "== ${dir#"$root"}/"
   (
     cd "$dir"
