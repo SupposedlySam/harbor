@@ -73,5 +73,9 @@ analyzer:
     # The dart fix goldens are written against the deprecated API on purpose; tool/check.sh runs
     # `dart fix --compare-to-golden` on them, with their own analysis_options.yaml.
     - "test_fixes/**"
+    # A package of its own, analyzed from its own directory by tool/check.sh. Unlike harbor_test it
+    # is not one of harbor's dev dependencies, so from here its imports resolve only once its own
+    # `pub get` has run, which a fresh checkout has not.
+    - "harbor_material/**"
   errors:
     invalid_annotation_target: ignore
