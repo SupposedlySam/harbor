@@ -8,9 +8,9 @@ import 'package:harbor/harbor.dart';
 
 void moored(BuildContext context) {
   // The coast alone becomes clearsBars: false; everything, the default, goes.
-  const HarborMoored(clear: HarborClear.coast, child: SizedBox());
-  const HarborMoored(clear: HarborClear.everything, child: SizedBox());
-  const HarborMoored(edges: {HarborEdge.top}, clear: HarborClear.coast, tide: false, child: SizedBox());
+  HarborMoored(clear: HarborClear.coast, child: SizedBox());
+  HarborMoored(clear: HarborClear.everything, child: SizedBox());
+  HarborMoored(edges: {HarborEdge.top}, clear: HarborClear.coast, tide: false, child: SizedBox());
   HarborMoored.clearanceOf(context, clear: HarborClear.coast);
   HarborMoored.clearanceOf(context, edges: HarborEdge.vertical, clear: HarborClear.everything);
 }
@@ -18,30 +18,30 @@ void moored(BuildContext context) {
 void both(BuildContext context, bool b) {
   // 0.8 allowed both: bars && clear != coast. With coast the result is false whatever bars says,
   // so both go and clearsBars: false is written once; with everything, bars stands, renamed.
-  const HarborMoored(bars: true, clear: HarborClear.coast, child: SizedBox());
+  HarborMoored(bars: true, clear: HarborClear.coast, child: SizedBox());
   HarborMoored(bars: b, clear: HarborClear.coast, child: const SizedBox());
   HarborMoored(bars: b, clear: HarborClear.everything, child: const SizedBox());
-  const HarborFairway(clear: HarborClear.coast, bars: false, slivers: <Widget>[]);
+  HarborFairway(clear: HarborClear.coast, bars: false, slivers: <Widget>[]);
   HarborFairway.paddingOf(context, bars: b, clear: HarborClear.everything);
-  const HarborFairwaySliver(bars: true, clear: HarborClear.coast, sliver: SliverToBoxAdapter());
+  HarborFairwaySliver(bars: true, clear: HarborClear.coast, sliver: SliverToBoxAdapter());
 }
 
 void bars(BuildContext context, bool b) {
   // 0.8.0's bars: alone is clearsBars: in 0.9.0.
-  const HarborMoored(bars: false, child: SizedBox());
+  HarborMoored(bars: false, child: SizedBox());
   HarborMoored.clearanceOf(context, bars: b);
-  const HarborFairway(bars: false, slivers: <Widget>[]);
+  HarborFairway(bars: false, slivers: <Widget>[]);
   HarborFairway.box(bars: false, child: const SizedBox());
   HarborFairway.paddingOf(context, bars: b);
-  const HarborFairwaySliver(bars: false, sliver: SliverToBoxAdapter());
+  HarborFairwaySliver(bars: false, sliver: SliverToBoxAdapter());
 }
 
 void fairways(BuildContext context) {
-  const HarborFairway(clear: HarborClear.coast, slivers: <Widget>[]);
-  const HarborFairway(scrollDirection: Axis.horizontal, clear: HarborClear.everything, slivers: <Widget>[]);
+  HarborFairway(clear: HarborClear.coast, slivers: <Widget>[]);
+  HarborFairway(scrollDirection: Axis.horizontal, clear: HarborClear.everything, slivers: <Widget>[]);
   HarborFairway.box(clear: HarborClear.coast, tide: false, child: const SizedBox());
   HarborFairway.paddingOf(context, clear: HarborClear.coast);
   HarborFairway.paddingOf(context, axis: Axis.horizontal, clear: HarborClear.everything);
-  const HarborFairwaySliver(clear: HarborClear.coast, sliver: SliverToBoxAdapter());
-  const HarborFairwaySliver(clearLeading: false, clear: HarborClear.everything, sliver: SliverToBoxAdapter());
+  HarborFairwaySliver(clear: HarborClear.coast, sliver: SliverToBoxAdapter());
+  HarborFairwaySliver(clearLeading: false, clear: HarborClear.everything, sliver: SliverToBoxAdapter());
 }

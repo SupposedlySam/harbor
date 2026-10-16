@@ -2,7 +2,8 @@
 // anchor in the room, so it covers no system edge, and reachesCoast has no effect on it, as with
 // no frame above it. Before 0.6.3 the frame's float layer still treated it as reaching: it was
 // laid out under the system edges, wider than the room it is placed in, and its content was
-// handed the system edges it reached over as its padding.
+// handed the system edges it reached over as its padding. That spelling is gone: an anchored toast
+// given reachesSystemEdges is an assert (placement_test.dart).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,8 +11,6 @@ import 'package:harbor/harbor.dart';
 import 'package:harbor_test/harbor_test.dart';
 
 const HarborTrialDevice _landscape = HarborTrialDevice.iPhone17Landscape;
-
-Rect _rect(final WidgetTester tester, final String key) => tester.getRect(find.byKey(ValueKey<String>(key)));
 
 /// A toast as wide as it may be, so the room it is laid out in shows in its rect.
 Widget _toast(final String key, final ValueSetter<EdgeInsets> onPadding) => Builder(
@@ -59,41 +58,6 @@ void main() {
     final EdgeInsets padding = MediaQuery.paddingOf(page);
     expect(padding.left, greaterThan(0));
     expect(padding.right, greaterThan(0));
-  });
-
-  testWidgets('an anchored toast with reachesCoast is laid out and padded as without it', (final tester) async {
-    final BuildContext page = await pump(tester);
-    EdgeInsets? plain;
-    final HarborToastEntry first = HarborToasts.show(
-      page,
-      placement: HarborAnchored(anchor),
-      builder: (final BuildContext _) => _toast('plain', (final EdgeInsets p) => plain = p),
-      timing: HarborToastTiming.untilHidden,
-    );
-    await settle(tester);
-    final Rect without = _rect(tester, 'plain');
-    first.hide();
-    await settle(tester);
-
-    EdgeInsets? reaching;
-    // The deprecated spelling, on purpose: reachesCoast with an anchor stays a no-op there, as it was
-    // since 0.6.3. Spelled with a HarborAnchored placement it is an assert (placement_test.dart).
-    // ignore: deprecated_member_use_from_same_package
-    HarborToasts.raise(
-      page,
-      // ignore: deprecated_member_use_from_same_package
-      anchor: anchor,
-      // ignore: deprecated_member_use_from_same_package
-      reachesCoast: true,
-      builder: (final BuildContext _) => _toast('reaching', (final EdgeInsets p) => reaching = p),
-      timing: HarborToastTiming.untilHidden,
-    );
-    await settle(tester);
-
-    // Its content keeps the page's padding, as the toast shown without reachesCoast does, rather
-    // than being handed a system edge it covers.
-    expect(reaching, plain);
-    expect(_rect(tester, 'reaching'), without);
   });
 
   testWidgets('an aligned low toast with reachesSystemEdges and no margin is still handed the whole side system edges', (

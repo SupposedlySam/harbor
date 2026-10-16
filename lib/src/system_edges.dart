@@ -86,18 +86,9 @@ class HarborSystemEdges with Diagnosticable {
 
   /// System edges of exactly [insets], whatever the platform reports. The keyboard still
   /// comes in unless [ignoresKeyboard] is set.
-  const HarborSystemEdges.fixed(
-    final EdgeInsetsGeometry insets, {
-    final bool ignoresKeyboard = false,
-    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? calmTide,
-  }) : assert(
-         calmTide == null || !ignoresKeyboard || calmTide == ignoresKeyboard,
-         'ignoresKeyboard and the deprecated calmTide disagree. Give ignoresKeyboard alone.',
-       ),
-       titleSafe = null,
-       fixedInsets = insets,
-       ignoresKeyboard = calmTide ?? ignoresKeyboard;
+  const HarborSystemEdges.fixed(final EdgeInsetsGeometry insets, {this.ignoresKeyboard = false})
+    : titleSafe = null,
+      fixedInsets = insets;
 
   /// A TV's title-safe band on top of what the platform reports, edge by edge
   /// whichever is larger.
@@ -108,10 +99,6 @@ class HarborSystemEdges with Diagnosticable {
 
   /// Whether the keyboard is kept out entirely.
   final bool ignoresKeyboard;
-
-  /// The old name of [ignoresKeyboard].
-  @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get calmTide => ignoresKeyboard;
 
   /// [mediaQuery] with its padding and view padding replaced by these system edges.
   MediaQueryData apply(final MediaQueryData mediaQuery, final TextDirection direction) {
@@ -203,40 +190,4 @@ class HarborSystemEdges with Diagnosticable {
     properties.add(DiagnosticsProperty<HarborTitleSafe>('titleSafe', titleSafe, defaultValue: null));
     properties.add(FlagProperty('ignoresKeyboard', value: ignoresKeyboard, ifTrue: 'ignores the keyboard'));
   }
-}
-
-/// The old name of [HarborSystemEdges], whose constructors keep their names.
-///
-/// A subclass rather than a typedef: `dart fix` renames `fixed(calmTide:)`, and a typedef cannot
-/// carry a fix on a named constructor's call.
-@Deprecated('Renamed HarborSystemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborCoast extends HarborSystemEdges {
-  const HarborCoast._({super.titleSafe, super.fixedInsets, super.ignoresKeyboard}) : super._();
-
-  /// The old name of [HarborSystemEdges.ambient].
-  static const HarborCoast ambient = HarborCoast._();
-
-  /// The old name of [HarborSystemEdges.none].
-  static const HarborCoast none = HarborCoast._(fixedInsets: EdgeInsetsDirectional.zero, ignoresKeyboard: true);
-
-  /// The old name of [HarborSystemEdges.fixed].
-  @Deprecated(
-    'Renamed HarborSystemEdges.fixed. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  const HarborCoast.fixed(
-    final EdgeInsetsGeometry insets, {
-    final bool ignoresKeyboard = false,
-    @Deprecated('Renamed ignoresKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? calmTide,
-  }) : assert(
-         calmTide == null || !ignoresKeyboard || calmTide == ignoresKeyboard,
-         'ignoresKeyboard and the deprecated calmTide disagree. Give ignoresKeyboard alone.',
-       ),
-       super._(fixedInsets: insets, ignoresKeyboard: calmTide ?? ignoresKeyboard);
-
-  /// The old name of [HarborSystemEdges.titleSafe].
-  @Deprecated(
-    'Renamed HarborSystemEdges.titleSafe. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  const HarborCoast.titleSafe(final HarborTitleSafe titleSafe) : this._(titleSafe: titleSafe);
 }

@@ -11,13 +11,16 @@
 //  * An old name kept as a typedef resolves to the new class, so every member transform is keyed on
 //    the NEW class (`inClass: 'HarborBar'`), whatever name the code spells the class with. Keyed on
 //    the old one it never matches.
-//  * A renamed enum value is a deprecated `static const` on the new enum: a `field` `inClass`.
-//  * A class whose named constructors are renamed is a deprecated subclass (HarborDock), renamed
-//    with `class:`; each of its constructors is `replacedBy` the new one.
-//  * An extension cannot be aliased, so the old one (HarborSeaTrials) is an extension of its own,
-//    holding only the old method names, renamed with `extension:`. Its method matches `inExtension:`
-//    only where the extension is applied by name; an implicit `tester.pumpSeaTrial()` matches by
-//    the target's type, `inClass: 'WidgetTester'`, so it is keyed both ways.
+//  * A renamed enum value was a deprecated `static const` on the new enum, a `field` `inClass`. 1.0
+//    removed them, and the analyzer offers no data-driven fix for an undefined enum constant, so
+//    those renames are gone (DECISIONS.md, "Fix data after 1.0").
+//  * A class whose named constructors are renamed was a deprecated subclass (HarborDock), renamed
+//    with `class:`. With the subclass removed (1.0), a transform keyed on it never matches: the
+//    class rename turns `HarborDock.pier(...)` into `HarborBar.pier(...)`, so the constructor
+//    transforms are keyed on HarborBar, the class the call lands on, and fire on the next pass.
+//  * An extension cannot be aliased, so the old one (HarborSeaTrials) was an extension of its own,
+//    holding only the old method names, renamed with `extension:`. An implicit
+//    `tester.pumpSeaTrial()` matches by the target's type, `inClass: 'WidgetTester'`.
 //  * A call with no receiver (a bare `pumpSeaTrial()` inside an extension, implicit `this`) is keyed
 //    on the type that declares the method, and also matches a one-name rename of that type: the
 //    analyzer reads `Name(...)` as a possible renamed constructor. Where two transforms rename the
@@ -28,12 +31,9 @@ import 'dart:io';
 
 const String _date = '2026-10-14';
 
-/// Where an element is declared: `inClass: 'HarborBar'`, `inExtension: 'HarborSeaTrials'`, or at
-/// the top level.
+/// Where an element is declared: `inClass: 'HarborBar'`, or at the top level.
 class _In {
   const _In.cls(this.name) : key = 'inClass';
-
-  const _In.ext(this.name) : key = 'inExtension';
 
   final String key;
   final String name;
@@ -137,14 +137,12 @@ _Element _ctor(final String cls, [final String name = '']) => _Element('construc
 _Element _method(final String cls, final String name) => _Element('method', name, _In.cls(cls));
 _Element _function(final String name) => _Element('function', name);
 
-/// Renames of members of one class: getters, methods and enum values.
+/// Renames of members of one class: getters and methods.
 List<_Transform> _members(
   final String cls, {
   final Map<String, String> getters = const <String, String>{},
   final Map<String, String> methods = const <String, String>{},
-  final Map<String, String> values = const <String, String>{},
 }) => <_Transform>[
-  for (final MapEntry<String, String> e in values.entries) _Rename(_Element('field', e.key, _In.cls(cls)), e.value),
   for (final MapEntry<String, String> e in getters.entries) _Rename(_Element('getter', e.key, _In.cls(cls)), e.value),
   for (final MapEntry<String, String> e in methods.entries) _Rename(_Element('method', e.key, _In.cls(cls)), e.value),
 ];
@@ -252,18 +250,20 @@ List<_Transform> _harbor() {
   return <_Transform>[
     for (final (String old, String now) in _typedefs) _Rename(_Element('typedef', old), now),
 
-    // HarborDock is a deprecated subclass of HarborBar, so its renamed constructors can be replaced.
+    // HarborDock was a deprecated subclass of HarborBar, removed at 1.0. Its class rename takes
+    // `HarborDock.pier(...)` to `HarborBar.pier(...)`, and these, keyed on HarborBar, take that to
+    // the constructor it is now, with its old parameters renamed.
     const _Rename(_Element('class', 'HarborDock'), 'HarborBar'),
     for (final (String old, String now) in <(String, String)>[
       ('pier', 'overlay'),
       ('quay', 'solid'),
       ('reserve', 'reserve'),
     ]) ...<_Transform>[
-      _ReplacedBy(_ctor('HarborDock', old), _ctor('HarborBar', now)),
       _Parameters(
-        _ctor('HarborDock', old),
+        _ctor('HarborBar', old),
         old == 'reserve' ? const <String, String>{'tide': 'keyboard', 'coast': 'systemEdges'} : dockParameters,
       ),
+      if (old != now) _Rename(_ctor('HarborBar', old), now),
     ],
     // HarborBuoy is a deprecated subclass of HarborFloat too: placement.yaml renames its deprecated
     // anchored constructor to the unnamed one, which a typedef cannot carry. Its constructors keep
@@ -322,7 +322,6 @@ List<_Transform> _harbor() {
     ..._members('HarborRoot', getters: const <String, String>{'coast': 'systemEdges'}),
 
     // Bars.
-    ..._members('HarborBarKind', values: const <String, String>{'pier': 'overlay', 'quay': 'solid'}),
     ..._members('HarborBar', getters: <String, String>{...dockParameters, 'effectiveCoast': 'effectiveSystemEdges'}),
     _Parameters(_method('HarborBar', 'copyWith'), const <String, String>{'tide': 'keyboard'}),
     ..._members('HarborBarRecord', getters: const <String, String>{'tide': 'keyboard'}),
@@ -340,14 +339,6 @@ List<_Transform> _harbor() {
         'highWaterIsEstimate': 'settledHeightIsEstimate',
         'isIn': 'isShown',
       },
-    ),
-    ..._members(
-      'HarborKeyboardPhase',
-      values: const <String, String>{'low': 'hidden', 'rising': 'opening', 'high': 'shown', 'falling': 'closing'},
-    ),
-    ..._members(
-      'HarborKeyboardStance',
-      values: const <String, String>{'float': 'rides', 'pilings': 'stays', 'dryDock': 'reserves'},
     ),
     _Parameters(_ctor('HarborKeyboardSpace'), const <String, String>{'showsChildAtHighTide': 'showsChildWithKeyboard'}),
     ..._members(
@@ -368,7 +359,6 @@ List<_Transform> _harbor() {
       getters: roomData,
       methods: const <String, String>{'castOff': 'handled', 'wakeOf': 'fadeBandOf'},
     ),
-    ..._members('HarborRoomAspect', values: const <String, String>{'coast': 'systemEdges', 'docks': 'bars'}),
     _Parameters(_ctor('HarborHandled'), const <String, String>{'tide': 'clearsKeyboard', 'docks': 'clearsBars'}),
     ..._members('HarborHandled', getters: const <String, String>{'tide': 'clearsKeyboard', 'docks': 'clearsBars'}),
     _Parameters(_ctor('HarborLayoutRecord'), records),
@@ -378,11 +368,7 @@ List<_Transform> _harbor() {
     // trade a deprecation for invalid_use_of_internal_member. They stay deprecated until 1.0.
     ..._members(
       'HarborController',
-      getters: const <String, String>{
-        'clearWater': 'room',
-        'fleet': 'registry',
-        'isPort': 'isPage',
-      },
+      getters: const <String, String>{'clearWater': 'room', 'fleet': 'registry', 'isPort': 'isPage'},
       methods: const <String, String>{
         'clearWaterInGlobal': 'roomInGlobal',
         'makeWay': 'hideBar',
@@ -410,7 +396,6 @@ List<_Transform> _harbor() {
     // The edge effect.
     _Parameters(_ctor('HarborEdgeEffect', 'fade'), const <String, String>{'dockOpacity': 'faceOpacity'}),
     ..._members('HarborEdgeEffect', getters: const <String, String>{'dockOpacity': 'faceOpacity'}),
-    ..._members('HarborRest', values: const <String, String>{'wakeEnd': 'fadeEnd', 'dockEdge': 'barFace'}),
     ..._members(
       'HarborFadeBand',
       getters: const <String, String>{'dockEdge': 'barFace', 'wakeEnd': 'fadeEnd', 'dockOpacity': 'faceOpacity'},
@@ -425,13 +410,8 @@ List<_Transform> _harbor() {
     ..._members('HarborPopover', getters: const <String, String>{'buoyBuilder': 'popoverBuilder'}),
     ..._members('HarborToasts', methods: const <String, String>{'raise': 'show'}),
     _Parameters(_method('HarborToasts', 'raise'), const <String, String>{'reachesCoast': 'reachesSystemEdges'}),
-    ..._members('HarborToastTarget', values: const <String, String>{'sea': 'root'}),
-    ..._members('HarborToastClosedReason', values: const <String, String>{'lower': 'hide'}),
-    ..._members(
-      'HarborToastEntry',
-      getters: const <String, String>{'raisedIn': 'shownFrom', 'reachesCoast': 'reachesSystemEdges'},
-      methods: const <String, String>{'lower': 'hide'},
-    ),
+    // raisedIn and reachesCoast went with shownFrom and reachesSystemEdges at 1.0: no rename left.
+    ..._members('HarborToastEntry', methods: const <String, String>{'lower': 'hide'}),
     ..._members('HarborFrameRegistry', getters: const <String, String>{'harbors': 'frames', 'sea': 'root'}),
 
     // Sheets and dialogs.
@@ -460,13 +440,16 @@ List<_Transform> _harborTest() {
     'reportsCoastUnderTide': 'reportsSystemEdgesUnderKeyboard',
   };
   return <_Transform>[
-    // `tester.pumpSeaTrial(...)` matches by the target's type, WidgetTester; only the explicit
-    // `HarborSeaTrials(tester).pumpSeaTrial(...)` matches by the extension. Both are needed, or the
-    // explicit form is left calling a method HarborTrials does not have.
-    for (final _In container in const <_In>[_In.ext('HarborSeaTrials'), _In.cls('WidgetTester')]) ...<_Transform>[
-      _Rename(_Element('method', 'pumpSeaTrial', container), 'pumpHarborTrial'),
-      _Parameters(_Element('method', 'pumpSeaTrial', container), const <String, String>{'tideIn': 'keyboardShown'}),
-    ],
+    // `tester.pumpSeaTrial(...)`, and a bare `pumpSeaTrial(...)` inside an extension on WidgetTester,
+    // match by the target's type. The explicit `HarborSeaTrials(tester).pumpSeaTrial(...)` matched
+    // `inExtension: 'HarborSeaTrials'` until 1.0 removed it; the extension rename below still takes
+    // it to `HarborTrials(tester).pumpSeaTrial(...)`, and keyed on HarborTrials (`inExtension:` or
+    // `inClass:`) the method is not matched: the analyzer offers no data-driven fix for a method an
+    // extension override does not have (measured, Dart 3.13; DECISIONS.md, "Fix data after 1.0").
+    const _Rename(_Element('method', 'pumpSeaTrial', _In.cls('WidgetTester')), 'pumpHarborTrial'),
+    const _Parameters(_Element('method', 'pumpSeaTrial', _In.cls('WidgetTester')), <String, String>{
+      'tideIn': 'keyboardShown',
+    }),
     // After the method renames, never before (#143): a bare `pumpSeaTrial(...)` inside an extension
     // on WidgetTester matches this transform too, so both rename the same name and the first one
     // listed is the one applied. Listed first, this turned it into `HarborTrials(...)`.

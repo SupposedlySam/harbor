@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
+import 'package:harbor/src/dock_slot.dart';
 import 'package:harbor_test/harbor_test.dart';
 
 Widget _bar(final String label, final double height) =>
@@ -168,7 +169,7 @@ void main() {
               HarborBar.solid(
                 key: const ValueKey<String>('s'),
                 state: s,
-                duration: const Duration(milliseconds: 200),
+                animationStyle: const AnimationStyle(duration: Duration(milliseconds: 200)),
                 child: _bar('strip', 60),
               ),
             ],
@@ -244,12 +245,12 @@ void main() {
     });
   });
 
-  testWidgets('a bar set to withdrawsAtHighTide leaves while the keyboard is up', (final tester) async {
+  testWidgets('a bar set to withdraw with the keyboard leaves while the keyboard is up', (final tester) async {
     final HarborTrial trial = await tester.pumpHarborTrial(
       _app(
         HarborFrame(
           bodyClearsKeyboard: false,
-          bottom: <HarborBar>[HarborBar.overlay(withdrawsAtHighTide: true, child: _bar('tools', 50))],
+          bottom: <HarborBar>[HarborBar.overlay(keyboard: HarborKeyboardStance.withdraws, child: _bar('tools', 50))],
           body: const SizedBox.expand(),
         ),
       ),
@@ -1163,7 +1164,7 @@ void main() {
     });
   });
 
-  testWidgets('a lifted keep-in-sight widget rises clear of a sheet that covers the page and settles back', (final tester) async {
+  testWidgets('a lifted widget rises clear of a sheet that covers the page and settles back', (final tester) async {
     late BuildContext pageContext;
     await tester.pumpHarborTrial(
       _app(
@@ -1171,14 +1172,13 @@ void main() {
           body: Builder(
             builder: (final BuildContext context) {
               pageContext = context;
-              return const HarborKeepInSightRegion(
+              return const HarborKeepVisibleRegion(
                 child: Stack(
                   children: <Widget>[
                     Positioned(
                       top: 700,
                       left: 100,
-                      child: HarborKeepInSight(
-                        lift: true,
+                      child: HarborLift(
                         clearance: 20,
                         child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40),
                       ),
@@ -1206,7 +1206,7 @@ void main() {
     expect(boat.bottom, lessThanOrEqualTo(sheet.top - 20 + 1));
   });
 
-  testWidgets('a keep-in-sight region lifts over its duration and settles back over its reverse duration', (
+  testWidgets('a keep-visible region lifts over its duration and settles back over its reverse duration', (
     final tester,
   ) async {
     final ValueNotifier<bool> boatIn = ValueNotifier<bool>(false);
@@ -1215,7 +1215,7 @@ void main() {
       _app(
         HarborFrame(
           bottom: <HarborBar>[HarborBar.overlay(child: _bar('tabs', 50))],
-          body: HarborKeepInSightRegion(
+          body: HarborKeepVisibleRegion(
             animationStyle: const AnimationStyle(
               duration: Duration(milliseconds: 100),
               curve: Curves.linear,
@@ -1228,11 +1228,7 @@ void main() {
                 children: <Widget>[
                   Positioned(top: 0, left: 0, child: _box('mast', 10, 10)),
                   if (shown)
-                    Positioned(
-                      top: 800,
-                      left: 100,
-                      child: HarborKeepInSight(lift: true, clearance: 0, child: _box('boat', 60, 40)),
-                    ),
+                    Positioned(top: 800, left: 100, child: HarborLift(clearance: 0, child: _box('boat', 60, 40))),
                 ],
               ),
             ),
@@ -1258,7 +1254,7 @@ void main() {
     expect(_rect(tester, 'mast').top, rest);
   });
 
-  testWidgets('a keep-in-sight widget reports how much of it the header covers', (final tester) async {
+  testWidgets('a coverage listener reports how much of it the header covers', (final tester) async {
     final List<double> reports = <double>[];
     await tester.pumpHarborTrial(
       _app(
@@ -1267,7 +1263,7 @@ void main() {
           body: HarborScrollView(
             slivers: <Widget>[
               SliverToBoxAdapter(
-                child: HarborKeepInSight(onObscured: reports.add, child: const SizedBox(height: 100)),
+                child: HarborCoverageListener(onCoverage: reports.add, child: const SizedBox(height: 100)),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 2000)),
             ],
@@ -1704,8 +1700,7 @@ void main() {
             slivers: <Widget>[
               const SliverToBoxAdapter(child: SizedBox(height: 600)),
               SliverToBoxAdapter(
-                child: HarborKeepInSight(
-                  keepInSight: true,
+                child: HarborKeepVisible(
                   onlyWhileFocused: true,
                   clearance: 16,
                   child: TextField(key: const ValueKey<String>('field'), focusNode: focus),
@@ -1737,8 +1732,7 @@ void main() {
                   SliverToBoxAdapter(child: TextField(focusNode: first)),
                   const SliverToBoxAdapter(child: SizedBox(height: 520)),
                   SliverToBoxAdapter(
-                    child: HarborKeepInSight(
-                      keepInSight: true,
+                    child: HarborKeepVisible(
                       onlyWhileFocused: true,
                       clearance: 16,
                       child: Column(
@@ -1830,7 +1824,7 @@ void main() {
             slivers: <Widget>[
               SliverToBoxAdapter(
                 child: HarborClear(
-                  bars: false,
+                  clearsBars: false,
                   edges: <HarborEdge>{HarborEdge.top},
                   child: SizedBox(key: ValueKey<String>('title'), height: 30),
                 ),
@@ -1884,7 +1878,7 @@ void main() {
         }
         await tester.pumpAndSettle();
         expect(_rect(tester, 'page').bottom, 874 - 300);
-        closeHarborSheet(tester.element(find.byType(HarborSheet)));
+        HarborSheet.close(tester.element(find.byType(HarborSheet)));
         for (int frame = 0; frame < 5; frame++) {
           await tester.pump(const Duration(milliseconds: 40));
           expectPageMeetsSheet('closing, frame $frame');

@@ -37,7 +37,7 @@ Widget _page({
 
 HarborBar _rail(final double width, {final HarborBarState state = HarborBarState.open}) => HarborBar.solid(
   state: state,
-  duration: Duration.zero,
+  animationStyle: const AnimationStyle(duration: Duration.zero),
   child: SizedBox(key: const ValueKey<String>('rail'), width: width),
 );
 

@@ -8,7 +8,6 @@ import 'package:flutter/widgets.dart';
 import 'bar.dart';
 import 'controller.dart';
 import 'edge.dart';
-import 'keyboard.dart';
 
 /// One frame in the inspector, in global coordinates.
 @immutable
@@ -33,20 +32,10 @@ class HarborInspectorEntry {
   final Rect body;
   final Rect room;
 
-  /// The old name of [room].
-  @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  Rect get clearWater => room;
   final List<HarborBarRecord> bars;
 
-  /// The old name of [bars].
-  @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  List<HarborBarRecord> get docks => bars;
   final EdgeInsetsDirectional obstruction;
   final double keyboard;
-
-  /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  double get tide => keyboard;
 
   /// Whether this frame is under an isolated root: a `HarborRoot` mounted
   /// inside another frame (a phone drawn inside a page, a preview), which
@@ -56,10 +45,6 @@ class HarborInspectorEntry {
   final bool isolated;
 
   /// This entry as JSON, as `ext.harbor.inspector` serves it.
-  ///
-  /// Through 0.9 it also carries the keys of the 0.8 wire format, as `ext.harbor.chart` sent them
-  /// (`clearWater`, `tide`, and `docks` with each bar's `tide` and its `kind` as `pier` or `quay`),
-  /// so a tool written against them keeps working; they go at 1.0.
   Map<String, Object?> toJson() => <String, Object?>{
     'label': label,
     'depth': depth,
@@ -84,29 +69,6 @@ class HarborInspectorEntry {
           'rect': _rect(d.rect),
         },
     ],
-    // The 0.8 keys, until 1.0.
-    'clearWater': _rect(room),
-    'tide': keyboard,
-    'docks': <Map<String, Object?>>[
-      for (final HarborBarRecord d in bars)
-        <String, Object?>{
-          'label': d.label,
-          'edge': d.edge.name,
-          'kind': switch (d.kind) {
-            HarborBarKind.overlay => 'pier',
-            HarborBarKind.solid => 'quay',
-          },
-          'state': d.state.name,
-          'tide': switch (d.keyboard) {
-            HarborKeyboardStance.rides => 'float',
-            HarborKeyboardStance.stays || HarborKeyboardStance.withdraws => 'pilings',
-            HarborKeyboardStance.reserves => 'dryDock',
-          },
-          'extent': d.extent,
-          'restingExtent': d.restingExtent,
-          'rect': _rect(d.rect),
-        },
-    ],
   };
 
   static Map<String, double> _rect(final Rect r) => <String, double>{
@@ -119,32 +81,6 @@ class HarborInspectorEntry {
 
 /// The inspector: who holds which edge, at which layer, in every frame in a
 /// view. A debug overlay and a snapshot API, unrelated to Flutter's
-
-/// The old name of [HarborInspectorEntry], which takes the old names of its parameters.
-///
-/// A subclass rather than a typedef, so the new constructor can keep its parameters required.
-@Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborChartEntry extends HarborInspectorEntry {
-  /// The old name of [HarborInspectorEntry.new].
-  @Deprecated('Renamed HarborInspectorEntry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborChartEntry({
-    required super.label,
-    required super.depth,
-    required super.frame,
-    required super.body,
-    @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final Rect? clearWater,
-    @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final List<HarborBarRecord>? docks,
-    required super.obstruction,
-    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final double? tide,
-    super.isolated,
-  }) : assert(clearWater != null, 'clearWater is required.'),
-       assert(docks != null, 'docks is required.'),
-       assert(tide != null, 'tide is required.'),
-       super(room: clearWater ?? Rect.zero, bars: docks ?? const <HarborBarRecord>[], keyboard: tide ?? 0.0);
-}
 
 /// `WidgetInspector`.
 abstract final class HarborInspector {
@@ -237,9 +173,8 @@ abstract final class HarborInspector {
   @internal
   static void unregister(final HarborFrameRegistry registry) => _registries.remove(registry);
 
-  /// Serves the inspector over the VM service as `ext.harbor.inspector` (and, until 1.0, its 0.8
-  /// name `ext.harbor.chart`), so a tool
-  /// driving the app can ask where everything is, and lists [registry] on it.
+  /// Serves the inspector over the VM service as `ext.harbor.inspector`, so a tool driving the app
+  /// can ask where everything is, and lists [registry] on it.
   /// Debug and profile only.
   ///
   /// Every root is served already: a frame that makes a registry lists it while
@@ -257,17 +192,17 @@ abstract final class HarborInspector {
     }
     _registered = true;
     try {
-      // ext.harbor.chart is the 0.8 name, served beside the new one until 1.0.
-      for (final String name in <String>['ext.harbor.inspector', 'ext.harbor.chart']) {
-        developer.registerExtension(name, (final String method, final Map<String, String> params) async {
-          final bool withIsolated = params['isolated'] == 'true';
-          final List<Map<String, Object?>> json = <Map<String, Object?>>[
-            for (final HarborInspectorEntry e in snapshotAll())
-              if (withIsolated || !e.isolated) e.toJson(),
-          ];
-          return developer.ServiceExtensionResponse.result(jsonEncode(<String, Object?>{'frames': json}));
-        });
-      }
+      developer.registerExtension('ext.harbor.inspector', (
+        final String method,
+        final Map<String, String> params,
+      ) async {
+        final bool withIsolated = params['isolated'] == 'true';
+        final List<Map<String, Object?>> json = <Map<String, Object?>>[
+          for (final HarborInspectorEntry e in snapshotAll())
+            if (withIsolated || !e.isolated) e.toJson(),
+        ];
+        return developer.ServiceExtensionResponse.result(jsonEncode(<String, Object?>{'frames': json}));
+      });
     } on Object {
       // Already registered in this isolate.
     }

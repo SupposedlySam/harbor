@@ -42,36 +42,6 @@ extension HarborTrials on WidgetTester {
   }
 }
 
-/// The old name of [HarborTrials], which holds the old name of its one method.
-///
-/// An extension cannot be aliased, so this is an extension of its own. It names no method that
-/// [HarborTrials] has, so the two never conflict.
-@Deprecated('Renamed HarborTrials. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
-extension HarborSeaTrials on WidgetTester {
-  /// The old name of [HarborTrials.pumpHarborTrial].
-  @Deprecated(
-    'Renamed pumpHarborTrial. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
-  )
-  Future<HarborTrial> pumpSeaTrial(
-    final Widget widget, {
-    final HarborTrialDevice device = HarborTrialDevice.iPhone17,
-    @Deprecated(
-      'Renamed keyboardShown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
-    )
-    final bool tideIn = false,
-    final TextDirection textDirection = TextDirection.ltr,
-    final double textScaleFactor = 1.0,
-    final bool wrapInView = true,
-  }) => pumpHarborTrial(
-    widget,
-    device: device,
-    keyboardShown: tideIn,
-    textDirection: textDirection,
-    textScaleFactor: textScaleFactor,
-    wrapInView: wrapInView,
-  );
-}
-
 /// A frame on trial, whose keyboard can be shown and hidden.
 class HarborTrial {
   HarborTrial._(this._tester, this.device);
@@ -83,33 +53,13 @@ class HarborTrial {
   /// Whether the keyboard is up.
   bool get keyboardShown => _keyboardShown;
 
-  /// The old name of [keyboardShown].
-  @Deprecated(
-    'Renamed keyboardShown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
-  )
-  bool get tideIn => keyboardShown;
-
   /// Brings the keyboard in.
   Future<void> showKeyboard({final bool settle = false, final Duration? pumpFor}) =>
       setKeyboard(shown: true, settle: settle, pumpFor: pumpFor);
 
-  /// The old name of [showKeyboard].
-  @Deprecated(
-    'Renamed showKeyboard. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
-  )
-  Future<void> raiseTide({final bool settle = false, final Duration? pumpFor}) =>
-      showKeyboard(settle: settle, pumpFor: pumpFor);
-
   /// Takes the keyboard out.
   Future<void> hideKeyboard({final bool settle = false, final Duration? pumpFor}) =>
       setKeyboard(shown: false, settle: settle, pumpFor: pumpFor);
-
-  /// The old name of [hideKeyboard].
-  @Deprecated(
-    'Renamed hideKeyboard. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
-  )
-  Future<void> lowerTide({final bool settle = false, final Duration? pumpFor}) =>
-      hideKeyboard(settle: settle, pumpFor: pumpFor);
 
   static const Duration _followTime = Duration(milliseconds: 600);
   static const Duration _pumpStep = Duration(milliseconds: 50);
@@ -138,20 +88,9 @@ class HarborTrial {
     }
   }
 
-  /// The old name of [setKeyboard].
-  @Deprecated(
-    'Renamed setKeyboard, and tideIn shown. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.',
-  )
-  Future<void> setTide({required final bool tideIn, final bool settle = false, final Duration? pumpFor}) =>
-      setKeyboard(shown: tideIn, settle: settle, pumpFor: pumpFor);
-
   /// Where the keyboard's top is, in global coordinates: the device's height while the keyboard
   /// is hidden.
   double get keyboardTop => device.size.height - (_keyboardShown ? device.keyboardHeight : 0.0);
-
-  /// The old name of [keyboardTop].
-  @Deprecated('Renamed keyboardTop. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
-  double get waterline => keyboardTop;
 
   void _apply({required final bool shown}) {
     _keyboardShown = shown;
@@ -180,31 +119,14 @@ class HarborTrial {
     return frame.room;
   }
 
-  /// The old name of [roomAround].
-  @Deprecated('Renamed roomAround. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
-  Rect clearWaterAround(final Finder finder) => roomAround(finder);
-
   /// Every bar of the frame nearest [finder], in global coordinates.
   List<HarborBarRecord> barsAround(final Finder finder) =>
       HarborInspector.nearest(finder.evaluate().single)?.bars ?? const <HarborBarRecord>[];
-
-  /// The old name of [barsAround].
-  @Deprecated('Renamed barsAround. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
-  List<HarborBarRecord> docksAround(final Finder finder) => barsAround(finder);
 }
-
-/// The old name of [HarborTrial].
-@Deprecated('Renamed HarborTrial. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
-typedef HarborSeaTrial = HarborTrial;
 
 /// Matches a [Finder] whose widget lies wholly in [room], within [tolerance]: read the room with
 /// [HarborTrial.roomAround].
 Matcher isInRoom(final Rect room, {final double tolerance = 0.5}) => _InRoom(room, tolerance);
-
-/// The old name of [isInRoom].
-@Deprecated('Renamed isInRoom. `dart fix` applies it in a file that imports package:harbor_test/harbor_test.dart.')
-Matcher isInClearWater(final Rect clearWater, {final double tolerance = 0.5}) =>
-    isInRoom(clearWater, tolerance: tolerance);
 
 class _InRoom extends Matcher {
   const _InRoom(this.room, this.tolerance);

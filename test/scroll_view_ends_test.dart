@@ -230,7 +230,7 @@ void main() {
 
     // Breaks if: a system-edges-only scroll view's ends clear the bars too.
     testWidgets('its ends rest clear of the status bar and home indicator, under the bars', (final tester) async {
-      await tester.pumpHarborTrial(page(HarborScrollView(bars: false, slivers: <Widget>[_rows()])));
+      await tester.pumpHarborTrial(page(HarborScrollView(clearsBars: false, slivers: <Widget>[_rows()])));
       expect(_rect(tester, 'row0').top, _statusBar);
       await _scrollBy(tester, -5000);
       expect(_rect(tester, 'row29').bottom, _screen - _homeIndicator);
@@ -242,7 +242,7 @@ void main() {
       await tester.pumpHarborTrial(
         page(
           HarborScrollView(
-            bars: false,
+            clearsBars: false,
             slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))],
           ),
         ),
@@ -261,7 +261,7 @@ void main() {
       await tester.pumpHarborTrial(
         page(
           HarborScrollView(
-            bars: false,
+            clearsBars: false,
             slivers: <Widget>[
               const SliverToBoxAdapter(child: SizedBox(height: 200)),
               HarborSliverBar(child: _bar('pinned', 40)),
@@ -276,7 +276,7 @@ void main() {
 
     // Breaks if: reveals are widened by the system-edges-only ends rather than by what is over the viewport.
     testWidgets('reveals still keep clear of the header and the tab bar', (final tester) async {
-      await tester.pumpHarborTrial(page(HarborScrollView(bars: false, slivers: <Widget>[_rows()])));
+      await tester.pumpHarborTrial(page(HarborScrollView(clearsBars: false, slivers: <Widget>[_rows()])));
       // Row 14 starts at 62 + 14 * 50 = 762, under the tab bar's face at 780.
       tester.renderObject(find.byKey(const ValueKey<String>('row14'))).showOnScreen();
       await tester.pumpAndSettle();
@@ -302,7 +302,7 @@ void main() {
                 height: 100,
                 child: HarborScrollView(
                   scrollDirection: Axis.horizontal,
-                  bars: false,
+                  clearsBars: false,
                   slivers: <Widget>[SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c))],
                 ),
               ),
@@ -316,14 +316,14 @@ void main() {
       expect(HarborRoom.of(item).bars.start, 80);
     });
 
-    // Breaks if: paddingOf ignores bars.
+    // Breaks if: paddingOf ignores clearsBars.
     testWidgets('paddingOf gives the system edges alone', (final tester) async {
       late EdgeInsets padding;
       await tester.pumpHarborTrial(
         page(
           Builder(
             builder: (final BuildContext context) {
-              padding = HarborScrollView.paddingOf(context, bars: false);
+              padding = HarborScrollView.paddingOf(context, clearsBars: false);
               return const SizedBox.expand();
             },
           ),
@@ -332,7 +332,7 @@ void main() {
       expect(padding, const EdgeInsets.only(top: _statusBar, bottom: _homeIndicator));
     });
 
-    // Breaks if: the sliver ignores bars, or marks the bars handled with the system edges.
+    // Breaks if: the sliver ignores clearsBars, or marks the bars handled with the system edges.
     testWidgets('so does a sliver clear, and its sliver reads the bars', (final tester) async {
       late BuildContext item;
       await tester.pumpHarborTrial(
@@ -340,7 +340,7 @@ void main() {
           CustomScrollView(
             slivers: <Widget>[
               HarborSliverClear(
-                bars: false,
+                clearsBars: false,
                 sliver: SliverToBoxAdapter(child: _Probe((final BuildContext c) => item = c)),
               ),
             ],

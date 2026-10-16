@@ -8,7 +8,6 @@ import 'package:flutter/widgets.dart';
 import 'clear.dart';
 import 'edge.dart';
 import 'edge_effect.dart';
-import 'renamed.dart';
 import 'room.dart';
 
 /// What a scroll view's end on [edge] keeps clear of: everything in the way there, or without
@@ -74,22 +73,12 @@ class HarborScrollView extends StatelessWidget {
     this.anchor = 0.0,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
-    final bool rowInsets = true,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? mooringLine,
-    final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
-    final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
+    this.rowInsets = true,
+    this.clearsBars = true,
+    this.clearsKeyboard = true,
     this.revealMargin = 0.0,
-    final bool edgeEffects = true,
-    @Deprecated('Renamed edgeEffects. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? wake,
-    final bool startsUnderBars = false,
-    @Deprecated('Renamed startsUnderBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? startsInOpenWater,
+    this.edgeEffects = true,
+    this.startsUnderBars = false,
     this.scrollCacheExtent,
     this.paintOrder = SliverPaintOrder.firstIsTop,
     this.semanticChildCount,
@@ -99,32 +88,7 @@ class HarborScrollView extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
     required this.slivers,
-  }) : assert(
-         mooringLine == null || rowInsets || mooringLine == rowInsets,
-         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
-       ),
-       assert(
-         bars == null || clearsBars || bars == clearsBars,
-         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
-       ),
-       assert(
-         tide == null || clearsKeyboard || tide == clearsKeyboard,
-         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
-       ),
-       assert(
-         wake == null || edgeEffects || wake == edgeEffects,
-         'edgeEffects and the deprecated wake disagree. Give edgeEffects alone.',
-       ),
-       assert(
-         startsInOpenWater == null || !startsUnderBars || startsInOpenWater == startsUnderBars,
-         'startsUnderBars and the deprecated startsInOpenWater disagree. Give startsUnderBars alone.',
-       ),
-       clearsBars = bars ?? clearsBars,
-       rowInsets = mooringLine ?? rowInsets,
-       clearsKeyboard = tide ?? clearsKeyboard,
-       edgeEffects = wake ?? edgeEffects,
-       startsUnderBars = startsInOpenWater ?? startsUnderBars,
-       assert(!shrinkWrap || center == null),
+  }) : assert(!shrinkWrap || center == null),
        assert(anchor >= 0.0 && anchor <= 1.0),
        _hugsChild = false;
 
@@ -147,22 +111,12 @@ class HarborScrollView extends StatelessWidget {
     this.shrinkWrap = false,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
-    final bool rowInsets = true,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? mooringLine,
-    final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
-    final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
+    this.rowInsets = true,
+    this.clearsBars = true,
+    this.clearsKeyboard = true,
     this.revealMargin = 0.0,
-    final bool edgeEffects = true,
-    @Deprecated('Renamed edgeEffects. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? wake,
-    final bool startsUnderBars = false,
-    @Deprecated('Renamed startsUnderBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? startsInOpenWater,
+    this.edgeEffects = true,
+    this.startsUnderBars = false,
     this.scrollCacheExtent,
     this.dragStartBehavior = DragStartBehavior.start,
     this.keyboardDismissBehavior,
@@ -170,32 +124,7 @@ class HarborScrollView extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
     required final Widget child,
-  }) : assert(
-         mooringLine == null || rowInsets || mooringLine == rowInsets,
-         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
-       ),
-       assert(
-         bars == null || clearsBars || bars == clearsBars,
-         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
-       ),
-       assert(
-         tide == null || clearsKeyboard || tide == clearsKeyboard,
-         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
-       ),
-       assert(
-         wake == null || edgeEffects || wake == edgeEffects,
-         'edgeEffects and the deprecated wake disagree. Give edgeEffects alone.',
-       ),
-       assert(
-         startsInOpenWater == null || !startsUnderBars || startsInOpenWater == startsUnderBars,
-         'startsUnderBars and the deprecated startsInOpenWater disagree. Give startsUnderBars alone.',
-       ),
-       clearsBars = bars ?? clearsBars,
-       rowInsets = mooringLine ?? rowInsets,
-       clearsKeyboard = tide ?? clearsKeyboard,
-       edgeEffects = wake ?? edgeEffects,
-       startsUnderBars = startsInOpenWater ?? startsUnderBars,
-       center = null,
+  }) : center = null,
        anchor = 0.0,
        paintOrder = SliverPaintOrder.firstIsTop,
        semanticChildCount = null,
@@ -238,10 +167,6 @@ class HarborScrollView extends StatelessWidget {
   /// the first item at rest lines up with the rest of the page.
   final bool rowInsets;
 
-  /// The old name of [rowInsets].
-  @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get mooringLine => rowInsets;
-
   /// Whether the ends keep clear of the bars (headers, tab bars, rails) as
   /// well as the system edges. True, the default, is the system edges, the
   /// bars and the keyboard.
@@ -260,10 +185,6 @@ class HarborScrollView extends StatelessWidget {
   /// keyboard out whatever its `clearsKeyboard`.)
   final bool clearsBars;
 
-  /// The old name of [clearsBars].
-  @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get bars => clearsBars;
-
   /// Whether a vertical scroll view keeps clear of the keyboard, as on
   /// [HarborClear.clearsKeyboard]. False leaves it to something else: a list in a host
   /// whose body already ends at the keyboard, or one that stays put while a
@@ -271,20 +192,12 @@ class HarborScrollView extends StatelessWidget {
   /// out, and it is not handled, so content inside can still keep clear of it.
   final bool clearsKeyboard;
 
-  /// The old name of [clearsKeyboard].
-  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get tide => clearsKeyboard;
-
   /// Extra space kept around a revealed row, beyond what covers the edge: a TV
   /// row that keeps the focused card a step in from the rail.
   final double revealMargin;
 
   /// Whether content fades out as it scrolls under a bar with a fade edge effect.
   final bool edgeEffects;
-
-  /// The old name of [edgeEffects].
-  @Deprecated('Renamed edgeEffects. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get wake => edgeEffects;
 
   /// Whether the first sliver starts at the frame's edge, under the bars, as
   /// a hero image that runs under a translucent header does. Pinned
@@ -294,10 +207,6 @@ class HarborScrollView extends StatelessWidget {
   /// title clear of the status bar: the trailing end, the keyboard and the
   /// trailing row insets stay handled.
   final bool startsUnderBars;
-
-  /// The old name of [startsUnderBars].
-  @Deprecated('Renamed startsUnderBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get startsInOpenWater => startsUnderBars;
 
   final ScrollCacheExtent? scrollCacheExtent;
   final SliverPaintOrder paintOrder;
@@ -362,24 +271,15 @@ class HarborScrollView extends StatelessWidget {
     final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final bool rowInsets = true,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? mooringLine,
     final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
     final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
   }) {
-    final bool insetsRows = renamed(mooringLine, rowInsets, true, 'rowInsets', 'mooringLine');
-    final bool barsHere = renamed(bars, clearsBars, true, 'clearsBars', 'bars');
-    final bool keyboardHere = renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide');
     final TextDirection direction = Directionality.of(context);
     final EdgeInsetsDirectional extraHere = HarborEdges.resolve(extra, direction);
     final EdgeInsetsDirectional minimumHere = HarborEdges.resolve(minimum, direction);
     double end(final HarborEdge edge) {
-      double value = _endClearance(context, edge, clearsBars: barsHere, clearsKeyboard: keyboardHere);
-      if (!edge.isVertical && insetsRows) {
+      double value = _endClearance(context, edge, clearsBars: clearsBars, clearsKeyboard: clearsKeyboard);
+      if (!edge.isVertical && rowInsets) {
         value += HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin, edge);
       }
       return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(extraHere, edge);
@@ -1093,121 +993,6 @@ class _RenderHarborHugTarget extends RenderProxyBox {
   }
 }
 
-/// The old name of [HarborScrollView], whose constructors keep their names.
-///
-/// A subclass rather than a typedef: `dart fix` renames the arguments of `box(tide:, ...)`, and a
-/// typedef cannot carry a fix on a named constructor's call.
-@Deprecated('Renamed HarborScrollView. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborFairway extends HarborScrollView {
-  /// The old name of [HarborScrollView.new].
-  @Deprecated('Renamed HarborScrollView. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborFairway({
-    super.key,
-    super.scrollDirection,
-    super.reverse,
-    super.controller,
-    super.primary,
-    super.physics,
-    super.scrollBehavior,
-    super.shrinkWrap,
-    super.center,
-    super.anchor,
-    super.padding,
-    super.minimum,
-    super.rowInsets,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.mooringLine,
-    super.clearsBars,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.bars,
-    super.clearsKeyboard,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.tide,
-    super.revealMargin,
-    super.edgeEffects,
-    @Deprecated('Renamed edgeEffects. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.wake,
-    super.startsUnderBars,
-    @Deprecated('Renamed startsUnderBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.startsInOpenWater,
-    super.scrollCacheExtent,
-    super.paintOrder,
-    super.semanticChildCount,
-    super.dragStartBehavior,
-    super.keyboardDismissBehavior,
-    super.restorationId,
-    super.clipBehavior,
-    super.hitTestBehavior,
-    required super.slivers,
-  });
-
-  /// The old name of [HarborScrollView.box].
-  @Deprecated('Renamed HarborScrollView.box. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborFairway.box({
-    super.key,
-    super.scrollDirection,
-    super.reverse,
-    super.controller,
-    super.primary,
-    super.physics,
-    super.scrollBehavior,
-    super.shrinkWrap,
-    super.padding,
-    super.minimum,
-    super.rowInsets,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.mooringLine,
-    super.clearsBars,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.bars,
-    super.clearsKeyboard,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.tide,
-    super.revealMargin,
-    super.edgeEffects,
-    @Deprecated('Renamed edgeEffects. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.wake,
-    super.startsUnderBars,
-    @Deprecated('Renamed startsUnderBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    super.startsInOpenWater,
-    super.scrollCacheExtent,
-    super.dragStartBehavior,
-    super.keyboardDismissBehavior,
-    super.restorationId,
-    super.clipBehavior,
-    super.hitTestBehavior,
-    required super.child,
-  }) : super.box();
-
-  /// The old name of [HarborScrollView.paddingOf].
-  @Deprecated(
-    'Renamed HarborScrollView.paddingOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart.',
-  )
-  static EdgeInsets paddingOf(
-    final BuildContext context, {
-    final Axis axis = Axis.vertical,
-    final EdgeInsetsGeometry extra = EdgeInsetsDirectional.zero,
-    final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
-    final bool rowInsets = true,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? mooringLine,
-    final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
-    final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
-  }) => HarborScrollView.paddingOf(
-    context,
-    axis: axis,
-    extra: extra,
-    minimum: minimum,
-    rowInsets: renamed(mooringLine, rowInsets, true, 'rowInsets', 'mooringLine'),
-    clearsBars: renamed(bars, clearsBars, true, 'clearsBars', 'bars'),
-    clearsKeyboard: renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide'),
-  );
-}
-
 /// One sliver of a scroll view you build yourself, kept clear at the ends you
 /// choose. Use it on the sliver at each end of a `CustomScrollView`; a whole
 /// scroll view is better as a [HarborScrollView].
@@ -1224,25 +1009,12 @@ class HarborSliverClear extends StatelessWidget {
     super.key,
     this.clearLeading = true,
     this.clearTrailing = true,
-    final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
-    final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
+    this.clearsBars = true,
+    this.clearsKeyboard = true,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
     required this.sliver,
-  }) : assert(
-         bars == null || clearsBars || bars == clearsBars,
-         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
-       ),
-       assert(
-         tide == null || clearsKeyboard || tide == clearsKeyboard,
-         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
-       ),
-       clearsBars = bars ?? clearsBars,
-       clearsKeyboard = tide ?? clearsKeyboard;
+  });
 
   final bool clearLeading;
   final bool clearTrailing;
@@ -1253,17 +1025,10 @@ class HarborSliverClear extends StatelessWidget {
   /// viewport.
   final bool clearsBars;
 
-  /// The old name of [clearsBars].
-  @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get bars => clearsBars;
-
   /// Whether a bottom end it clears keeps clear of the keyboard, and marks it
   /// handled, as on [HarborScrollView.clearsKeyboard].
   final bool clearsKeyboard;
 
-  /// The old name of [clearsKeyboard].
-  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get tide => clearsKeyboard;
   final EdgeInsetsGeometry padding;
 
   /// A floor on the clearance at each end it clears, as on [HarborScrollView.minimum].

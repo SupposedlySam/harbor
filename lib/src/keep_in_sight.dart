@@ -164,118 +164,8 @@ class HarborLift extends StatelessWidget {
   }
 }
 
-/// Keeps a widget in sight: clear of the bars and the keyboard that cover the edges of the frame
-/// it is in. Three jobs in one widget, which are three widgets now.
-@Deprecated(
-  'Split into three widgets, one per job: HarborCoverageListener(onCoverage:) for onObscured, '
-  'HarborKeepVisible for keepInSight, and HarborLift for lift. `dart fix` applies it to a call that does one job, in '
-  'a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` '
-  'needs HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import widened.',
-)
-class HarborKeepInSight extends StatelessWidget {
-  @Deprecated(
-    'Split into HarborCoverageListener, HarborKeepVisible and HarborLift. `dart fix` applies it to a call that does '
-    'one job, in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor '
-    'with `show` needs HarborKeepVisible, HarborLift and HarborCoverageListener added after `dart fix`, or the import '
-    'widened.',
-  )
-  const HarborKeepInSight({
-    super.key,
-    this.edge = HarborEdge.top,
-    @Deprecated(
-      'Use HarborCoverageListener(onCoverage:). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborCoverageListener added after `dart fix`, or the import widened.',
-    )
-    this.onObscured,
-    @Deprecated(
-      'Use HarborKeepVisible. `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated '
-      'after 0.9.1. A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, or the '
-      'import widened.',
-    )
-    this.keepInSight = false,
-    this.onlyWhileFocused = false,
-    @Deprecated(
-      'Use HarborLift. `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after '
-      '0.9.1. A file that imports harbor with `show` needs HarborLift added after `dart fix`, or the import widened.',
-    )
-    this.lift = false,
-    this.clearance = 0.0,
-    this.holdPosition = false,
-    required this.child,
-  });
-
-  final HarborEdge edge;
-  final ValueChanged<double>? onObscured;
-
-  /// Whether to scroll this widget back into sight when what covers the bottom
-  /// grows, and when focus moves into it from outside.
-  final bool keepInSight;
-
-  /// Whether [keepInSight] applies only while focus is inside this widget.
-  final bool onlyWhileFocused;
-
-  /// Whether the enclosing [HarborKeepVisibleRegion] should lift its content to
-  /// keep this widget clear of what covers the bottom.
-  final bool lift;
-
-  /// How far clear of what covers it this widget is kept.
-  final double clearance;
-
-  /// While true, a lift holds where it is (an element being dragged).
-  final bool holdPosition;
-
-  final Widget child;
-
-  /// The old place of [HarborKeepVisible.reveal].
-  @Deprecated(
-    'Moved to HarborKeepVisible.reveal. `dart fix` applies it in a file that imports package:harbor/harbor.dart. '
-    'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, '
-    'or the import widened.',
-  )
-  static void reveal(
-    final BuildContext context, {
-    final double clearance = 0.0,
-    final Duration duration = const Duration(milliseconds: 250),
-    final Curve curve = Curves.easeOutCubic,
-  }) => HarborKeepVisible.reveal(context, clearance: clearance, duration: duration, curve: curve);
-
-  /// The old place of [HarborKeepVisible.coverageOf].
-  @Deprecated(
-    'Moved to HarborKeepVisible.coverageOf. `dart fix` applies it in a file that imports package:harbor/harbor.dart. '
-    'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborKeepVisible added after `dart fix`, '
-    'or the import widened.',
-  )
-  static double coverageOf(final RenderBox box, final HarborController frame, final HarborEdge edge) =>
-      HarborKeepVisible.coverageOf(box, frame, edge);
-
-  @override
-  Widget build(final BuildContext context) => _KeepInSight(
-    edge: edge,
-    onObscured: onObscured,
-    keepInSight: keepInSight,
-    onlyWhileFocused: onlyWhileFocused,
-    lift: lift,
-    clearance: clearance,
-    holdPosition: holdPosition,
-    child: child,
-  );
-
-  @override
-  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(EnumProperty<HarborEdge>('edge', edge, defaultValue: HarborEdge.top));
-    properties.add(ObjectFlagProperty<ValueChanged<double>>.has('onObscured', onObscured));
-    properties.add(FlagProperty('keepInSight', value: keepInSight, ifTrue: 'keep in sight'));
-    properties.add(FlagProperty('onlyWhileFocused', value: onlyWhileFocused, ifTrue: 'only while focused'));
-    properties.add(FlagProperty('lift', value: lift, ifTrue: 'lift'));
-    properties.add(DoubleProperty('clearance', clearance, defaultValue: 0.0));
-    properties.add(FlagProperty('holdPosition', value: holdPosition, ifTrue: 'holding position'));
-  }
-}
-
 /// What all three jobs share: one widget that can report its coverage, keep itself in sight and
-/// lift, so the three public widgets and the deprecated [HarborKeepInSight] behave alike.
+/// lift, so the three public widgets behave alike.
 class _KeepInSight extends StatefulWidget {
   const _KeepInSight({
     this.edge = HarborEdge.top,
@@ -417,31 +307,7 @@ class _KeepInSightState extends State<_KeepInSight> {
 /// and back down when the cover goes. Content already clear stays where it is.
 /// With reduced motion ([MediaQueryData.disableAnimations]) it moves at once.
 class HarborKeepVisibleRegion extends StatefulWidget {
-  const HarborKeepVisibleRegion({
-    super.key,
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.duration = const Duration(milliseconds: 280),
-    @Deprecated(
-      'Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-    )
-    this.curve = Curves.easeOutCubic,
-    this.animationStyle,
-    required this.child,
-  });
-
-  /// How long a lift takes, where [animationStyle] does not say.
-  @Deprecated(
-    'Use animationStyle: AnimationStyle(duration: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-  )
-  final Duration duration;
-
-  /// The curve a lift moves along, where [animationStyle] does not say.
-  @Deprecated(
-    'Use animationStyle: AnimationStyle(curve: ...). `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-  )
-  final Curve curve;
+  const HarborKeepVisibleRegion({super.key, this.animationStyle, required this.child});
 
   /// How the content moves, as `AnimationStyle` sets it on Flutter's routes: its `duration` and
   /// `curve` are for lifting, and its `reverseDuration` and `reverseCurve` for settling back down;
@@ -456,22 +322,22 @@ class HarborKeepVisibleRegion extends StatefulWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-      DiagnosticsProperty<Duration>('duration', duration, defaultValue: const Duration(milliseconds: 280)),
-    );
-    properties.add(DiagnosticsProperty<Curve>('curve', curve, defaultValue: Curves.easeOutCubic));
     properties.add(DiagnosticsProperty<AnimationStyle>('animationStyle', animationStyle, defaultValue: null));
   }
 }
 
+/// How a region's content moves where its `animationStyle` does not say.
+const Duration _liftDuration = Duration(milliseconds: 280);
+const Curve _liftCurve = Curves.easeOutCubic;
+
 class _KeepVisibleRegionState extends State<HarborKeepVisibleRegion> with SingleTickerProviderStateMixin {
   final Set<_KeepInSightState> _keepers = <_KeepInSightState>{};
-  late final AnimationController _lift = AnimationController(vsync: this, duration: widget.duration);
+  late final AnimationController _lift = AnimationController(vsync: this, duration: _liftDuration);
   double _from = 0.0;
   double _to = 0.0;
   bool _pending = false;
   final GlobalKey _contentKey = GlobalKey();
-  late Curve _moveCurve = widget.curve;
+  late Curve _moveCurve = _liftCurve;
 
   double get _offset => _from + (_to - _from) * _moveCurve.transform(_lift.value);
 
@@ -538,8 +404,8 @@ class _KeepVisibleRegionState extends State<HarborKeepVisibleRegion> with Single
       return;
     }
     final AnimationStyle? style = widget.animationStyle;
-    final Duration liftDuration = style?.duration ?? widget.duration;
-    final Curve liftCurve = style?.curve ?? widget.curve;
+    final Duration liftDuration = style?.duration ?? _liftDuration;
+    final Curve liftCurve = style?.curve ?? _liftCurve;
     final bool lifting = target < _offset;
     _from = _offset;
     _to = target;
@@ -583,9 +449,3 @@ class _KeepVisibleRegionScope extends InheritedWidget {
   @override
   bool updateShouldNotify(final _KeepVisibleRegionScope oldWidget) => false;
 }
-
-/// The old name of [HarborKeepVisibleRegion], which lifts the content of a [HarborLift].
-@Deprecated(
-  'Renamed HarborKeepVisibleRegion. `dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1.',
-)
-typedef HarborKeepInSightRegion = HarborKeepVisibleRegion;

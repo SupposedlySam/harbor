@@ -59,7 +59,7 @@ void main() {
         MaterialApp(
           home: HarborClear(
             edges: HarborEdge.horizontal,
-            bars: false,
+            clearsBars: false,
             clearsKeyboard: false,
             // A page reads its system edges from the room above it, as a sheet's does.
             child: HarborFrame(

@@ -66,7 +66,10 @@ void main() {
         },
       );
       if (policy != null) {
-        body = HarborFlarePolicy(queue: policy, child: body);
+        body = HarborDefaultsScope(
+          defaults: HarborDefaults(toastQueue: policy),
+          child: body,
+        );
       }
       await tester.pumpHarborTrial(
         MaterialApp(

@@ -19,11 +19,7 @@ enum HarborToastTarget {
   topmost,
 
   /// The outermost frame, the root's, so the toast clears only the system edges.
-  root;
-
-  /// The old name of [root].
-  @Deprecated('Renamed root. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborToastTarget sea = root;
+  root,
 }
 
 /// Transient floats: messages shown in a frame's room for a while.
@@ -33,10 +29,6 @@ enum HarborToastTarget {
 ///  * `SnackBar` and `ScaffoldMessenger.showSnackBar`, which queue their messages one at a time;
 ///    toasts queue per slot, so toasts at different slots show together.
 abstract final class HarborToasts {
-  /// What the deprecated `duration:` reads when it is left out, so that `duration: null`, which
-  /// never ran out, can be told apart from it.
-  static const Duration _unsetDuration = Duration(microseconds: -1);
-
   /// Shows [builder]'s toast in [target]'s room at [slot], hidden
   /// once its [timing] runs out (or when the returned entry is hidden). If its frame
   /// leaves (the page is popped), the toast moves to the page frame now on top.
@@ -123,113 +115,21 @@ abstract final class HarborToasts {
     required final WidgetBuilder builder,
     final HarborToastSlot? slot,
     final HarborPlacement? placement,
-    @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or '
-      'the import widened.',
-    )
-    final AlignmentGeometry? alignment,
     final HarborToastTiming? timing,
-    @Deprecated(
-      'Use timing: HarborToastTiming(duration: ...), or HarborToastTiming.untilHidden for null. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.0. A file that '
-      'imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final Duration? duration = _unsetDuration,
-    @Deprecated(
-      'Use timing: HarborToastTiming.untilHidden for true, and leave out false. `dart fix` applies it to true and '
-      'false, in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.0. A file that imports harbor '
-      'with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final bool? persist,
     final HarborToastTarget target = HarborToastTarget.topmost,
     final AnimationStyle? animationStyle,
     final HarborToastTransitionBuilder? transitionBuilder,
     final bool liveRegion = true,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final HarborAnchor? anchor,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final HarborAnchorSide? side,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final double? gap,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final HarborCrossAlignment? crossAlignment,
-    @Deprecated(
-      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write '
-      'placement: by hand. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned and '
-      'HarborAnchored added after `dart fix`, or the import widened.',
-    )
-    final EdgeInsetsGeometry? margin,
-    @Deprecated(
-      'Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.0. A file that imports harbor with `show` needs '
-      'HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final bool? countsEntrance,
     final bool reachesSystemEdges = false,
     final HarborHinge? hinge,
-    @Deprecated(
-      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.0. A file that imports harbor with `show` needs '
-      'HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final bool? countsWhileCovered,
     final HarborToastQueue? queue,
   }) {
-    assert(slot == null || alignment == null, 'Give a toast a slot or an alignment, not both.');
-    assert(
-      anchor == null || (slot == null && alignment == null),
-      'Give an anchored toast its anchor alone, without a slot or an alignment.',
-    );
-    assert(
-      placement == null ||
-          (slot == null &&
-              alignment == null &&
-              anchor == null &&
-              side == null &&
-              gap == null &&
-              crossAlignment == null &&
-              margin == null),
-      'Give a toast a slot or a placement, not both, and not with the deprecated alignment, anchor, side, gap, '
-      'crossAlignment or margin.',
-    );
-    assert(
-      timing == null ||
-          (identical(duration, _unsetDuration) &&
-              persist == null &&
-              countsEntrance == null &&
-              countsWhileCovered == null),
-      'Give a toast its timing, not with the deprecated duration, persist, countsEntrance or countsWhileCovered.',
-    );
+    assert(slot == null || placement == null, 'Give a toast a slot or a placement, not both.');
     assert(placement is! HarborAnchored || placement.anchor != null, 'An anchored toast needs an anchor.');
     assert(
       placement is! HarborAnchored || placement.flips != true,
       'A toast never flips: its transition is built for the side it was shown on. Leave flips null.',
     );
-    // The deprecated anchor with reachesCoast stays as it was since 0.6.3, a no-op; spelled as a
-    // placement it is a mistake.
     assert(
       !reachesSystemEdges || placement is! HarborAnchored,
       'reachesSystemEdges is for an aligned toast: an anchored one sits by its anchor, clear of the system edges.',
@@ -241,20 +141,11 @@ abstract final class HarborToasts {
     // Resolved where it is shown from: the page that showed it decides its reading direction, wherever
     // it is shown.
     final HarborPlacement placed = switch (placement ??
-        (anchor != null
-            ? HarborAnchored(
-                anchor,
-                side: side ?? HarborAnchorSide.below,
-                gap: gap ?? HarborAnchored.defaultGap,
-                crossAlignment: crossAlignment ?? HarborCrossAlignment.center,
-                margin: margin ?? HarborAnchored.defaultMargin,
-              )
-            : HarborAligned(
-                alignment: alignment ?? (slot ?? HarborToastSlot.high).alignment,
-                // The defaults' margin is for a toast at a slot, or at none: the deprecated alignment
-                // keeps the margin it had, so a call `dart fix` moves to a placement sits where it did.
-                margin: margin ?? (alignment == null ? defaults.toastMargin : null) ?? HarborAligned.defaultMargin,
-              ))) {
+        HarborAligned(
+          alignment: (slot ?? HarborToastSlot.high).alignment,
+          // The defaults' margin is for a toast at a slot, or at none: a placement keeps its own.
+          margin: defaults.toastMargin ?? HarborAligned.defaultMargin,
+        )) {
       HarborAligned(:final AlignmentGeometry alignment, :final EdgeInsetsGeometry margin) => HarborAligned(
         alignment: alignment.resolve(textDirection),
         margin: margin.resolve(textDirection),
@@ -279,26 +170,7 @@ abstract final class HarborToasts {
       // A Builder, so the builder's own context sees the captured themes, not only what it returns.
       builder: (final BuildContext _) => themes.wrap(Builder(builder: builder)),
       placement: placed,
-      // The deprecated spellings, merged: persist was a duration that never ran out.
-      timing:
-          timing ??
-          // The defaults' timing is for a call that says nothing about time; the deprecated
-          // spellings keep the defaults they had.
-          (identical(duration, _unsetDuration) &&
-                  persist == null &&
-                  countsEntrance == null &&
-                  countsWhileCovered == null
-              ? defaults.toastTiming ?? const HarborToastTiming()
-              : null) ??
-          HarborToastTiming(
-            duration: persist ?? false
-                ? null
-                : identical(duration, _unsetDuration)
-                ? HarborToastTiming.defaultDuration
-                : duration,
-            countsEntrance: countsEntrance ?? false,
-            countsWhileCovered: countsWhileCovered ?? false,
-          ),
+      timing: timing ?? defaults.toastTiming ?? const HarborToastTiming(),
       // Sent to the root, a toast clears only the system edges.
       avoidInGlobal: target == HarborToastTarget.topmost ? HarborController.maybeOf(context)?.roomInGlobal() : null,
       shownFrom: target == HarborToastTarget.topmost ? HarborController.maybeOf(context) : null,
@@ -341,113 +213,6 @@ abstract final class HarborToasts {
     }
     return entry;
   }
-
-  /// The old name of [show].
-  @Deprecated('Renamed show. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static HarborToastEntry raise(
-    final BuildContext context, {
-    required final WidgetBuilder builder,
-    final HarborToastSlot? slot,
-    final HarborPlacement? placement,
-    @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned added after `dart fix`, or '
-      'the import widened.',
-    )
-    final AlignmentGeometry? alignment,
-    final HarborToastTiming? timing,
-    @Deprecated(
-      'Use timing: HarborToastTiming(duration: ...), or HarborToastTiming.untilHidden for null. '
-      '`dart fix` applies it in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.0. A file that '
-      'imports harbor with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final Duration? duration = _unsetDuration,
-    @Deprecated(
-      'Use timing: HarborToastTiming.untilHidden for true, and leave out false. `dart fix` applies it to true and '
-      'false, in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.0. A file that imports harbor '
-      'with `show` needs HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final bool? persist,
-    final HarborToastTarget target = HarborToastTarget.topmost,
-    final AnimationStyle? animationStyle,
-    final HarborToastTransitionBuilder? transitionBuilder,
-    final bool liveRegion = true,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final HarborAnchor? anchor,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, side: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final HarborAnchorSide? side,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, gap: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final double? gap,
-    @Deprecated(
-      'Use placement: HarborAnchored(anchor, crossAlignment: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write placement: by hand. '
-      'Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored added after `dart fix`, or '
-      'the import widened.',
-    )
-    final HarborCrossAlignment? crossAlignment,
-    @Deprecated(
-      'Use placement: HarborAligned(margin: ...), or HarborAnchored(anchor, margin: ...). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart, except to a call that gives both anchor and alignment: write '
-      'placement: by hand. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned and '
-      'HarborAnchored added after `dart fix`, or the import widened.',
-    )
-    final EdgeInsetsGeometry? margin,
-    @Deprecated(
-      'Use timing: HarborToastTiming(countsEntrance: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.0. A file that imports harbor with `show` needs '
-      'HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final bool? countsEntrance,
-    @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool reachesCoast = false,
-    final HarborHinge? hinge,
-    @Deprecated(
-      'Use timing: HarborToastTiming(countsWhileCovered: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.0. A file that imports harbor with `show` needs '
-      'HarborToastTiming added after `dart fix`, or the import widened.',
-    )
-    final bool? countsWhileCovered,
-    final HarborToastQueue? queue,
-  }) => show(
-    context,
-    builder: builder,
-    slot: slot,
-    placement: placement,
-    alignment: alignment,
-    timing: timing,
-    duration: duration,
-    persist: persist,
-    target: target,
-    animationStyle: animationStyle,
-    transitionBuilder: transitionBuilder,
-    liveRegion: liveRegion,
-    anchor: anchor,
-    side: side,
-    gap: gap,
-    crossAlignment: crossAlignment,
-    margin: margin,
-    countsEntrance: countsEntrance,
-    reachesSystemEdges: reachesCoast,
-    hinge: hinge,
-    countsWhileCovered: countsWhileCovered,
-    queue: queue,
-  );
 
   /// The page frame [frame] is in: the first frame of its route, or of its sheet over the root.
   static HarborController? _pageOf(final HarborController? frame) {
@@ -836,33 +601,4 @@ class HarborToastScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(final HarborToastScope oldWidget) => !identical(entry, oldWidget.entry);
-}
-
-/// Sets what toasts shown beneath it do when one is already up at their place, for a subtree:
-/// now `HarborDefaultsScope(defaults: HarborDefaults(toastQueue: queue))`, which it builds.
-///
-/// Since it builds a [HarborDefaultsScope], it is no longer an [InheritedWidget]: code that looked
-/// it up by type finds nothing, and reads [HarborDefaults.toastQueue] instead.
-class HarborFlarePolicy extends StatelessWidget {
-  @Deprecated(
-    'Use HarborDefaultsScope(defaults: HarborDefaults(toastQueue: ...)). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-    'HarborDefaultsScope and HarborDefaults added after `dart fix`, or the import widened.',
-  )
-  const HarborFlarePolicy({super.key, required this.queue, required this.child});
-
-  final HarborToastQueue queue;
-
-  final Widget child;
-
-  /// The queue at [context]: [HarborDefaults.toastQueue] there, read without a dependency.
-  @Deprecated('Use HarborDefaults.read(context).toastQueue. Deprecated after 0.9.1.')
-  static HarborToastQueue queueOf(final BuildContext context) =>
-      HarborDefaults.read(context).toastQueue ?? HarborToastQueue.wait;
-
-  @override
-  Widget build(final BuildContext context) => HarborDefaultsScope(
-    defaults: HarborDefaults(toastQueue: queue),
-    child: child,
-  );
 }

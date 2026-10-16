@@ -533,7 +533,7 @@ void main() {
           disableAnimations: disableAnimations,
         ),
       );
-      HarborKeepInSight.reveal(row.currentContext!);
+      HarborKeepVisible.reveal(row.currentContext!);
       await tester.pump();
       final double firstFrame = tester.getRect(find.byKey(row, skipOffstage: false)).bottom;
       await tester.pumpAndSettle();
@@ -553,7 +553,7 @@ void main() {
       expect(firstFrame, rest);
     });
 
-    /// Where a lifted keep-in-sight child is one frame after the cover rises under it, and where it comes to rest.
+    /// Where a lifted child is one frame after the cover rises under it, and where it comes to rest.
     Future<(double, double)> liftFrames(final WidgetTester tester, {required final bool disableAnimations}) async {
       final ValueNotifier<double> cover = ValueNotifier<double>(10);
       addTearDown(cover.dispose);
@@ -569,16 +569,13 @@ void main() {
                 ),
               ),
             ],
-            body: const HarborKeepInSightRegion(
+            body: const HarborKeepVisibleRegion(
               child: Stack(
                 children: <Widget>[
                   Positioned(
                     top: 600,
                     left: 100,
-                    child: HarborKeepInSight(
-                      lift: true,
-                      child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40),
-                    ),
+                    child: HarborLift(child: SizedBox(key: ValueKey<String>('boat'), width: 60, height: 40)),
                   ),
                 ],
               ),

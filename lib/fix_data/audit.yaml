@@ -668,32 +668,9 @@ transforms:
       holdPosition:
         kind: 'fragment'
         value: 'arguments[holdPosition]'
-  # HarborKeepInSight.reveal moved to HarborKeepVisible.
-  - title: "Replace with 'HarborKeepVisible.reveal'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      method: 'reveal'
-      inClass: 'HarborKeepInSight'
-    changes:
-      - kind: 'replacedBy'
-        newElement:
-          uris: [ 'harbor.dart' ]
-          method: 'reveal'
-          inClass: 'HarborKeepVisible'
-  # HarborKeepInSight.coverageOf moved to HarborKeepVisible.
-  - title: "Replace with 'HarborKeepVisible.coverageOf'"
-    date: 2026-10-14
-    element:
-      uris: [ 'harbor.dart' ]
-      method: 'coverageOf'
-      inClass: 'HarborKeepInSight'
-    changes:
-      - kind: 'replacedBy'
-        newElement:
-          uris: [ 'harbor.dart' ]
-          method: 'coverageOf'
-          inClass: 'HarborKeepVisible'
+  # HarborKeepInSight.reveal and .coverageOf moved to HarborKeepVisible. Their replacedBy went at
+  # 1.0: keyed on the removed HarborKeepInSight, which nothing renames as a whole (it splits), the
+  # static call never matched again (DECISIONS.md, "Fix data after 1.0").
   # HarborKeepInSightRegion is HarborKeepVisibleRegion, named after the widget it lifts for.
   - title: "Rename to 'HarborKeepVisibleRegion'"
     date: 2026-10-14

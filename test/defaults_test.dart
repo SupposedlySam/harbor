@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
+import 'package:harbor/src/controller.dart' show ShownToast;
 import 'package:harbor_test/harbor_test.dart';
 
 /// Pumps a root with [root] defaults and a page frame with [page] defaults, and returns a context
@@ -329,8 +330,7 @@ void main() {
         timing: HarborToastTiming.untilHidden,
         builder: _toast,
       );
-      // ignore: deprecated_member_use_from_same_package
-      expect(entry.animationStyle, const AnimationStyle(duration: Duration(milliseconds: 600)));
+      expect((entry as ShownToast).animationStyle, const AnimationStyle(duration: Duration(milliseconds: 600)));
       final HarborToastEntry own = HarborToasts.show(
         inside,
         slot: HarborToastSlot.top,
@@ -338,8 +338,7 @@ void main() {
         timing: HarborToastTiming.untilHidden,
         builder: _toast,
       );
-      // ignore: deprecated_member_use_from_same_package
-      expect(own.animationStyle, AnimationStyle.noAnimation);
+      expect((own as ShownToast).animationStyle, AnimationStyle.noAnimation);
       entry.hide();
       own.hide();
       await _step(tester, 10);
@@ -466,12 +465,7 @@ void main() {
     // Owner review: a frame's own hinge beats a barHinge inherited from the frame around it. The
     // order per frame is its own barHinge, its own hinge, then the inherited barHinge and hinge, as
     // on main, where the inner frame's tabs ended at 540.
-    Future<void> ownHinge(
-      final WidgetTester tester, {
-      required final bool deprecated,
-      final bool deeper = false,
-      final bool innerHinge = true,
-    }) {
+    Future<void> ownHinge(final WidgetTester tester, {final bool deeper = false, final bool innerHinge = true}) {
       // Deeper, the inner frame holds no bars, so the frame in its body is still as big as the
       // screen: only a frame that size reads the hinge.
       final Widget body = deeper
@@ -495,45 +489,33 @@ void main() {
       return tester.pumpHarborTrial(
         MaterialApp(
           builder: (final BuildContext context, final Widget? child) => HarborRoot(child: child!),
-          home: deprecated
-              ? HarborFrame(
-                  // ignore: deprecated_member_use_from_same_package
-                  barHinge: HarborHinge.never,
-                  // ignore: deprecated_member_use_from_same_package
-                  body: HarborFrame(hinge: own, bottom: bottom, body: body),
-                )
-              : HarborFrame(
-                  defaults: const HarborDefaults(barHinge: HarborHinge.never),
-                  body: HarborFrame(
-                    defaults: HarborDefaults(hinge: own),
-                    bottom: bottom,
-                    body: body,
-                  ),
-                ),
+          home: HarborFrame(
+            defaults: const HarborDefaults(barHinge: HarborHinge.never),
+            body: HarborFrame(
+              defaults: HarborDefaults(hinge: own),
+              bottom: bottom,
+              body: body,
+            ),
+          ),
         ),
         device: dual,
       );
     }
 
-    for (final bool deprecated in <bool>[true, false]) {
-      final String how = deprecated ? 'hinge:/barHinge:' : 'defaults:';
-      testWidgets('a nested frame’s own hinge beats an inherited barHinge ($how)', (final tester) async {
-        await ownHinge(tester, deprecated: deprecated);
-        expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 540);
-      });
+    testWidgets('a nested frame’s own hinge beats an inherited barHinge', (final tester) async {
+      await ownHinge(tester);
+      expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 540);
+    });
 
-      testWidgets('and a frame beneath that one follows the nearer hinge too ($how)', (final tester) async {
-        await ownHinge(tester, deprecated: deprecated, deeper: true);
-        expect(tester.getRect(find.byKey(const ValueKey<String>('deeper tabs'))).right, 540);
-      });
+    testWidgets('and a frame beneath that one follows the nearer hinge too', (final tester) async {
+      await ownHinge(tester, deeper: true);
+      expect(tester.getRect(find.byKey(const ValueKey<String>('deeper tabs'))).right, 540);
+    });
 
-      testWidgets('positive control: without the inner hinge, the outer barHinge reaches it ($how)', (
-        final tester,
-      ) async {
-        await ownHinge(tester, deprecated: deprecated, deeper: true, innerHinge: false);
-        expect(tester.getRect(find.byKey(const ValueKey<String>('deeper tabs'))).right, 1114);
-      });
-    }
+    testWidgets('positive control: without the inner hinge, the outer barHinge reaches it', (final tester) async {
+      await ownHinge(tester, deeper: true, innerHinge: false);
+      expect(tester.getRect(find.byKey(const ValueKey<String>('deeper tabs'))).right, 1114);
+    });
 
     testWidgets('a frame’s own barHinge still beats its own hinge', (final tester) async {
       await tester.pumpHarborTrial(
@@ -552,69 +534,6 @@ void main() {
         device: dual,
       );
       expect(tester.getRect(find.byKey(const ValueKey<String>('tabs'))).right, 1114);
-    });
-  });
-
-  group('the deprecated spellings still work', () {
-    testWidgets('HarborFrame(hinge:) and HarborRoot(hinge:) set the hinge; defaults wins over them', (
-      final tester,
-    ) async {
-      late BuildContext inside;
-      late BuildContext both;
-      await tester.pumpHarborTrial(
-        MaterialApp(
-          builder: (final BuildContext context, final Widget? child) =>
-              // ignore: deprecated_member_use_from_same_package
-              HarborRoot(hinge: HarborHinge.always, child: child!),
-          home: Column(
-            children: <Widget>[
-              Expanded(
-                child: Builder(
-                  builder: (final BuildContext context) {
-                    inside = context;
-                    return const SizedBox.expand();
-                  },
-                ),
-              ),
-              Expanded(
-                child: HarborFrame(
-                  defaults: const HarborDefaults(hinge: HarborHinge.avoidOccluding),
-                  // ignore: deprecated_member_use_from_same_package
-                  hinge: HarborHinge.never,
-                  body: Builder(
-                    builder: (final BuildContext context) {
-                      both = context;
-                      return const SizedBox.expand();
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-      expect(HarborHinge.of(inside), HarborHinge.always);
-      expect(HarborHinge.of(both), HarborHinge.avoidOccluding);
-    });
-
-    testWidgets('HarborFlarePolicy builds a HarborDefaultsScope, and queueOf reads it', (final tester) async {
-      late BuildContext inside;
-      await tester.pumpWidget(
-        // ignore: deprecated_member_use_from_same_package
-        HarborFlarePolicy(
-          queue: HarborToastQueue.replace,
-          child: Builder(
-            builder: (final BuildContext context) {
-              inside = context;
-              return const SizedBox();
-            },
-          ),
-        ),
-      );
-      expect(find.byType(HarborDefaultsScope), findsOneWidget);
-      // ignore: deprecated_member_use_from_same_package
-      expect(HarborFlarePolicy.queueOf(inside), HarborToastQueue.replace);
-      expect(HarborDefaults.read(inside).toastQueue, HarborToastQueue.replace);
     });
   });
 }

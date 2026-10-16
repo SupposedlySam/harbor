@@ -37,199 +37,31 @@ class HarborFloat with Diagnosticable {
   const HarborFloat({
     this.key,
     required this.child,
-    final HarborPlacement? placement,
-    @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
-      'added after `dart fix`, or the import widened.',
-    )
-    final AlignmentGeometry? alignment,
-    @Deprecated(
-      'Use placement: HarborAligned(margin: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
-      'added after `dart fix`, or the import widened.',
-    )
-    final EdgeInsetsGeometry? margin,
-    final HarborBarrier barrier = HarborBarrier.none,
-    @Deprecated(
-      'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
-      '`dart fix` applies it to modal: true and modal: false, in a file that imports package:harbor/harbor.dart. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or '
-      'the import widened.',
-    )
-    final bool modal = false,
+    this.placement = const HarborAligned(),
+    this.barrier = HarborBarrier.none,
     this.onDismiss,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    final Color? barrierColor,
     this.requestFocus = true,
-    @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    final String? barrierLabel,
     this.within,
     this.hinge,
   }) : assert(
-         !modal || identical(barrier, HarborBarrier.none),
-         'Give a float a barrier, or the deprecated modal, not both.',
-       ),
-       assert(
-         (!modal && identical(barrier, HarborBarrier.none)) || onDismiss != null,
+         identical(barrier, HarborBarrier.none) || onDismiss != null,
          'A modal float needs onDismiss: a tap on its barrier, back and Escape call it.',
-       ),
-       assert(
-         (barrierColor == null && barrierLabel == null) || identical(barrier, HarborBarrier.none),
-         'barrierColor and barrierLabel are for the deprecated modal. Give them to the barrier.',
-       ),
-       _barrier = barrier,
-       _modal = modal,
-       _barrierColor = barrierColor,
-       _barrierLabel = barrierLabel,
-       assert(
-         placement == null || (alignment == null && margin == null),
-         'Give a float a placement, or the deprecated alignment and margin, not both.',
-       ),
-       _placement = placement,
-       _alignment = alignment,
-       _margin = margin,
-       _anchor = null,
-       _side = HarborAnchorSide.above,
-       _gap = HarborAnchored.defaultGap,
-       _overlap = 0.0,
-       _crossAlignment = HarborCrossAlignment.center,
-       _crossOffset = 0.0;
-
-  /// A float anchored to [anchor], on its [side], [gap] away, overlapping it by
-  /// [overlap] (a speech bubble whose tail sits over the button), and lined up
-  /// with it across that side by [crossAlignment]. Kept inside the room
-  /// across that side, and never past its far edge.
-  @Deprecated(
-    'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
-    'by default. `dart fix` applies it to a call, in a file that imports package:harbor/harbor.dart; a tear-off is '
-    'yours to change. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored and '
-    'HarborAnchorSide added after `dart fix`, or the import widened.',
-  )
-  const HarborFloat.anchored({
-    this.key,
-    // Optional and deprecated in itself, though every call gives it: `dart fix` can move a call's
-    // arguments only from a diagnostic on one of them, never from the one on the constructor's name,
-    // and a tear-off (which has no arguments to move) must keep compiling. So it is asserted, not typed.
-    // ignore: tighten_type_of_initializing_formals
-    @Deprecated(
-      'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    this._anchor,
-    required this.child,
-    this._side = HarborAnchorSide.above,
-    this._gap = HarborAnchored.defaultGap,
-    this._overlap = 0.0,
-    this._crossAlignment = HarborCrossAlignment.center,
-    this._crossOffset = 0.0,
-    EdgeInsetsGeometry this._margin = HarborAnchored.defaultMargin,
-    final HarborBarrier barrier = HarborBarrier.none,
-    @Deprecated(
-      'Use barrier: const HarborBarrier.clear(), or HarborBarrier.dimmed(color: ...) for a barrierColor. '
-      '`dart fix` applies it to modal: true and modal: false, in a file that imports package:harbor/harbor.dart. '
-      'Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or '
-      'the import widened.',
-    )
-    final bool modal = false,
-    this.onDismiss,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    final Color? barrierColor,
-    this.requestFocus = true,
-    @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    final String? barrierLabel,
-    this.hinge,
-  }) : assert(
-         !modal || identical(barrier, HarborBarrier.none),
-         'Give a float a barrier, or the deprecated modal, not both.',
-       ),
-       assert(
-         (!modal && identical(barrier, HarborBarrier.none)) || onDismiss != null,
-         'A modal float needs onDismiss: a tap on its barrier, back and Escape call it.',
-       ),
-       assert(
-         (barrierColor == null && barrierLabel == null) || identical(barrier, HarborBarrier.none),
-         'barrierColor and barrierLabel are for the deprecated modal. Give them to the barrier.',
-       ),
-       _barrier = barrier,
-       _modal = modal,
-       _barrierColor = barrierColor,
-       _barrierLabel = barrierLabel,
-       assert(_anchor != null, 'HarborFloat.anchored needs an anchor.'),
-       _placement = null,
-       _alignment = null,
-       within = null;
+       );
 
   final Key? key;
   final Widget child;
-
-  // The placement given, or null when the float was made with the deprecated parameters, which are
-  // kept below so it can be built in a const constructor.
-  final HarborPlacement? _placement;
-  final AlignmentGeometry? _alignment;
-  final EdgeInsetsGeometry? _margin;
-  final HarborAnchor? _anchor;
-  final HarborAnchorSide _side;
-  final double _gap;
-  final double _overlap;
-  final HarborCrossAlignment _crossAlignment;
-  final double _crossOffset;
 
   /// Where the float sits in the room: at a point of it, or by an anchor. An aligned float at
   /// bottom centre, 16 in from the room's edges, when none is given.
   ///
   /// An anchored float needs an anchor, and it keeps its side: [HarborAnchored.flips] null is false
   /// here. While its anchor is not in the tree it is not shown, takes no taps and is not read out.
-  HarborPlacement get placement =>
-      _placement ??
-      switch (_anchor) {
-        final HarborAnchor anchor => HarborAnchored(
-          anchor,
-          side: _side,
-          gap: _gap,
-          overlap: _overlap,
-          crossAlignment: _crossAlignment,
-          crossOffset: _crossOffset,
-          margin: _margin ?? HarborAnchored.defaultMargin,
-        ),
-        null => HarborAligned(
-          alignment: _alignment ?? HarborAligned.defaultAlignment,
-          margin: _margin ?? HarborAligned.defaultMargin,
-        ),
-      };
+  final HarborPlacement placement;
 
   /// Which hinges and folds the float keeps to one side of: the screen that holds its alignment
   /// point, or for an anchored float the screen its anchor is on. Null takes its frame's
   /// [HarborHinge.of].
   final HarborHinge? hinge;
-
-  /// Where an aligned float sits in the room; [Alignment.center] for an anchored one.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  AlignmentGeometry get alignment => switch (placement) {
-    HarborAligned(:final AlignmentGeometry alignment) => alignment,
-    HarborAnchored() => Alignment.center,
-  };
-
-  /// How far in from the room's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
-  EdgeInsetsGeometry get margin => placement.margin;
 
   /// What the float puts between itself and the page: [HarborBarrier.none] by default, so the
   /// float is not modal. With a barrier ([HarborBarrier.clear] for quick actions or a menu, so the
@@ -244,21 +76,7 @@ class HarborFloat with Diagnosticable {
   ///
   /// The barrier's `label` is what a screen reader announces for it ('Dismiss' when none is
   /// given); a Material app passes `MaterialLocalizations.of(context).modalBarrierDismissLabel`.
-  ///
-  /// Through 0.9 this was `modal: true`, with `barrierColor` and `barrierLabel`: a clear barrier, or
-  /// one tinted by `barrierColor`. Those still work, deprecated, and this reads what they made.
-  HarborBarrier get barrier => _modal
-      ? (_barrierColor ?? const Color(0x00000000)).a == 0
-            ? HarborBarrier.clear(label: _barrierLabel)
-            : HarborBarrier.dimmed(color: _barrierColor!, label: _barrierLabel)
-      : _barrier;
-
-  // The barrier given, or the deprecated modal, barrierColor and barrierLabel, which are kept so the
-  // float can be made in a const constructor.
-  final HarborBarrier _barrier;
-  final bool _modal;
-  final Color? _barrierColor;
-  final String? _barrierLabel;
+  final HarborBarrier barrier;
 
   /// Whether this float is modal while it is up: whether it has a [barrier].
   ///
@@ -276,88 +94,19 @@ class HarborFloat with Diagnosticable {
   /// float that is not [modal].
   final bool requestFocus;
 
-  /// The colour of a modal float's barrier.
-  @Deprecated('Read barrier.color. Deprecated after 0.9.1.')
-  Color get barrierColor => barrier.color;
-
-  /// What a screen reader announces for a modal float's barrier.
-  @Deprecated('Read barrier.label. Deprecated after 0.9.1.')
-  String get barrierLabel => barrier.label ?? harborBarrierDismissLabel;
-
-  /// What an anchored float sits by; null for an aligned one.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  HarborAnchor? get anchor => switch (placement) {
-    HarborAnchored(:final HarborAnchor? anchor) => anchor,
-    HarborAligned() => null,
-  };
-
-  /// Which side of its anchor an anchored float sits on.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  HarborAnchorSide get side => switch (placement) {
-    HarborAnchored(:final HarborAnchorSide side) => side,
-    HarborAligned() => HarborAnchorSide.above,
-  };
-
-  /// How far an anchored float sits from its anchor.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  double get gap => switch (placement) {
-    HarborAnchored(:final double gap) => gap,
-    HarborAligned() => 0.0,
-  };
-
-  /// How far an anchored float reaches back over its anchor.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  double get overlap => switch (placement) {
-    HarborAnchored(:final double overlap) => overlap,
-    HarborAligned() => 0.0,
-  };
-
-  /// How an anchored float lines up with its anchor across its side; centred by default.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  HarborCrossAlignment get crossAlignment => switch (placement) {
-    HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
-    HarborAligned() => HarborCrossAlignment.center,
-  };
-
-  /// How far an anchored float is moved across its side from where its cross alignment puts it.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  double get crossOffset => switch (placement) {
-    HarborAnchored(:final double crossOffset) => crossOffset,
-    HarborAligned() => 0.0,
-  };
-
   /// Keeps the float inside this rectangle (in the frame's own coordinates)
   /// as well as inside the room.
   final Rect? within;
 
   @override
-  String toStringShort() => _placement == null && _anchor != null
-      ? '${objectRuntimeType(this, 'HarborFloat')}.anchored'
-      : objectRuntimeType(this, 'HarborFloat');
+  String toStringShort() => objectRuntimeType(this, 'HarborFloat');
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Key>('key', key, defaultValue: null));
-    if (_placement != null) {
-      properties.add(
-        DiagnosticsProperty<HarborPlacement>('placement', _placement, defaultValue: const HarborAligned()),
-      );
-      properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
-    } else if (_anchor == null) {
-      // Made with the deprecated parameters: described as it was then.
-      properties.add(DiagnosticsProperty<AlignmentGeometry>('alignment', _alignment, defaultValue: null));
-      properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', _margin, defaultValue: null));
-      properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
-    } else {
-      properties.add(DiagnosticsProperty<HarborAnchor>('anchor', _anchor));
-      properties.add(EnumProperty<HarborAnchorSide>('side', _side, defaultValue: HarborAnchorSide.above));
-      properties.add(DoubleProperty('gap', _gap, defaultValue: HarborAnchored.defaultGap));
-      properties.add(DoubleProperty('overlap', _overlap, defaultValue: 0.0));
-      properties.add(
-        DiagnosticsProperty<EdgeInsetsGeometry>('margin', _margin, defaultValue: HarborAnchored.defaultMargin),
-      );
-    }
+    properties.add(DiagnosticsProperty<HarborPlacement>('placement', placement, defaultValue: const HarborAligned()));
+    properties.add(DiagnosticsProperty<Rect>('within', within, defaultValue: null));
     properties.add(FlagProperty('modal', value: modal, ifTrue: 'modal'));
     properties.add(DiagnosticsProperty<HarborBarrier>('barrier', barrier, defaultValue: HarborBarrier.none));
     properties.add(ObjectFlagProperty<VoidCallback>.has('onDismiss', onDismiss));
@@ -365,102 +114,6 @@ class HarborFloat with Diagnosticable {
       FlagProperty('requestFocus', value: requestFocus, ifFalse: 'does not take focus', defaultValue: true),
     );
   }
-}
-
-/// The old name of [HarborFloat], whose constructors keep their names.
-///
-/// A subclass rather than a typedef: `dart fix` renames `HarborBuoy.anchored(...)` to a
-/// `HarborFloat(placement: ...)`, and a typedef cannot carry a constructor rename.
-@Deprecated('Renamed HarborFloat. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborBuoy extends HarborFloat {
-  /// The old name of [HarborFloat.new].
-  @Deprecated('Renamed HarborFloat. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborBuoy({
-    super.key,
-    required super.child,
-    super.placement,
-    @Deprecated(
-      'Use placement: HarborAligned(alignment: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.alignment,
-    @Deprecated(
-      'Use placement: HarborAligned(margin: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAligned '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.margin,
-    super.barrier,
-    @Deprecated(
-      'Use barrier: const HarborBarrier.clear(). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.modal,
-    super.onDismiss,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.barrierColor,
-    super.requestFocus,
-    @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.barrierLabel,
-    super.within,
-    super.hinge,
-  });
-
-  /// The old name of [HarborFloat.anchored].
-  @Deprecated(
-    'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)); its side is below '
-    'by default. `dart fix` applies it to a call, in a file that imports package:harbor/harbor.dart; a tear-off is '
-    'yours to change. Deprecated after 0.7.0. A file that imports harbor with `show` needs HarborAnchored and '
-    'HarborAnchorSide added after `dart fix`, or the import widened.',
-  )
-  const HarborBuoy.anchored({
-    super.key,
-    @Deprecated(
-      'Use HarborFloat(placement: HarborAnchored(anchor, side: HarborAnchorSide.above)). `dart fix` applies it in a '
-      'file that imports package:harbor/harbor.dart. Deprecated after 0.7.0. A file that imports harbor with `show` '
-      'needs HarborAnchored and HarborAnchorSide added after `dart fix`, or the import widened.',
-    )
-    super.anchor,
-    required super.child,
-    super.side,
-    super.gap,
-    super.overlap,
-    super.crossAlignment,
-    super.crossOffset,
-    super.margin,
-    super.barrier,
-    @Deprecated(
-      'Use barrier: const HarborBarrier.clear(). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.modal,
-    super.onDismiss,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.barrierColor,
-    super.requestFocus,
-    @Deprecated(
-      'Use barrier: HarborBarrier.clear(label: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    super.barrierLabel,
-    super.hinge,
-  }) : super.anchored();
 }
 
 /// The layer a frame places its floats in.

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'edge.dart';
-import 'renamed.dart';
 import 'room.dart';
 
 /// Which bars a [HarborClear] keeps up with.
@@ -35,41 +34,14 @@ class HarborClear extends StatelessWidget {
   const HarborClear({
     super.key,
     this.edges = HarborEdge.all,
-    final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
+    this.clearsBars = true,
     this.follow = HarborFollow.live,
-    final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
-    final bool rowInsets = false,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? mooringLine,
+    this.clearsKeyboard = true,
+    this.rowInsets = false,
     this.minimum = EdgeInsetsDirectional.zero,
-    final EdgeInsetsGeometry padding = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed padding. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final EdgeInsetsGeometry? extra,
+    this.padding = EdgeInsetsDirectional.zero,
     required this.child,
-  }) : assert(
-         bars == null || clearsBars || bars == clearsBars,
-         'clearsBars and the deprecated bars disagree. Give clearsBars alone.',
-       ),
-       assert(
-         tide == null || clearsKeyboard || tide == clearsKeyboard,
-         'clearsKeyboard and the deprecated tide disagree. Give clearsKeyboard alone.',
-       ),
-       assert(
-         mooringLine == null || !rowInsets || mooringLine == rowInsets,
-         'rowInsets and the deprecated mooringLine disagree. Give rowInsets alone.',
-       ),
-       assert(
-         extra == null || identical(padding, EdgeInsetsDirectional.zero) || identical(extra, padding),
-         'padding and the deprecated extra disagree. Give padding alone.',
-       ),
-       clearsBars = bars ?? clearsBars,
-       clearsKeyboard = tide ?? clearsKeyboard,
-       rowInsets = mooringLine ?? rowInsets,
-       padding = extra ?? padding;
+  });
 
   /// Keeps [child], a row in a list, a heading or a tile grid, on the page margin at its sides:
   /// the frame's margin plus whatever is in the way there (a side cutout, a rail). The list itself
@@ -104,36 +76,20 @@ class HarborClear extends StatelessWidget {
   /// keeps the keyboard while its `clearsKeyboard` is true; this one does not.)
   final bool clearsBars;
 
-  /// The old name of [clearsBars].
-  @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get bars => clearsBars;
-
   final HarborFollow follow;
 
   /// Whether the bottom keeps clear of the keyboard too. Not read where [clearsBars] is false, which
   /// leaves the keyboard to the content.
   final bool clearsKeyboard;
 
-  /// The old name of [clearsKeyboard].
-  @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get tide => clearsKeyboard;
-
   /// Whether the frame's margin is added on [edges], so the content lines up with the page.
   final bool rowInsets;
-
-  /// The old name of [rowInsets].
-  @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get mooringLine => rowInsets;
 
   /// A floor on each edge: the clearance or this, whichever is larger.
   final EdgeInsetsGeometry minimum;
 
   /// Your own spacing, added on top of the clearance.
   final EdgeInsetsGeometry padding;
-
-  /// The old name of [padding].
-  @Deprecated('Renamed padding. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  EdgeInsetsGeometry get extra => padding;
 
   final Widget child;
 
@@ -158,35 +114,23 @@ class HarborClear extends StatelessWidget {
     final BuildContext context, {
     final Set<HarborEdge> edges = HarborEdge.all,
     final bool clearsBars = true,
-    @Deprecated('Renamed clearsBars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bars,
     final HarborFollow follow = HarborFollow.live,
     final bool clearsKeyboard = true,
-    @Deprecated('Renamed clearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? tide,
     final bool rowInsets = false,
-    @Deprecated('Renamed rowInsets. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? mooringLine,
     final EdgeInsetsGeometry minimum = EdgeInsetsDirectional.zero,
     final EdgeInsetsGeometry padding = EdgeInsetsDirectional.zero,
-    @Deprecated('Renamed padding. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final EdgeInsetsGeometry? extra,
   }) {
-    final bool barsHere = renamed(bars, clearsBars, true, 'clearsBars', 'bars');
-    final bool keyboardHere = renamed(tide, clearsKeyboard, true, 'clearsKeyboard', 'tide');
-    final bool insetsRows = renamed(mooringLine, rowInsets, false, 'rowInsets', 'mooringLine');
-    final EdgeInsetsGeometry paddingGiven = renamed(extra, padding, EdgeInsetsDirectional.zero, 'padding', 'extra');
     EdgeInsetsDirectional resolved(final EdgeInsetsGeometry insets) =>
         insets is EdgeInsetsDirectional ? insets : HarborEdges.resolve(insets, Directionality.of(context));
     final EdgeInsetsDirectional minimumHere = resolved(minimum);
-    final EdgeInsetsDirectional paddingHere = resolved(paddingGiven);
+    final EdgeInsetsDirectional paddingHere = resolved(padding);
     // Each part of the room is read only where it is used, so a row on the page margin in a list
     // under the keyboard does not rebuild as the keyboard moves.
     double clearance(final HarborEdge edge) {
       if (!edges.contains(edge)) {
         return HarborEdges.of(paddingHere, edge);
       }
-      double value = switch ((barsHere, follow)) {
+      double value = switch ((clearsBars, follow)) {
         (false, _) => HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges, edge),
         (true, HarborFollow.resting) => math.max(
           HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges, edge),
@@ -194,10 +138,10 @@ class HarborClear extends StatelessWidget {
         ),
         (true, HarborFollow.live) => HarborRoom.clearanceOf(context, edge, clearsKeyboard: false),
       };
-      if (keyboardHere && barsHere && edge == HarborEdge.bottom) {
+      if (clearsKeyboard && clearsBars && edge == HarborEdge.bottom) {
         value = math.max(value, MediaQuery.viewInsetsOf(context).bottom);
       }
-      if (insetsRows) {
+      if (rowInsets) {
         value += HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.margin).margin, edge);
       }
       return math.max(value, HarborEdges.of(minimumHere, edge)) + HarborEdges.of(paddingHere, edge);
@@ -228,52 +172,4 @@ class HarborClear extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The old name of [HarborClear.rowInsets].
-@Deprecated(
-  'Use HarborClear.rowInsets(follow:, child:). `dart fix` applies it to a call, in a file that imports '
-  'package:harbor/harbor.dart; a type use (find.byType(HarborMooringLine), is HarborMooringLine) or a tear-off is '
-  'yours to change. Deprecated after 0.8.0.',
-)
-class HarborMooringLine extends StatelessWidget {
-  /// The old name of [HarborClear.rowInsets].
-  @Deprecated(
-    'Use HarborClear.rowInsets(follow:, child:). `dart fix` applies it to a call, in a file that imports '
-    'package:harbor/harbor.dart; a type use (find.byType(HarborMooringLine), is HarborMooringLine) or a tear-off is '
-    'yours to change. Deprecated after 0.8.0.',
-  )
-  const HarborMooringLine({super.key, this.follow = HarborFollow.live, required this.child});
-
-  final HarborFollow follow;
-  final Widget child;
-
-  @override
-  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(EnumProperty<HarborFollow>('follow', follow, defaultValue: HarborFollow.live));
-  }
-
-  @override
-  Widget build(final BuildContext context) => HarborClear.rowInsets(follow: follow, child: child);
-}
-
-/// The signature of [HarborOpenWater.builder].
-@Deprecated('Use a Builder and read HarborRoom.of(context). Deprecated after 0.8.0.')
-typedef HarborWatersWidgetBuilder = Widget Function(BuildContext context, HarborRoomData waters);
-
-/// Content that ignores the bars and the system edges (a background, a map, a full-bleed image),
-/// told how far each of them reaches.
-///
-/// Retired: content anywhere in a frame reads the same from [HarborRoom.of], so a [Builder] does
-/// what this did: `Builder(builder: (context) => draw(HarborRoom.of(context)))`.
-@Deprecated('Use a Builder and read HarborRoom.of(context). Deprecated after 0.8.0.')
-class HarborOpenWater extends StatelessWidget {
-  @Deprecated('Use a Builder and read HarborRoom.of(context). Deprecated after 0.8.0.')
-  const HarborOpenWater({super.key, required this.builder});
-
-  final HarborWatersWidgetBuilder builder;
-
-  @override
-  Widget build(final BuildContext context) => builder(context, HarborRoom.of(context));
 }

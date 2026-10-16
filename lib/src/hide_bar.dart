@@ -31,30 +31,13 @@ class HarborHideBar extends StatefulWidget {
   const HarborHideBar({
     super.key,
     required this.edge,
-    final HarborBarState state = HarborBarState.withdrawn,
-    @Deprecated(
-      'Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborBarState added after `dart fix`, or the import widened.',
-    )
-    final HarborYield? mode,
+    this.state = HarborBarState.withdrawn,
     this.active = true,
     required this.child,
   }) : assert(
          state != HarborBarState.open,
          'HarborHideBar hides a bar dark or withdrawn; set active: false to open it.',
-       ),
-       assert(
-         mode == null ||
-             identical(state, HarborBarState.withdrawn) ||
-             identical(state, HarborBarState.dark) == identical(mode, HarborYield.dark),
-         'state and the deprecated mode disagree. Give state alone.',
-       ),
-       state = mode == null
-           ? state
-           : identical(mode, HarborYield.dark)
-           ? HarborBarState.dark
-           : HarborBarState.withdrawn;
+       );
 
   final HarborEdge edge;
 
@@ -62,9 +45,6 @@ class HarborHideBar extends StatefulWidget {
   /// default) gives it back. Never [HarborBarState.open].
   final HarborBarState state;
 
-  /// The old spelling of [state].
-  @Deprecated('Read state. Deprecated after 0.9.1.')
-  HarborYield get mode => state == HarborBarState.dark ? HarborYield.dark : HarborYield.withdraw;
   final bool active;
   final Widget child;
 

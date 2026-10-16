@@ -6,29 +6,10 @@ import 'package:flutter/widgets.dart';
 
 import 'bar.dart';
 import 'edge.dart';
-import 'float.dart' show HarborAnchor, HarborAnchorClip, HarborToastScope, HarborToastSlot;
+import 'float.dart' show HarborAnchor, HarborAnchorClip, HarborToastScope;
 import 'hinge.dart';
 import 'keyboard.dart';
 import 'placement.dart';
-
-/// How a bar hides when content asks it to: the old spelling of the two hidden [HarborBarState]s.
-@Deprecated(
-  'Use HarborBarState: HarborYield.dark is HarborBarState.dark, and HarborYield.withdraw is '
-  'HarborBarState.withdrawn. `dart fix` applies it where the value is written out, in a file that imports '
-  'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarState '
-  'added after `dart fix`, or the import widened.',
-)
-enum HarborYield {
-  /// Lights out: the bar disappears but keeps its space.
-  dark,
-
-  /// The bar withdraws and gives its space back.
-  withdraw,
-}
-
-/// The [HarborBarState] a deprecated [HarborYield] stands for.
-HarborBarState hiddenStateOf(final HarborYield mode) =>
-    mode == HarborYield.dark ? HarborBarState.dark : HarborBarState.withdrawn;
 
 /// A request that a bar hide, returned by [HarborController.hideBar].
 /// Release it when the content no longer needs the edge.
@@ -40,10 +21,6 @@ class HarborClaim {
 
   /// How the bar hides: [HarborBarState.dark] or [HarborBarState.withdrawn].
   final HarborBarState state;
-
-  /// The old spelling of [state].
-  @Deprecated('Read state. Deprecated after 0.9.1.')
-  HarborYield get mode => state == HarborBarState.dark ? HarborYield.dark : HarborYield.withdraw;
 
   bool get isActive => _controller != null;
 
@@ -67,22 +44,9 @@ class HarborPageCover {
   final ValueListenable<double> _coverage;
   final bool _measuresTop;
 
-  /// Whether the listenable holds the cover's top edge in global coordinates
-  /// rather than how far it reaches up from the bottom of the screen.
-  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
-  bool get measuresTop => _measuresTop;
-
   double get _reach => _controller == null || _measuresTop ? 0.0 : _coverage.value;
 
   double? get _top => _controller == null || !_measuresTop ? null : _coverage.value;
-
-  /// How far the cover reaches up from the bottom of the screen.
-  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
-  double get coverage => _reach;
-
-  /// The cover's top edge in global coordinates, for a page cover that measures it.
-  @Deprecated('A page cover is only removed; nothing outside harbor reads it. Deprecated after 0.9.1.')
-  double? get topInGlobal => _top;
 
   /// Takes the cover away: call it when the cover leaves.
   void remove() {
@@ -112,11 +76,7 @@ enum HarborToastClosedReason {
   remove,
 
   /// A toast shown with [HarborToastQueue.replace] at its place took its turn.
-  replaced;
-
-  /// The old name of [hide].
-  @Deprecated('Renamed hide. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  static const HarborToastClosedReason lower = hide;
+  replaced,
 }
 
 /// Where a toast is in its life, read synchronously with [HarborToastEntry.phase].
@@ -335,13 +295,7 @@ abstract final class HarborToastEntry {
 
   /// Hides the toast; [closed] reports [HarborToastClosedReason.hide]. Hiding it again does
   /// nothing: the first reason is the one [closed] reports.
-  void hide({
-    @Deprecated(
-      'Leave it out: hide() reports HarborToastClosedReason.hide, and dismiss() reports dismiss. The other '
-      'reasons are what harbor reports for a toast it hid itself. Deprecated after 0.9.0.',
-    )
-    final HarborToastClosedReason reason = HarborToastClosedReason.hide,
-  }) => _hideAs(reason);
+  void hide() => _hideAs(HarborToastClosedReason.hide);
 
   /// Hides the toast because the user dismissed it; [closed] reports
   /// [HarborToastClosedReason.dismiss], as it does when a screen reader dismisses it.
@@ -357,127 +311,12 @@ abstract final class HarborToastEntry {
     }
   }
 
-  /// The old name of [hide].
-  @Deprecated('Renamed hide. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  void lower({final HarborToastClosedReason reason = HarborToastClosedReason.hide}) => _hideAs(reason);
-
   void _left() {
     _phase = HarborToastPhase.closed;
     if (!_closed.isCompleted) {
       _closed.complete(_reason ?? HarborToastClosedReason.hide);
     }
   }
-
-  // What follows is how the toast was shown, and the record harbor runs it on: it is not the
-  // caller's to read, and goes at 1.0.
-
-  static const String _internal =
-      'How the toast was shown is harbor\'s to read: no replacement. Deprecated after 0.9.0.';
-
-  /// What builds the toast.
-  @Deprecated(_internal)
-  WidgetBuilder get builder;
-
-  /// Where an aligned toast sits in the room; [HarborToastSlot.high]'s point for an
-  /// anchored one.
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  Alignment get alignment => switch (placement) {
-    HarborAligned(:final AlignmentGeometry alignment) => alignment as Alignment,
-    HarborAnchored() => HarborToastSlot.high.alignment,
-  };
-
-  /// How far the toast sits from its [anchor].
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  double get gap => switch (placement) {
-    HarborAnchored(:final double gap) => gap,
-    HarborAligned() => HarborAnchored.defaultGap,
-  };
-
-  /// How the toast lines up with its [anchor] across its [side].
-  @Deprecated('Read placement. Deprecated after 0.7.0.')
-  HarborCrossAlignment get crossAlignment => switch (placement) {
-    HarborAnchored(:final HarborCrossAlignment crossAlignment) => crossAlignment,
-    HarborAligned() => HarborCrossAlignment.center,
-  };
-
-  /// How far the toast keeps in from the room's edges.
-  @Deprecated('Read placement.margin. Deprecated after 0.7.0.')
-  EdgeInsets? get margin => placement.margin as EdgeInsets;
-
-  /// Whether the toast may reach over the system edges on the edges it is against.
-  @Deprecated(_internal)
-  bool get reachesSystemEdges;
-
-  /// The old name of [reachesSystemEdges].
-  @Deprecated('Renamed reachesSystemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get reachesCoast;
-
-  /// Which hinges and folds the toast keeps to one side of.
-  @Deprecated(_internal)
-  HarborHinge? get hinge;
-
-  /// Whether the toast's time keeps running while another route covers its page.
-  @Deprecated(_internal)
-  bool get countsWhileCovered;
-
-  /// Whether it waits its turn at its place or takes it at once.
-  @Deprecated(_internal)
-  HarborToastQueue get queue;
-
-  /// Whether [duration] counts from the start of the toast's entrance.
-  @Deprecated(_internal)
-  bool get countsEntrance;
-
-  /// Ticks when [duration] is set.
-  @Deprecated(
-    'A counter harbor runs a toast\'s time on, not its HarborToastTiming, which is not kept on the entry: '
-    'read duration, which is the timing\'s duration until it is set. No replacement. Deprecated after 0.9.0.',
-  )
-  ValueListenable<int> get timing => _restarts;
-
-  /// Whether the toast stays until it is hidden: now a null [duration].
-  @Deprecated('Read duration: null stays until hidden. Deprecated after 0.9.0.')
-  bool get persist => _duration == null;
-
-  /// The duration and curve of the entrance and exit.
-  @Deprecated(_internal)
-  AnimationStyle? get animationStyle;
-
-  /// Builds the entrance and exit.
-  @Deprecated(_internal)
-  HarborToastTransitionBuilder? get transitionBuilder;
-
-  /// Whether harbor makes the toast a live region.
-  @Deprecated(_internal)
-  bool get liveRegion;
-
-  /// How long the entrance takes.
-  @Deprecated(_internal)
-  Duration get transitionDuration;
-
-  /// How long the exit takes.
-  @Deprecated(_internal)
-  Duration get reverseTransitionDuration;
-
-  /// How long a hidden toast stays in the tree.
-  @Deprecated(_internal)
-  Duration get lingers;
-
-  /// The frame the toast was shown from.
-  @Deprecated(_internal)
-  HarborController? get shownFrom;
-
-  /// The old name of [shownFrom].
-  @Deprecated('Renamed shownFrom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborController? get raisedIn;
-
-  /// The room of the frame the toast was shown from, in global coordinates.
-  @Deprecated(_internal)
-  Rect? get avoidInGlobal;
-
-  /// The frame showing the toast.
-  @Deprecated(_internal)
-  HarborController? get owner;
 }
 
 /// A toast as harbor runs it: the [HarborToastEntry] a caller holds, with how it was shown.
@@ -504,29 +343,20 @@ final class ShownToast extends HarborToastEntry {
   static const Duration _defaultTransition = Duration(milliseconds: 220);
   static const Duration _minimumLinger = Duration(milliseconds: 300);
 
-  @override
   final WidgetBuilder builder;
 
-  @override
   final bool reachesSystemEdges;
 
-  @override
-  bool get reachesCoast => reachesSystemEdges;
-
   /// Which hinges and folds the toast keeps to one side of; the showing page's when shown.
-  @override
   final HarborHinge? hinge;
 
   /// Whether the toast's time keeps running while another route covers its page.
-  @override
   final bool countsWhileCovered;
 
   /// Whether it waits its turn at its place or takes it at once. See [HarborToastQueue].
-  @override
   final HarborToastQueue queue;
 
   /// Whether [duration] counts from the start of the toast's entrance rather than its end.
-  @override
   final bool countsEntrance;
 
   /// Ticks when [duration] is set, so a showing toast starts its time over.
@@ -534,27 +364,21 @@ final class ShownToast extends HarborToastEntry {
 
   /// The duration and curve of the entrance and exit, 220 ms each way by
   /// default; [AnimationStyle.noAnimation] shows and removes the toast as it is.
-  @override
   final AnimationStyle? animationStyle;
 
   /// Builds the entrance and exit; a fade and a slight scale when null.
-  @override
   final HarborToastTransitionBuilder? transitionBuilder;
 
   /// Whether harbor makes the toast a live region with a dismiss action, as
   /// a `SnackBar` makes itself. False leaves the semantics to [builder]'s widget.
-  @override
   final bool liveRegion;
 
-  @override
   Duration get transitionDuration => animationStyle?.duration ?? _defaultTransition;
 
-  @override
   Duration get reverseTransitionDuration => animationStyle?.reverseDuration ?? transitionDuration;
 
   /// How long a hidden toast stays in the tree: its exit, and never less
   /// than 300 ms, so a child that runs an exit of its own has time to.
-  @override
   Duration get lingers => _reason == HarborToastClosedReason.replaced
       // Replaced, it leaves at once, so it is never drawn under the toast that took its place.
       ? Duration.zero
@@ -563,11 +387,7 @@ final class ShownToast extends HarborToastEntry {
       : _minimumLinger;
 
   /// The frame the toast was shown from, whose room it also keeps inside.
-  @override
   final HarborController? shownFrom;
-
-  @override
-  HarborController? get raisedIn => shownFrom;
 
   final Rect? _avoidAtShow;
 
@@ -578,11 +398,9 @@ final class ShownToast extends HarborToastEntry {
   /// Read from that frame's latest layout, not kept from the moment it was shown: a stored
   /// rectangle boxed the toast into a foldable's cover screen after the device opened. The
   /// rectangle from the show is the fallback once that frame has gone.
-  @override
   Rect? get avoidInGlobal => shownFrom?.roomInGlobal() ?? _avoidAtShow;
 
   /// The frame showing the toast.
-  @override
   HarborController? get owner => _owner;
   HarborController? _owner;
 
@@ -665,20 +483,10 @@ class HarborLayoutRecord {
   final Rect body;
   final Rect room;
 
-  /// The old name of [room].
-  @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  Rect get clearWater => room;
   final List<HarborBarRecord> bars;
 
-  /// The old name of [bars].
-  @Deprecated('Renamed bars. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  List<HarborBarRecord> get docks => bars;
   final EdgeInsetsDirectional obstruction;
   final double keyboard;
-
-  /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  double get tide => keyboard;
 }
 
 /// One bar as it was last laid out.
@@ -703,32 +511,6 @@ class HarborBarRecord {
   final HarborBarState state;
   final String? label;
   final HarborKeyboardStance keyboard;
-
-  /// The old name of [keyboard].
-  @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborKeyboardStance get tide => keyboard;
-}
-
-/// The old name of [HarborBarRecord], which takes the old name of its keyboard stance.
-///
-/// A subclass rather than a typedef, so the new constructor can keep [HarborBarRecord.keyboard]
-/// required.
-@Deprecated('Renamed HarborBarRecord. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-class HarborDockRecord extends HarborBarRecord {
-  /// The old name of [HarborBarRecord.new].
-  @Deprecated('Renamed HarborBarRecord. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  const HarborDockRecord({
-    required super.edge,
-    required super.kind,
-    required super.rect,
-    required super.extent,
-    required super.restingExtent,
-    required super.state,
-    @Deprecated('Renamed keyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborKeyboardStance? tide,
-    super.label,
-  }) : assert(tide != null, 'tide is required.'),
-       super(keyboard: tide ?? HarborKeyboardStance.stays);
 }
 
 /// Hears frames join and leave a [HarborFrameRegistry], as a `NavigatorObserver`
@@ -770,10 +552,6 @@ class HarborFrameRegistry {
 
   /// Every frame mounted in this view, outermost first.
   List<HarborController> get frames => List<HarborController>.unmodifiable(_frames);
-
-  /// The old name of [frames].
-  @Deprecated('Renamed frames. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  List<HarborController> get harbors => frames;
 
   final List<HarborFrameObserver> _observers = <HarborFrameObserver>[];
 
@@ -876,10 +654,6 @@ class HarborFrameRegistry {
 
   /// The outermost frame, where toasts go when asked to stay put.
   HarborController? get root => _frames.isEmpty ? null : _frames.first;
-
-  /// The old name of [root].
-  @Deprecated('Renamed root. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborController? get sea => root;
 }
 
 /// A frame's handle on itself, for what content asks of it.
@@ -911,19 +685,11 @@ class HarborController {
   /// Every frame under the same root as this one.
   final HarborFrameRegistry registry;
 
-  /// The old name of [registry].
-  @Deprecated('Renamed registry. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborFrameRegistry get fleet => registry;
-
   /// Whether this frame was built as a page (`HarborFrame.page` or `isPage: true`, as a root, a
   /// sheet and a dialog build theirs) or has no frame above it. A frame built in a route without
   /// either reads false, though it is that route's page. For information: nothing in harbor reads
   /// it, and toasts find their page by route.
   final bool isPage;
-
-  /// The old name of [isPage].
-  @Deprecated('Renamed isPage. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get isPort => isPage;
 
   /// Whether this frame is a `HarborRoot`, whose children are each a page.
   @internal
@@ -946,12 +712,6 @@ class HarborController {
   set edgesWithBars(final Set<HarborEdge> value) => _edgesWithBars = value;
   Set<HarborEdge> _edgesWithBars = <HarborEdge>{};
 
-  /// The old name of [edgesWithBars].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  Set<HarborEdge> get dockedEdges => edgesWithBars;
-
   /// The route this frame is in, if any.
   @internal
   ModalRoute<Object?>? get route => _route;
@@ -973,20 +733,6 @@ class HarborController {
     }
     return parent.parent == null && parent.isRoot;
   }
-
-  /// The last layout, in this frame's coordinates.
-  @Deprecated(
-    'Read HarborInspector.nearest(context), which has the same rectangles in global coordinates, or listen to '
-    'room. This getter goes in a later release.',
-  )
-  HarborLayoutRecord? get lastLayout => _layoutRecord;
-
-  /// The render object of the frame.
-  @Deprecated(
-    'Read HarborInspector.nearest(context) for the harbor\'s rectangles in global coordinates, or roomInGlobal(). '
-    'This getter goes in a later release.',
-  )
-  RenderBox? get renderBox => layoutBox;
 
   /// The last layout, for the inspector and for overlays that need the room.
   @internal
@@ -1029,12 +775,6 @@ class HarborController {
     return null;
   }
 
-  /// The old name of [withBarOn].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  HarborController? withDockOn(final HarborEdge edge) => withBarOn(edge);
-
   // Claims.
 
   /// Asks the bars on [edge] to hide: go [HarborBarState.dark] (keep their space) or
@@ -1043,32 +783,14 @@ class HarborController {
   /// outward, that has a bar on [edge].
   ///
   /// [state] is never [HarborBarState.open]: releasing the claim is what opens the bar again.
-  HarborClaim hideBar(
-    final HarborEdge edge, {
-    final HarborBarState state = HarborBarState.withdrawn,
-    @Deprecated(
-      'Use state: HarborBarState.dark or .withdrawn. `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborBarState added after `dart fix`, or the import widened.',
-    )
-    final HarborYield? mode,
-  }) {
+  HarborClaim hideBar(final HarborEdge edge, {final HarborBarState state = HarborBarState.withdrawn}) {
     assert(state != HarborBarState.open, 'hideBar hides a bar dark or withdrawn; release the claim to open it again.');
-    assert(
-      mode == null || state == HarborBarState.withdrawn || state == hiddenStateOf(mode),
-      'state and the deprecated mode disagree. Give state alone.',
-    );
     final HarborController target = withBarOn(edge) ?? this;
-    final HarborClaim claim = HarborClaim._(target, edge, mode == null ? state : hiddenStateOf(mode));
+    final HarborClaim claim = HarborClaim._(target, edge, state);
     target._claims.add(claim);
     target._changed();
     return claim;
   }
-
-  /// The old name of [hideBar].
-  @Deprecated('Renamed hideBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborClaim makeWay(final HarborEdge edge, {final HarborYield mode = HarborYield.withdraw}) =>
-      hideBar(edge, state: hiddenStateOf(mode));
 
   void _releaseClaim(final HarborClaim claim) {
     if (_claims.remove(claim)) {
@@ -1103,10 +825,6 @@ class HarborController {
     return attached;
   }
 
-  /// The old name of [attachBar].
-  @Deprecated('Renamed attachBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborAttachedBarHandle addPontoon(final HarborEdge edge, final HarborBar dock) => attachBar(edge, dock);
-
   /// Moves the attached bar [handle] stands for to [edge] and rebuilds it as [bar].
   void updateAttachedBar(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar bar) {
     if (handle._edge == edge && identical(handle._bar, bar)) {
@@ -1118,11 +836,6 @@ class HarborController {
     _changed();
   }
 
-  /// The old name of [updateAttachedBar].
-  @Deprecated('Renamed updateAttachedBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  void updatePontoon(final HarborAttachedBarHandle handle, final HarborEdge edge, final HarborBar dock) =>
-      updateAttachedBar(handle, edge, dock);
-
   /// Takes the attached bar [handle] stands for out of this frame.
   void detachBar(final HarborAttachedBarHandle handle) {
     if (_attachedBars.remove(handle)) {
@@ -1130,22 +843,12 @@ class HarborController {
     }
   }
 
-  /// The old name of [detachBar].
-  @Deprecated('Renamed detachBar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  void removePontoon(final HarborAttachedBarHandle handle) => detachBar(handle);
-
   /// Bars attached here from deeper in the tree, by edge, in arrival order.
   @internal
   List<HarborBar> attachedBarsOn(final HarborEdge edge) => <HarborBar>[
     for (final HarborAttachedBarHandle p in _attachedBars)
       if (p._edge == edge) p._bar,
   ];
-
-  /// The old name of [attachedBarsOn].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  List<HarborBar> pontoonsOn(final HarborEdge edge) => attachedBarsOn(edge);
 
   // Page covers.
 
@@ -1159,10 +862,6 @@ class HarborController {
     _pageCoverChanges.ping();
     return coversPage;
   }
-
-  /// The old name of [addPageCover].
-  @Deprecated('Renamed addPageCover. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborPageCover addBreakwater(final ValueListenable<double> coverage) => addPageCover(coverage);
 
   void _removePageCover(final HarborPageCover coversPage) {
     if (_pageCovers.remove(coversPage)) {
@@ -1181,16 +880,6 @@ class HarborController {
     _pageCoverChanges.ping();
     return coversPage;
   }
-
-  /// The old name of [addPageCoverEdge].
-  @Deprecated('Renamed addPageCoverEdge. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborPageCover addBreakwaterEdge(final ValueListenable<double> topInGlobal) => addPageCoverEdge(topInGlobal);
-
-  /// The old name of [pageCoverTopsInGlobal].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  Iterable<double> get breakwaterTopsInGlobal => pageCoverTopsInGlobal;
 
   /// The top edges, in global coordinates, of page covers that measure one.
   @internal
@@ -1219,18 +908,6 @@ class HarborController {
   @internal
   Listenable get pageCoverChanges => _pageCoverChanges;
 
-  /// The old name of [pageCoverage].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  double get breakwaterCoverage => pageCoverage;
-
-  /// The old name of [pageCoverChanges].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  Listenable get breakwaterChanges => pageCoverChanges;
-
   // Toasts.
 
   /// The toasts shown on this frame, in the order they were shown.
@@ -1240,18 +917,6 @@ class HarborController {
   /// [toasts], as harbor runs them.
   @internal
   List<ShownToast> get shownToasts => List<ShownToast>.unmodifiable(_toasts);
-
-  /// The old name of [toasts].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  List<HarborToastEntry> get flares => toasts;
-
-  /// The flares raised on this harbor: the old name of [toasts].
-  @Deprecated(
-    'Internal to harbor: read HarborInspector.nearest(context), or ask the frame through HarborFrame.of(context). Goes at 1.0.',
-  )
-  List<HarborToastEntry> get signals => toasts;
 
   void _addToast(final ShownToast toast) {
     toast._owner = this;
@@ -1373,10 +1038,6 @@ class HarborController {
   /// relayout (a card that slides as a drawer rises).
   ValueListenable<Rect> get room => _room;
 
-  /// The old name of [room].
-  @Deprecated('Renamed room. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  ValueListenable<Rect> get clearWater => room;
-
   /// Called by the frame's layout.
   @internal
   void recordLayout(final HarborLayoutRecord record) {
@@ -1403,10 +1064,6 @@ class HarborController {
     }
     return MatrixUtils.transformRect(box.getTransformTo(null), layout.room);
   }
-
-  /// The old name of [roomInGlobal].
-  @Deprecated('Renamed roomInGlobal. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  Rect? clearWaterInGlobal() => roomInGlobal();
 }
 
 /// A bar attached to a frame by [HarborController.attachBar]; give it to
@@ -1422,10 +1079,6 @@ class HarborAttachedBarHandle {
 
   /// The bar it is attached as.
   HarborBar get bar => _bar;
-
-  /// The old name of [bar].
-  @Deprecated('Renamed bar. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborBar get dock => bar;
 }
 
 class _PageCoverNotifier extends ChangeNotifier {

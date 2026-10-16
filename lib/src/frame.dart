@@ -58,75 +58,17 @@ class HarborFrame extends StatefulWidget {
     this.start = const <HarborBar>[],
     this.end = const <HarborBar>[],
     required this.body,
-    final List<HarborFloat> floats = const <HarborFloat>[],
-    @Deprecated('Renamed floats. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final List<HarborFloat>? buoys,
-    final HarborSystemEdges? systemEdges,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborSystemEdges? coast,
-    final bool isPage = false,
-    @Deprecated('Renamed isPage. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? newPort,
-    final bool bodyClearsKeyboard = true,
-    @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? bodyClearsTide,
+    this.floats = const <HarborFloat>[],
+    this.systemEdges,
+    this.isPage = false,
+    this.bodyClearsKeyboard = true,
     this.margin,
     this.minimum = EdgeInsetsDirectional.zero,
     this.sizing = HarborSizing.fill,
-    @Deprecated(
-      'Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborSizing '
-      'added after `dart fix`, or the import widened.',
-    )
-    this._maxExtentFraction,
-    final HarborEdgeEffectPainter? edgeEffectPainter,
-    @Deprecated('Renamed edgeEffectPainter. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborEdgeEffectPainter? wakePainter,
+    this.edgeEffectPainter,
     this.debugLabel,
     this.defaults,
-    @Deprecated(
-      'Use defaults: HarborDefaults(hinge: ...). `dart fix` applies it where defaults: is not given, in a file that '
-      'imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborDefaults added after `dart fix`, or the import widened.',
-    )
-    this._hinge,
-    @Deprecated(
-      'Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given, in a file '
-      'that imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborDefaults added after `dart fix`, or the import widened.',
-    )
-    final HarborHinge? barHinge,
-    @Deprecated(
-      'Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given, in a file '
-      'that imports package:harbor/harbor.dart. A file that imports harbor with `show` needs HarborDefaults added '
-      'after `dart fix`, or the import widened.',
-    )
-    final HarborHinge? dockHinge,
-  }) : assert(
-         buoys == null || identical(floats, const <HarborFloat>[]) || identical(buoys, floats),
-         'floats and the deprecated buoys disagree. Give floats alone.',
-       ),
-       assert(coast == null || systemEdges == null, 'Give systemEdges or the deprecated coast, not both.'),
-       assert(
-         newPort == null || !isPage || newPort == isPage,
-         'isPage and the deprecated newPort disagree. Give isPage alone.',
-       ),
-       assert(
-         bodyClearsTide == null || bodyClearsKeyboard || bodyClearsTide == bodyClearsKeyboard,
-         'bodyClearsKeyboard and the deprecated bodyClearsTide disagree. Give bodyClearsKeyboard alone.',
-       ),
-       assert(
-         wakePainter == null || edgeEffectPainter == null,
-         'Give edgeEffectPainter or the deprecated wakePainter, not both.',
-       ),
-       assert(dockHinge == null || barHinge == null, 'Give barHinge or the deprecated dockHinge, not both.'),
-       floats = buoys ?? floats,
-       systemEdges = systemEdges ?? coast,
-       isPage = newPort ?? isPage,
-       bodyClearsKeyboard = bodyClearsTide ?? bodyClearsKeyboard,
-       edgeEffectPainter = edgeEffectPainter ?? wakePainter,
-       _barHinge = barHinge ?? dockHinge,
-       _isRoot = false,
+  }) : _isRoot = false,
        _observers = const <HarborFrameObserver>[];
 
   /// A frame that starts a page: a route, a sheet, a dialog. [isPage] is true, so the bars of the
@@ -145,27 +87,9 @@ class HarborFrame extends StatefulWidget {
     this.margin,
     this.minimum = EdgeInsetsDirectional.zero,
     this.sizing = HarborSizing.fill,
-    @Deprecated(
-      'Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborSizing '
-      'added after `dart fix`, or the import widened.',
-    )
-    this._maxExtentFraction,
     this.edgeEffectPainter,
     this.debugLabel,
     this.defaults,
-    @Deprecated(
-      'Use defaults: HarborDefaults(hinge: ...). `dart fix` applies it where defaults: is not given, in a file that '
-      'imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborDefaults added after `dart fix`, or the import widened.',
-    )
-    this._hinge,
-    @Deprecated(
-      'Use defaults: HarborDefaults(barHinge: ...). `dart fix` applies it where defaults: is not given, in a file '
-      'that imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborDefaults added after `dart fix`, or the import widened.',
-    )
-    this._barHinge,
   }) : isPage = true,
        _isRoot = false,
        _observers = const <HarborFrameObserver>[];
@@ -177,9 +101,7 @@ class HarborFrame extends StatefulWidget {
     required this.body,
     required this._observers,
     required this.defaults,
-  }) : _hinge = null,
-       _barHinge = null,
-       top = const <HarborBar>[],
+  }) : top = const <HarborBar>[],
        bottom = const <HarborBar>[],
        start = const <HarborBar>[],
        end = const <HarborBar>[],
@@ -188,7 +110,6 @@ class HarborFrame extends StatefulWidget {
        bodyClearsKeyboard = false,
        minimum = EdgeInsetsDirectional.zero,
        sizing = HarborSizing.fill,
-       _maxExtentFraction = null,
        edgeEffectPainter = null,
        debugLabel = 'sea',
        _isRoot = true;
@@ -198,42 +119,6 @@ class HarborFrame extends StatefulWidget {
   /// queue, time and sit, what its barriers are announced as, how wide its sheets are. Null
   /// leaves them all to the frame, root or [HarborDefaultsScope] above. See [HarborDefaults].
   final HarborDefaults? defaults;
-
-  /// Which hinges and folds this frame's overlays keep off: now [HarborDefaults.hinge].
-  @Deprecated('Read defaults?.hinge. Deprecated after 0.9.1.')
-  HarborHinge? get hinge => _hinge;
-  final HarborHinge? _hinge;
-
-  /// Which hinges and folds this frame's own bars keep off: now [HarborDefaults.barHinge].
-  @Deprecated('Read defaults?.barHinge. Deprecated after 0.9.1.')
-  HarborHinge? get barHinge => _barHinge;
-  final HarborHinge? _barHinge;
-
-  /// The old name of [barHinge].
-  @Deprecated('Read defaults?.barHinge. Deprecated after 0.9.1.')
-  HarborHinge? get dockHinge => _barHinge;
-
-  /// [defaults], with the deprecated `hinge:` and `barHinge:` folded in under it, field by field:
-  /// both are this frame's own, so `defaults: HarborDefaults(hinge: a)` beside `barHinge: b` keeps
-  /// its bars on `b`, as `hinge: a, barHinge: b` did. (A plain [HarborDefaults.merge] would let `a`
-  /// replace `b`, which is the rule between frames, not within one.)
-  HarborDefaults? get _ownDefaults {
-    final HarborDefaults? given = defaults;
-    if (_hinge == null && _barHinge == null) {
-      return given;
-    }
-    return HarborDefaults(
-      hinge: given?.hinge ?? _hinge,
-      barHinge: given?.barHinge ?? _barHinge,
-      barrierLabel: given?.barrierLabel,
-      sheetBarrierOnTapHint: given?.sheetBarrierOnTapHint,
-      sheetMaxWidth: given?.sheetMaxWidth,
-      toastQueue: given?.toastQueue,
-      toastTiming: given?.toastTiming,
-      toastAnimationStyle: given?.toastAnimationStyle,
-      toastMargin: given?.toastMargin,
-    );
-  }
 
   /// Whether this is the outermost frame of a [HarborRoot].
   final bool _isRoot;
@@ -258,32 +143,16 @@ class HarborFrame extends StatefulWidget {
   /// The floats over the room: menus, bubbles, messages.
   final List<HarborFloat> floats;
 
-  /// The old name of [floats].
-  @Deprecated('Renamed floats. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  List<HarborFloat> get buoys => floats;
-
   /// Where this frame's system edges come from. Null inherits them.
   final HarborSystemEdges? systemEdges;
-
-  /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborSystemEdges? get coast => systemEdges;
 
   /// Whether this frame starts a page (a route, a sheet, a dialog): the bars
   /// of the frame around it don't reach in, only the system edges do.
   final bool isPage;
 
-  /// The old name of [isPage].
-  @Deprecated('Renamed isPage. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get newPort => isPage;
-
   /// Whether the body ends at the keyboard's top when the keyboard is up. Off, the
   /// body runs under the keyboard and is told how far it reaches.
   final bool bodyClearsKeyboard;
-
-  /// The old name of [bodyClearsKeyboard].
-  @Deprecated('Renamed bodyClearsKeyboard. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get bodyClearsTide => bodyClearsKeyboard;
 
   /// The margin content keeps from whatever is in its way, for the content
   /// that asks for it. Null inherits it. Resolved against the reading direction
@@ -298,26 +167,11 @@ class HarborFrame extends StatefulWidget {
   /// as its body and solid bars ([HarborSizing.hug]).
   final HarborSizing sizing;
 
-  /// For a frame that hugs: the most of the space above the keyboard it may take. [sizing]'s
-  /// `maxFraction`, or the deprecated `maxExtentFraction:` when [sizing] gives none. A frame that
-  /// fills never reads it.
-  @Deprecated(
-    'Use sizing: HarborSizing.hug(maxFraction: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborSizing '
-    'added after `dart fix`, or the import widened.',
-  )
-  double? get maxExtentFraction => sizing.maxFraction ?? _maxExtentFraction;
-  final double? _maxExtentFraction;
-
   /// Paints an edge effect over the whole body. Null (the default) leaves the
   /// edge effect to the scroll views in it, which fade their content as it
   /// scrolls under the bars, while content outside one (a background, a hero)
   /// stays as it is.
   final HarborEdgeEffectPainter? edgeEffectPainter;
-
-  /// The old name of [edgeEffectPainter].
-  @Deprecated('Renamed edgeEffectPainter. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborEdgeEffectPainter? get wakePainter => edgeEffectPainter;
 
   /// This frame's name in the [HarborInspector].
   final String? debugLabel;
@@ -369,18 +223,9 @@ class HarborFrame extends StatefulWidget {
     properties.add(
       DiagnosticsProperty<HarborSizing>('sizing', sizing, defaultValue: HarborSizing.fill, description: '$sizing'),
     );
-    properties.add(
-      PercentProperty(
-        'maxExtentFraction',
-        _maxExtentFraction,
-        level: _maxExtentFraction == null ? DiagnosticLevel.fine : DiagnosticLevel.info,
-      ),
-    );
     properties.add(ObjectFlagProperty<HarborEdgeEffectPainter>.has('edgeEffectPainter', edgeEffectPainter));
     properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborDefaults>('defaults', defaults, defaultValue: null));
-    properties.add(EnumProperty<HarborHinge>('hinge', _hinge, defaultValue: null));
-    properties.add(EnumProperty<HarborHinge>('barHinge', _barHinge, defaultValue: null));
   }
 }
 
@@ -531,7 +376,7 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
     controller.debugLabel = widget.debugLabel;
     // A root starts from harbor's own defaults, as it starts a world of its own; any other frame
     // from the defaults above it.
-    final HarborDefaults? own = widget._ownDefaults;
+    final HarborDefaults? own = widget.defaults;
     final HarborDefaults resolved = (widget._isRoot ? HarborDefaults.fallback : HarborDefaults.of(context)).merge(own);
     final TextDirection direction = Directionality.of(context);
     final MediaQueryData ambient = (widget.systemEdges ?? HarborSystemEdges.ambient).apply(
@@ -750,7 +595,7 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
         sizing: widget.sizing,
         viewHeight: ambient.size.height,
         frameSize: widget.isPage || outer == null || outer.frameSize.isEmpty ? null : outer.frameSize,
-        maxExtentFraction: widget.sizing.maxFraction ?? widget._maxExtentFraction,
+        maxExtentFraction: widget.sizing.maxFraction,
         roomFloor: HarborRoomFloor.of(context),
         hinges: <Rect>[
           for (final DisplayFeature feature
@@ -859,41 +704,20 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
 class HarborRoot extends StatelessWidget {
   const HarborRoot({
     super.key,
-    final HarborSystemEdges systemEdges = HarborSystemEdges.ambient,
-    @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final HarborSystemEdges? coast,
+    this.systemEdges = HarborSystemEdges.ambient,
     this.margin,
     this.observers = const <HarborFrameObserver>[],
     this.defaults,
-    @Deprecated(
-      'Use defaults: HarborDefaults(hinge: ...). `dart fix` applies it where defaults: is not given, in a file that '
-      'imports package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs '
-      'HarborDefaults added after `dart fix`, or the import widened.',
-    )
-    this._hinge = HarborHinge.avoidSeparating,
     required this.child,
-  }) : assert(
-         coast == null || identical(systemEdges, HarborSystemEdges.ambient) || identical(coast, systemEdges),
-         'systemEdges and the deprecated coast disagree. Give systemEdges alone.',
-       ),
-       systemEdges = coast ?? systemEdges;
+  });
 
   final HarborSystemEdges systemEdges;
-
-  /// The old name of [systemEdges].
-  @Deprecated('Renamed systemEdges. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  HarborSystemEdges get coast => systemEdges;
 
   /// The app's choices for everything beneath it, merged field by field over
   /// [HarborDefaults.fallback]: a root starts from harbor's own, not from a root it is mounted
   /// in. A frame's [HarborFrame.defaults] overrides them for a page, and an argument given to one
   /// call for that call. See [HarborDefaults].
   final HarborDefaults? defaults;
-
-  /// The app's default [HarborHinge]: now [HarborDefaults.hinge], which wins when both are given.
-  @Deprecated('Read defaults?.hinge, null meaning HarborHinge.avoidSeparating. Deprecated after 0.9.1.')
-  HarborHinge get hinge => _hinge;
-  final HarborHinge _hinge;
 
   /// Told of every frame that joins or leaves this root's registry, the root
   /// included, after the frame drawn that it happens in, as `Navigator.observers`
@@ -911,8 +735,9 @@ class HarborRoot extends StatelessWidget {
     systemEdges: systemEdges,
     margin: margin,
     observers: observers,
-    // The deprecated hinge: under defaults, which wins. Its default is the fallback's own.
-    defaults: HarborDefaults(hinge: _hinge).merge(defaults),
+    // The root's own hinge is harbor's, so its bars' hinge follows it (merge sets barHinge from it)
+    // and frames beneath inherit both, as they did while the root took a hinge of its own.
+    defaults: const HarborDefaults(hinge: HarborHinge.avoidSeparating).merge(defaults),
     body: child,
   );
 
@@ -924,7 +749,6 @@ class HarborRoot extends StatelessWidget {
     );
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
     properties.add(DiagnosticsProperty<HarborDefaults>('defaults', defaults, defaultValue: null));
-    properties.add(EnumProperty<HarborHinge>('hinge', _hinge, defaultValue: HarborHinge.avoidSeparating));
     properties.add(
       IterableProperty<HarborFrameObserver>(
         'observers',

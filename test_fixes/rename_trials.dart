@@ -6,7 +6,6 @@ import 'package:harbor_test/harbor_test.dart';
 
 Future<void> trials(WidgetTester tester) async {
   final HarborSeaTrial trial = await tester.pumpSeaTrial(const SizedBox(), device: HarborTrialDevice.iPhoneSE, tideIn: true);
-  await HarborSeaTrials(tester).pumpSeaTrial(const SizedBox());
   await trial.raiseTide(settle: true);
   await trial.lowerTide(pumpFor: Duration.zero);
   await trial.setTide(tideIn: true);
@@ -36,6 +35,8 @@ extension PumpOnDevice on WidgetTester {
   }
 }
 
+// Through implicit `this`: against 1.0 the methods are renamed and the getters (tideIn, waterline,
+// and the device's below) are left as they are, as in rename_members.dart.
 extension ImplicitTrial on HarborSeaTrial {
   Future<void> moves() async {
     await raiseTide(settle: true);

@@ -8,7 +8,6 @@ import 'clear.dart';
 import 'controller.dart';
 import 'defaults.dart';
 import 'hinge.dart';
-import 'renamed.dart';
 
 /// Opens [builder]'s dialog over [context].
 ///
@@ -49,10 +48,6 @@ import 'renamed.dart';
 /// an entrance and exit of your own in place of the fade, as
 /// `showGeneralDialog`'s does; see [HarborDialogRoute.transitionBuilder].
 ///
-/// `barrierColor`, `barrierDismissible` and `barrierLabel` are the spellings of the barrier through
-/// 0.9, deprecated: given, each overrides the matching field of [barrier] (`barrierColor` only
-/// tints a dimmed barrier).
-///
 /// See also:
 ///
 ///  * [showGeneralDialog], the closest Flutter function.
@@ -61,27 +56,7 @@ Future<T?> showHarborDialog<T>(
   final BuildContext context, {
   required final WidgetBuilder builder,
   final bool inheritRoom = false,
-  @Deprecated('Renamed inheritRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  final bool? inheritClearWater,
   final HarborBarrier barrier = const HarborBarrier.dimmed(),
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(color: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final Color? barrierColor,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final bool? barrierDismissible,
-  @Deprecated(
-    'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it in a file that imports '
-    'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-    'added after `dart fix`, or the import widened.',
-  )
-  final String? barrierLabel,
   final String? semanticLabel,
   final bool useRootNavigator = true,
   final RouteSettings? routeSettings,
@@ -99,8 +74,8 @@ Future<T?> showHarborDialog<T>(
       context: context,
       builder: builder,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
-      inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
-      barrier: harborBarrierWith(barrier, color: barrierColor, dismissible: barrierDismissible, label: barrierLabel),
+      inheritRoom: inheritRoom,
+      barrier: barrier,
       semanticLabel: semanticLabel,
       settings: routeSettings,
       anchorPoint: anchorPoint,
@@ -145,27 +120,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required final WidgetBuilder builder,
     final CapturedThemes? themes,
     final bool inheritRoom = false,
-    @Deprecated('Renamed inheritRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-    final bool? inheritClearWater,
     final HarborBarrier barrier = const HarborBarrier.dimmed(),
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(color: ...), or HarborBarrier.clear() where it was null. '
-      '`dart fix` applies it to null, in a file that imports package:harbor/harbor.dart. Deprecated after 0.9.1. A '
-      'file that imports harbor with `show` needs HarborBarrier added after `dart fix`, or the import widened.',
-    )
-    final Color? barrierColor = HarborBarrier.defaultColor,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(dismissible: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    final bool? barrierDismissible,
-    @Deprecated(
-      'Use barrier: HarborBarrier.dimmed(label: ...). `dart fix` applies it in a file that imports '
-      'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-      'added after `dart fix`, or the import widened.',
-    )
-    final String? barrierLabel,
     final String? semanticLabel,
     final RouteSettings? settings,
     final Offset? anchorPoint,
@@ -177,8 +132,8 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     final bool clearsSystemEdges = true,
   }) : this._(
          builder: builder,
-         inheritRoom: renamed(inheritClearWater, inheritRoom, false, 'inheritRoom', 'inheritClearWater'),
-         barrier: _withLegacy(barrier, barrierColor, barrierDismissible, barrierLabel),
+         inheritRoom: inheritRoom,
+         barrier: barrier,
          semanticLabel: semanticLabel,
          settings: settings,
          anchorPoint: anchorPoint,
@@ -195,7 +150,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   HarborDialogRoute._({
     required final WidgetBuilder builder,
     required this.inheritRoom,
-    required final HarborBarrier barrier,
+    required this.barrier,
     required final String? semanticLabel,
     required super.settings,
     required super.anchorPoint,
@@ -209,7 +164,6 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
     required final _HarborDialogPage page,
   }) : hinge = hinge ?? defaults.hinge ?? HarborHinge.avoidSeparating,
        assert(barrier.blocks, 'A dialog is a route with a barrier: give it HarborBarrier.dimmed or .clear, not none.'),
-       _barrier = barrier,
        _animationStyle = animationStyle,
        _page = page,
        super(
@@ -223,31 +177,8 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
 
   static const Duration _duration = Duration(milliseconds: 180);
 
-  // The deprecated barrierColor keeps the default it had, so a call that leaves it out changes
-  // nothing, and null, which was a barrier with no colour, is still one: a clear barrier.
-  static HarborBarrier _withLegacy(
-    final HarborBarrier barrier,
-    final Color? color,
-    final bool? dismissible,
-    final String? label,
-  ) {
-    if (color == null) {
-      final HarborBarrier given = harborBarrierWith(barrier, dismissible: dismissible, label: label);
-      return HarborBarrier.clear(dismissible: given.isDismissible, label: given.label, onTapHint: given.onTapHint);
-    }
-    return harborBarrierWith(
-      barrier,
-      color: identical(color, HarborBarrier.defaultColor) ? null : color,
-      dismissible: dismissible,
-      label: label,
-    );
-  }
-
-  /// What the dialog puts over the page: a dimmed barrier unless it is given another. As given to
-  /// the constructor, with the deprecated `barrierColor`, `barrierDismissible` and `barrierLabel`
-  /// applied.
-  HarborBarrier get barrier => _barrier;
-  final HarborBarrier _barrier;
+  /// What the dialog puts over the page: a dimmed barrier unless it is given another.
+  final HarborBarrier barrier;
 
   /// Which hinges and folds the dialog keeps off: the one given, or the opening page's
   /// [HarborDefaults.hinge], read as the route is made. [anchorPoint] picks the side.
@@ -274,10 +205,6 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   /// [showHarborDialog]'s `inheritRoom` does. Measured when the route is
   /// installed.
   final bool inheritRoom;
-
-  /// The old name of [inheritRoom].
-  @Deprecated('Renamed inheritRoom. `dart fix` applies it in a file that imports package:harbor/harbor.dart.')
-  bool get inheritClearWater => inheritRoom;
 
   /// Builds the dialog's entrance and exit, in place of its fade, as
   /// `showGeneralDialog`'s `transitionBuilder` does. Null keeps the fade.
@@ -361,7 +288,7 @@ class HarborDialogRoute<T> extends RawDialogRoute<T> {
   // one the route's own barrier is built, as it always was.
   @override
   Widget buildModalBarrier() {
-    final String? onTapHint = _barrier.onTapHint;
+    final String? onTapHint = barrier.onTapHint;
     if (onTapHint == null) {
       return super.buildModalBarrier();
     }

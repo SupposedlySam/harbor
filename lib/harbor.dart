@@ -8,7 +8,7 @@ library;
 
 export 'src/attached_bar.dart';
 export 'src/bar.dart';
-export 'src/barrier.dart' show HarborBarrier, HarborSheetBarrier;
+export 'src/barrier.dart' show HarborBarrier;
 export 'src/clear.dart';
 export 'src/controller.dart'
     show
@@ -16,7 +16,6 @@ export 'src/controller.dart'
         HarborClaim,
         HarborController,
         HarborBarRecord,
-        HarborDockRecord,
         HarborFrameRegistry,
         HarborFrameObserver,
         HarborLayoutRecord,
@@ -27,33 +26,19 @@ export 'src/controller.dart'
         HarborToastPhase,
         HarborToastQueue,
         HarborToastTiming,
-        HarborToastTransitionBuilder,
-        HarborYield;
+        HarborToastTransitionBuilder;
 export 'src/defaults.dart' show HarborDefaults, HarborDefaultsScope;
-export 'src/deprecated.dart';
 export 'src/dialog.dart';
-export 'src/dock_slot.dart' show HarborDockSlot;
 export 'src/edge.dart';
 export 'src/edge_effect.dart'
-    show
-        HarborRest,
-        HarborEdgeEffect,
-        HarborWake,
-        HarborEdgeEffectKind,
-        HarborFadeMask,
-        HarborWakeMask,
-        HarborEdgeEffectPainter,
-        harborAlphaWake;
+    show HarborRest, HarborEdgeEffect, HarborEdgeEffectKind, HarborFadeMask, HarborEdgeEffectPainter;
 export 'src/float.dart'
     show
         HarborAnchor,
         HarborAnchorClip,
         HarborAnchorPoint,
-        HarborBuoy,
         HarborFloat,
         HarborPopover,
-        HarborPortalBuoy,
-        HarborFlarePolicy,
         HarborToastSlot,
         HarborToastTarget,
         HarborToasts;
@@ -69,12 +54,11 @@ export 'src/keyboard.dart'
         HarborKeyboardPhase,
         HarborKeyboardSource,
         HarborKeyboardStance,
-        HarborKeyboardState,
-        HarborTideState;
+        HarborKeyboardState;
 export 'src/panes.dart';
 export 'src/placement.dart' show HarborAligned, HarborAnchorSide, HarborAnchored, HarborCrossAlignment, HarborPlacement;
 export 'src/render_frame.dart' show HarborSizing;
-export 'src/room.dart' show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData, HarborWakeBand;
+export 'src/room.dart' show HarborHandled, HarborFadeBand, HarborRoom, HarborRoomAspect, HarborRoomData;
 export 'src/scaled_screen.dart';
 export 'src/scroll_view.dart';
 export 'src/sheet.dart' hide HarborNonModalSheetActions, HarborPageSheetHost;

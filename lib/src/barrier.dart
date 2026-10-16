@@ -17,10 +17,6 @@ import 'package:flutter/widgets.dart';
 /// Back and Escape close an overlay whatever its barrier; [isDismissible] is only about a tap on the
 /// barrier, as `ModalRoute.barrierDismissible` is.
 ///
-/// Through 0.9 the barrier was loose parameters on each host (`isDismissible`, `barrierColor`,
-/// `barrierLabel` and `barrierOnTapHint` on a sheet, `barrierDismissible` on a dialog, `modal` on a
-/// float) and a sheet's `HarborSheetBarrier` enum. Those still work, deprecated, until 1.0.
-///
 /// See also:
 ///
 ///  * [ModalBarrier], which draws it.
@@ -51,9 +47,6 @@ sealed class HarborBarrier with Diagnosticable {
 
   /// Whether a tap on it closes the overlay: the `dismissible` it was made with. Back and Escape
   /// close the overlay either way. True by default; false for [none], which has nothing to tap.
-  ///
-  /// Named apart from the `dismissible` it is made with because the deprecated
-  /// [HarborSheetBarrier] implements this type, and its value `dismissible` holds the name.
   bool get isDismissible;
 
   /// What a screen reader announces for it. Null announces 'Dismiss', the English Material and
@@ -179,106 +172,4 @@ final class _NoBarrier extends HarborBarrier {
 
   @override
   String toStringShort() => 'HarborBarrier.none';
-}
-
-/// How a sheet sits over the page that opened it.
-///
-/// Its values are barriers: `barrier: HarborSheetBarrier.none` still compiles where a
-/// [HarborBarrier] is taken, and means what it did.
-@Deprecated(
-  'Use HarborBarrier: HarborSheetBarrier.dismissible is const HarborBarrier.dimmed(), .clear is '
-  'const HarborBarrier.clear(), and .none is HarborBarrier.none. `dart fix` applies it to a showHarborSheet call that '
-  'also gives isDismissible, barrierColor, barrierLabel or barrierOnTapHint, in a file that imports '
-  'package:harbor/harbor.dart. Deprecated after 0.9.1. A file that imports harbor with `show` needs HarborBarrier '
-  'added after `dart fix`, or the import widened.',
-)
-enum HarborSheetBarrier implements HarborBarrier {
-  /// A dimmed barrier that closes the sheet when tapped, unless the sheet is opened with
-  /// `isDismissible: false`. `const HarborBarrier.dimmed()`.
-  @Deprecated('Use const HarborBarrier.dimmed(). Deprecated after 0.9.1.')
-  dismissible,
-
-  /// A clear barrier: the page stays visible, and taps on it close the sheet, unless the sheet is
-  /// opened with `isDismissible: false`. `const HarborBarrier.clear()`.
-  @Deprecated('Use const HarborBarrier.clear(). Deprecated after 0.9.1.')
-  clear,
-
-  /// No barrier at all: the page stays live underneath. [HarborBarrier.none].
-  @Deprecated('Use HarborBarrier.none. Deprecated after 0.9.1.')
-  none;
-
-  /// The [HarborBarrier] this value stands for.
-  // ignore: deprecated_member_use_from_same_package
-  HarborBarrier get _barrier => switch (this) {
-    // ignore: deprecated_member_use_from_same_package
-    HarborSheetBarrier.dismissible => const HarborBarrier.dimmed(),
-    // ignore: deprecated_member_use_from_same_package
-    HarborSheetBarrier.clear => const HarborBarrier.clear(),
-    // ignore: deprecated_member_use_from_same_package
-    HarborSheetBarrier.none => HarborBarrier.none,
-  };
-
-  @override
-  Color get color => _barrier.color;
-
-  @override
-  bool get isDismissible => _barrier.isDismissible;
-
-  @override
-  String? get label => null;
-
-  @override
-  String? get onTapHint => null;
-
-  @override
-  bool get blocks => _barrier.blocks;
-
-  @override
-  String toStringShort() => 'HarborSheetBarrier.$name';
-
-  @override
-  String toString({final DiagnosticLevel minLevel = DiagnosticLevel.info}) => 'HarborSheetBarrier.$name';
-
-  @override
-  DiagnosticsNode toDiagnosticsNode({final String? name, final DiagnosticsTreeStyle? style}) =>
-      DiagnosticsProperty<HarborSheetBarrier>(name, this, style: style ?? DiagnosticsTreeStyle.singleLine);
-
-  @override
-  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {}
-}
-
-/// [barrier] with the fields a host's deprecated loose parameters give overriding its own: the
-/// spelling of a barrier through 0.9. [color] only tints a dimmed barrier, as `barrierColor` only
-/// ever did; a clear one stays clear. A deprecated [HarborSheetBarrier] comes back as the
-/// [HarborBarrier] it stands for.
-@internal
-HarborBarrier harborBarrierWith(
-  final HarborBarrier barrier, {
-  final Color? color,
-  final bool? dismissible,
-  final String? label,
-  final String? onTapHint,
-}) {
-  final HarborBarrier plain = switch (barrier) {
-    // ignore: deprecated_member_use_from_same_package
-    final HarborSheetBarrier sheet => sheet._barrier,
-    _ => barrier,
-  };
-  if (color == null && dismissible == null && label == null && onTapHint == null) {
-    return plain;
-  }
-  return switch (plain) {
-    _DimmedBarrier() => HarborBarrier.dimmed(
-      color: color ?? plain.color,
-      dismissible: dismissible ?? plain.isDismissible,
-      label: label ?? plain.label,
-      onTapHint: onTapHint ?? plain.onTapHint,
-    ),
-    _ClearBarrier() => HarborBarrier.clear(
-      dismissible: dismissible ?? plain.isDismissible,
-      label: label ?? plain.label,
-      onTapHint: onTapHint ?? plain.onTapHint,
-    ),
-    _ => plain,
-  };
 }

@@ -224,25 +224,27 @@ transforms:
       uris: [ 'harbor.dart' ]
       constructor: ''
       inClass: 'HarborFlarePolicy'
-    changes:
-      - kind: 'removeParameter'
-        name: 'queue'
-      - kind: 'addParameter'
-        index: 0
-        name: 'defaults'
-        style: required_named
-        argumentValue:
-          expression: "{% HarborDefaults %}(toastQueue: {% queue %})"
-          variables:
-            HarborDefaults:
-              kind: 'import'
-              uris: [ 'package:harbor/harbor.dart' ]
-              name: 'HarborDefaults'
-      - kind: 'replacedBy'
-        newElement:
-          uris: [ 'harbor.dart' ]
-          constructor: ''
-          inClass: 'HarborDefaultsScope'
+    oneOf:
+      - if: "queue != ''"
+        changes:
+          - kind: 'removeParameter'
+            name: 'queue'
+          - kind: 'addParameter'
+            index: 0
+            name: 'defaults'
+            style: required_named
+            argumentValue:
+              expression: "{% HarborDefaults %}(toastQueue: {% queue %})"
+              variables:
+                HarborDefaults:
+                  kind: 'import'
+                  uris: [ 'package:harbor/harbor.dart' ]
+                  name: 'HarborDefaults'
+          - kind: 'replacedBy'
+            newElement:
+              uris: [ 'harbor.dart' ]
+              constructor: ''
+              inClass: 'HarborDefaultsScope'
     variables:
       queue:
         kind: 'fragment'
