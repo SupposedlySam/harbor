@@ -1,3 +1,7 @@
+## 1.0.0
+
+Needs harbor 1.0.0. This is 1.0.0-dev.1, below, unchanged.
+
 ## 1.0.0-dev.1
 
 Needs harbor 1.0.0-dev.1, a pre-release of 1.0, and is one too. **Breaking:** every name deprecated in 0.x is removed. Nothing else changes.

@@ -1,6 +1,6 @@
 name: harbor_test
 description: "Widget-test helpers for harbor: device presets, a pump helper that shows and hides the keyboard, and matchers for where things sit in the room."
-version: 1.0.0-dev.1
+version: 1.0.0
 repository: https://github.com/SupposedlySam/harbor/tree/main/harbor_test
 issue_tracker: https://github.com/SupposedlySam/harbor/issues
 topics:
@@ -20,7 +20,7 @@ dependencies:
   flutter_test:
     sdk: flutter
   # pubspec_overrides.yaml points this at the harbor beside it for development.
-  harbor: ^1.0.0-dev.1
+  harbor: ^1.0.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
