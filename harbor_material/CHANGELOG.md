@@ -1,3 +1,7 @@
+## 0.1.1
+
+* Docs: `showSnackToast` and `HarborSnackToast` say the content spans the toast's width and aligns itself (give a `Text` its own `textAlign`), from Flyby's adoption. No code changes.
+
 ## 0.1.0
 
 The first release: the Material pieces apps wrote by hand around harbor, in a package of their own so

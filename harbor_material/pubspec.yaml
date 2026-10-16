@@ -1,6 +1,6 @@
 name: harbor_material
 description: "Material for harbor: a Scaffold-like frame, an AppBar bar, SnackBar-look toasts, Material sheets, and harbor defaults from the Material theme."
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/SupposedlySam/harbor/tree/main/harbor_material
 issue_tracker: https://github.com/SupposedlySam/harbor/issues
 topics:
