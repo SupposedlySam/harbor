@@ -1,3 +1,7 @@
+## 0.1.2
+
+* Docs: `HarborMaterialFrame` and the README say that a `SnackBar` or `MaterialBanner` shown through `ScaffoldMessenger` stops appearing once no `Scaffold` is on screen: it asserts in debug and shows nothing in release. Move a page's snack bars to `showSnackToast` when the page moves to `HarborMaterialFrame`. Found by Rubric evaluating the swap. No code changes.
+
 ## 0.1.1
 
 * Docs: `showSnackToast` and `HarborSnackToast` say the content spans the toast's width and aligns itself (give a `Text` its own `textAlign`), from Flyby's adoption. No code changes.

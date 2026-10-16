@@ -86,6 +86,11 @@ keeps clear of the navigation bar and the keyboard, and nothing pads by hand. Th
 
 ## Notes
 
+- **A `SnackBar` left behind stops appearing.** `ScaffoldMessenger.showSnackBar` and
+  `showMaterialBanner` present into a `Scaffold`. Once a page is a `HarborMaterialFrame` and no
+  `Scaffold` is on screen, they assert in debug ("no descendant Scaffolds to present to") and show
+  nothing in release. Move every snack bar on that page to `context.showSnackToast(...)` in the
+  same change, or keep the `Scaffold` there until you do.
 - **The status bar's icons.** An `AppBar`'s `systemOverlayStyle` sets the status bar from a harbor
   bar as it does from a `Scaffold`: harbor carries a bar's child's style over the system edge the
   bar pads (harbor's CHANGELOG has the measurement).
