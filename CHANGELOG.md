@@ -1,3 +1,7 @@
+## Unreleased
+
+* **Fix:** an `AppBar`'s `systemOverlayStyle` sets the status bar from a top bar, as it does from a `Scaffold`. The platform reads the status bar's style from the `AnnotatedRegion<SystemUiOverlayStyle>` at the middle of the status bar, and an `AppBar` annotates only its own box, which a bar pads below the status bar, so the lookup found nothing and the app's style was never applied. A bar now answers a lookup in the system edge it pads from the nearest point of its child, for any annotation: a top bar's reaches the status bar, and a bottom bar's reaches Android's navigation bar. A bar whose child sets no style leaves the status bar to whatever annotates the page, as before. `test/status_bar_style_test.dart` measures it the way `RenderView` samples it.
+
 ## 1.0.0-dev.1
 
 A pre-release of 1.0, for consumers to retest before 1.0.0. **Breaking:** every name deprecated in 0.x is removed, as `doc/design/DECISIONS.md` planned ("removed together in one breaking release before 1.0"). Nothing else changes: the showcase videos render frame for frame as they do on 0.10.3, and a consumer written on 0.10.3's non-deprecated API compiles and passes unchanged.
