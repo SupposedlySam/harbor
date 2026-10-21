@@ -392,14 +392,25 @@ class HarborSheet extends StatelessWidget {
       page = Builder(
         builder: (final BuildContext context) => HarborRoomFloor(
           floor: EdgeInsetsDirectional.only(top: MediaQuery.paddingOf(context).top),
-          child: HarborHandled(edges: const <HarborEdge>{HarborEdge.top}, margin: false, child: content),
+          child: HarborHandled(
+            edges: const <HarborEdge>{HarborEdge.top},
+            margin: false,
+            debugLabel: 'sheet top',
+            child: content,
+          ),
         ),
       );
     }
     if (clearsSides) {
       // Clear of the side system edges alone, inside the surface, so the surface still runs edge to
       // edge and the new page frame beneath is handed no side system edges. The margin stays.
-      page = HarborClear(edges: HarborEdge.horizontal, clearsBars: false, clearsKeyboard: false, child: page);
+      page = HarborClear(
+        edges: HarborEdge.horizontal,
+        clearsBars: false,
+        clearsKeyboard: false,
+        debugLabel: 'sheet sides',
+        child: page,
+      );
     }
     return page;
   }

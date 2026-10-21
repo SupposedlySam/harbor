@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
@@ -7,7 +8,11 @@ import 'package:flutter/widgets.dart';
 
 import 'bar.dart';
 import 'controller.dart';
+import 'clear.dart';
 import 'edge.dart';
+import 'frame.dart';
+import 'room.dart';
+import 'scroll_view.dart';
 
 /// One frame in the inspector, in global coordinates.
 @immutable
@@ -22,6 +27,7 @@ class HarborInspectorEntry {
     required this.obstruction,
     required this.keyboard,
     this.isolated = false,
+    this.consumers = const <HarborConsumerRecord>[],
   });
 
   final String label;
@@ -43,6 +49,23 @@ class HarborInspectorEntry {
   /// [depth] counts from that root, not from the app's, and its rects are in
   /// global coordinates like every other frame's.
   final bool isolated;
+
+  /// The widgets beneath this frame that took an inset out of what lies beneath them, one record
+  /// per edge each handled, outermost first: [HarborClear] (and [HarborClear.rowInsets]),
+  /// [HarborScrollView]'s two ends, [HarborSliverClear], a [HarborSliverBar] that takes the status
+  /// bar, [HarborHandled], and a [HarborFrame] nested in a frame's body whose bars took its system
+  /// edges. An edge cleared twice has two records on it, and a consumer that found its edge already
+  /// cleared has one with an amount of zero.
+  ///
+  /// Collected in debug and profile builds; empty in release, where nothing reads it. A frame
+  /// right under a [HarborRoot] (a route's page) is not nested, so the root lists none.
+  final List<HarborConsumerRecord> consumers;
+
+  /// [consumers] on [edge], outermost first.
+  List<HarborConsumerRecord> consumersOn(final HarborEdge edge) => <HarborConsumerRecord>[
+    for (final HarborConsumerRecord c in consumers)
+      if (c.edge == edge) c,
+  ];
 
   /// This entry as JSON, as `ext.harbor.inspector` serves it.
   Map<String, Object?> toJson() => <String, Object?>{
@@ -67,6 +90,17 @@ class HarborInspectorEntry {
           'extent': d.extent,
           'restingExtent': d.restingExtent,
           'rect': _rect(d.rect),
+        },
+    ],
+    'consumers': <Map<String, Object?>>[
+      for (final HarborConsumerRecord c in consumers)
+        <String, Object?>{
+          'type': c.type,
+          'label': c.label,
+          'key': c.key,
+          'edge': c.edge.name,
+          'amount': c.amount,
+          'rect': _rect(c.rect),
         },
     ],
   };
@@ -153,7 +187,27 @@ abstract final class HarborInspector {
       ],
       obstruction: layout.obstruction,
       keyboard: layout.keyboard,
+      consumers: _consumersOf(frame),
     );
+  }
+
+  static List<HarborConsumerRecord> _consumersOf(final HarborController frame) {
+    if (frame.consumers.isEmpty) {
+      return const <HarborConsumerRecord>[];
+    }
+    // Outermost first; siblings (the rows of a list) keep the order they were built in.
+    final List<(int, HarborConsumerSource)> sources = <(int, HarborConsumerSource)>[
+      for (final HarborConsumerSource source in frame.consumers) (source.depth, source),
+    ];
+    mergeSort(
+      sources,
+      compare: (final (int, HarborConsumerSource) a, final (int, HarborConsumerSource) b) => a.$1 - b.$1,
+    );
+    final List<HarborConsumerRecord> records = <HarborConsumerRecord>[];
+    for (final (int, HarborConsumerSource) source in sources) {
+      source.$2.collect(records);
+    }
+    return records;
   }
 
   /// The frame registries of the live roots, in the order they were mounted,
@@ -211,15 +265,28 @@ abstract final class HarborInspector {
 
 /// Draws the inspector over [child]: every bar's space (overlay bars in teal,
 /// solid bars in sand), each frame's room outlined, and the keyboard in blue.
+/// Inside each room, a line on each edge names the widgets that took an inset out of what lies
+/// beneath them there and how much ([HarborInspectorEntry.consumers]): `top: HarborScrollView
+/// "inbox" 103`, alike ones grouped (`start: HarborClear.rowInsets ×12 16`) and those that took
+/// nothing left out.
 ///
 /// See also:
 ///
 ///  * `debugPaintSizeEnabled`, the closest Flutter debug paint, which draws every box rather than who
 ///    holds each edge.
 class HarborInspectorOverlay extends StatefulWidget {
-  const HarborInspectorOverlay({super.key, this.enabled = true, this.labelStyle, required this.child});
+  const HarborInspectorOverlay({
+    super.key,
+    this.enabled = true,
+    this.showsConsumers = true,
+    this.labelStyle,
+    required this.child,
+  });
 
   final bool enabled;
+
+  /// Whether each room carries its lines of consumers, one per edge.
+  final bool showsConsumers;
 
   /// Merged over the bar labels' own style (9 pt, white on a dark band).
   ///
@@ -237,6 +304,7 @@ class HarborInspectorOverlay extends StatefulWidget {
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(FlagProperty('enabled', value: enabled, ifFalse: 'disabled'));
+    properties.add(FlagProperty('showsConsumers', value: showsConsumers, ifFalse: 'consumers not shown'));
     properties.add(DiagnosticsProperty<TextStyle>('labelStyle', labelStyle, defaultValue: null));
   }
 }
@@ -289,7 +357,13 @@ class _HarborInspectorOverlayState extends State<HarborInspectorOverlay> with Si
     }
     final Widget painted = CustomPaint(
       foregroundPainter: widget.enabled
-          ? _InspectorPainter(context, registry!, _repaint, labelStyle: widget.labelStyle)
+          ? _InspectorPainter(
+              context,
+              registry!,
+              _repaint,
+              labelStyle: widget.labelStyle,
+              showsConsumers: widget.showsConsumers,
+            )
           : null,
       child: widget.child,
     );
@@ -298,9 +372,14 @@ class _HarborInspectorOverlayState extends State<HarborInspectorOverlay> with Si
 }
 
 class _InspectorPainter extends CustomPainter {
-  _InspectorPainter(this.context, this.registry, final Listenable repaint, {final TextStyle? labelStyle})
-    : labelStyle = _labelStyle.merge(labelStyle),
-      super(repaint: repaint);
+  _InspectorPainter(
+    this.context,
+    this.registry,
+    final Listenable repaint, {
+    final TextStyle? labelStyle,
+    required this.showsConsumers,
+  }) : labelStyle = _labelStyle.merge(labelStyle),
+       super(repaint: repaint);
 
   static const TextStyle _labelStyle = TextStyle(
     fontSize: 9,
@@ -311,6 +390,7 @@ class _InspectorPainter extends CustomPainter {
   final BuildContext context;
   final HarborFrameRegistry registry;
   final TextStyle labelStyle;
+  final bool showsConsumers;
 
   @override
   void paint(final Canvas canvas, final Size size) {
@@ -322,7 +402,11 @@ class _InspectorPainter extends CustomPainter {
     // between the overlay and the screen (a preview, a scaled screen) is honored.
     Rect local(final Rect global) =>
         Rect.fromPoints(self.globalToLocal(global.topLeft), self.globalToLocal(global.bottomRight));
-    for (final HarborInspectorEntry entry in HarborInspector.snapshotOf(registry)) {
+    final TextDirection direction = Directionality.maybeOf(context) ?? TextDirection.ltr;
+    // Every label drawn so far, so a consumer line never lands on a bar's label.
+    final List<Rect> drawn = <Rect>[];
+    final List<HarborInspectorEntry> entries = HarborInspector.snapshotOf(registry);
+    for (final HarborInspectorEntry entry in entries) {
       final Rect clear = local(entry.room);
       canvas.drawRect(
         clear.deflate(1),
@@ -346,6 +430,22 @@ class _InspectorPainter extends CustomPainter {
           textDirection: TextDirection.ltr,
         )..layout();
         label.paint(canvas, r.topLeft + const Offset(2, 2));
+        drawn.add((r.topLeft + const Offset(2, 2)) & label.size);
+      }
+      if (showsConsumers) {
+        for (final HarborEdge edge in HarborEdge.values) {
+          if (debugHarborConsumerLine(entry, edge) case final String line) {
+            _paintConsumerLine(
+              canvas,
+              line,
+              debugHarborConsumerLine(entry, edge, short: true)!,
+              edge,
+              clear,
+              direction,
+              drawn,
+            );
+          }
+        }
       }
       if (entry.keyboard > 0) {
         final Rect frame = local(entry.frame);
@@ -357,6 +457,82 @@ class _InspectorPainter extends CustomPainter {
     }
   }
 
+  // [line] inside [room] against [edge]: along the top or the bottom, or halfway down a side,
+  // moved inward past any label already drawn where it would go, so the end line of a narrow room
+  // goes below the start line rather than beside it. Never cut short: a line wider than the room
+  // is written in its [short] form, and wraps if that is still too wide, so every amount and
+  // count stays in sight.
+  void _paintConsumerLine(
+    final Canvas canvas,
+    final String line,
+    final String short,
+    final HarborEdge edge,
+    final Rect room,
+    final TextDirection direction,
+    final List<Rect> drawn,
+  ) {
+    final bool left = switch (edge) {
+      HarborEdge.start => direction == TextDirection.ltr,
+      HarborEdge.end => direction == TextDirection.rtl,
+      HarborEdge.top || HarborEdge.bottom => true,
+    };
+    final double maxWidth = math.max(0.0, room.width - 4);
+    TextPainter lay(final String text) => TextPainter(
+      text: TextSpan(text: text, style: labelStyle),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxWidth);
+    TextPainter painter = lay(line);
+    if (painter.computeLineMetrics().length > 1) {
+      painter = lay(short);
+    }
+    final Size size = painter.size;
+    Offset at = switch (edge) {
+      HarborEdge.top => room.topLeft + const Offset(2, 2),
+      HarborEdge.bottom => room.bottomLeft + Offset(2, -2 - size.height),
+      _ => Offset(left ? room.left + 2 : room.right - 2 - size.width, room.center.dy - size.height / 2),
+    };
+    // Inward: down from the top, up from the bottom, and down along a side.
+    for (int i = 0; i < drawn.length; i++) {
+      final Rect other = drawn[i];
+      if (!(at & size).overlaps(other)) {
+        continue;
+      }
+      at = edge == HarborEdge.bottom ? Offset(at.dx, other.top - size.height) : Offset(at.dx, other.bottom);
+      i = -1;
+    }
+    painter.paint(canvas, at);
+    drawn.add(at & size);
+  }
+
   @override
   bool shouldRepaint(final _InspectorPainter oldDelegate) => true;
+}
+
+/// The overlay's line for [edge] of [entry]: each consumer on that edge that took something, by
+/// type, label and amount, alike ones grouped; null when none took anything.
+///
+/// [short] writes each type without its `Harbor` prefix (`Clear.rowInsets ×16 16`), for a room
+/// too narrow for the whole line.
+@visibleForTesting
+String? debugHarborConsumerLine(final HarborInspectorEntry entry, final HarborEdge edge, {final bool short = false}) {
+  final Map<String, int> counts = <String, int>{};
+  for (final HarborConsumerRecord c in entry.consumers) {
+    if (c.edge != edge || c.amount.round() == 0) {
+      continue;
+    }
+    final String name = <String>[
+      if (short && c.type.startsWith('Harbor')) c.type.substring('Harbor'.length) else c.type,
+      if (c.label case final String label) '"$label"',
+      c.amount.toStringAsFixed(0),
+    ].join(' ');
+    counts[name] = (counts[name] ?? 0) + 1;
+  }
+  if (counts.isEmpty) {
+    return null;
+  }
+  final String consumers = <String>[
+    for (final MapEntry<String, int> e in counts.entries)
+      if (e.value == 1) e.key else e.key.replaceFirst(RegExp(r' (?=\S+$)'), ' ×${e.value} '),
+  ].join(' · ');
+  return '${edge.name}: $consumers';
 }

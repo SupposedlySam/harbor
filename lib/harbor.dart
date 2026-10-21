@@ -16,6 +16,7 @@ export 'src/controller.dart'
         HarborClaim,
         HarborController,
         HarborBarRecord,
+        HarborConsumerRecord,
         HarborFrameRegistry,
         HarborFrameObserver,
         HarborLayoutRecord,
@@ -45,7 +46,7 @@ export 'src/float.dart'
 export 'src/frame.dart';
 export 'src/hide_bar.dart';
 export 'src/hinge.dart' show HarborHinge, HarborPosture;
-export 'src/inspector.dart';
+export 'src/inspector.dart' hide debugHarborConsumerLine;
 export 'src/keep_in_sight.dart';
 export 'src/keyboard.dart'
     show

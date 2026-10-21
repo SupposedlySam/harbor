@@ -351,7 +351,7 @@ class _HarborDialogPage {
       // As showDialog's SafeArea, but marked handled, so a HarborClear inside does not clear them
       // again. Inside the inherited room below, so the opener's bars are cleared in their place.
       // The keyboard is left in `viewInsets`, where a Material Dialog already keeps off it.
-      dialog = HarborClear(clearsKeyboard: false, child: dialog);
+      dialog = HarborClear(clearsKeyboard: false, debugLabel: 'dialog', child: dialog);
     }
     final EdgeInsets? insets = inherited;
     if (insets != null) {

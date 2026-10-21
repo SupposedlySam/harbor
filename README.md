@@ -1173,6 +1173,19 @@ frame without reaching into it.
 In debug and profile builds the `ext.harbor.inspector` VM-service extension serves
 it as JSON, for tools that drive the app.
 
+Each entry also says **which widgets took an inset out of what lies beneath them**, and how
+much: `entry.consumers`, one `HarborConsumerRecord` per edge each handled, outermost first, with
+its `type` (`HarborClear`, `HarborClear.rowInsets`, `HarborScrollView`, `HarborSliverClear`,
+`HarborSliverBar`, `HarborHandled`, or a `HarborFrame` nested in a body), the `label` (its
+`debugLabel:`) and `key` it was given, the `edge`, the `amount` and its `rect`. The amount is what
+the widget laid out with: a `HarborClear`'s padding on that edge, where a scroll view's end rests,
+what a nested frame's bar took as its system edge, or what a `HarborHandled` removed. A list of
+two on one edge is content cleared twice; an amount of zero is a consumer that found its edge
+already cleared. `entry.consumersOn(HarborEdge.top)` reads one edge, the JSON carries them as
+`consumers`, and the overlay writes them inside each room, one line per edge
+(`top: HarborScrollView "inbox" 103`; `showsConsumers: false` leaves the lines out). They are
+collected in debug and profile builds only, so a release build pays nothing for them.
+
 Tooling that runs outside the widget tree (a debug panel, a logger, an
 automation driver) reads `HarborInspector.snapshotAll()`: every frame of every live
 root, with no context. A root mounted inside another frame (a phone drawn in a

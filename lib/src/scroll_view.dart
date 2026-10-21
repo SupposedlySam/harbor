@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'clear.dart';
+import 'consumer.dart';
 import 'edge.dart';
 import 'edge_effect.dart';
 import 'room.dart';
@@ -87,6 +88,7 @@ class HarborScrollView extends StatelessWidget {
     this.restorationId,
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
+    this.debugLabel,
     required this.slivers,
   }) : assert(!shrinkWrap || center == null),
        assert(anchor >= 0.0 && anchor <= 1.0),
@@ -123,6 +125,7 @@ class HarborScrollView extends StatelessWidget {
     this.restorationId,
     this.clipBehavior = Clip.hardEdge,
     this.hitTestBehavior = HitTestBehavior.opaque,
+    this.debugLabel,
     required final Widget child,
   }) : center = null,
        anchor = 0.0,
@@ -221,6 +224,9 @@ class HarborScrollView extends StatelessWidget {
   final HitTestBehavior hitTestBehavior;
   final List<Widget> slivers;
 
+  /// Its name in the inspector, among the frame's consumers (`HarborInspectorEntry.consumers`).
+  final String? debugLabel;
+
   /// Whether this is the box form, which can take its cross axis from its child.
   final bool _hugsChild;
 
@@ -258,6 +264,7 @@ class HarborScrollView extends StatelessWidget {
     );
     properties.add(EnumProperty<Clip>('clipBehavior', clipBehavior, defaultValue: Clip.hardEdge));
     properties.add(IntProperty('semanticChildCount', semanticChildCount, defaultValue: null));
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
 
   /// The scroll padding a third-party list should use to keep clear as this
@@ -373,15 +380,18 @@ class HarborScrollView extends StatelessWidget {
                   !(hasSliverBar && e == leadingEdge))
                 e: room.fadeBands[e]!,
           };
+    // Starting under the bars skips only the clearance at the leading end: the caller's own padding and
+    // minimum there still apply (#74).
+    final double leadingLaid = startsUnderBars
+        ? HarborEdges.of(minimum, leadingEdge) + HarborEdges.of(padding, leadingEdge)
+        : leading;
     final Widget scrollView = HarborFadeMask(
       bands: bands,
       child: _scrollView(
         context,
         leadingEdge,
         vertical,
-        // Starting under the bars skips only the clearance at the leading end: the caller's own padding and
-        // minimum there still apply (#74).
-        startsUnderBars ? HarborEdges.of(minimum, leadingEdge) + HarborEdges.of(padding, leadingEdge) : leading,
+        leadingLaid,
         clearLeading,
         cover,
         trailing,
@@ -396,13 +406,25 @@ class HarborScrollView extends StatelessWidget {
         direction,
       ),
     );
-    if (!_hugsChild) {
-      return scrollView;
+    final Widget result = !_hugsChild
+        ? scrollView
+        : _HarborCrossAxisHug(
+            scrollDirection: scrollDirection,
+            crossPadding: vertical ? crossPadding.horizontal : crossPadding.vertical,
+            child: scrollView,
+          );
+    if (kReleaseMode) {
+      return result;
     }
-    return _HarborCrossAxisHug(
-      scrollDirection: scrollDirection,
-      crossPadding: vertical ? crossPadding.horizontal : crossPadding.vertical,
-      child: scrollView,
+    return HarborConsumerReport.wrap(
+      type: 'HarborScrollView',
+      edges: <HarborEdge>[leadingEdge, leadingEdge.opposite],
+      amounts: HarborEdges.build(
+        (final HarborEdge e) => e == leadingEdge ? leadingLaid : (e == leadingEdge.opposite ? trailing : 0.0),
+      ),
+      label: debugLabel,
+      widgetKey: key,
+      child: result,
     );
   }
 
@@ -453,14 +475,14 @@ class HarborScrollView extends StatelessWidget {
     // The trailing end is handled first and the leading end beneath it, so the first sliver of a
     // scroll view that starts under the bars can be handed the view between the two.
     final bool margin = !vertical && rowInsets;
-    return HarborHandled(
+    return HarborHandled.unreported(
       edges: <HarborEdge>{leadingEdge.opposite},
       clearsKeyboard: vertical && clearsKeyboard,
       margin: margin,
       clearsBars: clearsBars,
       child: _HarborUnderBarsView(
         enabled: startsUnderBars,
-        child: HarborHandled(
+        child: HarborHandled.unreported(
           edges: <HarborEdge>{leadingEdge},
           margin: margin,
           clearsBars: clearsBars,
@@ -1013,6 +1035,7 @@ class HarborSliverClear extends StatelessWidget {
     this.clearsKeyboard = true,
     this.padding = EdgeInsetsDirectional.zero,
     this.minimum = EdgeInsetsDirectional.zero,
+    this.debugLabel,
     required this.sliver,
   });
 
@@ -1033,6 +1056,10 @@ class HarborSliverClear extends StatelessWidget {
 
   /// A floor on the clearance at each end it clears, as on [HarborScrollView.minimum].
   final EdgeInsetsGeometry minimum;
+
+  /// Its name in the inspector, among the frame's consumers (`HarborInspectorEntry.consumers`).
+  final String? debugLabel;
+
   final Widget sliver;
 
   @override
@@ -1048,6 +1075,7 @@ class HarborSliverClear extends StatelessWidget {
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('minimum', minimum, defaultValue: EdgeInsetsDirectional.zero),
     );
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
 
   @override
@@ -1086,18 +1114,25 @@ class HarborSliverClear extends StatelessWidget {
     // As `SliverSafeArea` pads and then removes that padding, the ends it cleared are handled, so a
     // reader in the sliver does not clear them again. An end it leaves is left to its content.
     final Set<HarborEdge> cleared = <HarborEdge>{if (clearLeading) leadingEdge, if (clearTrailing) trailingEdge};
-    return _HarborRevealSliver(
-      leading: revealLeading,
-      trailing: revealTrailing,
-      textDirection: direction,
-      sliver: SliverPadding(
-        padding: insets.resolve(direction),
-        sliver: HarborHandled(
-          edges: cleared,
-          clearsKeyboard: clearsKeyboard && cleared.contains(HarborEdge.bottom),
-          margin: false,
-          clearsBars: clearsBars,
-          child: sliver,
+    return HarborConsumerReport.wrap(
+      type: 'HarborSliverClear',
+      edges: cleared,
+      amounts: insets,
+      label: debugLabel,
+      widgetKey: key,
+      child: _HarborRevealSliver(
+        leading: revealLeading,
+        trailing: revealTrailing,
+        textDirection: direction,
+        sliver: SliverPadding(
+          padding: insets.resolve(direction),
+          sliver: HarborHandled.unreported(
+            edges: cleared,
+            clearsKeyboard: clearsKeyboard && cleared.contains(HarborEdge.bottom),
+            margin: false,
+            clearsBars: clearsBars,
+            child: sliver,
+          ),
         ),
       ),
     );
@@ -1134,7 +1169,7 @@ class HarborSliverBar extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final double systemEdges = _SliverBarAbsorb.systemEdgesOf(context);
-    return PinnedHeaderSliver(
+    final Widget sliver = PinnedHeaderSliver(
       child: Listener(
         behavior: hitTestBehavior,
         child: Stack(
@@ -1147,6 +1182,17 @@ class HarborSliverBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+    // The first one in a scroll view with no bar above takes the status bar.
+    if (systemEdges <= 0) {
+      return sliver;
+    }
+    return HarborConsumerReport.wrap(
+      type: 'HarborSliverBar',
+      edges: const <HarborEdge>[HarborEdge.top],
+      amounts: EdgeInsetsDirectional.only(top: systemEdges),
+      widgetKey: key,
+      child: sliver,
     );
   }
 }

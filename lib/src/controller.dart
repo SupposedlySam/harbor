@@ -513,6 +513,53 @@ class HarborBarRecord {
   final HarborKeyboardStance keyboard;
 }
 
+/// One widget that took an inset out of what lies beneath it, on one edge, as the inspector reads
+/// it: a `HarborClear`, a `HarborScrollView`, a frame nested in a body, and the rest
+/// (`HarborInspectorEntry.consumers` lists them).
+@immutable
+class HarborConsumerRecord {
+  const HarborConsumerRecord({
+    required this.type,
+    required this.edge,
+    required this.amount,
+    required this.rect,
+    this.label,
+    this.key,
+  });
+
+  /// The widget's name: `HarborClear`, `HarborClear.rowInsets`, `HarborScrollView`,
+  /// `HarborSliverClear`, `HarborSliverBar`, `HarborHandled` or `HarborFrame`.
+  final String type;
+
+  /// The edge it took the inset from.
+  final HarborEdge edge;
+
+  /// How much it took on [edge], from the values it laid out with: the space it padded by,
+  /// minimum and own padding included (a `HarborClear`, a scroll view's end, a nested frame's bar),
+  /// or, for a `HarborHandled`, what it removed from `MediaQuery` there. Zero where it found the
+  /// edge already cleared.
+  final double amount;
+
+  /// The widget's own box, in global coordinates (a sliver's paint bounds).
+  final Rect rect;
+
+  /// The `debugLabel` it was given.
+  final String? label;
+
+  /// Its `key`, as `toString` prints it.
+  final String? key;
+}
+
+/// A widget the inspector lists among a frame's consumers.
+@internal
+abstract interface class HarborConsumerSource {
+  /// Adds this widget's records, in global coordinates, to [into]; nothing when it is not laid out.
+  void collect(List<HarborConsumerRecord> into);
+
+  /// How deep this widget sits in the tree, to list consumers outermost first.
+  int get depth;
+}
+
 /// Hears frames join and leave a [HarborFrameRegistry], as a `NavigatorObserver`
 /// hears routes come and go.
 ///
@@ -750,6 +797,11 @@ class HarborController {
   final Map<ShownToast, VoidCallback> _toastListeners = <ShownToast, VoidCallback>{};
   final Map<ShownToast, Timer> _toastRemovals = <ShownToast, Timer>{};
   final _PageCoverNotifier _pageCoverChanges = _PageCoverNotifier();
+
+  /// The widgets beneath this frame that took an inset out of what lies beneath them, for the
+  /// inspector. Filled in debug and profile builds only.
+  @internal
+  final Set<HarborConsumerSource> consumers = <HarborConsumerSource>{};
 
   /// The nearest frame above [context].
   @internal
