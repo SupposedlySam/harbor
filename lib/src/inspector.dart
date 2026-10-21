@@ -435,7 +435,15 @@ class _InspectorPainter extends CustomPainter {
       if (showsConsumers) {
         for (final HarborEdge edge in HarborEdge.values) {
           if (debugHarborConsumerLine(entry, edge) case final String line) {
-            _paintConsumerLine(canvas, line, edge, clear, direction, drawn);
+            _paintConsumerLine(
+              canvas,
+              line,
+              debugHarborConsumerLine(entry, edge, short: true)!,
+              edge,
+              clear,
+              direction,
+              drawn,
+            );
           }
         }
       }
@@ -450,10 +458,14 @@ class _InspectorPainter extends CustomPainter {
   }
 
   // [line] inside [room] against [edge]: along the top or the bottom, or halfway down a side,
-  // moved inward past any label already drawn where it would go.
+  // moved inward past any label already drawn where it would go, so the end line of a narrow room
+  // goes below the start line rather than beside it. Never cut short: a line wider than the room
+  // is written in its [short] form, and wraps if that is still too wide, so every amount and
+  // count stays in sight.
   void _paintConsumerLine(
     final Canvas canvas,
     final String line,
+    final String short,
     final HarborEdge edge,
     final Rect room,
     final TextDirection direction,
@@ -464,13 +476,15 @@ class _InspectorPainter extends CustomPainter {
       HarborEdge.end => direction == TextDirection.rtl,
       HarborEdge.top || HarborEdge.bottom => true,
     };
-    final double maxWidth = math.max(0.0, (edge.isVertical ? room.width : room.width / 2) - 4);
-    final TextPainter painter = TextPainter(
-      text: TextSpan(text: line, style: labelStyle),
+    final double maxWidth = math.max(0.0, room.width - 4);
+    TextPainter lay(final String text) => TextPainter(
+      text: TextSpan(text: text, style: labelStyle),
       textDirection: TextDirection.ltr,
-      maxLines: 1,
-      ellipsis: '…',
     )..layout(maxWidth: maxWidth);
+    TextPainter painter = lay(line);
+    if (painter.computeLineMetrics().length > 1) {
+      painter = lay(short);
+    }
     final Size size = painter.size;
     Offset at = switch (edge) {
       HarborEdge.top => room.topLeft + const Offset(2, 2),
@@ -496,15 +510,18 @@ class _InspectorPainter extends CustomPainter {
 
 /// The overlay's line for [edge] of [entry]: each consumer on that edge that took something, by
 /// type, label and amount, alike ones grouped; null when none took anything.
+///
+/// [short] writes each type without its `Harbor` prefix (`Clear.rowInsets ×16 16`), for a room
+/// too narrow for the whole line.
 @visibleForTesting
-String? debugHarborConsumerLine(final HarborInspectorEntry entry, final HarborEdge edge) {
+String? debugHarborConsumerLine(final HarborInspectorEntry entry, final HarborEdge edge, {final bool short = false}) {
   final Map<String, int> counts = <String, int>{};
   for (final HarborConsumerRecord c in entry.consumers) {
     if (c.edge != edge || c.amount.round() == 0) {
       continue;
     }
     final String name = <String>[
-      c.type,
+      if (short && c.type.startsWith('Harbor')) c.type.substring('Harbor'.length) else c.type,
       if (c.label case final String label) '"$label"',
       c.amount.toStringAsFixed(0),
     ].join(' ');

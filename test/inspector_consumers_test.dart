@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:harbor/harbor.dart';
+import 'package:harbor_test/harbor_test.dart';
 import 'package:harbor/src/inspector.dart' show debugHarborConsumerLine;
 
 const double _statusBar = 47;
@@ -292,6 +293,51 @@ void main() {
       );
     });
 
+    for (final HarborTrialDevice device in <HarborTrialDevice>[
+      HarborTrialDevice.iPhone17,
+      HarborTrialDevice.iPhoneSE,
+    ]) {
+      for (final double fontSize in <double>[9, 14]) {
+        testWidgets('on an ${device.name} at $fontSize pt, every line is whole and none overlaps another', (
+          final tester,
+        ) async {
+          // 14 pt is the showcase phone's label size, where the start and end lines met in the
+          // middle and were both cut short. The test font is a box a full em wide, wider than any
+          // real one, so what fits here fits on the phone.
+          await tester.pumpHarborTrial(
+            _listPage(labelStyle: TextStyle(fontSize: fontSize)),
+            device: device,
+          );
+          final List<(Rect, ui.Paragraph)> labels = _labels(tester);
+          // Two bar labels and the top, start and end lines (the bottom end rests on the solid tab
+          // bar, so it took nothing there).
+          expect(labels, hasLength(5));
+          for (final (Rect rect, ui.Paragraph p) in labels) {
+            expect(p.didExceedMaxLines, isFalse);
+            expect(rect.left, greaterThanOrEqualTo(0));
+            expect(rect.right, lessThanOrEqualTo(device.size.width), reason: '$rect runs off the screen');
+          }
+          for (int i = 0; i < labels.length; i++) {
+            for (int j = i + 1; j < labels.length; j++) {
+              expect(labels[i].$1.overlaps(labels[j].$1), isFalse, reason: '${labels[i].$1} and ${labels[j].$1}');
+            }
+          }
+        });
+      }
+    }
+
+    testWidgets('a line too wide for the room drops the Harbor prefix, keeping counts and amounts', (
+      final tester,
+    ) async {
+      await tester.pumpHarborTrial(_listPage());
+      final HarborInspectorEntry page = HarborInspector.snapshotAll().firstWhere(
+        (final HarborInspectorEntry e) => e.depth == 1,
+      );
+      final String line = debugHarborConsumerLine(page, HarborEdge.start)!;
+      expect(line, matches(RegExp(r'^start: HarborClear\.rowInsets ×\d+ 16$')));
+      expect(debugHarborConsumerLine(page, HarborEdge.start, short: true), line.replaceFirst('HarborClear', 'Clear'));
+    });
+
     testWidgets("moves a line off a bar's label it would land on", (final tester) async {
       // A 4-high bar and no status bar: the room starts at 4, inside the bar's own label.
       await tester.pumpWidget(
@@ -335,6 +381,49 @@ void main() {
     });
   });
 }
+
+/// Every label the overlay paints, as laid out: its rect, and its paragraph.
+List<(Rect, ui.Paragraph)> _labels(final WidgetTester tester) {
+  final RenderObject overlay = tester.renderObject(
+    find.descendant(of: find.byType(HarborInspectorOverlay), matching: find.byType(CustomPaint)).first,
+  );
+  final TestRecordingCanvas canvas = TestRecordingCanvas();
+  overlay.paint(TestRecordingPaintingContext(canvas), Offset.zero);
+  return <(Rect, ui.Paragraph)>[
+    for (final RecordedInvocation call in canvas.invocations)
+      if (call.invocation.memberName == #drawParagraph)
+        if (call.invocation.positionalArguments case [final ui.Paragraph p, final Offset at])
+          (at & Size(p.longestLine, p.height), p),
+  ];
+}
+
+/// A list page as the showcase's inspector chapter has it: an overlay header, a solid tab bar, a
+/// scroll view of rows on a 16 margin, with the inspector over it all.
+Widget _listPage({final TextStyle? labelStyle}) => HarborInspectorOverlay(
+  labelStyle: labelStyle,
+  child: HarborRoot(
+    margin: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+    child: HarborFrame(
+      top: const <HarborBar>[
+        HarborBar.overlay(
+          debugLabel: 'header',
+          child: SizedBox(height: _header),
+        ),
+      ],
+      bottom: const <HarborBar>[HarborBar.solid(debugLabel: 'tabs', child: SizedBox(height: 50))],
+      body: HarborScrollView(
+        debugLabel: 'harbor master',
+        slivers: <Widget>[
+          SliverList.builder(
+            itemCount: 30,
+            itemBuilder: (final BuildContext context, final int i) =>
+                const HarborClear.rowInsets(child: SizedBox(height: 44)),
+          ),
+        ],
+      ),
+    ),
+  ),
+);
 
 extension on Widget {
   Widget wrapInOverlay() => Directionality(
