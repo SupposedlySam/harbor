@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import 'consumer.dart';
 import 'edge.dart';
 import 'keyboard.dart';
 
@@ -438,8 +439,22 @@ class HarborHandled extends StatelessWidget {
     this.clearsKeyboard = false,
     this.margin = true,
     this.clearsBars = true,
+    this.debugLabel,
     required this.child,
-  });
+  }) : _reports = true;
+
+  /// A [HarborHandled] that a harbor widget puts beneath itself, which the inspector lists under
+  /// that widget's name rather than its own.
+  @internal
+  const HarborHandled.unreported({
+    super.key,
+    this.edges = HarborEdge.all,
+    this.clearsKeyboard = false,
+    this.margin = true,
+    this.clearsBars = true,
+    required this.child,
+  }) : debugLabel = null,
+       _reports = false;
 
   final Set<HarborEdge> edges;
 
@@ -456,6 +471,11 @@ class HarborHandled extends StatelessWidget {
   /// is all handled either way.
   final bool clearsBars;
 
+  /// Its name in the inspector, among the frame's consumers (`HarborInspectorEntry.consumers`).
+  final String? debugLabel;
+
+  final bool _reports;
+
   final Widget child;
 
   @override
@@ -465,7 +485,21 @@ class HarborHandled extends StatelessWidget {
     properties.add(FlagProperty('clearsKeyboard', value: clearsKeyboard, ifTrue: 'handles the keyboard'));
     properties.add(FlagProperty('margin', value: margin, ifFalse: 'keeps the margin'));
     properties.add(FlagProperty('clearsBars', value: clearsBars, ifFalse: 'keeps the bars'));
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
+
+  // [child] listed among the frame's consumers with what this removed on [edges], unless a harbor
+  // widget above lists it under its own name.
+  Widget _report(final EdgeInsetsDirectional removed, final Widget child) => !_reports
+      ? child
+      : HarborConsumerReport.wrap(
+          type: 'HarborHandled',
+          edges: edges,
+          amounts: removed,
+          label: debugLabel,
+          widgetKey: key,
+          child: child,
+        );
 
   @override
   Widget build(final BuildContext context) {
@@ -474,9 +508,13 @@ class HarborHandled extends StatelessWidget {
     }
     final TextDirection direction = Directionality.of(context);
     final ({bool left, bool top, bool right, bool bottom}) sides = HarborEdges.physical(edges, direction);
-    MediaQueryData data = MediaQuery.of(
-      context,
-    ).removePadding(removeLeft: sides.left, removeTop: sides.top, removeRight: sides.right, removeBottom: sides.bottom);
+    final MediaQueryData ambient = MediaQuery.of(context);
+    MediaQueryData data = ambient.removePadding(
+      removeLeft: sides.left,
+      removeTop: sides.top,
+      removeRight: sides.right,
+      removeBottom: sides.bottom,
+    );
     data = data.removeViewPadding(
       removeLeft: sides.left,
       removeTop: sides.top,
@@ -493,9 +531,23 @@ class HarborHandled extends StatelessWidget {
       edges,
       margin: margin,
     );
-    return MediaQuery(
+    final Widget handled = MediaQuery(
       data: data,
       child: HarborRoom(data: room, child: child),
+    );
+    if (kReleaseMode || !_reports) {
+      return handled;
+    }
+    // What was in the way here and reads zero beneath: the padding it removed, and at the bottom the
+    // keyboard where it removed that too.
+    final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
+    return _report(
+      HarborEdges.build(
+        (final HarborEdge e) => clearsKeyboard && e == HarborEdge.bottom
+            ? math.max(HarborEdges.of(padding, e), ambient.viewInsets.bottom)
+            : HarborEdges.of(padding, e),
+      ),
+      handled,
     );
   }
 
@@ -535,9 +587,14 @@ class HarborHandled extends StatelessWidget {
       cleared: cleared,
       margin: margin,
     );
-    return MediaQuery(
-      data: data,
-      child: HarborRoom(data: room, child: child),
+    return _report(
+      kReleaseMode || !clearsKeyboard
+          ? cleared
+          : cleared.copyWith(bottom: math.max(cleared.bottom, ambient.viewInsets.bottom)),
+      MediaQuery(
+        data: data,
+        child: HarborRoom(data: room, child: child),
+      ),
     );
   }
 }

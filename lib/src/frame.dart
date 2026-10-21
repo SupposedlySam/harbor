@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'bar.dart';
+import 'consumer.dart';
 import 'controller.dart';
 import 'defaults.dart';
 import 'dock_slot.dart';
@@ -503,6 +504,9 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
       ),
     );
 
+    // What the bar against each edge took as its system edge, for the inspector: a frame nested in
+    // another's body takes that frame's insets out of what its own body is handed.
+    final Map<HarborEdge, double>? took = kReleaseMode ? null : <HarborEdge, double>{};
     for (final HarborEdge edge in HarborEdge.values) {
       final List<HarborBar> list = bars[edge]!;
       // Listed in reading order; counted from the edge inward.
@@ -531,6 +535,9 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
         final double systemEdgeHere = i == absorbing
             ? _systemEdgeFor(bar, edge, systemEdges, systemEdgesSteady, keyboard, minimum)
             : 0.0;
+        if (i == absorbing) {
+          took?[edge] = systemEdgeHere;
+        }
         children.add(
           HarborSlot.bar(
             key: bar.key != null ? ValueKey<Object>((edge, bar.key!)) : ValueKey<Object>((edge, i, bar.kind)),
@@ -628,6 +635,17 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
     // they see what this frame sees from above.
     if (controller.route case final ModalRoute<Object?> route when controller.isRouteLevel && !widget._isRoot) {
       result = HarborPageSheetHost(route: route, child: result);
+    }
+    // A frame nested in another frame's body; a route's page right under the root is not nested.
+    if (took != null && took.isNotEmpty && !(controller.parent?.isRoot ?? true)) {
+      result = HarborConsumerReport.wrap(
+        type: 'HarborFrame',
+        edges: took.keys,
+        amounts: HarborEdges.build((final HarborEdge e) => took[e] ?? 0.0),
+        label: widget.debugLabel,
+        widgetKey: widget.key,
+        child: result,
+      );
     }
     return result;
   }

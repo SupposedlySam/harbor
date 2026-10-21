@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import 'consumer.dart';
 import 'edge.dart';
 import 'room.dart';
 
@@ -40,6 +41,7 @@ class HarborClear extends StatelessWidget {
     this.rowInsets = false,
     this.minimum = EdgeInsetsDirectional.zero,
     this.padding = EdgeInsetsDirectional.zero,
+    this.debugLabel,
     required this.child,
   });
 
@@ -53,7 +55,7 @@ class HarborClear extends StatelessWidget {
   ///
   ///  * [Padding], which a page margin is in Flutter; this adds whatever is in the way on the
   ///    sides.
-  const HarborClear.rowInsets({super.key, this.follow = HarborFollow.live, required this.child})
+  const HarborClear.rowInsets({super.key, this.follow = HarborFollow.live, this.debugLabel, required this.child})
     : edges = HarborEdge.horizontal,
       clearsBars = true,
       clearsKeyboard = false,
@@ -91,6 +93,9 @@ class HarborClear extends StatelessWidget {
   /// Your own spacing, added on top of the clearance.
   final EdgeInsetsGeometry padding;
 
+  /// Its name in the inspector, among the frame's consumers (`HarborInspectorEntry.consumers`).
+  final String? debugLabel;
+
   final Widget child;
 
   @override
@@ -107,6 +112,7 @@ class HarborClear extends StatelessWidget {
     properties.add(
       DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: EdgeInsetsDirectional.zero),
     );
+    properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
 
   /// What a [HarborClear] with these settings would pad [context] by.
@@ -162,13 +168,20 @@ class HarborClear extends StatelessWidget {
       minimum: minimum,
       padding: this.padding,
     );
-    return Padding(
-      padding: padding,
-      child: HarborHandled(
-        edges: edges,
-        clearsKeyboard: clearsKeyboard && clearsBars && edges.contains(HarborEdge.bottom),
-        margin: rowInsets,
-        child: child,
+    return HarborConsumerReport.wrap(
+      type: rowInsets && edges == HarborEdge.horizontal ? 'HarborClear.rowInsets' : 'HarborClear',
+      edges: edges,
+      amounts: padding,
+      label: debugLabel,
+      widgetKey: key,
+      child: Padding(
+        padding: padding,
+        child: HarborHandled.unreported(
+          edges: edges,
+          clearsKeyboard: clearsKeyboard && clearsBars && edges.contains(HarborEdge.bottom),
+          margin: rowInsets,
+          child: child,
+        ),
       ),
     );
   }
