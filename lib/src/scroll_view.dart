@@ -460,12 +460,14 @@ class HarborScrollView extends StatelessWidget {
       AxisDirection.right => EdgeInsets.only(left: leadExtra, right: trailExtra),
       AxisDirection.left => EdgeInsets.only(left: trailExtra, right: leadExtra),
     };
-    Widget first(final Widget sliver) {
-      final Widget result = leadsWithBar ? _SliverBarAbsorb(systemEdges: absorbed, child: sliver) : sliver;
+    // Every sliver is in the same widgets, first or not and whatever the scroll view's options, so a
+    // sliver keeps its state as it moves and as those change (#164). Only the first one's do anything.
+    Widget wrapped(final int i) => _HarborUnderBarsSliver(
       // Content that starts under the bars keeps the system edges and bars it starts under, on the
       // leading end alone: the trailing end and the keyboard are still handled.
-      return startsUnderBars ? _HarborUnderBarsSliver(sliver: result) : result;
-    }
+      underBars: i == 0 && startsUnderBars,
+      sliver: _SliverBarAbsorb(systemEdges: i == 0 && leadsWithBar ? absorbed : 0.0, child: slivers[i]),
+    );
 
     // With a center, the cover leads the slivers that grow forward from it,
     // and anchor 0 rests the center where the first sliver would rest.
@@ -524,7 +526,7 @@ class HarborScrollView extends StatelessWidget {
                     null => null,
                   },
                   padding: crossPadding.resolve(direction),
-                  sliver: i == 0 ? first(slivers[i]) : slivers[i],
+                  sliver: wrapped(i),
                 ),
               ],
               SliverToBoxAdapter(
@@ -568,24 +570,26 @@ class _HarborUnderBarsScope extends InheritedWidget {
   bool updateShouldNotify(final _HarborUnderBarsScope oldWidget) => media != oldWidget.media || room != oldWidget.room;
 }
 
-/// The first sliver of a scroll view that starts under the bars, in the view [_HarborUnderBarsView]
-/// publishes.
+/// A sliver of a scroll view, in the view [_HarborUnderBarsView] publishes while [underBars] (the
+/// first sliver of a scroll view that starts under the bars), and in the view where it is otherwise.
+///
+/// The same widgets either way, so turning `startsUnderBars` on or off keeps the sliver's state
+/// (#164).
 class _HarborUnderBarsSliver extends StatelessWidget {
-  const _HarborUnderBarsSliver({required this.sliver});
+  const _HarborUnderBarsSliver({required this.underBars, required this.sliver});
 
+  final bool underBars;
   final Widget sliver;
 
   @override
   Widget build(final BuildContext context) {
-    final _HarborUnderBarsScope? scope = context.dependOnInheritedWidgetOfExactType<_HarborUnderBarsScope>();
-    final MediaQueryData? media = scope?.media;
-    if (media == null) {
-      return sliver;
-    }
-    final HarborRoomData? room = scope!.room;
+    final _HarborUnderBarsScope? scope = underBars
+        ? context.dependOnInheritedWidgetOfExactType<_HarborUnderBarsScope>()
+        : null;
     return MediaQuery(
-      data: media,
-      child: room == null ? sliver : HarborRoom(data: room, child: sliver),
+      data: scope?.media ?? MediaQuery.of(context),
+      // The scroll view's HarborHandled above always gives a room.
+      child: HarborRoom(data: scope?.room ?? HarborRoom.maybeRawOf(context)!, child: sliver),
     );
   }
 }
@@ -1186,13 +1190,11 @@ class HarborSliverBar extends StatelessWidget {
         ),
       ),
     );
-    // The first one in a scroll view with no bar above takes the status bar.
-    if (systemEdges <= 0) {
-      return sliver;
-    }
+    // The first one in a scroll view with no bar above takes the status bar. Reported either way,
+    // on no edge when it took none, so a bar coming above keeps its state (#164).
     return HarborConsumerReport.wrap(
       type: 'HarborSliverBar',
-      edges: const <HarborEdge>[HarborEdge.top],
+      edges: systemEdges > 0 ? const <HarborEdge>[HarborEdge.top] : const <HarborEdge>[],
       amounts: EdgeInsetsDirectional.only(top: systemEdges),
       widgetKey: key,
       child: sliver,

@@ -621,18 +621,20 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
     result = HarborModalFloatActions(floats: widget.floats, child: result);
     result = HarborNonModalSheetActions(route: controller.route, child: result);
     result = HarborScope(controller: controller, child: result);
+    // A wrapper that comes and goes between builds changes the type of what the body is built in,
+    // and so unmounts the body and every State in it (#164). So a wrapper is conditional here only
+    // on what stays the same for the frame's life: the registry and keyboard gauge a frame owns,
+    // made once and kept, the route it is in, and whether it is nested. The systemEdges and the
+    // defaults a frame is given can come and go, so the MediaQuery and the defaults are always
+    // there, handing on what is above when the frame has none of its own.
     if (_ownRegistry != null) {
       result = HarborFrameRegistryScope(registry: _ownRegistry!, child: result);
     }
     if (_ownGauge != null) {
       result = HarborKeyboardScope(gauge: _ownGauge!, child: result);
     }
-    if (widget.systemEdges != null) {
-      result = MediaQuery(data: ambient, child: result);
-    }
-    if (own != null || widget._isRoot) {
-      result = HarborDefaultsInherited(defaults: resolved, child: result);
-    }
+    result = MediaQuery(data: ambient, child: result);
+    result = HarborDefaultsInherited(defaults: resolved, child: result);
     // The page's first frame draws the sheets with no barrier that the page opens, outermost, so
     // they see what this frame sees from above.
     if (controller.route case final ModalRoute<Object?> route when controller.isRouteLevel && !widget._isRoot) {
