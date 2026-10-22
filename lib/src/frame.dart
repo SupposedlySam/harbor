@@ -639,7 +639,7 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
       result = HarborPageSheetHost(route: route, child: result);
     }
     // A frame nested in another frame's body; a route's page right under the root is not nested.
-    if (took != null && took.isNotEmpty && !(controller.parent?.isRoot ?? true)) {
+    if (took != null && !(controller.parent?.isRoot ?? true)) {
       result = HarborConsumerReport.wrap(
         type: 'HarborFrame',
         edges: took.keys,
