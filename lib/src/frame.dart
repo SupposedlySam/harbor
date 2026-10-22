@@ -384,7 +384,9 @@ class _HarborFrameState extends State<HarborFrame> with WidgetsBindingObserver {
       MediaQuery.of(context),
       direction,
     );
-    final HarborRoomData? outer = widget._isRoot ? null : HarborRoom.maybeRawOf(context);
+    // A frame nested in content keeps clear of what is in the way, so an edge handled for clearing
+    // alone above it is not in the way.
+    final HarborRoomData? outer = widget._isRoot ? null : HarborRoom.maybeRawOf(context)?.forClearing;
 
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
     final EdgeInsetsDirectional steadyPadding = HarborEdges.directional(ambient.viewPadding, direction);

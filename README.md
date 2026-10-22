@@ -84,7 +84,7 @@ Where harbor resembles a Flutter widget, this is what is different.
 | `HarborScrollView` | `ListView`, `CustomScrollView` | A `ListView` with no `padding` pads its ends by `MediaQuery.padding` but not by the keyboard, and a `CustomScrollView` pads nothing. A `HarborScrollView` clears both ends, keyboard included (unless `clearsKeyboard: false`), and widens every reveal by what covers its edges. `HarborSliverClear` is the `SliverSafeArea` of a scroll view you build yourself |
 | `HarborSliverBar` | `PinnedHeaderSliver`, `SliverAppBar(pinned: true)` | It pins at the bars' face rather than the viewport's edge, several stack, and reveals keep clear of it |
 | `HarborRoom.of(context)` | Content outside any `SafeArea` that reads `MediaQuery.padding` itself | The room data splits each edge into system edges and bars, which `MediaQuery.padding` adds together |
-| `HarborHandled` | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; `HarborHandled` zeroes it, and with `clearsKeyboard:` the keyboard, and zeroes harbor's own room data, so harbor widgets beneath read zero too. `clearsBars: false` handles the system edges alone and leaves the bars, which `removePadding` cannot tell apart |
+| `HarborHandled` | `MediaQuery.removePadding` | `removePadding` lowers `viewPadding` only by the padding it removes; `HarborHandled` zeroes it, and with `clearsKeyboard:` the keyboard, and zeroes harbor's own room data, so harbor widgets beneath read zero too. `clearsBars: false` handles the system edges alone and leaves the bars, which `removePadding` cannot tell apart, and `keepsGeometry: true` handles them for clearing alone, leaving them to be measured |
 | `HarborKeyboardStance.rides` / `.stays` | Rides: the bottom of a resizing `Scaffold`'s body. Stays: `Scaffold.bottomNavigationBar`, which the keyboard covers | Chosen per bar, so a composer can ride the keyboard while the tab bar under it stays |
 | `HarborKeyboardStance.reserves` | None | It reserves the keyboard's height whether the keyboard is up or not, so a panel can trade places with it and nothing moves |
 | `HarborHideBar` | Rebuilding the `Scaffold` without its `bottomNavigationBar` | Asked for from deep in the page and counted. `state: HarborBarState.dark` keeps the bar's space as `Visibility(maintainSize: true)` does; `HarborBarState.withdrawn`, the default, slides it out and gives the space back |
@@ -268,6 +268,40 @@ under its app bar. `{HarborEdge.bottom}` does the same for a list that stops
 short of the bottom of the screen. To start the first sliver under the header
 instead, use `startsUnderBars` (below).
 
+Content that runs under a bar on purpose, with a scroll view nested further down it, goes in
+`HarborHandled(edges: {HarborEdge.top}, keepsGeometry: true)`: the edge is handled **for clearing
+alone**. Nothing beneath keeps clear of it again (`MediaQuery.padding` reads zero there, as beneath
+any layer that cleared it, and so do `HarborClear`, `HarborScrollView` and `HarborSliverClear`), but
+the system edges and the bars stay in the room data (`HarborRoomData.geometryOnly` names the edge),
+so `HarborRoom.barFaceOf` and `HarborRoom.of(context).bars` still measure the header for an
+overlay that lines up with it. A plain `HarborHandled` would take the header out of both. A detail
+page whose hero runs under the header and whose tab holds a grid:
+
+```dart
+HarborScrollView(
+  startsUnderBars: true,
+  slivers: [
+    SliverToBoxAdapter(
+      child: Column(children: [
+        const HeroImage(),                             // handed the leading end: under the header
+        HarborHandled(
+          edges: const {HarborEdge.top},
+          keepsGeometry: true,                         // the grid's first row rests at its own top
+          child: SizedBox(height: 600, child: HarborScrollView(slivers: [grid])),
+        ),
+      ]),
+    ),
+  ],
+)
+```
+
+The mark is needed only in the **first** sliver of a scroll view that starts under the bars,
+which is handed the leading end back so a hero's title can keep off the status bar, or under a
+scroll view harbor did not build. A scroll view nested in a later sliver of a
+`startsUnderBars` view already reads zero there and does not clear the header again: put the grid
+in its own sliver and it needs no mark. The inspector lists the mark with an amount of zero, since
+it moves nothing.
+
 A layer that pads by the system edges alone (a page's safe-area margin, read from
 `HarborRoom.of(context).systemEdges`) handles the system edges and keeps the bars with
 `HarborHandled(edges: {HarborEdge.bottom}, clearsBars: false)`. A list inside it
@@ -297,7 +331,8 @@ holds still while the keyboard moves. The sliver and `paddingOf` take it too.
 reaches, to its inner face, whether or not it has an edge effect: for artwork that
 lines up under a frosted header. It holds still while the keyboard moves. It
 reads zero inside a scroll view, which has handled its ends; start the scroll view
-under the bars to lay artwork under the header.
+under the bars to lay artwork under the header. Beneath `HarborHandled(keepsGeometry: true)` it
+still reads the header.
 
 `HarborClear(clearsBars: false)` keeps clear of the system edges alone, without the bars
 and, unlike a scroll view, without the keyboard whatever its `keyboard`: a hero title

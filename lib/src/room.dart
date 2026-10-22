@@ -85,6 +85,7 @@ class HarborRoomData {
     this.frameSize = Size.zero,
     this.hasBars = const <HarborEdge>{},
     this.fadeBandsPainted = const <HarborEdge>{},
+    this.geometryOnly = const <HarborEdge>{},
   });
 
   /// What the platform still takes on each edge: status bar, home indicator,
@@ -122,6 +123,17 @@ class HarborRoomData {
   /// whole body, so scroll views inside leave them alone rather than fade twice.
   final Set<HarborEdge> fadeBandsPainted;
 
+  /// The edges handled for clearing alone: a layer above (`HarborHandled(keepsGeometry: true)`)
+  /// decided where content goes there, so nothing beneath keeps clear of them again, yet the
+  /// system edges, the bars and the fade bands on them stay here to be measured.
+  ///
+  /// `MediaQuery.padding` reads zero on these edges, as beneath any layer that handled them, and so
+  /// does every harbor widget that keeps clear ([HarborRoom.clearanceOf], `HarborClear`,
+  /// `HarborScrollView`, `HarborSliverClear`) and [HarborRoom.steadySystemEdgeOf]. What reads them
+  /// is what measures against the bars: [HarborRoom.barFaceOf], and [systemEdges], [bars],
+  /// [barsResting] and [fadeBands] as [HarborRoom.of] returns them.
+  final Set<HarborEdge> geometryOnly;
+
   /// The fade band on [edge], or [HarborFadeBand.none].
   HarborFadeBand fadeBandOf(final HarborEdge edge) => fadeBands[edge] ?? HarborFadeBand.none;
 
@@ -148,6 +160,7 @@ class HarborRoomData {
     final Size? frameSize,
     final Set<HarborEdge>? hasBars,
     final Set<HarborEdge>? fadeBandsPainted,
+    final Set<HarborEdge>? geometryOnly,
   }) {
     return HarborRoomData(
       systemEdges: systemEdges ?? this.systemEdges,
@@ -159,6 +172,7 @@ class HarborRoomData {
       frameSize: frameSize ?? this.frameSize,
       hasBars: hasBars ?? this.hasBars,
       fadeBandsPainted: fadeBandsPainted ?? this.fadeBandsPainted,
+      geometryOnly: geometryOnly ?? this.geometryOnly,
     );
   }
 
@@ -175,6 +189,11 @@ class HarborRoomData {
     },
     margin: margin ? HarborEdges.without(this.margin, edges) : this.margin,
   );
+
+  /// This room as a widget that keeps clear reads it: [geometryOnly] handled, as it is for
+  /// `MediaQuery.padding`.
+  @internal
+  HarborRoomData get forClearing => geometryOnly.isEmpty ? this : handled(geometryOnly, margin: false);
 
   // This room with the system edges on [edges] handled and the bars kept, beneath a layer that kept
   // clear of [cleared] there: the bars and their edge effects are measured from that layer's edge,
@@ -216,7 +235,8 @@ class HarborRoomData {
       other.margin == margin &&
       other.frameSize == frameSize &&
       _setEquals(other.hasBars, hasBars) &&
-      _setEquals(other.fadeBandsPainted, fadeBandsPainted);
+      _setEquals(other.fadeBandsPainted, fadeBandsPainted) &&
+      _setEquals(other.geometryOnly, geometryOnly);
 
   @override
   int get hashCode => Object.hash(
@@ -231,6 +251,7 @@ class HarborRoomData {
     frameSize,
     Object.hashAllUnordered(hasBars),
     Object.hashAllUnordered(fadeBandsPainted),
+    Object.hashAllUnordered(geometryOnly),
   );
 
   static bool _mapEquals(final Map<HarborEdge, HarborFadeBand> a, final Map<HarborEdge, HarborFadeBand> b) =>
@@ -263,13 +284,17 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
     final HarborRoomData b = oldWidget.data;
     return dependencies.any(
       (final HarborRoomAspect aspect) => switch (aspect) {
-        HarborRoomAspect.systemEdges => a.systemEdges != b.systemEdges || a.systemEdgesSteady != b.systemEdgesSteady,
+        HarborRoomAspect.systemEdges =>
+          a.systemEdges != b.systemEdges ||
+              a.systemEdgesSteady != b.systemEdgesSteady ||
+              !HarborRoomData._setEquals(a.geometryOnly, b.geometryOnly),
         HarborRoomAspect.bars =>
           a.bars != b.bars ||
               a.barsResting != b.barsResting ||
               !HarborRoomData._mapEquals(a.fadeBands, b.fadeBands) ||
               !HarborRoomData._setEquals(a.hasBars, b.hasBars) ||
-              !HarborRoomData._setEquals(a.fadeBandsPainted, b.fadeBandsPainted),
+              !HarborRoomData._setEquals(a.fadeBandsPainted, b.fadeBandsPainted) ||
+              !HarborRoomData._setEquals(a.geometryOnly, b.geometryOnly),
         HarborRoomAspect.margin => a.margin != b.margin,
         HarborRoomAspect.frame => a.frameSize != b.frameSize,
       },
@@ -309,18 +334,27 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
         frameSize: readsFrame ? MediaQuery.sizeOf(context) : mediaQuery.size,
       );
     }
+    // An edge handled for clearing alone reads zero in `MediaQuery`, yet its system edges and bars
+    // are still there to be measured, so it is not clamped.
+    EdgeInsetsDirectional clamped(final EdgeInsetsDirectional value) => HarborEdges.build(
+      (final HarborEdge e) => raw.geometryOnly.contains(e)
+          ? HarborEdges.of(value, e)
+          : math.min(HarborEdges.of(value, e), HarborEdges.of(padding, e)),
+    );
     return raw.copyWith(
-      systemEdges: HarborEdges.min(raw.systemEdges, padding),
+      systemEdges: clamped(raw.systemEdges),
       // The steady system edges' clamp reads the view padding and the keyboard, which a body that
       // clears the keyboard moves on every frame drawn. As `MediaQuery.paddingOf` does not subscribe
       // to `viewPadding`, only a reader of everything subscribes here; the rest get the right value,
       // read without subscribing, and hold still while the keyboard moves. `steadySystemEdgeOf` is
       // the reader that follows it.
       systemEdgesSteady: HarborEdges.build(
-        (final HarborEdge edge) => _steadySystemEdge(context, raw, edge, listen: aspect == null),
+        (final HarborEdge edge) => raw.geometryOnly.contains(edge)
+            ? HarborEdges.of(raw.systemEdgesSteady, edge)
+            : _steadySystemEdge(context, raw, edge, listen: aspect == null),
       ),
-      bars: HarborEdges.min(raw.bars, padding),
-      barsResting: HarborEdges.min(raw.barsResting, padding),
+      bars: clamped(raw.bars),
+      barsResting: clamped(raw.barsResting),
     );
   }
 
@@ -329,7 +363,8 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
   /// footer that keeps the same size as the keyboard comes and goes, where
   /// `MediaQuery.viewPadding` would not: a frame whose body clears the keyboard
   /// takes the keyboard's ground out of both. Zero once a bar has absorbed
-  /// the system edge or a layer has handled it; outside any frame,
+  /// the system edge or a layer has handled it (for clearing alone too, as
+  /// `HarborHandled(keepsGeometry: true)` does); outside any frame,
   /// `MediaQuery.viewPadding`.
   ///
   /// It holds the home indicator even in a body that ends at the keyboard, so
@@ -347,8 +382,17 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
         edge,
       );
     }
+    if (raw.geometryOnly.contains(edge)) {
+      return 0.0;
+    }
     return _steadySystemEdge(context, raw, edge);
   }
+
+  /// [of] as a widget that keeps clear reads it: zero on the edges a layer above handled for
+  /// clearing alone ([HarborRoomData.geometryOnly]), as `MediaQuery.padding` is.
+  @internal
+  static HarborRoomData clearingOf(final BuildContext context, {final HarborRoomAspect? aspect}) =>
+      of(context, aspect: aspect).forClearing;
 
   // Clamped to `MediaQuery.viewPadding` like the rest of the room data, so a layer
   // outside the frame that removed the system edges is honored. At the bottom the
@@ -428,6 +472,12 @@ class HarborRoom extends InheritedModel<HarborRoomAspect> {
 /// frosted header or tab bar. Beneath, the bars are measured from that
 /// layer's edge, and `MediaQuery.padding` and `viewPadding` say the same.
 ///
+/// A layer whose content runs under the bars on purpose (a hero under a translucent header, a view
+/// that starts under the bars) passes `keepsGeometry: true`: [edges] are handled for clearing alone.
+/// Nothing beneath keeps clear of them again, so a scroll view nested further down rests its first
+/// row at its own top, and `MediaQuery.padding` reads zero there, while [HarborRoom.barFaceOf] and
+/// [HarborRoom.of] still find the system edges and the bars there, for what lines up with them.
+///
 /// See also:
 ///
 ///  * [MediaQuery.removePadding], which lowers `viewPadding` only by the padding it removes; this
@@ -439,9 +489,11 @@ class HarborHandled extends StatelessWidget {
     this.clearsKeyboard = false,
     this.margin = true,
     this.clearsBars = true,
+    this.keepsGeometry = false,
     this.debugLabel,
     required this.child,
-  }) : _reports = true;
+  }) : assert(clearsBars || !keepsGeometry, 'keepsGeometry handles the system edges and the bars together.'),
+       _reports = true;
 
   /// A [HarborHandled] that a harbor widget puts beneath itself, which the inspector lists under
   /// that widget's name rather than its own.
@@ -454,6 +506,7 @@ class HarborHandled extends StatelessWidget {
     this.clearsBars = true,
     required this.child,
   }) : debugLabel = null,
+       keepsGeometry = false,
        _reports = false;
 
   final Set<HarborEdge> edges;
@@ -471,6 +524,16 @@ class HarborHandled extends StatelessWidget {
   /// is all handled either way.
   final bool clearsBars;
 
+  /// Whether [edges] are handled for clearing alone, keeping their geometry. True, nothing beneath
+  /// keeps clear of them (`MediaQuery.padding` and every harbor widget that keeps clear read zero
+  /// there), but the system edges, the bars and their fade bands stay in the room data
+  /// ([HarborRoomData.geometryOnly]), so [HarborRoom.barFaceOf] and [HarborRoom.of] still measure
+  /// them. It handles the system edges and the bars together, so [clearsBars] stays true.
+  ///
+  /// The inspector lists it with an amount of zero on [edges]: it marks content that runs under
+  /// what is there, and moves nothing.
+  final bool keepsGeometry;
+
   /// Its name in the inspector, among the frame's consumers (`HarborInspectorEntry.consumers`).
   final String? debugLabel;
 
@@ -485,6 +548,7 @@ class HarborHandled extends StatelessWidget {
     properties.add(FlagProperty('clearsKeyboard', value: clearsKeyboard, ifTrue: 'handles the keyboard'));
     properties.add(FlagProperty('margin', value: margin, ifFalse: 'keeps the margin'));
     properties.add(FlagProperty('clearsBars', value: clearsBars, ifFalse: 'keeps the bars'));
+    properties.add(FlagProperty('keepsGeometry', value: keepsGeometry, ifTrue: 'keeps the geometry'));
     properties.add(StringProperty('debugLabel', debugLabel, defaultValue: null));
   }
 
@@ -527,10 +591,13 @@ class HarborHandled extends StatelessWidget {
     // Outside any frame, the room data a reader here would see: all of MediaQuery's padding as system
     // edges. Empty room data zeroed every edge beneath, not just these: a sheet with clearsSides opened
     // with no HarborRoot read a bottom inset of 0 instead of the home indicator (#98).
-    final HarborRoomData room = (HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context)).handled(
-      edges,
-      margin: margin,
-    );
+    final HarborRoomData outer = HarborRoom.maybeRawOf(context) ?? HarborRoom.of(context);
+    final HarborRoomData room = keepsGeometry
+        ? outer.copyWith(
+            geometryOnly: <HarborEdge>{...outer.geometryOnly, ...edges},
+            margin: margin ? HarborEdges.without(outer.margin, edges) : outer.margin,
+          )
+        : outer.handled(edges, margin: margin);
     final Widget handled = MediaQuery(
       data: data,
       child: HarborRoom(data: room, child: child),
@@ -542,11 +609,11 @@ class HarborHandled extends StatelessWidget {
     // keyboard where it removed that too.
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);
     return _report(
-      HarborEdges.build(
-        (final HarborEdge e) => clearsKeyboard && e == HarborEdge.bottom
-            ? math.max(HarborEdges.of(padding, e), ambient.viewInsets.bottom)
-            : HarborEdges.of(padding, e),
-      ),
+      HarborEdges.build((final HarborEdge e) {
+        // Keeping the geometry moves nothing: the content runs under what is there.
+        final double removed = keepsGeometry ? 0.0 : HarborEdges.of(padding, e);
+        return clearsKeyboard && e == HarborEdge.bottom ? math.max(removed, ambient.viewInsets.bottom) : removed;
+      }),
       handled,
     );
   }
@@ -557,7 +624,7 @@ class HarborHandled extends StatelessWidget {
     final TextDirection direction = Directionality.of(context);
     final MediaQueryData ambient = MediaQuery.of(context);
     // The system edges as a reader here sees them, clamped to `MediaQuery`: outside a frame, all of it.
-    final HarborRoomData here = HarborRoom.of(context);
+    final HarborRoomData here = HarborRoom.clearingOf(context);
     final EdgeInsetsDirectional cleared = HarborEdges.keep(here.systemEdges, edges);
     final EdgeInsetsDirectional clearedSteady = HarborEdges.keep(here.systemEdgesSteady, edges);
     final EdgeInsetsDirectional padding = HarborEdges.directional(ambient.padding, direction);

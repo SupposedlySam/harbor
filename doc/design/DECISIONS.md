@@ -296,6 +296,36 @@ up from the bottom. A pull-down panel is a float, a popover or an `OverlayPortal
 of the status bar by `HarborRoom.of(context).systemEdges`. The README says so where it describes
 sheets.
 
+## Handled for clearing, keeping the geometry (#162, 2026-10-21)
+
+The room answers two questions on an edge: is something there (geometry: `barFaceOf`, `HarborRoom.of`'s
+`bars` and `systemEdges`), and is something left to clear (consumption: `MediaQuery.padding` and every
+widget that keeps clear). `HarborHandled` answered both with no. `HarborHandled(keepsGeometry: true)`
+answers the second alone, for content that runs under a bar on purpose.
+
+- **One record, not two.** The room data keeps its geometry and names the edges handled this way in
+  `HarborRoomData.geometryOnly`. Widgets that keep clear read the room through `HarborRoom.clearingOf`
+  (internal: `of(...)` with those edges handled), and `MediaQuery.padding` is zeroed as under any
+  consumer, so a third-party list sees the same answer. The rejected shape is the one the issue's
+  workaround had: an inherited "content handles the band" mark beside the room, which only the widgets
+  that know it read.
+- **`HarborRoom.of` is the geometry reader.** It no longer clamps a `geometryOnly` edge to
+  `MediaQuery.padding` (which is zero there by design); every other edge is clamped as before.
+  `steadySystemEdgeOf` is a clearing reader (a footer pads by it) and reads zero, as it does beneath
+  any handled edge. A nested `HarborFrame` keeps clear, so it reads the clearing view.
+- **`startsUnderBars` does not set it.** The brief proposed that a view starting under the bars mark its
+  leading edge this way. Measured: slivers after the first already sit under the view's handled leading
+  end, and the first sliver is handed the leading end back on purpose, so a hero's
+  `HarborClear(clearsBars: false)` title keeps off the status bar (README). Marking it would break that.
+  The primitive goes where the caller knows the content runs under the bar.
+- **Named `keepsGeometry`**, the issue's own spelling, as a flag beside `clearsBars` and `clearsKeyboard`
+  rather than a constructor: it is one more choice about what the layer handles. It requires
+  `clearsBars: true` (an assert): handling the system edges alone while keeping their geometry has no
+  case yet.
+- **The inspector amount is 0.** A `HarborHandled` reports what it removed because the layer above it
+  padded by that much by hand; this one marks content that moves nothing.
+- Additive, so it ships in a minor (1.2.0).
+
 ## Product work outside the API
 
 - **Android landscape trial devices**, gesture and 3-button: yes, in `harbor_test` and the
