@@ -137,10 +137,13 @@ class HarborClear extends StatelessWidget {
         return HarborEdges.of(paddingHere, edge);
       }
       double value = switch ((clearsBars, follow)) {
-        (false, _) => HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges, edge),
+        (false, _) => HarborEdges.of(
+          HarborRoom.clearingOf(context, aspect: HarborRoomAspect.systemEdges).systemEdges,
+          edge,
+        ),
         (true, HarborFollow.resting) => math.max(
-          HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges, edge),
-          HarborEdges.of(HarborRoom.of(context, aspect: HarborRoomAspect.bars).barsResting, edge),
+          HarborEdges.of(HarborRoom.clearingOf(context, aspect: HarborRoomAspect.systemEdges).systemEdges, edge),
+          HarborEdges.of(HarborRoom.clearingOf(context, aspect: HarborRoomAspect.bars).barsResting, edge),
         ),
         (true, HarborFollow.live) => HarborRoom.clearanceOf(context, edge, clearsKeyboard: false),
       };

@@ -26,7 +26,7 @@ double _endClearance(
     return HarborRoom.clearanceOf(context, edge, clearsKeyboard: clearsKeyboard);
   }
   final double systemEdges = HarborEdges.of(
-    HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges,
+    HarborRoom.clearingOf(context, aspect: HarborRoomAspect.systemEdges).systemEdges,
     edge,
   );
   if (clearsKeyboard && edge == HarborEdge.bottom) {
@@ -318,9 +318,12 @@ class HarborScrollView extends StatelessWidget {
     final EdgeInsetsDirectional padding = HarborEdges.resolve(this.padding, direction);
     final EdgeInsetsDirectional minimum = HarborEdges.resolve(this.minimum, direction);
     // The bars carry the edge effects; the system edges and the margin are read only where
-    // they are used, so a carousel does not rebuild as the keyboard moves.
-    final HarborRoomData room = HarborRoom.of(context, aspect: HarborRoomAspect.bars);
-    EdgeInsetsDirectional systemEdges() => HarborRoom.of(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
+    // they are used, so a carousel does not rebuild as the keyboard moves. Read as a widget that
+    // keeps clear reads them: an edge a layer above handled for clearing alone is nothing to clear,
+    // to pin under or to fade here.
+    final HarborRoomData room = HarborRoom.clearingOf(context, aspect: HarborRoomAspect.bars);
+    EdgeInsetsDirectional systemEdges() =>
+        HarborRoom.clearingOf(context, aspect: HarborRoomAspect.systemEdges).systemEdges;
     final bool vertical = scrollDirection == Axis.vertical;
     final HarborEdge leadingEdge = vertical
         ? (reverse ? HarborEdge.bottom : HarborEdge.top)
