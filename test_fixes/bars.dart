@@ -24,6 +24,10 @@ void both(BuildContext context, bool b) {
   HarborFairway(clear: HarborClear.coast, bars: false, slivers: <Widget>[]);
   HarborFairway.paddingOf(context, bars: b, clear: HarborClear.everything);
   HarborFairwaySliver(bars: true, clear: HarborClear.coast, sliver: SliverToBoxAdapter());
+  // The same calls as dart fix sees them when rename.yaml runs first (the order Linux picked in #163's
+  // CI): bars: is already clearsBars:, and the coast branch must still leave only one.
+  HarborClear(clearsBars: true, clear: HarborClear.coast, child: SizedBox());
+  HarborClear.clearanceOf(context, clearsBars: b, clear: HarborClear.coast);
 }
 
 void bars(BuildContext context, bool b) {

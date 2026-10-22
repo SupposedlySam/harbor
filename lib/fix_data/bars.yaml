@@ -6,7 +6,9 @@
 # default, is removed. A `clear:` given anything else (a variable, a conditional) is left for you.
 # 0.8 let a call give both (`bars: b, clear: HarborClear.coast` meant `b && false`), so the coast
 # branch removes a `bars:` too rather than leaving two; with `.everything` a `bars:` stands as it was,
-# and rename.yaml renames it `clearsBars:`.
+# and rename.yaml renames it `clearsBars:`. The coast branch also removes a `clearsBars:`: dart fix
+# orders transforms from different files differently by platform, and when rename.yaml runs first the
+# `bars:` is already `clearsBars:`, so removing only `bars` left two (#163's CI, on Linux).
 #
 # 0.9.0 removed the enum and `clear:`, so the name HarborClear could go to the widget HarborMoored
 # was. A call still on `clear:` no longer compiles, and these transforms still rewrite it, keyed on
@@ -26,6 +28,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 0
             name: 'clearsBars'
@@ -55,6 +59,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 1
             name: 'clearsBars'
@@ -84,6 +90,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 0
             name: 'clearsBars'
@@ -113,6 +121,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 0
             name: 'clearsBars'
@@ -142,6 +152,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 1
             name: 'clearsBars'
@@ -171,6 +183,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 0
             name: 'clearsBars'
@@ -200,6 +214,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 0
             name: 'clearsBars'
@@ -229,6 +245,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 1
             name: 'clearsBars'
@@ -258,6 +276,8 @@ transforms:
         changes:
           - kind: 'removeParameter'
             name: 'bars'
+          - kind: 'removeParameter'
+            name: 'clearsBars'
           - kind: 'addParameter'
             index: 0
             name: 'clearsBars'

@@ -24,6 +24,10 @@ void both(BuildContext context, bool b) {
   const HarborScrollView(clearsBars: false, slivers: <Widget>[]);
   HarborScrollView.paddingOf(context, clearsBars: b);
   const HarborSliverClear(clearsBars: false, sliver: SliverToBoxAdapter());
+  // The same calls as dart fix sees them when rename.yaml runs first (the order Linux picked in #163's
+  // CI): bars: is already clearsBars:, and the coast branch must still leave only one.
+  const HarborClear(clearsBars: false, child: SizedBox());
+  HarborClear.clearanceOf(context, clearsBars: false);
 }
 
 void bars(BuildContext context, bool b) {
